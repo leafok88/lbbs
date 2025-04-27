@@ -1,9 +1,9 @@
 /***************************************************************************
-                          common.h  -  description
-                             -------------------
-    begin                : Mon Oct 18 2004
-    copyright            : (C) 2004 by Leaflet
-    email                : leaflet@leafok.com
+						  common.h  -  description
+							 -------------------
+	begin                : Mon Oct 18 2004
+	copyright            : (C) 2004 by Leaflet
+	email                : leaflet@leafok.com
  ***************************************************************************/
 
 /***************************************************************************
@@ -18,14 +18,14 @@
 #ifndef _COMMON_H_
 #define _COMMON_H_
 
-//Version
+// Version
 extern char app_version[256];
 
-//Enviroment
+// Enviroment
 extern char app_home_dir[256];
 extern char app_temp_dir[256];
 
-//Network
+// Network
 extern int socket_server;
 extern int socket_client;
 extern char hostaddr_server[50];
@@ -33,21 +33,21 @@ extern char hostaddr_client[50];
 extern int port_server;
 extern int port_client;
 
-//Database
+// Database
 extern char DB_host[256];
 extern char DB_username[50];
 extern char DB_password[50];
 extern char DB_database[50];
 
-//Signal
-#define SIG_RELOAD_MENU	0x22
+// Signal
+#define SIG_RELOAD_MENU 0x22
 
-//Signal handler
-extern void reload_bbs_menu (int);
-extern void system_exit (int);
-extern void child_exit (int);
+// Signal handler
+extern void reload_bbs_menu(int);
+extern void system_exit(int);
+extern void child_exit(int);
 
-//System
+// System
 extern int SYS_exit;
 extern int SYS_child_process_count;
 

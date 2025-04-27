@@ -19,7 +19,7 @@ Introduction
 ============
 
     This software (named as LBBS) aims to providing a telnet-based interface for
-a pure web-based BBS (named as LeafOK BBS). 
+a pure web-based BBS (named as LeafOK BBS).
     LeafOK BBS is a powerful BBS system, not only providing almost every function
 that a standard BBS should have, but also giving many features other BBS hasn't
 complemented yet.
@@ -45,4 +45,3 @@ please tell me.
 Installation
 ============
     Please see INSTALL for details.
-

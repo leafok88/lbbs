@@ -1,9 +1,9 @@
 /***************************************************************************
-                          database.h  -  description
-                             -------------------
-    begin                : Mon Oct 18 2004
-    copyright            : (C) 2004 by Leaflet
-    email                : leaflet@leafok.com
+						  database.h  -  description
+							 -------------------
+	begin                : Mon Oct 18 2004
+	copyright            : (C) 2004 by Leaflet
+	email                : leaflet@leafok.com
  ***************************************************************************/
 
 /***************************************************************************
@@ -20,6 +20,6 @@
 
 #include <mysql.h>
 
-extern MYSQL *db_open ();
+extern MYSQL *db_open();
 
 #endif //_DATABASE_H_

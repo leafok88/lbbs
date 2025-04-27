@@ -4,4 +4,3 @@ CLEANFILES=@EXTRA_CLEAN@
 
 install-data-local:
 	sh makedist.sh $(prefix)
-

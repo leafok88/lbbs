@@ -51,8 +51,8 @@ mkinstalldirs = $(install_sh) -d
 CONFIG_CLEAN_FILES =
 am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
 am__vpath_adj = case $$p in \
-    $(srcdir)/*) f=`echo "$$p" | sed "s|^$$srcdirstrip/||"`;; \
-    *) f=$$p;; \
+	$(srcdir)/*) f=`echo "$$p" | sed "s|^$$srcdirstrip/||"`;; \
+	*) f=$$p;; \
   esac;
 am__strip_dir = `echo $$p | sed -e 's|^.*/||'`;
 am__installdirs = "$(DESTDIR)$(libdir)" "$(DESTDIR)$(bindir)"
@@ -185,10 +185,10 @@ sharedstatedir = @sharedstatedir@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 bbsd_SOURCES = bbs.c bbs_cmd.c bbs_main.c common.c database.c fork.c init.c \
-               io.c log.c login.c menu.c main.c menu_proc.c netio.c net_server.c \
-               passwd.c regex.c register.c screen.c tcplib.c user_priv.c \
-               welcome.c \
-               bbs.h bbs_cmd.h common.h database.h io.h menu.h menu_proc.h tcplib.h
+			   io.c log.c login.c menu.c main.c menu_proc.c netio.c net_server.c \
+			   passwd.c regex.c register.c screen.c tcplib.c user_priv.c \
+			   welcome.c \
+			   bbs.h bbs_cmd.h common.h database.h io.h menu.h menu_proc.h tcplib.h
 
 bbsd_LDFLAGS = -export-dynamic
 lib_LTLIBRARIES = libbbs.la
@@ -202,10 +202,10 @@ all: all-am
 $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
-	    *$$dep*) \
-	      cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh \
+		*$$dep*) \
+		  cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh \
 		&& exit 0; \
-	      exit 1;; \
+		  exit 1;; \
 	  esac; \
 	done; \
 	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu  src/Makefile'; \
@@ -215,10 +215,10 @@ $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
 	  *config.status*) \
-	    cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh;; \
+		cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh;; \
 	  *) \
-	    echo ' cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@ $(am__depfiles_maybe)'; \
-	    cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@ $(am__depfiles_maybe);; \
+		echo ' cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@ $(am__depfiles_maybe)'; \
+		cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@ $(am__depfiles_maybe);; \
 	esac;
 
 $(top_builddir)/config.status: $(top_srcdir)/configure $(CONFIG_STATUS_DEPENDENCIES)
@@ -233,9 +233,9 @@ install-libLTLIBRARIES: $(lib_LTLIBRARIES)
 	test -z "$(libdir)" || $(mkdir_p) "$(DESTDIR)$(libdir)"
 	@list='$(lib_LTLIBRARIES)'; for p in $$list; do \
 	  if test -f $$p; then \
-	    f=$(am__strip_dir) \
-	    echo " $(LIBTOOL) --mode=install $(libLTLIBRARIES_INSTALL) $(INSTALL_STRIP_FLAG) '$$p' '$(DESTDIR)$(libdir)/$$f'"; \
-	    $(LIBTOOL) --mode=install $(libLTLIBRARIES_INSTALL) $(INSTALL_STRIP_FLAG) "$$p" "$(DESTDIR)$(libdir)/$$f"; \
+		f=$(am__strip_dir) \
+		echo " $(LIBTOOL) --mode=install $(libLTLIBRARIES_INSTALL) $(INSTALL_STRIP_FLAG) '$$p' '$(DESTDIR)$(libdir)/$$f'"; \
+		$(LIBTOOL) --mode=install $(libLTLIBRARIES_INSTALL) $(INSTALL_STRIP_FLAG) "$$p" "$(DESTDIR)$(libdir)/$$f"; \
 	  else :; fi; \
 	done
 
@@ -255,7 +255,7 @@ clean-libLTLIBRARIES:
 	  echo "rm -f \"$${dir}/so_locations\""; \
 	  rm -f "$${dir}/so_locations"; \
 	done
-libbbs.la: $(libbbs_la_OBJECTS) $(libbbs_la_DEPENDENCIES) 
+libbbs.la: $(libbbs_la_OBJECTS) $(libbbs_la_DEPENDENCIES)
 	$(LINK) -rpath $(libdir) $(libbbs_la_LDFLAGS) $(libbbs_la_OBJECTS) $(libbbs_la_LIBADD) $(LIBS)
 install-binPROGRAMS: $(bin_PROGRAMS)
 	@$(NORMAL_INSTALL)
@@ -263,9 +263,9 @@ install-binPROGRAMS: $(bin_PROGRAMS)
 	@list='$(bin_PROGRAMS)'; for p in $$list; do \
 	  p1=`echo $$p|sed 's/$(EXEEXT)$$//'`; \
 	  if test -f $$p \
-	     || test -f $$p1 \
+		 || test -f $$p1 \
 	  ; then \
-	    f=`echo "$$p1" | sed 's,^.*/,,;$(transform);s/$$/$(EXEEXT)/'`; \
+		f=`echo "$$p1" | sed 's,^.*/,,;$(transform);s/$$/$(EXEEXT)/'`; \
 	   echo " $(INSTALL_PROGRAM_ENV) $(LIBTOOL) --mode=install $(binPROGRAMS_INSTALL) '$$p' '$(DESTDIR)$(bindir)/$$f'"; \
 	   $(INSTALL_PROGRAM_ENV) $(LIBTOOL) --mode=install $(binPROGRAMS_INSTALL) "$$p" "$(DESTDIR)$(bindir)/$$f" || exit 1; \
 	  else :; fi; \
@@ -285,7 +285,7 @@ clean-binPROGRAMS:
 	  echo " rm -f $$p $$f"; \
 	  rm -f $$p $$f ; \
 	done
-bbsd$(EXEEXT): $(bbsd_OBJECTS) $(bbsd_DEPENDENCIES) 
+bbsd$(EXEEXT): $(bbsd_OBJECTS) $(bbsd_DEPENDENCIES)
 	@rm -f bbsd$(EXEEXT)
 	$(LINK) $(bbsd_LDFLAGS) $(bbsd_OBJECTS) $(bbsd_LDADD) $(LIBS)
 
@@ -353,10 +353,10 @@ uninstall-info-am:
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
 	list='$(SOURCES) $(HEADERS) $(LISP) $(TAGS_FILES)'; \
 	unique=`for i in $$list; do \
-	    if test -f "$$i"; then echo $$i; else echo $(srcdir)/$$i; fi; \
+		if test -f "$$i"; then echo $$i; else echo $(srcdir)/$$i; fi; \
 	  done | \
 	  $(AWK) '    { files[$$0] = 1; } \
-	       END { for (i in files) print i; }'`; \
+		   END { for (i in files) print i; }'`; \
 	mkid -fID $$unique
 tags: TAGS
 
@@ -366,14 +366,14 @@ TAGS:  $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) \
 	here=`pwd`; \
 	list='$(SOURCES) $(HEADERS)  $(LISP) $(TAGS_FILES)'; \
 	unique=`for i in $$list; do \
-	    if test -f "$$i"; then echo $$i; else echo $(srcdir)/$$i; fi; \
+		if test -f "$$i"; then echo $$i; else echo $(srcdir)/$$i; fi; \
 	  done | \
 	  $(AWK) '    { files[$$0] = 1; } \
-	       END { for (i in files) print i; }'`; \
+		   END { for (i in files) print i; }'`; \
 	if test -z "$(ETAGS_ARGS)$$tags$$unique"; then :; else \
 	  test -n "$$unique" || unique=$$empty_fix; \
 	  $(ETAGS) $(ETAGSFLAGS) $(AM_ETAGSFLAGS) $(ETAGS_ARGS) \
-	    $$tags $$unique; \
+		$$tags $$unique; \
 	fi
 ctags: CTAGS
 CTAGS:  $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) \
@@ -382,13 +382,13 @@ CTAGS:  $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) \
 	here=`pwd`; \
 	list='$(SOURCES) $(HEADERS)  $(LISP) $(TAGS_FILES)'; \
 	unique=`for i in $$list; do \
-	    if test -f "$$i"; then echo $$i; else echo $(srcdir)/$$i; fi; \
+		if test -f "$$i"; then echo $$i; else echo $(srcdir)/$$i; fi; \
 	  done | \
 	  $(AWK) '    { files[$$0] = 1; } \
-	       END { for (i in files) print i; }'`; \
+		   END { for (i in files) print i; }'`; \
 	test -z "$(CTAGS_ARGS)$$tags$$unique" \
 	  || $(CTAGS) $(CTAGSFLAGS) $(AM_CTAGSFLAGS) $(CTAGS_ARGS) \
-	     $$tags $$unique
+		 $$tags $$unique
 
 GTAGS:
 	here=`$(am__cd) $(top_builddir) && pwd` \
@@ -403,26 +403,26 @@ distdir: $(DISTFILES)
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \
 	  case $$file in \
-	    $(srcdir)/*) file=`echo "$$file" | sed "s|^$$srcdirstrip/||"`;; \
-	    $(top_srcdir)/*) file=`echo "$$file" | sed "s|^$$topsrcdirstrip/|$(top_builddir)/|"`;; \
+		$(srcdir)/*) file=`echo "$$file" | sed "s|^$$srcdirstrip/||"`;; \
+		$(top_srcdir)/*) file=`echo "$$file" | sed "s|^$$topsrcdirstrip/|$(top_builddir)/|"`;; \
 	  esac; \
 	  if test -f $$file || test -d $$file; then d=.; else d=$(srcdir); fi; \
 	  dir=`echo "$$file" | sed -e 's,/[^/]*$$,,'`; \
 	  if test "$$dir" != "$$file" && test "$$dir" != "."; then \
-	    dir="/$$dir"; \
-	    $(mkdir_p) "$(distdir)$$dir"; \
+		dir="/$$dir"; \
+		$(mkdir_p) "$(distdir)$$dir"; \
 	  else \
-	    dir=''; \
+		dir=''; \
 	  fi; \
 	  if test -d $$d/$$file; then \
-	    if test -d $(srcdir)/$$file && test $$d != $(srcdir); then \
-	      cp -pR $(srcdir)/$$file $(distdir)$$dir || exit 1; \
-	    fi; \
-	    cp -pR $$d/$$file $(distdir)$$dir || exit 1; \
+		if test -d $(srcdir)/$$file && test $$d != $(srcdir); then \
+		  cp -pR $(srcdir)/$$file $(distdir)$$dir || exit 1; \
+		fi; \
+		cp -pR $$d/$$file $(distdir)$$dir || exit 1; \
 	  else \
-	    test -f $(distdir)/$$file \
-	    || cp -p $$d/$$file $(distdir)/$$file \
-	    || exit 1; \
+		test -f $(distdir)/$$file \
+		|| cp -p $$d/$$file $(distdir)/$$file \
+		|| exit 1; \
 	  fi; \
 	done
 check-am: all-am
@@ -447,7 +447,7 @@ install-strip:
 	$(MAKE) $(AM_MAKEFLAGS) INSTALL_PROGRAM="$(INSTALL_STRIP_PROGRAM)" \
 	  install_sh_PROGRAM="$(INSTALL_STRIP_PROGRAM)" INSTALL_STRIP_FLAG=-s \
 	  `test -z '$(STRIP)' || \
-	    echo "INSTALL_PROGRAM_ENV=STRIPPROG='$(STRIP)'"` install
+		echo "INSTALL_PROGRAM_ENV=STRIPPROG='$(STRIP)'"` install
 mostlyclean-generic:
 
 clean-generic:
