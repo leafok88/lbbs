@@ -11,7 +11,7 @@
 		"               \033[1;34m-----\033[37m=====\033[41;37m 本站十大热门话题 \033[40m=====\033[34m-----\033[m\r\n\r\n";
 
 	$db_conn = include "./db_open.inc.php";
-	
+
 	$rs = mysql_query(
 		" select bbs.title, sname, username, sub_dt".
 		" from bbs inner join section_config on".
@@ -31,11 +31,11 @@
 			$i++, $row["sname"], str_repeat(" ", 20 - strlen($row["sname"])),
 			strftime("%b %d %H:%M:%S", strtotime($row["sub_dt"])),
 			str_repeat(" ", 16 - strlen($row["username"])),
-			$row["username"], substr($row["title"],0,60), 
+			$row["username"], substr($row["title"],0,60),
 			str_repeat(" ", 60 - strlen($row["title"]) >=0 ? 60 - strlen($row["title"]) : 0)
 			);
 	}
-	
+
 	mysql_free_result($rs);
 
 	mysql_close($db_conn);
@@ -45,6 +45,6 @@
 		fwrite($fp,$buffer);
 		fclose($fp);
 	}
-	
+
 	return 0;
 ?>

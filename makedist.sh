@@ -31,4 +31,3 @@ find ${PRG_HOME} -type d -exec chmod 750 {} \;
 find ${PRG_HOME} -type f -exec chmod 640 {} \;
 find ${PRG_HOME} -name *.php -type f -exec chmod 750 {} \;
 chmod 6750 ${PRG_HOME}/bin/bbsd
-

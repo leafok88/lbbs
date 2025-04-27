@@ -1,9 +1,9 @@
 /***************************************************************************
-                          log.c  -  description
-                             -------------------
-    begin                : Mon Oct 18 2004
-    copyright            : (C) 2004 by leaf
-    email                : leaflet@leafok.com
+						  log.c  -  description
+							 -------------------
+	begin                : Mon Oct 18 2004
+	copyright            : (C) 2004 by leaf
+	email                : leaflet@leafok.com
  ***************************************************************************/
 
 /***************************************************************************
@@ -25,98 +25,91 @@
 FILE *fp_log_std;
 FILE *fp_log_err;
 
-int
-log_begin (char *file_log_std, char *file_log_err)
+int log_begin(char *file_log_std, char *file_log_err)
 {
-  fp_log_std = fopen (file_log_std, "a");
-  if (fp_log_std == NULL)
-    {
-      perror ("log_begin failed\n");
-      return -1;
-    }
+	fp_log_std = fopen(file_log_std, "a");
+	if (fp_log_std == NULL)
+	{
+		perror("log_begin failed\n");
+		return -1;
+	}
 
-  fp_log_err = fopen (file_log_err, "a");
-  if (fp_log_err == NULL)
-    {
-      perror ("log_begin failed\n");
-      return -2;
-    }
+	fp_log_err = fopen(file_log_err, "a");
+	if (fp_log_err == NULL)
+	{
+		perror("log_begin failed\n");
+		return -2;
+	}
 
-  return 0;
+	return 0;
 }
 
-int
-log_end ()
+int log_end()
 {
-  fclose (fp_log_std);
-  fclose (fp_log_err);
+	fclose(fp_log_std);
+	fclose(fp_log_err);
 }
 
-int
-log_head (char *buf)
+int log_head(char *buf)
 {
-  time_t t;
-  char s_time[256];
-  t = time (0);
+	time_t t;
+	char s_time[256];
+	t = time(0);
 
-  strftime (s_time, 256, "%Y-%m-%d %H:%M:%S", localtime (&t));
-  sprintf (buf, "[%s] [%d] ", s_time, getpid ());
+	strftime(s_time, 256, "%Y-%m-%d %H:%M:%S", localtime(&t));
+	sprintf(buf, "[%s] [%d] ", s_time, getpid());
 
-  return 0;
+	return 0;
 }
 
-int
-log_std (const char *format, ...)
+int log_std(const char *format, ...)
 {
-  va_list args;
-  int retval;
-  char buf[1024];
+	va_list args;
+	int retval;
+	char buf[1024];
 
-  log_head (buf);
-  strcat (buf, format);
+	log_head(buf);
+	strcat(buf, format);
 
-  va_start (args, format);
-  retval = vfprintf (fp_log_std, buf, args);
-  va_end (args);
+	va_start(args, format);
+	retval = vfprintf(fp_log_std, buf, args);
+	va_end(args);
 
-  fflush (fp_log_std);
+	fflush(fp_log_std);
 
-  return retval;
+	return retval;
 }
 
-int
-log_error (const char *format, ...)
+int log_error(const char *format, ...)
 {
-  va_list args;
-  int retval;
-  char buf[1024];
+	va_list args;
+	int retval;
+	char buf[1024];
 
-  log_head (buf);
-  strcat (buf, format);
+	log_head(buf);
+	strcat(buf, format);
 
-  va_start (args, format);
-  retval = vfprintf (fp_log_err, buf, args);
-  va_end (args);
+	va_start(args, format);
+	retval = vfprintf(fp_log_err, buf, args);
+	va_end(args);
 
-  fflush (fp_log_err);
+	fflush(fp_log_err);
 
-  return retval;
+	return retval;
 }
 
-int
-log_std_redirect (int fd)
+int log_std_redirect(int fd)
 {
-  int ret;
-  close (fileno (fp_log_std));
-  ret = dup2 (fd, fileno (fp_log_std));
-  return ret;
+	int ret;
+	close(fileno(fp_log_std));
+	ret = dup2(fd, fileno(fp_log_std));
+	return ret;
 }
 
-int
-log_err_redirect (int fd)
+int log_err_redirect(int fd)
 {
-  int ret;
-  close (fileno (fp_log_err));
-  ret = dup2 (fd, fileno (fp_log_err));
-  return ret;
+	int ret;
+	close(fileno(fp_log_err));
+	ret = dup2(fd, fileno(fp_log_err));
+	return ret;
 }

@@ -1,6 +1,6 @@
 <?
 	include "../conf/db_conn.conf.php";
-	
+
 	$db_conn_id=mysql_connect($DB_hostname, $DB_username, $DB_password)
 		or die("Could not connect database");
 	mysql_select_db($DB_database,$db_conn_id) or die("Invalid database");

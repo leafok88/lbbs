@@ -1,9 +1,9 @@
 /***************************************************************************
-                            io.c  -  description
-                             -------------------
-    begin                : Mon Oct 18 2004
-    copyright            : (C) 2004 by Leaflet
-    email                : leaflet@leafok.com
+							io.c  -  description
+							 -------------------
+	begin                : Mon Oct 18 2004
+	copyright            : (C) 2004 by Leaflet
+	email                : leaflet@leafok.com
  ***************************************************************************/
 
 /***************************************************************************
@@ -25,226 +25,218 @@
 #include <unistd.h>
 #include <sys/ioctl.h>
 
-int
-outc (char c)
+int outc(char c)
 {
-  int retval;
+	int retval;
 
-  retval = fprintf (stdout, "%c", c);
+	retval = fprintf(stdout, "%c", c);
 
-  return retval;
+	return retval;
 }
 
-int
-prints (const char *format, ...)
+int prints(const char *format, ...)
 {
-  va_list args;
-  int retval;
+	va_list args;
+	int retval;
 
-  va_start (args, format);
-  retval = vfprintf (stdout, format, args);
-  va_end (args);
+	va_start(args, format);
+	retval = vfprintf(stdout, format, args);
+	va_end(args);
 
-  return retval;
+	return retval;
 }
 
-int
-iflush ()
+int iflush()
 {
-  int retval;
+	int retval;
 
-  retval = fflush (stdout);
+	retval = fflush(stdout);
 
-  return retval;
+	return retval;
 }
 
-int
-igetch ()
+int igetch()
 {
-  static char buf[256];
-  unsigned char c, tmp[256];
-  int out = KEY_NULL, loop = 1, in_esc = 0, in_ascii = 0, in_control = 0, i =
-    0, j, result;
-  static int len = 0, pos = 0;
-  fd_set testfds;
-  struct timeval timeout;
+	static char buf[256];
+	unsigned char c, tmp[256];
+	int out = KEY_NULL, loop = 1, in_esc = 0, in_ascii = 0, in_control = 0, i = 0, j, result;
+	static int len = 0, pos = 0;
+	fd_set testfds;
+	struct timeval timeout;
 
-  //Stop on system exit
-  if (SYS_exit)
-    return KEY_NULL;
+	// Stop on system exit
+	if (SYS_exit)
+		return KEY_NULL;
 
-  if (pos >= len)
-    {
-      pos = 0;
-      len = 0;
-
-      FD_ZERO (&testfds);
-      FD_SET (0, &testfds);
-
-      timeout.tv_sec = 1;
-      timeout.tv_usec = 0;
-
-      result = SignalSafeSelect (FD_SETSIZE, &testfds, (fd_set *) NULL,
-		       (fd_set *) NULL, &timeout);
-
-      if (result == 0)
+	if (pos >= len)
 	{
-	  return KEY_TIMEOUT;
-	}
-      if (result < 0)
-	{
-	  log_error ("select() error (%d) !\n", result);
-	  return KEY_NULL;
-	}
-      if (result > 0)
-	{
-	  if (FD_ISSET (0, &testfds))
-	    {
-	      len = read (0, buf, 255);
-	    }
-	}
+		pos = 0;
+		len = 0;
 
-      //For debug
-      //for (j = 0; j < len; j++)
-      //  log_std ("<--[%u]\n", (buf[j] + 256) % 256);
-    }
+		FD_ZERO(&testfds);
+		FD_SET(0, &testfds);
 
-  while (pos < len)
-    {
-      c = buf[pos++];
+		timeout.tv_sec = 1;
+		timeout.tv_usec = 0;
 
-      if (c == '\0')
-	{
-	  out = c;
-	  break;
-	}
+		result = SignalSafeSelect(FD_SETSIZE, &testfds, (fd_set *)NULL,
+								  (fd_set *)NULL, &timeout);
 
-      if (c == KEY_CONTROL)
-	{
-	  if (in_control == 0)
-	    {
-	      in_control = 1;
-	      i = 0;
-	      continue;
-	    }
-	}
-
-      if (in_control)
-	{
-	  tmp[i++] = c;
-	  if (i >= 2)
-	    {
-	      out = (int) tmp[0] * 256 + tmp[1];
-	      in_control = 0;
-	      break;
-	    }
-	  continue;
-	}
-
-      if (c == ESC_KEY)
-	{
-	  if (in_esc == 0)
-	    {
-	      in_esc = 1;
-	      in_ascii = 1;
-	      i = 0;
-	      continue;
-	    }
-	  else
-	    {
-	      out = ESC_KEY;
-	      in_esc = 0;
-	      break;
-	    }
-	}
-
-      in_esc = 0;
-
-      if (in_ascii)
-	{
-	  tmp[i++] = c;
-	  if (c == 'm')
-	    {
-	      in_ascii = 0;
-	      continue;
-	    }
-	  if (i == 2 && c >= 'A' && c <= 'D')
-	    {
-	      in_ascii = 0;
-	      switch (c)
+		if (result == 0)
 		{
-		case 'A':
-		  out = KEY_UP;
-		  break;
-		case 'B':
-		  out = KEY_DOWN;
-		  break;
-		case 'C':
-		  out = KEY_RIGHT;
-		  break;
-		case 'D':
-		  out = KEY_LEFT;
-		  break;
+			return KEY_TIMEOUT;
 		}
-	      break;
-	    }
-	  if (i == 3 && tmp[0] == 91 && tmp[2] == 126)
-	    {
-	      in_ascii = 0;
-	      switch (tmp[1])
+		if (result < 0)
 		{
-		case 49:
-		  out = KEY_HOME;
-		  break;
-		case 51:
-		  out = KEY_DEL;
-		  break;
-		case 52:
-		  out = KEY_END;
-		  break;
-		case 53:
-		  out = KEY_PGUP;
-		  break;
-		case 54:
-		  out = KEY_PGDN;
-		  break;
+			log_error("select() error (%d) !\n", result);
+			return KEY_NULL;
 		}
-	      break;
-	    }
-	  continue;
+		if (result > 0)
+		{
+			if (FD_ISSET(0, &testfds))
+			{
+				len = read(0, buf, 255);
+			}
+		}
+
+		// For debug
+		// for (j = 0; j < len; j++)
+		//   log_std ("<--[%u]\n", (buf[j] + 256) % 256);
 	}
 
-      out = ((int) c + 256) % 256;
-      break;
-    }
+	while (pos < len)
+	{
+		c = buf[pos++];
 
-  //for debug
-  //log_std ("-->[%u]\n", out);
+		if (c == '\0')
+		{
+			out = c;
+			break;
+		}
 
-  return out;
+		if (c == KEY_CONTROL)
+		{
+			if (in_control == 0)
+			{
+				in_control = 1;
+				i = 0;
+				continue;
+			}
+		}
+
+		if (in_control)
+		{
+			tmp[i++] = c;
+			if (i >= 2)
+			{
+				out = (int)tmp[0] * 256 + tmp[1];
+				in_control = 0;
+				break;
+			}
+			continue;
+		}
+
+		if (c == ESC_KEY)
+		{
+			if (in_esc == 0)
+			{
+				in_esc = 1;
+				in_ascii = 1;
+				i = 0;
+				continue;
+			}
+			else
+			{
+				out = ESC_KEY;
+				in_esc = 0;
+				break;
+			}
+		}
+
+		in_esc = 0;
+
+		if (in_ascii)
+		{
+			tmp[i++] = c;
+			if (c == 'm')
+			{
+				in_ascii = 0;
+				continue;
+			}
+			if (i == 2 && c >= 'A' && c <= 'D')
+			{
+				in_ascii = 0;
+				switch (c)
+				{
+				case 'A':
+					out = KEY_UP;
+					break;
+				case 'B':
+					out = KEY_DOWN;
+					break;
+				case 'C':
+					out = KEY_RIGHT;
+					break;
+				case 'D':
+					out = KEY_LEFT;
+					break;
+				}
+				break;
+			}
+			if (i == 3 && tmp[0] == 91 && tmp[2] == 126)
+			{
+				in_ascii = 0;
+				switch (tmp[1])
+				{
+				case 49:
+					out = KEY_HOME;
+					break;
+				case 51:
+					out = KEY_DEL;
+					break;
+				case 52:
+					out = KEY_END;
+					break;
+				case 53:
+					out = KEY_PGUP;
+					break;
+				case 54:
+					out = KEY_PGDN;
+					break;
+				}
+				break;
+			}
+			continue;
+		}
+
+		out = ((int)c + 256) % 256;
+		break;
+	}
+
+	// for debug
+	// log_std ("-->[%u]\n", out);
+
+	return out;
 }
 
-int
-igetch_t (long int sec)
+int igetch_t(long int sec)
 {
-  int ch;
-  time_t t_begin = time (0);
+	int ch;
+	time_t t_begin = time(0);
 
-  do
-    {
-      ch = igetch ();
-    }
-  while ((ch == KEY_TIMEOUT || ch == 0xa) && (time (0) - t_begin < sec));
+	do
+	{
+		ch = igetch();
+	} while ((ch == KEY_TIMEOUT || ch == 0xa) && (time(0) - t_begin < sec));
 
-  return ch;
+	return ch;
 }
 
-int
-ikbhit ()
+int ikbhit()
 {
-  int len;
+	int len;
 
-  ioctl (0, FIONREAD, &len);
+	ioctl(0, FIONREAD, &len);
 
-  return len;
+	return len;
 }

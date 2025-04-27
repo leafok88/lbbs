@@ -1,9 +1,9 @@
 /***************************************************************************
-                          regex.c  -  description
-                             -------------------
-    begin                : Mon Oct 11 2004
-    copyright            : (C) 2004 by Leaflet
-    email                : leaflet@leafok.com
+						  regex.c  -  description
+							 -------------------
+	begin                : Mon Oct 11 2004
+	copyright            : (C) 2004 by Leaflet
+	email                : leaflet@leafok.com
  ***************************************************************************/
 
 /***************************************************************************
@@ -18,33 +18,32 @@
 #include <stdlib.h>
 #include <regex.h>
 
-int
-ireg (const char *pattern, const char *string, size_t nmatch,
-      regmatch_t pmatch[])
+int ireg(const char *pattern, const char *string, size_t nmatch,
+		 regmatch_t pmatch[])
 {
-  regex_t *preg;
-  int cflags = 0, eflags = 0, ret;
+	regex_t *preg;
+	int cflags = 0, eflags = 0, ret;
 
-  preg = (regex_t *) malloc (sizeof (regex_t));
+	preg = (regex_t *)malloc(sizeof(regex_t));
 
-  cflags = REG_EXTENDED;
+	cflags = REG_EXTENDED;
 
-  if (pmatch == NULL)
-    cflags |= REG_NOSUB;
+	if (pmatch == NULL)
+		cflags |= REG_NOSUB;
 
-  if (regcomp (preg, pattern, cflags) != 0)
-    {
-      log_error ("Compile regular expression pattern failed\n");
-      free (preg);
-      return -1;
-    }
-  ret = regexec (preg, string, nmatch, pmatch, eflags);
+	if (regcomp(preg, pattern, cflags) != 0)
+	{
+		log_error("Compile regular expression pattern failed\n");
+		free(preg);
+		return -1;
+	}
+	ret = regexec(preg, string, nmatch, pmatch, eflags);
 
-  regfree (preg);
-  free (preg);
+	regfree(preg);
+	free(preg);
 
-  //For debug
-  //log_std(ret?"error\n":"ok\n");
+	// For debug
+	// log_std(ret?"error\n":"ok\n");
 
-  return ret;
+	return ret;
 }

@@ -1,9 +1,9 @@
 /***************************************************************************
-                         register.c  -  description
-                             -------------------
-    begin                : Mon Oct 20 2004
-    copyright            : (C) 2004 by Leaflet
-    email                : leaflet@leafok.com
+						 register.c  -  description
+							 -------------------
+	begin                : Mon Oct 20 2004
+	copyright            : (C) 2004 by Leaflet
+	email                : leaflet@leafok.com
  ***************************************************************************/
 
 /***************************************************************************
@@ -21,14 +21,13 @@
 #include <mysql.h>
 #include <regex.h>
 
-int
-user_register ()
+int user_register()
 {
-  char temp[256];
+	char temp[256];
 
-  strcpy (temp, app_home_dir);
-  strcat (temp, "data/register.txt");
-  display_file_ex (temp, 1, 1);
+	strcpy(temp, app_home_dir);
+	strcat(temp, "data/register.txt");
+	display_file_ex(temp, 1, 1);
 
-  return -1;
+	return -1;
 }
