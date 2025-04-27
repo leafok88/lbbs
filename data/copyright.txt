@@ -1,0 +1,18 @@
+LeafOK Bulletin Board System (www)        Version 2.00
+Copyright (C) 2001-2005                   Ling Ye
+
+
+LeafOK Bulletin Board System (telnet)     Version 1.00
+Copyright (C) 2004-2005                   Ling Ye
+
+
+LeafOK Bulletin Board System is developed at
+Network Information Center,
+Fudan University, Shanghai, China.
+
+
+This BBS comes with ABSOLUTELY NO WARRANTY.
+This program is free software; you can redistribute it and/or modify 
+it under the terms of the GNU General Public License as published by 
+the Free Software Foundation; either version 2 of the License, or    
+(at your option) any later version. 
