@@ -1,7 +1,7 @@
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
 
-AC_PREREQ([2.71])
+AC_PREREQ([2.69])
 AC_INIT([bbsd],[1.0])
 AC_CONFIG_SRCDIR([src/])
 # AM_CONFIG_HEADERS(config.h)
