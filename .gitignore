@@ -1,2 +1,9 @@
 /conf/bbsd.conf
 /autom4te.cache
+/compile
+/config.guess
+/config.sub
+/configure
+/depcomp
+/ltmain.sh
+
