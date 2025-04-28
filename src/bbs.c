@@ -36,7 +36,6 @@ int BBS_user_money = 0;
 
 time_t BBS_login_tm;
 time_t BBS_last_access_tm;
-time_t BBS_last_sub_tm;
 
 char BBS_current_section_name[20];
 

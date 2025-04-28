@@ -39,21 +39,20 @@ extern char BBS_start_dt[50];
 #define S_GETEXP 0x2
 #define S_POST 0x4
 #define S_MSG 0x8
-#define S_MAIL 0x10
 #define S_MAN_S 0x20
 #define S_MAN_M 0x60 //(0x40 | 0x20)
 #define S_ADMIN 0xe0 //(0x80 | 0x40 | 0x20)
 #define S_ALL 0xff
 #define S_DEFAULT 0x3 // 0x1 | 0x2
 
-#define P_GUEST 0x0		// ï¿½Î¿ï¿½
-#define P_USER 0x1		// ï¿½ï¿½Í¨ï¿½Ã»ï¿½
-#define P_AUTH_USER 0x2 // ï¿½ï¿½Ö¤ï¿½Ã»ï¿½
-#define P_MAN_S 0x4		// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
-#define P_MAN_M 0x8		// ï¿½ï¿½ï¿½ï¿½ï¿?
-#define P_MAN_C 0x10	// 8Ä¿ï¿½ï¿½ï¿?
-#define P_ADMIN_S 0x20	// ï¿½ï¿½ÏµÍ³ï¿½ï¿½ï¿½ï¿½Ô±
-#define P_ADMIN_M 0x40	// ï¿½ï¿½ÏµÍ³ï¿½ï¿½ï¿½ï¿½Ô±
+#define P_GUEST 0x0		//ÓÎ¿Í
+#define P_USER 0x1		//ÆÕÍ¨ÓÃ»§
+//#define P_AUTH_USER 0x2 // Reserved
+#define P_MAN_S 0x4		//¸±°æÖ÷
+#define P_MAN_M 0x8		//Õý°æÖ÷
+#define P_MAN_C 0x10	// Reserved
+#define P_ADMIN_S 0x20	//¸±ÏµÍ³¹ÜÀíÔ±
+#define P_ADMIN_M 0x40	//Ö÷ÏµÍ³¹ÜÀíÔ±
 
 struct user_priv
 {
@@ -80,7 +79,6 @@ extern int BBS_user_money;
 
 extern time_t BBS_login_tm;
 extern time_t BBS_last_access_tm;
-extern time_t BBS_last_sub_tm;
 
 extern char BBS_current_section_name[20];
 

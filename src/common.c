@@ -40,6 +40,7 @@ char DB_host[256];
 char DB_username[50];
 char DB_password[50];
 char DB_database[50];
+char DB_timezone[50];
 
 // Global declaration for system
 int SYS_exit;

@@ -38,6 +38,7 @@ extern char DB_host[256];
 extern char DB_username[50];
 extern char DB_password[50];
 extern char DB_database[50];
+extern char DB_timezone[50];
 
 // Signal
 #define SIG_RELOAD_MENU 0x22

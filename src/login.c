@@ -94,7 +94,7 @@ int check_user(char *username, char *password)
 	int ret;
 
 	// Verify format
-	if (ireg("^[A-Za-z0-9_]{3,14}$", username, 0, NULL) != 0 ||
+	if (ireg("^[A-Za-z][A-Za-z0-9]{2,11}$", username, 0, NULL) != 0 ||
 		ireg("^[A-Za-z0-9]{5,12}$", password, 0, NULL) != 0)
 	{
 		prints("\033[1;31m用户名或密码格式错误...\033[m\r\n");
@@ -108,11 +108,23 @@ int check_user(char *username, char *password)
 		return -1;
 	}
 
+	// Begin transaction
+	if (mysql_query(db, "SET autocommit=0") != 0)
+	{
+		log_error("SET autocommit=0 failed\n");
+		return -1;
+	}
+
+	if (mysql_query(db, "BEGIN") != 0)
+	{
+		log_error("Begin transaction failed\n");
+		return -1;
+	}
+
 	sprintf(sql,
-			"select UID,username,p_login from user_list where username='%s' "
-			"and (password=MD5('%s') or password=SHA2('%s', 256)) and "
-			"enable",
-			username, password, password);
+			"SELECT UID, username, p_login FROM user_list "
+			"WHERE username = '%s' AND password = SHA2('%s', 256) AND enable",
+			username, password);
 	if (mysql_query(db, sql) != 0)
 	{
 		log_error("Query user_list failed\n");
@@ -127,7 +139,29 @@ int check_user(char *username, char *password)
 	{
 		BBS_uid = atol(row[0]);
 		strcpy(BBS_username, row[1]);
-		if (atoi(row[2]) == 0)
+		int p_login = atoi(row[2]);
+
+		mysql_free_result(rs);
+
+		// Add user login log
+		sprintf(sql,
+				"INSERT INTO user_login_log(UID, login_dt, login_ip) "
+				"VALUES(%ld, NOW(), '%s')",
+				BBS_uid, hostaddr_client);
+		if (mysql_query(db, sql) != 0)
+		{
+			log_error("Insert into user_login_log failed\n");
+			return -1;
+		}
+
+		// Commit transaction
+		if (mysql_query(db, "COMMIT") != 0)
+		{
+			log_error("Commit transaction failed\n");
+			return -1;
+		}
+
+		if (p_login == 0)
 		{
 			mysql_free_result(rs);
 			mysql_close(db);
@@ -142,13 +176,19 @@ int check_user(char *username, char *password)
 		mysql_free_result(rs);
 
 		sprintf(sql,
-				"insert into user_err_login_log"
-				"(username,password,login_dt,login_ip) values"
-				"('%s','%s',now(),'%s')",
+				"INSERT INTO user_err_login_log(username, password, login_dt, login_ip) "
+				"VALUES('%s', '%s', NOW(), '%s')",
 				username, password, hostaddr_client);
 		if (mysql_query(db, sql) != 0)
 		{
 			log_error("Insert into user_err_login_log failed\n");
+			return -1;
+		}
+
+		// Commit transaction
+		if (mysql_query(db, "COMMIT") != 0)
+		{
+			log_error("Commit transaction failed\n");
 			return -1;
 		}
 
@@ -158,23 +198,28 @@ int check_user(char *username, char *password)
 		iflush();
 		return 1;
 	}
-	mysql_free_result(rs);
+
+	// Set AUTOCOMMIT = 1
+	if (mysql_query(db, "SET autocommit=1") != 0)
+	{
+		log_error("SET autocommit=1 failed\n");
+		return -1;
+	}
 
 	ret = load_user_info(db, BBS_uid);
 
 	switch (ret)
 	{
 	case 0: // Login successfully
-		return 0;
 		break;
 	case -1: // Load data error
 		prints("\033[1;31m读取用户数据错误...\033[m\r\n");
 		iflush();
 		return -1;
-		break;
 	case -2: // Unused
-		return 0;
-		break;
+		prints("\033[1;31m请通过Web登录更新用户许可协议...\033[m\r\n");
+		iflush();
+		return 1;
 	case -3: // Dead
 		prints("\033[1;31m很遗憾，您已经永远离开了我们的世界！\033[m\r\n");
 		iflush();
@@ -183,7 +228,19 @@ int check_user(char *username, char *password)
 		return -2;
 	}
 
+	sprintf(sql,
+			"UPDATE user_pubinfo SET visit_count = visit_count + 1, "
+			"last_login_dt = NOW() WHERE UID = %ld",
+			BBS_uid);
+	if (mysql_query(db, sql) != 0)
+	{
+		log_error("Update user_pubinfo failed\n");
+		return -1;
+	}
+
 	mysql_close(db);
+
+	BBS_last_access_tm = BBS_login_tm = time(0);
 
 	return 0;
 }
@@ -193,13 +250,12 @@ int load_user_info(MYSQL *db, long int BBS_uid)
 	MYSQL_RES *rs;
 	MYSQL_ROW row;
 	char sql[1024];
-	long int BBS_auth_uid = 0;
 	int life;
 	time_t last_login_dt;
 
 	sprintf(sql,
-			"select life,UNIX_TIMESTAMP(last_login_dt) "
-			"from user_pubinfo where UID=%ld limit 1",
+			"SELECT life, UNIX_TIMESTAMP(last_login_dt) "
+			"FROM user_pubinfo WHERE UID = %ld",
 			BBS_uid);
 	if (mysql_query(db, sql) != 0)
 	{
@@ -223,36 +279,13 @@ int load_user_info(MYSQL *db, long int BBS_uid)
 	}
 	mysql_free_result(rs);
 
-	if (time(0) - last_login_dt >= 60 * 60 * 24 * life)
+	if (life != 333 && life != 365 && life != 666 && life != 999 && // Not immortal
+		time(0) - last_login_dt > 60 * 60 * 24 * life)
 	{
 		return (-3); // Dead
 	}
 
-	sprintf(sql,
-			"insert into user_login_log"
-			"(uid,login_dt,login_ip) values(%ld"
-			",now(),'%s')",
-			BBS_uid, hostaddr_client);
-	if (mysql_query(db, sql) != 0)
-	{
-		log_error("Insert into user_login_log failed\n");
-		return -1;
-	}
-
 	load_priv(db, &BBS_priv, BBS_uid);
-
-	BBS_last_access_tm = BBS_login_tm = time(0);
-	BBS_last_sub_tm = time(0) - 60;
-
-	sprintf(sql,
-			"update user_pubinfo set visit_count=visit_count+1,"
-			"last_login_dt=now() where uid=%ld",
-			BBS_uid);
-	if (mysql_query(db, sql) != 0)
-	{
-		log_error("Update user_pubinfo failed\n");
-		return -1;
-	}
 
 	return 0;
 }
@@ -270,10 +303,9 @@ int load_guest_info(MYSQL *db, long int BBS_uid)
 
 	strcpy(BBS_username, "guest");
 
-	load_priv(db, &BBS_priv, 0, 0, S_NONE);
+	load_priv(db, &BBS_priv, 0);
 
 	BBS_last_access_tm = BBS_login_tm = time(0);
-	BBS_last_sub_tm = time(0) - 60;
 
 	mysql_close(db);
 

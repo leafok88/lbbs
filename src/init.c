@@ -118,6 +118,10 @@ int load_conf(const char *conf_file)
 		{
 			fscanf(fin, "%s", DB_database);
 		}
+		if (strcmp(c_name, "db_timezone") == 0)
+		{
+			fscanf(fin, "%s", DB_timezone);
+		}
 	}
 
 	fclose(fin);

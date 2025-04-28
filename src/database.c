@@ -23,6 +23,7 @@ MYSQL *
 db_open()
 {
 	MYSQL *db;
+	char sql[1024];
 
 	db = mysql_init(NULL);
 	if (db == NULL)
@@ -39,15 +40,19 @@ db_open()
 		return NULL;
 	}
 
-	if (mysql_query(db, "SET CHARACTER SET gb2312") != 0)
+	if (mysql_set_character_set(db, "gb2312") != 0)
 	{
-		log_error("SET CHARACTER SET failed\n");
+		log_error("Set character set failed\n");
 		return NULL;
 	}
 
-	if (mysql_query(db, "SET NAMES \'gb2312\'") != 0)
+	sprintf(sql,
+		"SET time_zone = '%s'",
+		DB_timezone);
+
+	if (mysql_query(db, sql) != 0)
 	{
-		log_error("SET NAMES failed\n");
+		log_error("Set timezone failed\n");
 		return NULL;
 	}
 

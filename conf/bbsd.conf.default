@@ -10,3 +10,4 @@ db_host localhost
 db_username user
 db_password pass
 db_database db
+db_timezone +08:00
