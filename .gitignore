@@ -13,6 +13,7 @@
 /ltmain.sh
 CVS
 .cvsignore
+.vscode
 Makefile
 *.o
 *.Po
