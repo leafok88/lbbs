@@ -58,7 +58,6 @@ extern char BBS_start_dt[50];
 struct user_priv
 {
 	long int uid;
-	long int auid;
 	int level;
 	int g_priv;
 	struct

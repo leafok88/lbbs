@@ -71,8 +71,7 @@ int checkpriv(BBS_user_priv *p_priv, int sid, int priv)
 	return (((getpriv(p_priv, sid) & priv)) ^ priv ? 0 : 1);
 }
 
-int load_priv(MYSQL *db, BBS_user_priv *p_priv, long int uid,
-			  long int auth_uid, int priv_excluse)
+int load_priv(MYSQL *db, BBS_user_priv *p_priv, long int uid)
 {
 	MYSQL_RES *rs;
 	MYSQL_ROW row;
@@ -80,9 +79,7 @@ int load_priv(MYSQL *db, BBS_user_priv *p_priv, long int uid,
 	int i;
 
 	p_priv->uid = uid;
-	p_priv->auid = auth_uid;
 	p_priv->level = (uid == 0 ? P_GUEST : P_USER);
-	p_priv->level |= (auth_uid == 0 ? P_GUEST : P_AUTH_USER);
 	p_priv->g_priv = S_DEFAULT;
 
 	if (db == NULL)
@@ -128,65 +125,6 @@ int load_priv(MYSQL *db, BBS_user_priv *p_priv, long int uid,
 		p_priv->g_priv |= (atoi(row[0]) ? S_POST : 0);
 		p_priv->g_priv |= (atoi(row[1]) ? S_MSG : 0);
 		p_priv->g_priv |= (atoi(row[2]) ? S_MAIL : 0);
-	}
-	mysql_free_result(rs);
-
-	// Verified
-	sprintf(sql, "select verified from user_list where"
-				 " UID=%ld",
-			uid);
-	if (mysql_query(db, sql) != 0)
-	{
-		log_error("Query user_list failed\n");
-		return -1;
-	}
-	if ((rs = mysql_store_result(db)) == NULL)
-	{
-		log_error("Get user_list data failed\n");
-		return -1;
-	}
-	if (row = mysql_fetch_row(rs))
-		p_priv->g_priv &= (atoi(row[0]) ? p_priv->g_priv : S_DEFAULT);
-	mysql_free_result(rs);
-
-	// IP ban
-	sprintf(sql, "select begin_ip,end_ip from ban_ip_list"
-				 " where ('%s' between begin_ip and end_ip) and enable",
-			hostaddr_client);
-	if (mysql_query(db, sql) != 0)
-	{
-		log_error("Query ban_ip_list failed\n");
-		return -1;
-	}
-	if ((rs = mysql_store_result(db)) == NULL)
-	{
-		log_error("Get ban_ip_list data failed\n");
-		return -1;
-	}
-	if (mysql_num_rows(rs) > 0)
-		p_priv->g_priv &= S_DEFAULT;
-	mysql_free_result(rs);
-
-	// Section Class Master
-	sprintf(sql, "select SID from section_class_master"
-				 " left join section_config on section_class_master.CID"
-				 "=section_config.CID where UID=%ld and section_class_master.enable"
-				 " and (now() between begin_dt and end_dt)",
-			uid);
-	if (mysql_query(db, sql) != 0)
-	{
-		log_error("Query section_class_master failed\n");
-		return -1;
-	}
-	if ((rs = mysql_store_result(db)) == NULL)
-	{
-		log_error("Get section_class_master data failed\n");
-		return -1;
-	}
-	while (row = mysql_fetch_row(rs))
-	{
-		p_priv->level |= P_MAN_C;
-		setpriv(p_priv, atoi(row[0]), getpriv(p_priv, atoi(row[0])) | S_MAN_M);
 	}
 	mysql_free_result(rs);
 
@@ -288,14 +226,6 @@ int load_priv(MYSQL *db, BBS_user_priv *p_priv, long int uid,
 				getpriv(p_priv, atoi(row[0])) & (~S_POST));
 	}
 	mysql_free_result(rs);
-
-	// Priv exclusion
-	p_priv->g_priv &= (~priv_excluse);
-	for (i = 0; i < p_priv->s_count; i++)
-		p_priv->s_priv_list[i].s_priv &= (~priv_excluse);
-
-	if (priv_excluse & S_MAN_M)
-		p_priv->level &= (P_AUTH_USER | P_USER);
 
 	return 0;
 }

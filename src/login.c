@@ -142,7 +142,7 @@ int check_user(char *username, char *password)
 		mysql_free_result(rs);
 
 		sprintf(sql,
-				"insert delayed into user_err_login_log"
+				"insert into user_err_login_log"
 				"(username,password,login_dt,login_ip) values"
 				"('%s','%s',now(),'%s')",
 				username, password, hostaddr_client);
@@ -159,8 +159,6 @@ int check_user(char *username, char *password)
 		return 1;
 	}
 	mysql_free_result(rs);
-
-	BBS_passwd_complex = verify_pass_complexity(password, username, 6);
 
 	ret = load_user_info(db, BBS_uid);
 
@@ -231,31 +229,7 @@ int load_user_info(MYSQL *db, long int BBS_uid)
 	}
 
 	sprintf(sql,
-			"select AUID from user_auth where UID=%ld"
-			" and enable and expire_dt>now()",
-			BBS_uid);
-	if (mysql_query(db, sql) != 0)
-	{
-		log_error("Query user_auth failed\n");
-		return -1;
-	}
-	if ((rs = mysql_store_result(db)) == NULL)
-	{
-		log_error("Get user_auth data failed\n");
-		return -1;
-	}
-	if (row = mysql_fetch_row(rs))
-	{
-		BBS_auth_uid = atol(row[0]);
-	}
-	else
-	{
-		BBS_auth_uid = 0;
-	}
-	mysql_free_result(rs);
-
-	sprintf(sql,
-			"insert delayed into user_login_log"
+			"insert into user_login_log"
 			"(uid,login_dt,login_ip) values(%ld"
 			",now(),'%s')",
 			BBS_uid, hostaddr_client);
@@ -265,9 +239,7 @@ int load_user_info(MYSQL *db, long int BBS_uid)
 		return -1;
 	}
 
-	load_priv(db, &BBS_priv, BBS_uid, BBS_auth_uid,
-			  (!BBS_passwd_complex ? S_MAN_M : S_NONE) |
-				  (BBS_auth_uid ? S_NONE : S_MAIL));
+	load_priv(db, &BBS_priv, BBS_uid);
 
 	BBS_last_access_tm = BBS_login_tm = time(0);
 	BBS_last_sub_tm = time(0) - 60;

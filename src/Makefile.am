@@ -3,7 +3,7 @@ EXTRA_PROGRAMS =
 
 bbsd_SOURCES = bbs.c bbs_cmd.c bbs_main.c common.c database.c fork.c init.c \
 			   io.c log.c login.c menu.c main.c menu_proc.c netio.c net_server.c \
-			   passwd.c regex.c register.c screen.c tcplib.c user_priv.c \
+			   regex.c register.c screen.c tcplib.c user_priv.c \
 			   welcome.c \
 			   bbs.h bbs_cmd.h common.h database.h io.h menu.h menu_proc.h tcplib.h
 
