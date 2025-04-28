@@ -13,7 +13,7 @@ lib_LTLIBRARIES = libbbs.la
 
 libbbs_la_SOURCES = bbs_net.c bbs.h common.h io.h menu.h tcplib.h
 
-INCLUDES = -I../include -I/usr/include/mysql
+AM_CPPFLAGS = -I../include -I/usr/include/mysql
 LIBS = -L../lib -L/usr/lib/mysql -L/usr/lib64/mysql -lmysqlclient -lz -ldl
 
 libdir=${prefix}/lib

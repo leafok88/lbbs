@@ -1,5 +1,2 @@
-.cvsignore
 /conf/bbsd.conf
-CVS
 /autom4te.cache
-
