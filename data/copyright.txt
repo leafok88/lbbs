@@ -1,13 +1,12 @@
-LeafOK Bulletin Board System (www)        Version 2.00
-Copyright (C) 2001-2005                   Ling Ye
+LeafOK Bulletin Board System (Web)        Version 2.00
+Copyright (C) 2001-2025                   Leaflet
 
 
-LeafOK Bulletin Board System (telnet)     Version 1.00
-Copyright (C) 2004-2005                   Ling Ye
+LeafOK Bulletin Board System (Telnet)     Version 1.00
+Copyright (C) 2004-2025                   Leaflet
 
 
 LeafOK Bulletin Board System is developed at
-Network Information Center,
 Fudan University, Shanghai, China.
 
 
