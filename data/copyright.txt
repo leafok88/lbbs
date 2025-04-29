@@ -6,8 +6,7 @@ LeafOK Bulletin Board System (Telnet)     Version 1.00
 Copyright (C) 2004-2025                   Leaflet
 
 
-LeafOK Bulletin Board System is developed at
-Fudan University, Shanghai, China.
+E-mail: leaflet@leafok.com
 
 
 This BBS comes with ABSOLUTELY NO WARRANTY.
