@@ -15,6 +15,7 @@ PRG_HOME="$1"
 
 md ${PRG_HOME} conf
 md ${PRG_HOME} data
+md ${PRG_HOME} var
 md ${PRG_HOME} log
 md ${PRG_HOME}/data chicken
 
