@@ -227,7 +227,7 @@ int igetch_t(long int sec)
 	do
 	{
 		ch = igetch();
-	} while ((ch == KEY_TIMEOUT || ch == 0xa) && (time(0) - t_begin < sec));
+	} while ((ch == KEY_TIMEOUT || ch == 0xa || ch == 0x0) && (time(0) - t_begin < sec));
 
 	return ch;
 }
