@@ -112,9 +112,13 @@ int _str_input(char *buffer, int buffer_length, int echo_mode)
 	while (c = igetch_t(60))
 	{
 		if (c == KEY_NULL || c == KEY_TIMEOUT || c == CR)
+		{
 			break;
+		}
 		if (c == LF)
+		{
 			continue;
+		}
 		if (c == BACKSPACE)
 		{
 			if (offset > 0)
