@@ -22,11 +22,6 @@ AC_PROG_MAKE_SET
 AC_CHECK_LIB([mysqlclient], [mysql_connect])
 AC_CHECK_LIB([z], [unzip])
 
-# Autoupdate added the next two lines to ensure that your configure
-# script's behavior did not change.  They are probably safe to remove.
-AC_CHECK_INCLUDES_DEFAULT
-AC_PROG_EGREP
-
 AC_HEADER_SYS_WAIT
 AC_CHECK_HEADERS([arpa/inet.h dflcn.h fcntl.h memory.h netdb.h netinet/in.h stdlib.h string.h strings.h sys/ioctl.h sys/param.h sys/socket.h sys/time.h unistd.h])
 
@@ -34,12 +29,6 @@ AC_CHECK_HEADERS([arpa/inet.h dflcn.h fcntl.h memory.h netdb.h netinet/in.h stdl
 AC_C_CONST
 AC_TYPE_SIZE_T
 AC_CHECK_HEADERS_ONCE([sys/time.h])
-# Obsolete code to be removed.
-if test $ac_cv_header_sys_time_h = yes; then
-  AC_DEFINE([TIME_WITH_SYS_TIME],[1],[Define to 1 if you can safely include both <sys/time.h>
-	     and <time.h>.  This macro is obsolete.])
-fi
-# End of obsolete code.
 
 AC_STRUCT_TM
 
@@ -58,5 +47,5 @@ AC_CHECK_FUNCS([bzero dup2 gethostbyname inet_ntoa memset mkdir rmdir regcomp se
 AC_CONFIG_FILES([Makefile
 		src/Makefile
 		utils/Makefile
-                utils/game/Makefile])
+        utils/game/Makefile])
 AC_OUTPUT
