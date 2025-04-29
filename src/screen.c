@@ -66,7 +66,7 @@ void clrtobot(int line_begin)
 
 void clearscr()
 {
-	prints("\33[2J");
+	prints("\033[2J");
 	moveto(0, 0);
 	iflush();
 }
