@@ -110,7 +110,7 @@ int bbs_welcome()
 	// Log max user_online
 	FILE *fin, *fout;
 	strcpy(temp, app_home_dir);
-	strcat(temp, "data/max_user_online.dat");
+	strcat(temp, "var/max_user_online.dat");
 	if ((fin = fopen(temp, "r")) != NULL)
 	{
 		fscanf(fin, "%ld", &max_u_online);

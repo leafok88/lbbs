@@ -114,8 +114,8 @@ int main(int argc, char *argv[])
 	chdir(app_home_dir);
 
 	// Initialize log
-	strcpy(app_temp_dir, "/tmp/lbbs/");
-	mkdir(app_temp_dir, 0777);
+	strcpy(app_temp_dir, "var/");
+	mkdir(app_temp_dir, 0750);
 	strcpy(log_dir, app_home_dir);
 	strcat(log_dir, "log/");
 	strcpy(file_log_std, log_dir);
