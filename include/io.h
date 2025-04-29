@@ -63,4 +63,16 @@
 
 extern int screen_lines;
 
+extern int outc(char c);
+
+extern int prints(const char *format, ...);
+
+extern int iflush();
+
+extern int igetch();
+
+extern int igetch_t(long int sec);
+
+extern int ikbhit();
+
 #endif //_IO_H_
