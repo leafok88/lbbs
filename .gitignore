@@ -1,4 +1,6 @@
 /conf/bbsd.conf
+/var
+/log
 /aclocal.m4
 /autom4te.cache
 /compile
