@@ -1,7 +1,7 @@
 /***************************************************************************
-						  bbs_cmd.h  -  description
+						  login.h  -  description
 							 -------------------
-	begin                : Wed Mar 16 2005
+	begin                : Wed Mar 16 2004
 	copyright            : (C) 2005 by Leaflet
 	email                : leaflet@leafok.com
  ***************************************************************************/
@@ -14,28 +14,20 @@
  *   (at your option) any later version.                                   *
  *                                                                         *
  ***************************************************************************/
-#ifndef _BBS_CMD_H_
-#define _BBS_CMD_H_
 
-#define MAX_CMD_LENGTH 20
-#define MAX_CMD_ID 100
+#ifndef _LOGIN_H_
+#define _LOGIN_H_
 
-#define MENU_OK 0x0
-#define UNKNOWN_CMD 0xff
-#define EXITBBS 0xfe
-#define REDRAW 0x1
-#define NOREDRAW 0x2
+#include <mysql.h>
 
-struct _bbs_cmd
-{
-	char cmd[MAX_CMD_LENGTH];
-	int (*p_handle)(const char *p_param);
-};
+extern void login_fail();
 
-typedef struct _bbs_cmd BBS_CMD;
+extern int bbs_login();
 
-extern BBS_CMD bbs_cmd_list[MAX_CMD_ID];
+extern int check_user(MYSQL *db, char *username, char *password);
 
-extern int exec_cmd(const char *cmd, const char *param);
+extern int load_user_info(MYSQL *db, long int BBS_uid);
 
-#endif //_BBS_CMD_H_
+extern int load_guest_info(MYSQL *db);
+
+#endif //_LOGIN_H_

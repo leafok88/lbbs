@@ -15,48 +15,20 @@
  *                                                                         *
  ***************************************************************************/
 
+#include "bbs_main.h"
 #include "bbs.h"
+#include "welcome.h"
+#include "login.h"
+#include "user_priv.h"
 #include "common.h"
+#include "log.h"
 #include "io.h"
+#include "screen.h"
 #include "menu.h"
 #include "bbs_cmd.h"
+#include <unistd.h>
 #include <time.h>
 #include <string.h>
-
-int bbs_main()
-{
-	char temp[256];
-	int ret;
-
-	set_input_echo(0);
-
-	bbs_info();
-
-	// Welcome
-	bbs_welcome();
-
-	// Login
-	ret = bbs_login();
-	if (ret < 0)
-		return -1;
-	log_std("User \"%s\"(%ld) login from %s:%d\n",
-			BBS_username, BBS_priv.uid, hostaddr_client, port_client);
-	clearscr();
-
-	// BBS Top 10
-	strcpy(temp, app_home_dir);
-	strcat(temp, "data/bbs_top.txt");
-	display_file_ex(temp, 1, 1);
-
-	// Main
-	bbs_center();
-
-	// Logout
-	bbs_exit();
-	log_std("User logout\n");
-
-	return 0;
-}
 
 int bbs_info()
 {
@@ -142,6 +114,41 @@ int bbs_center()
 		}
 		BBS_last_access_tm = time(0);
 	}
+
+	return 0;
+}
+
+int bbs_main()
+{
+	char temp[256];
+	int ret;
+
+	set_input_echo(0);
+
+	bbs_info();
+
+	// Welcome
+	bbs_welcome();
+
+	// Login
+	ret = bbs_login();
+	if (ret < 0)
+		return -1;
+	log_std("User \"%s\"(%ld) login from %s:%d\n",
+			BBS_username, BBS_priv.uid, hostaddr_client, port_client);
+	clearscr();
+
+	// BBS Top 10
+	strcpy(temp, app_home_dir);
+	strcat(temp, "data/bbs_top.txt");
+	display_file_ex(temp, 1, 1);
+
+	// Main
+	bbs_center();
+
+	// Logout
+	bbs_exit();
+	log_std("User logout\n");
 
 	return 0;
 }

@@ -16,6 +16,7 @@
  ***************************************************************************/
 
 #include "common.h"
+#include "log.h"
 #include <mysql.h>
 #include <stdio.h>
 

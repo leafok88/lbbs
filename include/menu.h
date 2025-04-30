@@ -74,10 +74,17 @@ typedef struct _menu_set MENU_SET;
 extern MENU_SET bbs_menu;
 
 extern int load_menu(MENU_SET *p_menu_set, const char *conf_file);
+
 extern void unload_menu(MENU_SET *p_menu_set);
+
 extern int reload_menu(MENU_SET *p_menu_set);
+
 extern int menu_control(MENU_SET *p_menu_set, int key);
+
 extern int display_menu(MENU *p_menu);
+
+extern int display_current_menu(MENU_SET *p_menu_set);
+
 extern MENU *get_menu(MENU_SET *p_menu_set, const char *menu_name);
 
 #endif //_MENU_H_

@@ -1,12 +1,15 @@
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
 
-AC_PREREQ([2.69])
+AC_PREREQ([2.71])
 AC_INIT([bbsd],[1.0])
 AC_CONFIG_SRCDIR([src/])
 # AM_CONFIG_HEADERS(config.h)
 AM_INIT_AUTOMAKE
 
+AC_ARG_ENABLE(werror,
+        AS_HELP_STRING([--enable-werror],[Enable -Werror in all Makefiles]))
+		
 # Checks for programs.
 AC_PROG_GCC_TRADITIONAL
 LT_INIT
@@ -23,7 +26,8 @@ AC_CHECK_LIB([mysqlclient], [mysql_connect])
 AC_CHECK_LIB([z], [unzip])
 
 AC_HEADER_SYS_WAIT
-AC_CHECK_HEADERS([arpa/inet.h dflcn.h fcntl.h memory.h netdb.h netinet/in.h stdlib.h string.h strings.h sys/ioctl.h sys/param.h sys/socket.h sys/time.h unistd.h])
+AC_CHECK_HEADERS([arpa/inet.h dflcn.h fcntl.h memory.h netdb.h netinet/in.h stdlib.h string.h
+	strings.h sys/ioctl.h sys/param.h sys/socket.h sys/time.h unistd.h mysql.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST

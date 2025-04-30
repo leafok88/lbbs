@@ -16,7 +16,9 @@
  ***************************************************************************/
 
 #include "common.h"
+#include "io.h"
 #include <string.h>
+#include <unistd.h>
 #include <sys/socket.h>
 
 char s_getc(int socket)

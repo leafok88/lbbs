@@ -15,12 +15,20 @@
  *                                                                         *
  ***************************************************************************/
 
+#include "login.h"
+#include "register.h"
 #include "bbs.h"
+#include "user_priv.h"
+#include "reg_ex.h"
 #include "common.h"
+#include "log.h"
 #include "io.h"
+#include "screen.h"
 #include "database.h"
+#include <string.h>
 #include <mysql.h>
 #include <regex.h>
+#include <unistd.h>
 
 void login_fail()
 {
@@ -52,7 +60,16 @@ int bbs_login()
 
 		if (strcmp(username, "guest") == 0)
 		{
-			load_guest_info();
+			MYSQL * db = db_open();
+			if (db == NULL)
+			{
+				return -1;
+			}
+		
+			load_guest_info(db);
+
+			mysql_close(db);
+
 			return 0;
 		}
 
@@ -72,7 +89,15 @@ int bbs_login()
 
 			str_input(password, 19, NOECHO);
 
-			ok = (check_user(username, password) == 0);
+			MYSQL * db = db_open();
+			if (db == NULL)
+			{
+				return -1;
+			}
+		
+			ok = (check_user(db, username, password) == 0);
+
+			mysql_close(db);
 		}
 		if (count >= 3 && !ok)
 		{
@@ -84,9 +109,8 @@ int bbs_login()
 	return 0;
 }
 
-int check_user(char *username, char *password)
+int check_user(MYSQL *db, char *username, char *password)
 {
-	MYSQL *db;
 	MYSQL_RES *rs;
 	MYSQL_ROW row;
 	char sql[1024];
@@ -100,12 +124,6 @@ int check_user(char *username, char *password)
 		prints("\033[1;31m用户名或密码格式错误...\033[m\r\n");
 		iflush();
 		return 1;
-	}
-
-	db = (MYSQL *)db_open();
-	if (db == NULL)
-	{
-		return -1;
 	}
 
 	// Begin transaction
@@ -164,7 +182,6 @@ int check_user(char *username, char *password)
 		if (p_login == 0)
 		{
 			mysql_free_result(rs);
-			mysql_close(db);
 
 			prints("\033[1;31m您目前无权登陆...\033[m\r\n");
 			iflush();
@@ -191,8 +208,6 @@ int check_user(char *username, char *password)
 			log_error("Commit transaction failed\n");
 			return -1;
 		}
-
-		mysql_close(db);
 
 		prints("\033[1;31m错误的用户名或密码...\033[m\r\n");
 		iflush();
@@ -237,8 +252,6 @@ int check_user(char *username, char *password)
 		log_error("Update user_pubinfo failed\n");
 		return -1;
 	}
-
-	mysql_close(db);
 
 	BBS_last_access_tm = BBS_login_tm = time(0);
 
@@ -290,24 +303,16 @@ int load_user_info(MYSQL *db, long int BBS_uid)
 	return 0;
 }
 
-int load_guest_info(MYSQL *db, long int BBS_uid)
+int load_guest_info(MYSQL *db)
 {
 	MYSQL_RES *rs;
 	MYSQL_ROW row;
-
-	db = (MYSQL *)db_open();
-	if (db == NULL)
-	{
-		return -1;
-	}
 
 	strcpy(BBS_username, "guest");
 
 	load_priv(db, &BBS_priv, 0);
 
 	BBS_last_access_tm = BBS_login_tm = time(0);
-
-	mysql_close(db);
 
 	return 0;
 }

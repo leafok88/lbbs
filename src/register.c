@@ -15,9 +15,12 @@
  *                                                                         *
  ***************************************************************************/
 
+#include "register.h"
 #include "bbs.h"
 #include "common.h"
 #include "io.h"
+#include "screen.h"
+#include <string.h>
 #include <mysql.h>
 #include <regex.h>
 

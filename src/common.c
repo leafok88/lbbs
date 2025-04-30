@@ -15,7 +15,10 @@
  *                                                                         *
  ***************************************************************************/
 
+#include "common.h"
+#include "log.h"
 #include "menu.h"
+#include <string.h>
 #include <time.h>
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -47,8 +50,7 @@ int SYS_exit;
 int SYS_child_process_count;
 
 // Common function
-const char *
-str_space(char *string, int length)
+const char *str_space(char *string, int length)
 {
 	int i;
 	for (i = 0; i < length; i++)
@@ -59,8 +61,7 @@ str_space(char *string, int length)
 	return string;
 }
 
-const char *
-get_time_str(char *string, size_t length)
+const char *get_time_str(char *string, size_t length)
 {
 	char week[10], buffer[256];
 	time_t curtime;

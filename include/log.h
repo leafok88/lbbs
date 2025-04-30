@@ -1,8 +1,8 @@
 /***************************************************************************
-						  regex.c  -  description
+						   log.h  -  description
 							 -------------------
-	begin                : Mon Oct 11 2004
-	copyright            : (C) 2004 by Leaflet
+	begin                : Wed Mar 16 2004
+	copyright            : (C) 2005 by Leaflet
 	email                : leaflet@leafok.com
  ***************************************************************************/
 
@@ -15,35 +15,21 @@
  *                                                                         *
  ***************************************************************************/
 
-#include <stdlib.h>
-#include <regex.h>
+#ifndef _LOG_H_
+#define _LOG_H_
 
-int ireg(const char *pattern, const char *string, size_t nmatch,
-		 regmatch_t pmatch[])
-{
-	regex_t *preg;
-	int cflags = 0, eflags = 0, ret;
+extern int log_begin(char *file_log_std, char *file_log_err);
 
-	preg = (regex_t *)malloc(sizeof(regex_t));
+extern int log_end();
 
-	cflags = REG_EXTENDED;
+extern int log_head(char *buf);
 
-	if (pmatch == NULL)
-		cflags |= REG_NOSUB;
+extern int log_std(const char *format, ...);
 
-	if (regcomp(preg, pattern, cflags) != 0)
-	{
-		log_error("Compile regular expression pattern failed\n");
-		free(preg);
-		return -1;
-	}
-	ret = regexec(preg, string, nmatch, pmatch, eflags);
+extern int log_error(const char *format, ...);
 
-	regfree(preg);
-	free(preg);
+extern int log_std_redirect(int fd);
 
-	// For debug
-	// log_std(ret?"error\n":"ok\n");
+extern int log_err_redirect(int fd);
 
-	return ret;
-}
+#endif //_LOG_H_

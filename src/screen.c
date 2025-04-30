@@ -17,7 +17,11 @@
 
 #include "bbs.h"
 #include "common.h"
+#include "log.h"
 #include "io.h"
+#include "screen.h"
+#include <string.h>
+#include <ctype.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -99,7 +103,7 @@ void set_input_echo(int echo)
 	}
 }
 
-int _str_input(char *buffer, int buffer_length, int echo_mode)
+static int _str_input(char *buffer, int buffer_length, int echo_mode)
 {
 	char buf[256], ch;
 	int c, offset = 0, len, loop = 1, i, hz = 0;

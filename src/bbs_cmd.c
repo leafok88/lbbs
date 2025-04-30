@@ -17,6 +17,7 @@
 
 #include "bbs_cmd.h"
 #include "menu_proc.h"
+#include <string.h>
 
 BBS_CMD bbs_cmd_list[MAX_CMD_ID] = {
 	{"RunMBEM", exec_mbem},

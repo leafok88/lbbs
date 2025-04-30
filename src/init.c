@@ -15,9 +15,13 @@
  *                                                                         *
  ***************************************************************************/
 
+#include "init.h"
 #include "bbs.h"
 #include "common.h"
+#include "log.h"
 #include "io.h"
+#include <string.h>
+#include <stdlib.h>
 #include <signal.h>
 #include <sys/param.h>
 #include <sys/types.h>

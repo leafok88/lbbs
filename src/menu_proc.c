@@ -18,7 +18,9 @@
 #include "bbs.h"
 #include "bbs_cmd.h"
 #include "common.h"
+#include "log.h"
 #include "io.h"
+#include "screen.h"
 #include <dlfcn.h>
 #include <errno.h>
 #include <signal.h>

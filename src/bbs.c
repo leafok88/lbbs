@@ -16,6 +16,8 @@
  ***************************************************************************/
 
 #include "bbs.h"
+#include "user_priv.h"
+#include <stdio.h>
 #include <signal.h>
 #include <time.h>
 
@@ -30,8 +32,6 @@ long BBS_max_user = 10000;
 char BBS_start_dt[50] = "2004Äê 1ÔÂ 1ÈÕ";
 
 char BBS_username[BBS_max_username_length];
-BBS_user_priv BBS_priv;
-int BBS_passwd_complex = 0;
 int BBS_user_money = 0;
 
 time_t BBS_login_tm;
@@ -39,16 +39,14 @@ time_t BBS_last_access_tm;
 
 char BBS_current_section_name[20];
 
-char *
-setuserfile(char *buf, const char *filename)
+char *setuserfile(char *buf, const char *filename)
 {
-	sprintf(buf, "data/%s/%ld", filename, BBS_priv.uid);
+	sprintf(buf, "var/%s/%ld", filename, BBS_priv.uid);
 	return buf;
 }
 
-char *
-sethomefile(char *buf, long int uid, char *filename)
+char *sethomefile(char *buf, long int uid, char *filename)
 {
-	sprintf(buf, "data/%s/%ld", filename, uid);
+	sprintf(buf, "var/%s/%ld", filename, uid);
 	return buf;
 }

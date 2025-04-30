@@ -16,8 +16,13 @@
  ***************************************************************************/
 
 #include "common.h"
+#include "bbs_main.h"
+#include "log.h"
 #include "io.h"
+#include "fork.h"
 #include <string.h>
+#include <unistd.h>
+#include <stdlib.h>
 
 int fork_server()
 {

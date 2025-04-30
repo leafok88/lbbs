@@ -5,8 +5,13 @@
 #include "bbs.h"
 #include "common.h"
 #include "io.h"
+#include "screen.h"
 #include "money.h"
 #include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <unistd.h>
+
 #define DATA_FILE "chicken"
 
 char
@@ -554,7 +559,7 @@ int death()
 }
 */
 
-int pressany(i)
+int pressany(int i)
 {
 	int ch;
 	moveto(23, 0);

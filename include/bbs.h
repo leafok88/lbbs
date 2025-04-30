@@ -33,53 +33,19 @@ extern long BBS_max_client;
 extern long BBS_max_user;
 extern char BBS_start_dt[50];
 
-// User privilege
-#define S_NONE 0x0
-#define S_LIST 0x1
-#define S_GETEXP 0x2
-#define S_POST 0x4
-#define S_MSG 0x8
-#define S_MAN_S 0x20
-#define S_MAN_M 0x60 //(0x40 | 0x20)
-#define S_ADMIN 0xe0 //(0x80 | 0x40 | 0x20)
-#define S_ALL 0xff
-#define S_DEFAULT 0x3 // 0x1 | 0x2
-
-#define P_GUEST 0x0		//游客
-#define P_USER 0x1		//普通用户
-//#define P_AUTH_USER 0x2 // Reserved
-#define P_MAN_S 0x4		//副版主
-#define P_MAN_M 0x8		//正版主
-#define P_MAN_C 0x10	// Reserved
-#define P_ADMIN_S 0x20	//副系统管理员
-#define P_ADMIN_M 0x40	//主系统管理员
-
-struct user_priv
-{
-	long int uid;
-	int level;
-	int g_priv;
-	struct
-	{
-		int sid;
-		int s_priv;
-	} s_priv_list[BBS_max_section];
-	int s_count;
-};
-
-typedef struct user_priv BBS_user_priv;
-
 // Session
 #define MAX_DELAY_TIME 600
 
 extern char BBS_username[BBS_max_username_length];
-extern BBS_user_priv BBS_priv;
-extern int BBS_passwd_complex;
 extern int BBS_user_money;
 
 extern time_t BBS_login_tm;
 extern time_t BBS_last_access_tm;
 
 extern char BBS_current_section_name[20];
+
+extern char *setuserfile(char *buf, const char *filename);
+
+extern char *sethomefile(char *buf, long int uid, char *filename);
 
 #endif //_BBS_H_

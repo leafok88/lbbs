@@ -18,6 +18,8 @@
 #ifndef _COMMON_H_
 #define _COMMON_H_
 
+#include <stddef.h>
+
 // Version
 extern char app_version[256];
 
@@ -42,6 +44,9 @@ extern char DB_timezone[50];
 
 // Signal
 #define SIG_RELOAD_MENU 0x22
+
+extern const char *str_space(char *string, int length);
+extern const char *get_time_str(char *string, size_t length);
 
 // Signal handler
 extern void reload_bbs_menu(int);

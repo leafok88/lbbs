@@ -15,9 +15,14 @@
  *                                                                         *
  ***************************************************************************/
 
+#include "user_priv.h"
 #include "bbs.h"
 #include "common.h"
+#include "log.h"
+#include <stdio.h>
 #include <mysql.h>
+
+BBS_user_priv BBS_priv;
 
 int checklevel(BBS_user_priv *p_priv, int level)
 {

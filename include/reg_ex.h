@@ -1,8 +1,8 @@
 /***************************************************************************
-						  bbs_cmd.h  -  description
+						  reg_ex.h  -  description
 							 -------------------
-	begin                : Wed Mar 16 2005
-	copyright            : (C) 2005 by Leaflet
+	begin                : Mon Oct 18 2004
+	copyright            : (C) 2004 by Leaflet
 	email                : leaflet@leafok.com
  ***************************************************************************/
 
@@ -14,28 +14,13 @@
  *   (at your option) any later version.                                   *
  *                                                                         *
  ***************************************************************************/
-#ifndef _BBS_CMD_H_
-#define _BBS_CMD_H_
 
-#define MAX_CMD_LENGTH 20
-#define MAX_CMD_ID 100
+#ifndef _REG_EX_H_
+#define _REG_EX_H_
 
-#define MENU_OK 0x0
-#define UNKNOWN_CMD 0xff
-#define EXITBBS 0xfe
-#define REDRAW 0x1
-#define NOREDRAW 0x2
+#include <regex.h>
 
-struct _bbs_cmd
-{
-	char cmd[MAX_CMD_LENGTH];
-	int (*p_handle)(const char *p_param);
-};
+extern int ireg(const char *pattern, const char *string, size_t nmatch,
+				regmatch_t pmatch[]);
 
-typedef struct _bbs_cmd BBS_CMD;
-
-extern BBS_CMD bbs_cmd_list[MAX_CMD_ID];
-
-extern int exec_cmd(const char *cmd, const char *param);
-
-#endif //_BBS_CMD_H_
+#endif //_REG_EX_H_

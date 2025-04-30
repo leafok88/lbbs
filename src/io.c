@@ -16,6 +16,7 @@
  ***************************************************************************/
 
 #include "io.h"
+#include "log.h"
 #include "common.h"
 #include "tcplib.h"
 #include <stdio.h>

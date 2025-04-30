@@ -17,7 +17,9 @@
 
 #include "bbs.h"
 #include "common.h"
+#include "log.h"
 #include "io.h"
+#include "screen.h"
 #include "menu.h"
 #include "tcplib.h"
 #include <stdio.h>

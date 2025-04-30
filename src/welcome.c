@@ -15,9 +15,12 @@
  *                                                                         *
  ***************************************************************************/
 
+#include "welcome.h"
 #include "bbs.h"
 #include "common.h"
+#include "log.h"
 #include "io.h"
+#include "screen.h"
 #include "database.h"
 #include <mysql.h>
 #include <string.h>

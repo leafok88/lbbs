@@ -17,9 +17,15 @@
 
 #include "bbs.h"
 #include "bbs_cmd.h"
+#include "user_priv.h"
+#include "reg_ex.h"
+#include "bbs_cmd.h"
 #include "menu.h"
+#include "log.h"
 #include "io.h"
+#include "screen.h"
 #include "common.h"
+#include <string.h>
 #include <stdio.h>
 #include <ctype.h>
 #include <regex.h>
@@ -273,8 +279,7 @@ get_menu(MENU_SET *p_menu_set, const char *menu_name)
 	return NULL;
 }
 
-static void
-display_menu_cursor(MENU *p_menu, int show)
+static void display_menu_cursor(MENU *p_menu, int show)
 {
 	moveto((p_menu->items[p_menu->item_cur_pos])->r_row,
 		   (p_menu->items[p_menu->item_cur_pos])->r_col - 2);

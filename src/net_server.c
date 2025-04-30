@@ -15,8 +15,11 @@
  *                                                                         *
  ***************************************************************************/
 
+#include "net_server.h"
 #include "common.h"
+#include "log.h"
 #include "io.h"
+#include "fork.h"
 #include "tcplib.h"
 #include <sys/socket.h>
 #include <netinet/in.h>

@@ -16,13 +16,18 @@
  ***************************************************************************/
 
 #include "bbs.h"
+#include "init.h"
 #include "common.h"
+#include "net_server.h"
+#include "log.h"
 #include "io.h"
 #include "menu.h"
+#include <stdlib.h>
 #include <signal.h>
 #include <string.h>
-#include <sys/types.h>
 #include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 void app_help(void)
 {
@@ -106,10 +111,12 @@ int main(int argc, char *argv[])
 
 	// Initialize daemon
 	if (daemon)
+	{
 		init_daemon();
+	}
 
 	// Change current dir
-	strncpy(app_home_dir, argv[0], rindex(argv[0], '/') - argv[0] + 1);
+	strncpy(app_home_dir, argv[0], strrchr(argv[0], '/') - argv[0] + 1);
 	strcat(app_home_dir, "../");
 	chdir(app_home_dir);
 
