@@ -64,8 +64,13 @@ void clrline(int line_begin, int line_end)
 
 void clrtobot(int line_begin)
 {
-	clrline(line_begin, screen_lines);
+	//clrline(line_begin, screen_lines);
 	moveto(line_begin, 0);
+	prints("\033[J");
+
+	moveto(line_begin, 0);
+
+	iflush();
 }
 
 void clearscr()
