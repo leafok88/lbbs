@@ -16,6 +16,7 @@
  ***************************************************************************/
 
 #include "init.h"
+#include "database.h"
 #include "bbs.h"
 #include "common.h"
 #include "log.h"

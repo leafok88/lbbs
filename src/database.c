@@ -20,8 +20,14 @@
 #include <mysql.h>
 #include <stdio.h>
 
-MYSQL *
-db_open()
+// Global declaration for database
+char DB_host[256];
+char DB_username[50];
+char DB_password[50];
+char DB_database[50];
+char DB_timezone[50];
+
+MYSQL *db_open()
 {
 	MYSQL *db;
 	char sql[1024];
@@ -48,8 +54,8 @@ db_open()
 	}
 
 	sprintf(sql,
-		"SET time_zone = '%s'",
-		DB_timezone);
+			"SET time_zone = '%s'",
+			DB_timezone);
 
 	if (mysql_query(db, sql) != 0)
 	{

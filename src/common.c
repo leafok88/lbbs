@@ -38,13 +38,6 @@ char hostaddr_client[50];
 int port_server;
 int port_client;
 
-// Global declaration for database
-char DB_host[256];
-char DB_username[50];
-char DB_password[50];
-char DB_database[50];
-char DB_timezone[50];
-
 // Global declaration for system
 int SYS_exit;
 int SYS_child_process_count;
@@ -63,40 +56,41 @@ const char *str_space(char *string, int length)
 
 const char *get_time_str(char *string, size_t length)
 {
-	char week[10], buffer[256];
+	char week[20];
+	char buffer[LINE_BUFFER_LEN];
 	time_t curtime;
 	struct tm *loctime;
 
 	curtime = time(NULL);
 	loctime = localtime(&curtime);
 
-	strftime(buffer, 256, "%Y年%m月%d日%H:%M:%S ", loctime);
+	strftime(buffer, sizeof(buffer), "%Y年%m月%d日%H:%M:%S ", loctime);
 
 	switch (loctime->tm_wday)
 	{
 	case 0:
-		strcpy(week, "星期天");
+		strncpy(week, "星期天", sizeof(week));
 		break;
 	case 1:
-		strcpy(week, "星期一");
+		strncpy(week, "星期一", sizeof(week));
 		break;
 	case 2:
-		strcpy(week, "星期二");
+		strncpy(week, "星期二", sizeof(week));
 		break;
 	case 3:
-		strcpy(week, "星期三");
+		strncpy(week, "星期三", sizeof(week));
 		break;
 	case 4:
-		strcpy(week, "星期四");
+		strncpy(week, "星期四", sizeof(week));
 		break;
 	case 5:
-		strcpy(week, "星期五");
+		strncpy(week, "星期五", sizeof(week));
 		break;
 	case 6:
-		strcpy(week, "星期六");
+		strncpy(week, "星期六", sizeof(week));
 		break;
 	}
-	strcat(buffer, week);
+	strncat(buffer, week, sizeof(week));
 
 	strncpy(string, buffer, length);
 
