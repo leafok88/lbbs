@@ -26,7 +26,12 @@ BBS_user_priv BBS_priv;
 
 int checklevel(BBS_user_priv *p_priv, int level)
 {
-	return (((p_priv->level & level)) ^ level ? 0 : 1);
+	if (level == P_GUEST)
+	{
+		return 1;
+	}
+
+	return ((p_priv->level & level) ? 1 : 0);
 }
 
 int setpriv(BBS_user_priv *p_priv, int sid, int priv)
@@ -73,7 +78,7 @@ int getpriv(BBS_user_priv *p_priv, int sid)
 
 int checkpriv(BBS_user_priv *p_priv, int sid, int priv)
 {
-	return (((getpriv(p_priv, sid) & priv)) ^ priv ? 0 : 1);
+	return (((getpriv(p_priv, sid) & priv)) == priv ? 1 : 0);
 }
 
 int load_priv(MYSQL *db, BBS_user_priv *p_priv, long int uid)
@@ -126,8 +131,8 @@ int load_priv(MYSQL *db, BBS_user_priv *p_priv, long int uid)
 	}
 	if (row = mysql_fetch_row(rs))
 	{
-		p_priv->level |= (atoi(row[1]) ? P_ADMIN_M : P_ADMIN_S);
-		p_priv->g_priv |= (atoi(row[1]) ? S_ALL : S_ADMIN);
+		p_priv->level |= (atoi(row[0]) ? P_ADMIN_M : P_ADMIN_S);
+		p_priv->g_priv |= (atoi(row[0]) ? S_ALL : S_ADMIN);
 	}
 	mysql_free_result(rs);
 
