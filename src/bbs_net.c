@@ -373,7 +373,7 @@ int bbs_net()
 
 	while (1)
 	{
-		ch = igetch();
+		ch = igetch(0);
 		switch (ch)
 		{
 		case KEY_NULL:

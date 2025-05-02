@@ -567,7 +567,7 @@ int pressany(int i)
 	iflush();
 	do
 	{
-		ch = igetch();
+		ch = igetch(0);
 		/*
 				if (ch == KEY_ESC && KEY_ESC_arg == 'c')
 					// capture_screen()
@@ -595,7 +595,7 @@ int guess()
 		DOECHO,NULL);*/
 		moveto(23, 0);
 		prints("[1]-¼ôµ¶ [2]-Ê¯Í· [3]-²¼£º");
-		ch = igetch();
+		ch = igetch(0);
 	} while ((ch != '1') && (ch != '2') && (ch != '3'));
 
 	/* com=qtime->tm_sec%3;*/

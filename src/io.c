@@ -56,7 +56,7 @@ int iflush()
 	return retval;
 }
 
-int igetch()
+int igetch(int clear_buf)
 {
 	static char buf[256];
 	unsigned char c, tmp[256];
@@ -64,6 +64,14 @@ int igetch()
 	static int len = 0, pos = 0;
 	fd_set testfds;
 	struct timeval timeout;
+
+	if (clear_buf)
+	{
+		pos = 0;
+		len = 0;
+
+		return 0;
+	}
 
 	// Stop on system exit
 	if (SYS_exit)
@@ -227,8 +235,8 @@ int igetch_t(long int sec)
 
 	do
 	{
-		ch = igetch();
-	} while ((ch == KEY_TIMEOUT || ch == 0xa || ch == 0x0) && (time(0) - t_begin < sec));
+		ch = igetch(0);
+	} while ((ch == KEY_TIMEOUT || ch == 0xa) && (time(0) - t_begin < sec));
 
 	return ch;
 }

@@ -86,7 +86,7 @@ int license(const char *s)
 
 	strcpy(temp, app_home_dir);
 	strcat(temp, "data/license.txt");
-	display_file_ex(temp, 0, 1);
+	display_file_ex(temp, 1, 1);
 
 	return REDRAW;
 }
@@ -97,7 +97,7 @@ int copyright(const char *s)
 
 	strcpy(temp, app_home_dir);
 	strcat(temp, "data/copyright.txt");
-	display_file_ex(temp, 0, 1);
+	display_file_ex(temp, 1, 1);
 
 	return REDRAW;
 }

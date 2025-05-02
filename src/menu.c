@@ -37,7 +37,9 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 {
 	FILE *fin, *fout;
 	int i = 0, j;
-	char buffer[256], screen_filename[256], temp[256];
+	char buffer[LINE_BUFFER_LEN];
+	char screen_filename[LINE_BUFFER_LEN];
+	char temp[LINE_BUFFER_LEN];
 	regmatch_t pmatch[10];
 
 	if ((fin = fopen(conf_file, "r")) == NULL)
@@ -48,7 +50,7 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 
 	strcpy(p_menu_set->conf_file, conf_file);
 
-	while (fgets(buffer, 255, fin))
+	while (fgets(buffer, sizeof(buffer), fin))
 	{
 		switch (buffer[0])
 		{
@@ -68,7 +70,7 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 					return -2;
 				}
 
-				while (fgets(buffer, 255, fin))
+				while (fgets(buffer, sizeof(buffer), fin))
 				{
 					if (buffer[0] != '%')
 						fputs(buffer, fout);
@@ -94,7 +96,7 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 
 				j = 0;
 
-				while (fgets(buffer, 255, fin))
+				while (fgets(buffer, sizeof(buffer), fin))
 				{
 					if (buffer[0] == '#')
 					{
@@ -475,9 +477,9 @@ void unload_menu(MENU_SET *p_menu_set)
 int reload_menu(MENU_SET *p_menu_set)
 {
 	int result;
-	char conf_file[256];
+	char conf_file[FILE_PATH_LEN];
 
-	strcpy(conf_file, p_menu_set->conf_file);
+	strncpy(conf_file, p_menu_set->conf_file, sizeof(conf_file));
 	unload_menu(p_menu_set);
 	result = load_menu(p_menu_set, conf_file);
 

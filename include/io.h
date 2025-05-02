@@ -61,15 +61,13 @@
 #define DOECHO (1)
 #define NOECHO (0)
 
-extern int screen_lines;
-
 extern int outc(char c);
 
 extern int prints(const char *format, ...);
 
 extern int iflush();
 
-extern int igetch();
+extern int igetch(int clear_buf);
 
 extern int igetch_t(long int sec);
 

@@ -20,6 +20,15 @@
 
 #include <mysql.h>
 
+#define SQL_BUFFER_LEN 2048
+
+// Database
+extern char DB_host[256];
+extern char DB_username[50];
+extern char DB_password[50];
+extern char DB_database[50];
+extern char DB_timezone[50];
+
 extern MYSQL *db_open();
 
 #endif //_DATABASE_H_

@@ -27,9 +27,16 @@
 
 int bbs_welcome()
 {
-	char buffer[256], sql[1024], temp[256];
-	long u_online = 0, u_anonymous = 0, u_total = 0,
-		 max_u_online = 0, u_login_count = 0;
+	char buffer[LINE_BUFFER_LEN];
+	char sql[SQL_BUFFER_LEN];
+	char temp[LINE_BUFFER_LEN];
+
+	u_int32_t u_online = 0;
+	u_int32_t u_anonymous = 0;
+	u_int32_t u_total = 0;
+	u_int32_t max_u_online = 0;
+	u_int32_t u_login_count = 0;
+
 	MYSQL *db;
 	MYSQL_RES *rs;
 	MYSQL_ROW row;
@@ -41,9 +48,9 @@ int bbs_welcome()
 	}
 
 	strcpy(sql,
-		   "select SID as cc from user_online where current_action not in"
-		   " ('max_user_limit','max_ip_limit','max_session_limit','exit')"
-		   " group by SID");
+		   "SELECT COUNT(SID) AS cc FROM user_online "
+		   "WHERE current_action NOT IN ('exit') "
+		   "GROUP BY SID");
 	if (mysql_query(db, sql) != 0)
 	{
 		log_error("Query user_online failed\n");
@@ -54,13 +61,16 @@ int bbs_welcome()
 		log_error("Get user_online data failed\n");
 		return -2;
 	}
-	u_online = mysql_num_rows(rs);
+	if (row = mysql_fetch_row(rs))
+	{
+		u_online = atol(row[0]);
+	}
 	mysql_free_result(rs);
 
 	strcpy(sql,
-		   "select SID as cc from user_online where UID=0 and current_action not in"
-		   " ('max_user_limit','max_ip_limit','max_session_limit','exit')"
-		   " group by SID");
+		   "SELECT COUNT(SID) AS cc FROM user_online "
+		   "WHERE UID = 0 AND current_action NOT IN ('exit') "
+		   "GROUP BY SID");
 	if (mysql_query(db, sql) != 0)
 	{
 		log_error("Query user_online failed\n");
@@ -71,10 +81,14 @@ int bbs_welcome()
 		log_error("Get user_online data failed\n");
 		return -2;
 	}
-	u_anonymous = mysql_num_rows(rs);
+	if (row = mysql_fetch_row(rs))
+	{
+		u_anonymous = atol(row[0]);
+	}
 	mysql_free_result(rs);
 
-	strcpy(sql, "select count(*) as cc from user_list where enable");
+	strcpy(sql, "SELECT COUNT(UID) AS cc FROM user_list "
+				"WHERE enable");
 	if (mysql_query(db, sql) != 0)
 	{
 		log_error("Query user_list failed\n");
@@ -91,7 +105,7 @@ int bbs_welcome()
 	}
 	mysql_free_result(rs);
 
-	strcpy(sql, "select max(ID) as login_count from user_login_log");
+	strcpy(sql, "SELECT ID FROM user_login_log ORDER BY ID LIMIT 1");
 	if (mysql_query(db, sql) != 0)
 	{
 		log_error("Query user_login_log failed\n");

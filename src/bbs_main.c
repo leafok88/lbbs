@@ -70,7 +70,7 @@ int bbs_center()
 
 	while (!SYS_exit)
 	{
-		ch = igetch();
+		ch = igetch(0);
 
 		if (time(0) - t_last_action >= 10)
 		{

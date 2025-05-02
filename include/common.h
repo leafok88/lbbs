@@ -20,6 +20,9 @@
 
 #include <stddef.h>
 
+#define LINE_BUFFER_LEN 256
+#define FILE_PATH_LEN 1024
+
 // Version
 extern char app_version[256];
 
@@ -34,13 +37,6 @@ extern char hostaddr_server[50];
 extern char hostaddr_client[50];
 extern int port_server;
 extern int port_client;
-
-// Database
-extern char DB_host[256];
-extern char DB_username[50];
-extern char DB_password[50];
-extern char DB_database[50];
-extern char DB_timezone[50];
 
 // Signal
 #define SIG_RELOAD_MENU 0x22
