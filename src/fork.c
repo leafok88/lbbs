@@ -20,6 +20,7 @@
 #include "log.h"
 #include "io.h"
 #include "fork.h"
+#include <stdio.h>
 #include <string.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -28,15 +29,20 @@ int fork_server()
 {
 	int pid;
 
-	if (pid = fork())
+	pid = fork();
+
+	if (pid > 0) // Parent process
 	{
 		SYS_child_process_count++;
 		log_std("Child process (%d) start\n", pid);
 		return 0;
 	}
-	else if (pid < 0)
+	else if (pid < 0) // Error
+	{
 		return -1;
+	}
 
+	// Child process
 	if (close(socket_server) == -1)
 	{
 		log_error("Close server socket failed\n");
@@ -44,16 +50,16 @@ int fork_server()
 	}
 
 	// Redirect Input
-	close(0);
-	if (dup2(socket_client, 0) == -1)
+	close(STDIN_FILENO);
+	if (dup2(socket_client, STDIN_FILENO) == -1)
 	{
 		log_error("Redirect stdin to client socket failed\n");
 		return -3;
 	}
 
 	// Redirect Output
-	close(1);
-	if (dup2(socket_client, 1) == -1)
+	close(STDOUT_FILENO);
+	if (dup2(socket_client, STDOUT_FILENO) == -1)
 	{
 		log_error("Redirect stdout to client socket failed\n");
 		return -4;
@@ -67,8 +73,8 @@ int fork_server()
 	}
 
 	// Close Input and Output for client
-	close(0);
-	close(1);
+	close(STDIN_FILENO);
+	close(STDOUT_FILENO);
 
 	log_std("Process exit normally\n");
 
