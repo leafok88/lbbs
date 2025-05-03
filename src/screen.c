@@ -238,6 +238,7 @@ int display_file_ex(const char *filename, int begin_line, int wait)
 	long *p_line_offsets;
 	int len;
 	int percentile;
+	int loop = 1;
 
 	if ((fin = fopen(filename, "r")) == NULL)
 	{
@@ -253,11 +254,34 @@ int display_file_ex(const char *filename, int begin_line, int wait)
 	line = begin_line;
 	max_lines = screen_rows - 1;
 
-	while (c_line_current < c_line_total)
+	while (loop)
 	{
+		if (c_line_current >= c_line_total)
+		{
+			if (wait)
+			{
+				ch = press_any_key();
+			}
+			else
+			{
+				iflush();
+			}
+
+			loop = 0;
+			break;
+		}
+
 		if (line >= max_lines)
 		{
-			percentile = (c_line_current - (line - 1) + (screen_rows - 2)) * 100 / c_line_total;
+			if (c_line_current - (line - 1) + (screen_rows - 2) < c_line_total)
+			{
+				percentile = (c_line_current - (line - 1) + (screen_rows - 2)) * 100 / c_line_total;
+			}
+			else
+			{
+				log_error("P100 reached\n");
+				percentile = 100;
+			}
 
 			moveto(screen_rows, 0);
 			prints("\033[1;44;32m下面还有喔 (%d%%)\033[33m   │ 结束 ← <q> │ ↑/↓/PgUp/PgDn 移动 │ ? 辅助说明 │     \033[m",
@@ -331,8 +355,7 @@ int display_file_ex(const char *filename, int begin_line, int wait)
 				case KEY_LEFT:
 				case 'q':
 				case 'Q':
-					c_line_current = c_line_total;
-					wait = 0;
+					loop = 0;
 					break;
 				case '?':
 				case 'h':
@@ -374,13 +397,6 @@ int display_file_ex(const char *filename, int begin_line, int wait)
 		prints("%s", buffer);
 		c_line_current++;
 		line++;
-	}
-
-	iflush();
-
-	if (wait)
-	{
-		ch = press_any_key();
 	}
 
 	free(p_line_offsets);
