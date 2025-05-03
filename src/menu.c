@@ -366,6 +366,7 @@ int menu_control(MENU_SET *p_menu_set, int key)
 	switch (key)
 	{
 	case CR:
+		igetch(1); // Cleanup remaining '\n' in the buffer
 	case KEY_RIGHT:
 		if (p_menu->items[p_menu->item_cur_pos]->submenu)
 		{

@@ -76,8 +76,6 @@ void clearscr()
 
 int press_any_key()
 {
-	igetch(1);
-
 	moveto(screen_rows, 0);
 	clrtoeol();
 
@@ -114,12 +112,11 @@ static int _str_input(char *buffer, int buffer_length, int echo_mode)
 		offset++;
 	}
 
-	igetch(1);
-
 	while (c = igetch_t(60))
 	{
 		if (c == KEY_NULL || c == KEY_TIMEOUT || c == CR)
 		{
+			igetch(1); // Cleanup remaining '\n' in the buffer
 			break;
 		}
 		if (c == LF)
@@ -303,7 +300,8 @@ int display_file_ex(const char *filename, int begin_line, int wait)
 					c_line_current -= line;
 					line = begin_line;
 					max_lines = begin_line + 1;
-					prints("\033[1T"); // Scroll down 1 line
+					prints("\033[T"); // Scroll down 1 line
+					//max_lines = screen_rows - 1; // Legacy Fterm only works with this line
 					break;
 				case KEY_DOWN:
 				case CR:
@@ -316,7 +314,7 @@ int display_file_ex(const char *filename, int begin_line, int wait)
 					max_lines = screen_rows - 1;
 					moveto(screen_rows, 0);
 					clrtoeol();
-					prints("\033[1S"); // Scroll up 1 line
+					prints("\033[S"); // Scroll up 1 line
 					break;
 				case KEY_PGUP:
 				case Ctrl('B'):
