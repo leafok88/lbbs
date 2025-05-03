@@ -142,8 +142,8 @@ am_bbsd_OBJECTS = bbs.$(OBJEXT) bbs_cmd.$(OBJEXT) bbs_main.$(OBJEXT) \
 	init.$(OBJEXT) io.$(OBJEXT) log.$(OBJEXT) login.$(OBJEXT) \
 	menu.$(OBJEXT) main.$(OBJEXT) menu_proc.$(OBJEXT) \
 	netio.$(OBJEXT) net_server.$(OBJEXT) reg_ex.$(OBJEXT) \
-	register.$(OBJEXT) screen.$(OBJEXT) tcplib.$(OBJEXT) \
-	user_priv.$(OBJEXT) welcome.$(OBJEXT)
+	register.$(OBJEXT) screen.$(OBJEXT) str_process.$(OBJEXT) \
+	tcplib.$(OBJEXT) user_priv.$(OBJEXT) welcome.$(OBJEXT)
 bbsd_OBJECTS = $(am_bbsd_OBJECTS)
 bbsd_LDADD = $(LDADD)
 bbsd_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
@@ -172,8 +172,9 @@ am__depfiles_remade = ./$(DEPDIR)/bbs.Po ./$(DEPDIR)/bbs_cmd.Po \
 	./$(DEPDIR)/menu.Po ./$(DEPDIR)/menu_proc.Po \
 	./$(DEPDIR)/net_server.Po ./$(DEPDIR)/netio.Po \
 	./$(DEPDIR)/reg_ex.Po ./$(DEPDIR)/register.Po \
-	./$(DEPDIR)/screen.Po ./$(DEPDIR)/tcplib.Po \
-	./$(DEPDIR)/user_priv.Po ./$(DEPDIR)/welcome.Po
+	./$(DEPDIR)/screen.Po ./$(DEPDIR)/str_process.Po \
+	./$(DEPDIR)/tcplib.Po ./$(DEPDIR)/user_priv.Po \
+	./$(DEPDIR)/welcome.Po
 am__mv = mv -f
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
@@ -346,13 +347,12 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 bbsd_SOURCES = bbs.c bbs_cmd.c bbs_main.c common.c database.c fork.c init.c \
 			   io.c log.c login.c menu.c main.c menu_proc.c netio.c net_server.c \
-			   reg_ex.c register.c screen.c tcplib.c user_priv.c \
-			   welcome.c \
-			   bbs.h bbs_cmd.h common.h database.h io.h menu.h menu_proc.h tcplib.h
+			   reg_ex.c register.c screen.c str_process.c tcplib.c user_priv.c \
+			   welcome.c
 
 bbsd_LDFLAGS = -export-dynamic
 lib_LTLIBRARIES = libbbs.la
-libbbs_la_SOURCES = bbs_net.c bbs.h common.h io.h menu.h tcplib.h
+libbbs_la_SOURCES = bbs_net.c
 AM_CPPFLAGS = -I../include -I/usr/include/mysql
 CLEANFILES = @EXTRA_CLEAN@
 all: all-am
@@ -505,6 +505,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/reg_ex.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/register.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/screen.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/str_process.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tcplib.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/user_priv.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/welcome.Po@am__quote@ # am--include-marker
@@ -693,6 +694,7 @@ distclean: distclean-am
 	-rm -f ./$(DEPDIR)/reg_ex.Po
 	-rm -f ./$(DEPDIR)/register.Po
 	-rm -f ./$(DEPDIR)/screen.Po
+	-rm -f ./$(DEPDIR)/str_process.Po
 	-rm -f ./$(DEPDIR)/tcplib.Po
 	-rm -f ./$(DEPDIR)/user_priv.Po
 	-rm -f ./$(DEPDIR)/welcome.Po
@@ -760,6 +762,7 @@ maintainer-clean: maintainer-clean-am
 	-rm -f ./$(DEPDIR)/reg_ex.Po
 	-rm -f ./$(DEPDIR)/register.Po
 	-rm -f ./$(DEPDIR)/screen.Po
+	-rm -f ./$(DEPDIR)/str_process.Po
 	-rm -f ./$(DEPDIR)/tcplib.Po
 	-rm -f ./$(DEPDIR)/user_priv.Po
 	-rm -f ./$(DEPDIR)/welcome.Po
