@@ -1,6 +1,7 @@
 <?
-	$DB_hostname = "127.0.0.1";
-	$DB_username = "";
-	$DB_password = "";
-	$DB_database = "";
-?>
+	$DB_hostname			=	"localhost";
+	$DB_username			=	"";
+	$DB_password			=	"";
+	$DB_database			=	"";
+
+	$DB_session_timezone	=	"+08:00"; //Keep consistent with DB server config

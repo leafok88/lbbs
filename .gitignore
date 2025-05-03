@@ -1,4 +1,5 @@
 /conf/bbsd.conf
+/utils/conf/db_conn.conf.php
 /var
 /log
 /aclocal.m4

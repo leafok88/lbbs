@@ -140,7 +140,7 @@ int bbs_main()
 
 	// BBS Top 10
 	strcpy(temp, app_home_dir);
-	strcat(temp, "data/bbs_top.txt");
+	strcat(temp, "var/bbs_top.txt");
 	display_file_ex(temp, 1, 1);
 
 	// Main
