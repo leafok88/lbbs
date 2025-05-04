@@ -32,21 +32,34 @@
 void init_daemon(void)
 {
 	int pid;
-	int i;
 
-	if (pid = fork())
+	pid = fork();
+
+	if (pid > 0) // Parent process
+	{
 		exit(0);
-	else if (pid < 0)
+	}
+	else if (pid < 0) // Error
+	{
 		exit(1);
+	}
 
+	// Child process
 	setsid();
 
-	if (pid = fork())
-		exit(0);
-	else if (pid < 0)
-		exit(1);
+	pid = fork();
 
-	umask(0);
+	if (pid > 0) // Parent process
+	{
+		exit(0);
+	}
+	else if (pid < 0) // Error
+	{
+		exit(1);
+	}
+
+	// Child process
+	umask(022);
 
 	return;
 }

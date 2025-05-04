@@ -16,6 +16,7 @@
  ***************************************************************************/
 
 #include "common.h"
+#include "database.h"
 #include "log.h"
 #include <mysql.h>
 #include <stdio.h>
@@ -30,7 +31,7 @@ char DB_timezone[50];
 MYSQL *db_open()
 {
 	MYSQL *db;
-	char sql[1024];
+	char sql[SQL_BUFFER_LEN];
 
 	db = mysql_init(NULL);
 	if (db == NULL)

@@ -31,6 +31,8 @@
 #include <regex.h>
 #include <stdlib.h>
 
+#define MENU_TEMP_DIR "var"
+
 MENU_SET bbs_menu;
 
 int load_menu(MENU_SET *p_menu_set, const char *conf_file)
@@ -38,7 +40,7 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 	FILE *fin, *fout;
 	int i = 0, j;
 	char buffer[LINE_BUFFER_LEN];
-	char screen_filename[LINE_BUFFER_LEN];
+	char screen_filename[FILE_PATH_LEN];
 	char temp[LINE_BUFFER_LEN];
 	regmatch_t pmatch[10];
 
@@ -62,7 +64,7 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 				strncpy(temp, buffer + pmatch[1].rm_so,
 						pmatch[1].rm_eo - pmatch[1].rm_so);
 				temp[pmatch[1].rm_eo - pmatch[1].rm_so] = '\0';
-				sprintf(screen_filename, "%sMENU_SCR_%s", app_temp_dir, temp);
+				sprintf(screen_filename, "%s/MENU_SCR_%s", MENU_TEMP_DIR, temp);
 
 				if ((fout = fopen(screen_filename, "w")) == NULL)
 				{
@@ -248,7 +250,7 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 								pmatch[3].rm_eo - pmatch[3].rm_so);
 						temp[pmatch[3].rm_eo - pmatch[3].rm_so] = '\0';
 						sprintf(p_menu_set->p_menu[i]->screen.filename,
-								"%sMENU_SCR_%s", app_temp_dir, temp);
+								"%s/MENU_SCR_%s", MENU_TEMP_DIR, temp);
 						continue;
 					}
 				}
@@ -457,7 +459,6 @@ int menu_control(MENU_SET *p_menu_set, int key)
 void unload_menu(MENU_SET *p_menu_set)
 {
 	MENU *p_menu;
-	MENU_ITEM *p_menuitem;
 	int i, j;
 
 	for (i = 0; i < p_menu_set->menu_count; i++)

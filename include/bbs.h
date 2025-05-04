@@ -22,21 +22,22 @@
 
 // BBS
 #define BBS_max_section 1024
-#define BBS_max_username_length 20
+#define BBS_username_max_len 12
+#define BBS_password_max_len 12
 
 extern char BBS_id[20];
 extern char BBS_name[50];
 extern char BBS_server[256];
 extern char BBS_address[50];
 extern unsigned int BBS_port;
-extern long BBS_max_client;
-extern long BBS_max_user;
+extern unsigned int BBS_max_client;
+extern unsigned int BBS_max_user;
 extern char BBS_start_dt[50];
 
 // Session
 #define MAX_DELAY_TIME 600
 
-extern char BBS_username[BBS_max_username_length];
+extern char BBS_username[BBS_username_max_len + 1];
 extern int BBS_user_money;
 
 extern time_t BBS_login_tm;
@@ -45,7 +46,5 @@ extern time_t BBS_last_access_tm;
 extern char BBS_current_section_name[20];
 
 extern char *setuserfile(char *buf, const char *filename);
-
-extern char *sethomefile(char *buf, long int uid, char *filename);
 
 #endif //_BBS_H_

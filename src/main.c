@@ -26,6 +26,7 @@
 #include <signal.h>
 #include <string.h>
 #include <unistd.h>
+#include <libgen.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 
@@ -48,19 +49,20 @@ void arg_error(void)
 
 int main(int argc, char *argv[])
 {
-	char log_dir[256], file_log_std[256], file_log_error[256], file_config[256];
-	int i, j;
-	int daemon = 1, std_log_redir = 0, error_log_redir = 0;
+	char file_path_temp[FILE_PATH_LEN];
+	int daemon = 1;
+	int std_log_redir = 0;
+	int error_log_redir = 0;
 
 	// Parse args
-	for (i = 1; i < argc; i++)
+	for (int i = 1; i < argc; i++)
 	{
 		switch (argv[i][0])
 		{
 		case '-':
 			if (argv[i][1] != '-')
 			{
-				for (j = 1; j < strlen(argv[i]); j++)
+				for (int j = 1; j < strlen(argv[i]); j++)
 				{
 					switch (argv[i][j])
 					{
@@ -116,38 +118,31 @@ int main(int argc, char *argv[])
 	}
 
 	// Change current dir
-	strncpy(app_home_dir, argv[0], strrchr(argv[0], '/') - argv[0] + 1);
-	strcat(app_home_dir, "../");
-	chdir(app_home_dir);
+	strncpy(file_path_temp, argv[0], sizeof(file_path_temp) - 1);
+	chdir(dirname(file_path_temp));
+	chdir("..");
 
 	// Initialize log
-	strcpy(app_temp_dir, "var/");
-	mkdir(app_temp_dir, 0750);
-	strcpy(log_dir, app_home_dir);
-	strcat(log_dir, "log/");
-	strcpy(file_log_std, log_dir);
-	strcpy(file_log_error, log_dir);
-	strcat(file_log_std, "bbsd.log");
-	strcat(file_log_error, "error.log");
-	mkdir(log_dir, 0750);
-	if (log_begin(file_log_std, file_log_error) < 0)
+	if (log_begin(LOG_FILE_INFO, LOG_FILE_ERROR) < 0)
+	{
 		exit(-1);
+	}
 
 	if ((!daemon) && std_log_redir)
+	{
 		log_std_redirect(2);
+	}
 	if ((!daemon) && error_log_redir)
+	{
 		log_err_redirect(3);
+	}
 
 	// Load configuration
-	strcpy(file_config, app_home_dir);
-	strcat(file_config, "conf/bbsd.conf");
-	if (load_conf(file_config) < 0)
+	if (load_conf("conf/bbsd.conf") < 0)
 		exit(-2);
 
 	// Load menus
-	strcpy(file_config, app_home_dir);
-	strcat(file_config, "conf/menu.conf");
-	if (load_menu(&bbs_menu, file_config) < 0)
+	if (load_menu(&bbs_menu, "conf/menu.conf") < 0)
 		exit(-3);
 
 	// Set signal handler
@@ -161,13 +156,11 @@ int main(int argc, char *argv[])
 	// Wait for child process exit
 	while (SYS_child_process_count > 0)
 	{
-		log_std(".");
 		sleep(1);
 	}
 
 	// Cleanup
 	unload_menu(&bbs_menu);
-	rmdir(app_temp_dir);
 
 	return 0;
 }

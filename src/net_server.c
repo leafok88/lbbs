@@ -27,9 +27,10 @@
 
 int net_server(const char *hostaddr, unsigned int port)
 {
-	int namelen, seq, netint, result, flags;
+	unsigned int namelen;
+	int result;
+	int flags;
 	struct sockaddr_in sin;
-	char temp[256];
 	fd_set testfds;
 	struct timeval timeout;
 

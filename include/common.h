@@ -21,15 +21,28 @@
 #include <stddef.h>
 
 #define LINE_BUFFER_LEN 1024
-#define FILE_PATH_LEN 1024
+#define FILE_PATH_LEN 4096
 #define MAX_FILE_LINES 65536
 
 // Version
 extern char app_version[256];
 
 // Enviroment
-extern char app_home_dir[256];
-extern char app_temp_dir[256];
+#define CONF_BBSNET "conf/bbsnet.conf"
+
+#define LOG_FILE_INFO "log/bbsd.log"
+#define LOG_FILE_ERROR "log/error.log"
+
+#define DATA_WELCOME "data/welcome.txt"
+#define DATA_REGISTER "data/register.txt"
+#define DATA_GOODBYE "data/goodbye.txt"
+#define DATA_LICENSE "data/license.txt"
+#define DATA_COPYRIGHT "data/copyright.txt"
+#define DATA_LOGIN_ERROR "data/login_error.txt"
+#define DATA_ACTIVE_BOARD "data/active_board.txt"
+#define DATA_READ_HELP "data/read_help.txt"
+
+#define VAR_MAX_USER_ONLINE "var/max_user_online.dat"
 
 // Network
 extern int socket_server;

@@ -45,7 +45,7 @@ int log_begin(char *file_log_std, char *file_log_err)
 	return 0;
 }
 
-int log_end()
+void log_end()
 {
 	fclose(fp_log_std);
 	fclose(fp_log_err);

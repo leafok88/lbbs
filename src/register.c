@@ -26,11 +26,7 @@
 
 int user_register()
 {
-	char temp[256];
-
-	strcpy(temp, app_home_dir);
-	strcat(temp, "data/register.txt");
-	display_file_ex(temp, 1, 1);
+	display_file_ex(DATA_REGISTER, 1, 1);
 
 	return -1;
 }

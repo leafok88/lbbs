@@ -18,6 +18,8 @@
 #ifndef _MENU_H_
 #define _MENU_H_
 
+#include "common.h"
+
 #define MAX_MENUITEM_LENGTH 50
 #define MAX_MENUITEMS 30
 #define MAX_MENUNAME_LENGTH 256
@@ -47,7 +49,7 @@ typedef struct _menu_title MENU_TITLE;
 struct _menu_screen
 {
 	int row, col, show;
-	char filename[256];
+	char filename[FILE_PATH_LEN];
 };
 typedef struct _menu_screen MENU_SCREEN;
 

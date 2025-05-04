@@ -30,4 +30,8 @@ extern int load_user_info(MYSQL *db, long int BBS_uid);
 
 extern int load_guest_info(MYSQL *db);
 
+extern int user_online_add(MYSQL *db);
+
+extern int user_online_del(MYSQL *db);
+
 #endif //_LOGIN_H_

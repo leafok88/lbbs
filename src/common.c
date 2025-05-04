@@ -26,10 +26,6 @@
 // Version information
 char app_version[256] = "LBBS-devel version 1.0";
 
-// Global declaration for enviroment
-char app_home_dir[256];
-char app_temp_dir[256];
-
 // Global declaration for sockets
 int socket_server;
 int socket_client;
@@ -90,7 +86,7 @@ const char *get_time_str(char *string, size_t length)
 		strncpy(week, "ÐÇÆÚÁù", sizeof(week));
 		break;
 	}
-	strncat(buffer, week, sizeof(week));
+	strncat(buffer, week, sizeof(buffer) - 1 - strnlen(buffer, sizeof(buffer)));
 
 	strncpy(string, buffer, length);
 

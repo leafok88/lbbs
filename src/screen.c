@@ -104,15 +104,14 @@ void set_input_echo(int echo)
 
 static int _str_input(char *buffer, int buffer_length, int echo_mode)
 {
-	char buf[256], ch;
-	int c, offset = 0, len, loop = 1, i, hz = 0;
+	int c, offset = 0, i, hz = 0;
 
 	for (i = 0; i < buffer_length && buffer[i] != '\0'; i++)
 	{
 		offset++;
 	}
 
-	while (c = igetch_t(60))
+	while ((c = igetch_t(60)))
 	{
 		if (c == KEY_NULL || c == KEY_TIMEOUT || c == CR)
 		{
@@ -226,12 +225,10 @@ int display_file(const char *filename)
 int display_file_ex(const char *filename, int begin_line, int wait)
 {
 	char buffer[LINE_BUFFER_LEN];
-	char temp[LINE_BUFFER_LEN];
 	int ch = 0;
 	int input_ok, line, max_lines;
 	long int c_line_current = 0, c_line_total = 0;
 	FILE *fin;
-	struct stat f_stat;
 	long *p_line_offsets;
 	int len;
 	int percentile;
@@ -359,9 +356,7 @@ int display_file_ex(const char *filename, int begin_line, int wait)
 				case 'h':
 				case 'H':
 					// Display help information
-					strcpy(temp, app_home_dir);
-					strcat(temp, "data/read_help.txt");
-					display_file_ex(temp, begin_line, 1);
+					display_file_ex(DATA_READ_HELP, begin_line, 1);
 
 					// Refresh after display help information
 					c_line_current -= (line - 1);
@@ -422,7 +417,6 @@ int show_top(char *status)
 int show_bottom(char *msg)
 {
 	char str_time[LINE_BUFFER_LEN];
-	char str_time_onine[20];
 	char buffer[LINE_BUFFER_LEN];
 	time_t time_online;
 	struct tm *tm_online;
@@ -454,11 +448,9 @@ int show_active_board()
 	int len;
 	int end_of_line;
 
-	sprintf(filename, "%sdata/active_board.txt", app_home_dir);
-
 	clrline(3, 2 + ACTIVE_BOARD_HEIGHT);
 
-	if ((fin = fopen(filename, "r")) == NULL)
+	if ((fin = fopen(DATA_ACTIVE_BOARD, "r")) == NULL)
 	{
 		log_error("Unable to open file %s\n", filename);
 		return -1;

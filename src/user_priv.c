@@ -18,6 +18,7 @@
 #include "user_priv.h"
 #include "bbs.h"
 #include "common.h"
+#include "database.h"
 #include "log.h"
 #include <stdio.h>
 #include <mysql.h>
@@ -85,8 +86,7 @@ int load_priv(MYSQL *db, BBS_user_priv *p_priv, long int uid)
 {
 	MYSQL_RES *rs;
 	MYSQL_ROW row;
-	char sql[1024];
-	int i;
+	char sql[SQL_BUFFER_LEN];
 
 	p_priv->uid = uid;
 	p_priv->level = (uid == 0 ? P_GUEST : P_USER);
@@ -108,7 +108,7 @@ int load_priv(MYSQL *db, BBS_user_priv *p_priv, long int uid)
 		log_error("Get user_list data failed\n");
 		return -1;
 	}
-	if (row = mysql_fetch_row(rs))
+	if ((row = mysql_fetch_row(rs)))
 	{
 		p_priv->g_priv |= (atoi(row[0]) ? S_POST : 0);
 		p_priv->g_priv |= (atoi(row[1]) ? S_MSG : 0);
@@ -129,7 +129,7 @@ int load_priv(MYSQL *db, BBS_user_priv *p_priv, long int uid)
 		log_error("Get admin_config data failed\n");
 		return -1;
 	}
-	if (row = mysql_fetch_row(rs))
+	if ((row = mysql_fetch_row(rs)))
 	{
 		p_priv->level |= (atoi(row[0]) ? P_ADMIN_M : P_ADMIN_S);
 		p_priv->g_priv |= (atoi(row[0]) ? S_ALL : S_ADMIN);
@@ -152,7 +152,7 @@ int load_priv(MYSQL *db, BBS_user_priv *p_priv, long int uid)
 		log_error("Get section_master data failed\n");
 		return -1;
 	}
-	while (row = mysql_fetch_row(rs))
+	while ((row = mysql_fetch_row(rs)))
 	{
 		p_priv->level |= (atoi(row[1]) ? P_MAN_M : P_MAN_S);
 		setpriv(p_priv, atoi(row[0]), getpriv(p_priv, atoi(row[0])) | (atoi(row[1]) ? S_MAN_M : S_MAN_S));
@@ -174,7 +174,7 @@ int load_priv(MYSQL *db, BBS_user_priv *p_priv, long int uid)
 		log_error("Get section_config data failed\n");
 		return -1;
 	}
-	while (row = mysql_fetch_row(rs))
+	while ((row = mysql_fetch_row(rs)))
 	{
 		int priv = getpriv(p_priv, atoi(row[0]));
 		if (p_priv->level < atoi(row[2]))
@@ -207,7 +207,7 @@ int load_priv(MYSQL *db, BBS_user_priv *p_priv, long int uid)
 		log_error("Get ban_user_list data failed\n");
 		return -1;
 	}
-	while (row = mysql_fetch_row(rs))
+	while ((row = mysql_fetch_row(rs)))
 	{
 		setpriv(p_priv, atoi(row[0]),
 				getpriv(p_priv, atoi(row[0])) & (~S_POST));

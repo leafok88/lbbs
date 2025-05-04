@@ -141,13 +141,13 @@ process_bar(int n, int len)
 
 int bbsnet_connect(int n)
 {
-	int sock, ch, result, len, loop;
+	int sock, result, len, loop;
 	struct sockaddr_in sin;
 	char buf[256];
 	fd_set inputs, testfds;
 	struct timeval timeout;
 	struct hostent *pHost = NULL;
-	int rc, rv, tos = 020, i;
+	int rv, tos = 020, i;
 	char remote_addr[256];
 	int remote_port;
 	time_t t_used;
@@ -356,12 +356,8 @@ int bbsnet_selchange(int new_pos)
 int bbs_net()
 {
 	int ch, pos, i;
-	char file_config[256];
 
-	strcpy(file_config, app_home_dir);
-	strcat(file_config, "conf/bbsnet.conf");
-
-	load_bbsnet_conf(file_config);
+	load_bbsnet_conf(CONF_BBSNET);
 
 	BBS_last_access_tm = time(0);
 

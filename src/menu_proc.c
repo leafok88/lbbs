@@ -82,22 +82,14 @@ int exitbbs(const char *s)
 
 int license(const char *s)
 {
-	char temp[256];
-
-	strcpy(temp, app_home_dir);
-	strcat(temp, "data/license.txt");
-	display_file_ex(temp, 1, 1);
+	display_file_ex(DATA_LICENSE, 1, 1);
 
 	return REDRAW;
 }
 
 int copyright(const char *s)
 {
-	char temp[256];
-
-	strcpy(temp, app_home_dir);
-	strcat(temp, "data/copyright.txt");
-	display_file_ex(temp, 1, 1);
+	display_file_ex(DATA_COPYRIGHT, 1, 1);
 
 	return REDRAW;
 }
@@ -105,7 +97,9 @@ int copyright(const char *s)
 int reloadbbsmenu(const char *s)
 {
 	if (kill(getppid(), SIG_RELOAD_MENU) < 0)
+	{
 		log_error("Send SIG_RELOAD_MENU signal failed (%d)\n", errno);
+	}
 
 	return REDRAW;
 }
@@ -113,7 +107,9 @@ int reloadbbsmenu(const char *s)
 int shutdownbbs(const char *s)
 {
 	if (kill(0, SIGTERM) < 0)
+	{
 		log_error("Send SIGTERM signal failed (%d)\n", errno);
+	}
 
 	return REDRAW;
 }

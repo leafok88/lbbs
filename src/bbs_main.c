@@ -21,6 +21,7 @@
 #include "login.h"
 #include "user_priv.h"
 #include "common.h"
+#include "database.h"
 #include "log.h"
 #include "io.h"
 #include "screen.h"
@@ -42,11 +43,7 @@ int bbs_info()
 
 int bbs_exit()
 {
-	char temp[256];
-
-	strcpy(temp, app_home_dir);
-	strcat(temp, "data/goodbye.txt");
-	display_file_ex(temp, 1, 0);
+	display_file_ex(DATA_GOODBYE, 1, 0);
 
 	sleep(1);
 
@@ -55,8 +52,7 @@ int bbs_exit()
 
 int bbs_center()
 {
-	int ch, result, redraw;
-	char temp[256];
+	int ch, redraw;
 	time_t t_last_action;
 
 	BBS_last_access_tm = t_last_action = time(0);
@@ -120,7 +116,6 @@ int bbs_center()
 
 int bbs_main()
 {
-	char temp[256];
 	int ret;
 
 	set_input_echo(0);
@@ -139,9 +134,7 @@ int bbs_main()
 	clearscr();
 
 	// BBS Top 10
-	strcpy(temp, app_home_dir);
-	strcat(temp, "var/bbs_top.txt");
-	display_file_ex(temp, 1, 1);
+	display_file_ex("./var/bbs_top.txt", 1, 1);
 
 	// Main
 	bbs_center();
@@ -149,6 +142,16 @@ int bbs_main()
 	// Logout
 	bbs_exit();
 	log_std("User logout\n");
+
+	MYSQL *db = db_open();
+	if (db == NULL)
+	{
+		return -1;
+	}
+
+	user_online_del(db);
+
+	mysql_close(db);
 
 	return 0;
 }

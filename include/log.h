@@ -20,7 +20,7 @@
 
 extern int log_begin(char *file_log_std, char *file_log_err);
 
-extern int log_end();
+extern void log_end();
 
 extern int log_head(char *buf);
 

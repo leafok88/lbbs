@@ -58,12 +58,17 @@ int iflush()
 
 int igetch(int clear_buf)
 {
+	// static input buffer
 	static char buf[256];
-	unsigned char c, tmp[256];
-	int out = KEY_NULL, loop = 1, in_esc = 0, in_ascii = 0, in_control = 0, i = 0, j, result;
-	static int len = 0, pos = 0;
-	fd_set testfds;
-	struct timeval timeout;
+	static int len = 0;
+	static int pos = 0;
+
+	unsigned char tmp[256];
+	int out = KEY_NULL;
+	int in_esc = 0;
+	int in_ascii = 0;
+	int in_control = 0;
+	int i = 0;
 
 	if (clear_buf)
 	{
@@ -79,6 +84,9 @@ int igetch(int clear_buf)
 
 	if (pos >= len)
 	{
+		fd_set testfds;
+		struct timeval timeout;
+
 		pos = 0;
 		len = 0;
 
@@ -88,7 +96,7 @@ int igetch(int clear_buf)
 		timeout.tv_sec = 1;
 		timeout.tv_usec = 0;
 
-		result = SignalSafeSelect(FD_SETSIZE, &testfds, (fd_set *)NULL,
+		int result = SignalSafeSelect(FD_SETSIZE, &testfds, (fd_set *)NULL,
 								  (fd_set *)NULL, &timeout);
 
 		if (result == 0)
@@ -115,7 +123,7 @@ int igetch(int clear_buf)
 
 	while (pos < len)
 	{
-		c = buf[pos++];
+		unsigned char c = buf[pos++];
 
 		if (c == '\0')
 		{

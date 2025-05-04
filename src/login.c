@@ -32,18 +32,15 @@
 
 void login_fail()
 {
-	char temp[256];
-
-	strcpy(temp, app_home_dir);
-	strcat(temp, "data/login_error.txt");
-	display_file(temp);
+	display_file(DATA_LOGIN_ERROR);
 
 	sleep(1);
 }
 
 int bbs_login()
 {
-	char username[20], password[20];
+	char username[BBS_username_max_len + 1];
+	char password[BBS_password_max_len + 1];
 	int count, ok;
 
 	// Input username
@@ -55,17 +52,17 @@ int bbs_login()
 			   "×¢²áÇëÊäÈë`\033[1;31mnew\033[m'): ");
 		iflush();
 
-		str_input(username, 19, DOECHO);
+		str_input(username, BBS_username_max_len, DOECHO);
 		count++;
 
 		if (strcmp(username, "guest") == 0)
 		{
-			MYSQL * db = db_open();
+			MYSQL *db = db_open();
 			if (db == NULL)
 			{
 				return -1;
 			}
-		
+
 			load_guest_info(db);
 
 			mysql_close(db);
@@ -87,14 +84,14 @@ int bbs_login()
 			prints("\033[1;37mÇëÊäÈëÃÜÂë\033[m: ");
 			iflush();
 
-			str_input(password, 19, NOECHO);
+			str_input(password, BBS_password_max_len, NOECHO);
 
-			MYSQL * db = db_open();
+			MYSQL *db = db_open();
 			if (db == NULL)
 			{
 				return -1;
 			}
-		
+
 			ok = (check_user(db, username, password) == 0);
 
 			mysql_close(db);
@@ -113,9 +110,9 @@ int check_user(MYSQL *db, char *username, char *password)
 {
 	MYSQL_RES *rs;
 	MYSQL_ROW row;
-	char sql[1024];
-	long int BBS_uid;
+	char sql[SQL_BUFFER_LEN];
 	int ret;
+	long BBS_uid = 0;
 
 	// Verify format
 	if (ireg("^[A-Za-z][A-Za-z0-9]{2,11}$", username, 0, NULL) != 0 ||
@@ -153,7 +150,7 @@ int check_user(MYSQL *db, char *username, char *password)
 		log_error("Get user_list data failed\n");
 		return -1;
 	}
-	if (row = mysql_fetch_row(rs))
+	if ((row = mysql_fetch_row(rs)))
 	{
 		BBS_uid = atol(row[0]);
 		strcpy(BBS_username, row[1]);
@@ -253,6 +250,11 @@ int check_user(MYSQL *db, char *username, char *password)
 		return -1;
 	}
 
+	if (user_online_add(db) != 0)
+	{
+		return -1;
+	}
+
 	BBS_last_access_tm = BBS_login_tm = time(0);
 
 	return 0;
@@ -262,7 +264,7 @@ int load_user_info(MYSQL *db, long int BBS_uid)
 {
 	MYSQL_RES *rs;
 	MYSQL_ROW row;
-	char sql[1024];
+	char sql[SQL_BUFFER_LEN];
 	int life;
 	time_t last_login_dt;
 
@@ -280,7 +282,7 @@ int load_user_info(MYSQL *db, long int BBS_uid)
 		log_error("Get user_pubinfo data failed\n");
 		return -1;
 	}
-	if (row = mysql_fetch_row(rs))
+	if ((row = mysql_fetch_row(rs)))
 	{
 		life = atoi(row[0]);
 		last_login_dt = (time_t)atol(row[1]);
@@ -288,31 +290,77 @@ int load_user_info(MYSQL *db, long int BBS_uid)
 	else
 	{
 		mysql_free_result(rs);
-		return (-1); // Data not found
+		return -1; // Data not found
 	}
 	mysql_free_result(rs);
 
 	if (life != 333 && life != 365 && life != 666 && life != 999 && // Not immortal
 		time(0) - last_login_dt > 60 * 60 * 24 * life)
 	{
-		return (-3); // Dead
+		return -3; // Dead
 	}
 
-	load_priv(db, &BBS_priv, BBS_uid);
+	if (load_priv(db, &BBS_priv, BBS_uid) != 0)
+	{
+		return -1;
+	}
 
 	return 0;
 }
 
 int load_guest_info(MYSQL *db)
 {
-	MYSQL_RES *rs;
-	MYSQL_ROW row;
-
 	strcpy(BBS_username, "guest");
 
-	load_priv(db, &BBS_priv, 0);
+	if (load_priv(db, &BBS_priv, 0) != 0)
+	{
+		return -1;
+	}
+
+	if (user_online_add(db) != 0)
+	{
+		return -1;
+	}
 
 	BBS_last_access_tm = BBS_login_tm = time(0);
+
+	return 0;
+}
+
+int user_online_add(MYSQL *db)
+{
+	char sql[SQL_BUFFER_LEN];
+
+	if (user_online_del(db) != 0)
+	{
+		return -1;
+	}
+
+	sprintf(sql,
+			"INSERT INTO user_online(SID, UID, ip, login_tm, last_tm) "
+			"VALUES('Telnet_Process_%d', %ld, '%s', NOW(), NOW())",
+			getpid(), BBS_priv.uid, hostaddr_client);
+	if (mysql_query(db, sql) != 0)
+	{
+		log_error("Add user_online failed\n");
+		return -1;
+	}
+
+	return 0;
+}
+
+int user_online_del(MYSQL *db)
+{
+	char sql[SQL_BUFFER_LEN];
+
+	sprintf(sql,
+			"DELETE FROM user_online WHERE SID = 'Telnet_Process_%d'",
+			getpid());
+	if (mysql_query(db, sql) != 0)
+	{
+		log_error("Delete user_online failed\n");
+		return -1;
+	}
 
 	return 0;
 }
