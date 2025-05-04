@@ -15,7 +15,8 @@
 	$buffer =
 		"               \033[1;34m-----\033[37m=====\033[41;37m 本站十大热门话题 \033[40m=====\033[34m-----\033[m\r\n\r\n";
 
-	$sql = "SELECT AID, bbs.title AS title, sname, username, sub_dt
+	$sql = "SELECT AID, bbs.title AS title, sname,
+			section_config.title AS s_title, username, sub_dt
 			FROM bbs INNER JOIN section_config ON bbs.SID = section_config.SID
 			WHERE section_config.recommend AND TID = 0 AND visible AND view_count >= 10
 			AND (sub_dt >= SUBDATE(NOW(), INTERVAL 7 DAY))
@@ -35,11 +36,12 @@
 		$title_f = split_line($row["title"], "", 60, 1, "");
 
 		$buffer .= sprintf (
-			" \033[1;37m第 \033[31m%2d \033[37m名 版块 : \033[33m%s%s \033[37m【 \033[32m%s \033[37m】   \033[35m%s%s \n" .
-			" \033[37m         标题 : \033[44;37m%s%s \033[0;40;37m\n",
+			" \033[1;37m第 \033[31m%2d \033[37m名 版块 : \033[33m%s [%s]%s \033[37m【 \033[32m%s \033[37m】\033[35m%s%s \n" .
+			" \033[37m         标题 : \033[44;37m%s%s  \033[0;40;37m \n",
 			$i++,
+			$row["s_title"],
 			$row["sname"],
-			str_repeat(" ", 20 - strlen($row["sname"])),
+			str_repeat(" ", 20 - str_length($row["s_title"]) - strlen($row["sname"])),
 			(new DateTimeImmutable($row["sub_dt"]))->format("M d H:i:s"),
 			str_repeat(" ", 16 - strlen($row["username"])),
 			$row["username"],
