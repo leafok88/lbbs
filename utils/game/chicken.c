@@ -5,6 +5,7 @@
 #include "bbs.h"
 #include "common.h"
 #include "io.h"
+#include "log.h"
 #include "screen.h"
 #include "money.h"
 #include <stdio.h>
@@ -12,7 +13,8 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-#define DATA_FILE "chicken"
+#define DATA_FILE "var/chicken"
+#define LOG_FILE "var/chicken/log"
 
 char
 	*cstate[10] = {"ÎÒÔÚ³Ô·¹", "Íµ³ÔÁãÊ³", "À­±ã±ã", "±¿µ°..Êä¸ø¼¦?", "¹þ..Ó®Ð¡¼¦Ò²Ã»¶à¹âÈÙ", "Ã»Ê³ÎïÀ²..", "Æ£ÀÍÈ«Ïû!"};
@@ -47,7 +49,7 @@ static int win_c(void);
 int chicken_main()
 {
 	FILE *fp;
-	time_t now = time(0);
+	time_t now;
 	struct tm *ptime;
 	char fname[50];
 
@@ -103,13 +105,18 @@ static int creat_a_egg()
 		strcpy(Name, "±¦±¦");
 		get_data(2, 0, "°ïÐ¡¼¦È¡¸öºÃÃû×Ö£º", Name, 21, DOECHO);
 	}
+
 	setuserfile(fname, DATA_FILE);
-	fp = fopen(fname, "w");
+	if ((fp = fopen(fname, "w")) == NULL)
+	{
+		log_error("Error!!cannot open file '%s'!\n", fname);
+		return -1;
+	}
 	fprintf(fp, "%d %d %d %d %d %d %d %d %d %d %d %d %d %d %s ", ptime->tm_hour * 2, ptime->tm_mday, ptime->tm_mon + 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10, 5, Name);
 	fclose(fp);
-	if ((fp = fopen("game/chicken", "a")) == NULL)
+	if ((fp = fopen(LOG_FILE, "a")) == NULL)
 	{
-		prints("Error!!cannot open then 'game/chicken'!\r\n");
+		log_error("Error!!cannot open file '%s'!\n", LOG_FILE);
 		return -1;
 	}
 	fprintf(fp, "[32m%s[m ÔÚ [34;43m[%d/%d  %d:%02d][m  ÑøÁËÒ»Ö»½Ð [33m%s[m µÄÐ¡¼¦\r\n",
@@ -531,9 +538,11 @@ int death()
 	ptime = localtime(&now);
 	clearscr();
 	clrtobot(5);
-	if ((fp = fopen("game/chicken", "a")) != NULL)
-		prints("Error!\r\n");
-	/*fp=fopen("game/chicken,"ab");*/
+	if ((fp = fopen(LOG_FILE, "a")) == NULL)
+	{
+		log_error("Error!!cannot open file '%s'!\n", LOG_FILE);
+		return -1;
+	}
 	fprintf(fp, "[32m%s[m ÔÚ [34;43m[%d/%d  %d:%02d][m  µÄÐ¡¼¦ [33m%s  [36m¹ÒÁË~~[m \r\n",
 			BBS_username, ptime->tm_mon + 1, ptime->tm_mday,
 			ptime->tm_hour, ptime->tm_min, Name);
@@ -583,11 +592,6 @@ int pressany(int i)
 int guess()
 {
 	int ch, com;
-	struct tm *qtime;
-	time_t now;
-
-	time(&now);
-	qtime = localtime(&now);
 
 	do
 	{
@@ -595,10 +599,12 @@ int guess()
 		DOECHO,NULL);*/
 		moveto(23, 0);
 		prints("[1]-¼ôµ¶ [2]-Ê¯Í· [3]-²¼£º");
+		iflush();
 		ch = igetch(0);
 	} while ((ch != '1') && (ch != '2') && (ch != '3'));
 
 	/* com=qtime->tm_sec%3;*/
+	srand(time(NULL));
 	com = rand() % 3;
 	moveto(21, 35);
 	switch (com)
@@ -780,8 +786,11 @@ int sell()
 	if (ans[0] != 'y')
 		return -2;
 
-	if ((fp = fopen("game/chicken", "a")) != NULL)
-		;
+	if ((fp = fopen(LOG_FILE, "a")) == NULL)
+	{
+		log_error("Error!!cannot open file '%s'!\n", LOG_FILE);
+		return -1;
+	}
 	fprintf(fp, "[32m%s[m ÔÚ [34;43m[%d/%d  %d:%02d][m  °ÑÐ¡¼¦ [33m%s  [31mÒÔ [37;44m%d[m [31mÌÇ¹ûÂôÁË[m\r\n",
 			BBS_username, ptime->tm_mon + 1, ptime->tm_mday,
 			ptime->tm_hour, ptime->tm_min, Name, sel);
@@ -823,6 +832,7 @@ int gagb_c()
 	{
 		do
 		{
+			srand(time(NULL));
 			k = rand() % 9;
 		} while (flag[k] != 0);
 		flag[k] = 1;
@@ -1104,7 +1114,7 @@ static int show_m()
 
 static int doit()
 {
-	int i, j, k, m, seed, flag = 0, flag1 = 0;
+	int j, seed, flag = 0, flag1 = 0;
 	int g[10] = {5, 40, 30, 25, 50, 20, 15, 10, 2, 0};
 
 	clearscr();
@@ -1128,16 +1138,11 @@ static int doit()
 											.....¡õ
 																  ");
 	*/
-	m = 1000000;
-	for (i = 1; i <= 30; i++)
+	for (int i = 1; i <= 30; i++)
 	{
 		clearscr();
 		moveto(10, i);
 		prints("¡ñ");
-		if (i % 23 == 0)
-			m *= 10;
-		for (j = 1; j <= m; j++)
-			k = 0;
 
 		iflush();
 	}
@@ -1153,6 +1158,7 @@ static int doit()
 
 	do
 	{
+		srand(time(NULL));
 		ran = rand() % seed;
 		flag1 = 0;
 
@@ -1235,8 +1241,10 @@ static int doit()
 
 	inmoney(gold);
 	press_any_key();
-	for (i = 0; i <= 8; i++)
+	for (int i = 0; i <= 8; i++)
+	{
 		x[i] = 0;
+	}
 	p_mon = 0;
 	q_mon = BBS_user_money;
 
