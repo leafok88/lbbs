@@ -253,7 +253,7 @@ int display_file_ex(const char *filename, int begin_line, int wait)
 
 	while (loop)
 	{
-		if (c_line_current >= c_line_total)
+		if (c_line_current >= c_line_total && c_line_total <= screen_rows - 2)
 		{
 			if (wait)
 			{
@@ -268,7 +268,7 @@ int display_file_ex(const char *filename, int begin_line, int wait)
 			break;
 		}
 
-		if (line >= max_lines)
+		if (c_line_current >= c_line_total || line >= max_lines)
 		{
 			if (c_line_current - (line - 1) + (screen_rows - 2) < c_line_total)
 			{
@@ -276,13 +276,13 @@ int display_file_ex(const char *filename, int begin_line, int wait)
 			}
 			else
 			{
-				log_error("P100 reached\n");
 				percentile = 100;
 			}
 
 			moveto(screen_rows, 0);
-			prints("\033[1;44;32m下面还有喔 (%d%%)\033[33m   │ 结束 ← <q> │ ↑/↓/PgUp/PgDn 移动 │ ? 辅助说明 │     \033[m",
-				   percentile);
+			prints("\033[1;44;32m%s (%d%%)%s\033[33m  │ 结束 ← <q> │ ↑/↓/PgUp/PgDn 移动 │ ? 辅助说明 │     \033[m",
+				   (percentile < 100 ? "下面还有喔" : "没有更多了"), percentile,
+				   (percentile < 10 ? "  " : (percentile < 100 ? " " : "")));
 			iflush();
 
 			input_ok = 0;
@@ -301,7 +301,7 @@ int display_file_ex(const char *filename, int begin_line, int wait)
 					line = begin_line;
 					max_lines = begin_line + 1;
 					prints("\033[T"); // Scroll down 1 line
-					//max_lines = screen_rows - 1; // Legacy Fterm only works with this line
+					// max_lines = screen_rows - 1; // Legacy Fterm only works with this line
 					break;
 				case KEY_DOWN:
 				case CR:
