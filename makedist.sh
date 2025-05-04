@@ -17,7 +17,7 @@ md ${PRG_HOME} conf
 md ${PRG_HOME} data
 md ${PRG_HOME} var
 md ${PRG_HOME} log
-md ${PRG_HOME}/data chicken
+md ${PRG_HOME}/var chicken
 
 for i in `find conf/ -maxdepth 1 -type f`; do
 cpfile ${PRG_HOME} $i

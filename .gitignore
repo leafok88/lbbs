@@ -1,7 +1,5 @@
 /conf/bbsd.conf
 /utils/conf/db_conn.conf.php
-/var
-/log
 /aclocal.m4
 /autom4te.cache
 /compile
@@ -14,6 +12,9 @@
 /depcomp
 /libtool
 /ltmain.sh
+/m4
+/log
+/var
 CVS
 .cvsignore
 .vscode

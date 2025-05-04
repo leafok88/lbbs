@@ -5,15 +5,12 @@ AC_PREREQ([2.69])
 AC_INIT([bbsd],[1.0])
 AC_CONFIG_SRCDIR([src/])
 # AM_CONFIG_HEADERS(config.h)
-AM_INIT_AUTOMAKE
+AC_CONFIG_MACRO_DIRS([m4])
+AM_INIT_AUTOMAKE()
 
-AC_ARG_ENABLE(werror,
-        AS_HELP_STRING([--enable-werror],[Enable -Werror in all Makefiles]))
-		
 # Checks for programs.
 AC_PROG_GCC_TRADITIONAL
 LT_INIT
-AC_PROG_RANLIB
 AC_PROG_CXX
 AC_PROG_CC
 AC_PROG_CPP
