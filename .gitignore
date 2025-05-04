@@ -28,4 +28,5 @@ Makefile
 *.so
 *.so.*
 *.lo
+*.Tpo
 bbsd
