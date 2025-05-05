@@ -57,7 +57,9 @@ int load_bbsnet_conf(const char *file_config)
 
 	fp = fopen(file_config, "r");
 	if (fp == NULL)
+	{
 		return -1;
+	}
 
 	p_menu = bbsnet_menu.p_menu[0] = malloc(sizeof(MENU));
 	strcpy(p_menu->name, "BBSNET");
@@ -66,17 +68,12 @@ int load_bbsnet_conf(const char *file_config)
 
 	while (fgets(t, 255, fp) && item_count < MAXSTATION)
 	{
-		if (t[0] == '#' || t[0] == '*')
-		{
-			continue;
-		}
-
 		t1 = strtok_r(t, " \t", &saveptr);
 		t2 = strtok_r(NULL, " \t\n", &saveptr);
 		t3 = strtok_r(NULL, " \t\n", &saveptr);
 		t4 = strtok_r(NULL, " \t\n", &saveptr);
 
-		if (t1 == NULL || t2 == NULL || t3 == NULL)
+		if (t1 == NULL || t2 == NULL || t3 == NULL || t[0] == '#' || t[0] == '*')
 		{
 			continue;
 		}
@@ -114,8 +111,7 @@ int load_bbsnet_conf(const char *file_config)
 	return 0;
 }
 
-static void
-process_bar(int n, int len)
+static void process_bar(int n, int len)
 {
 	char buf[256];
 	char buf2[256];
@@ -223,7 +219,9 @@ int bbsnet_connect(int n)
 			continue;
 		}
 		else if (rv == 0)
+		{
 			break;
+		}
 		else
 		{
 			prints("\033[1;31mÁ¬½ÓÊ§°Ü£¡\033[m\r\n");
@@ -313,12 +311,10 @@ int bbsnet_connect(int n)
 static int
 bbsnet_refresh()
 {
-	int i;
-
 	clearscr();
 	moveto(1, 0);
 	prints("¨q¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨r");
-	for (i = 2; i < 19; i++)
+	for (int i = 2; i < 19; i++)
 	{
 		moveto(i, 0);
 		prints("¨U");
@@ -349,7 +345,9 @@ int bbsnet_selchange(int new_pos)
 	clrtoeol();
 	prints("¨U\x1b[1mÁ¬Íù:\x1b[1;33m%-20s", bbsnet_conf[new_pos].ip);
 	if (bbsnet_conf[new_pos].port != 23)
+	{
 		prints("  %d", bbsnet_conf[new_pos].port);
+	}
 	prints("\x1b[m");
 	moveto(21, 79);
 	prints("¨U");
@@ -395,13 +393,17 @@ int bbs_net()
 			break;
 		case KEY_UP:
 			for (i = 0; i < STATION_PER_LINE; i++)
+			{
 				menu_control(&bbsnet_menu, KEY_UP);
+			}
 			pos = bbsnet_menu.p_menu[0]->item_cur_pos;
 			bbsnet_selchange(pos);
 			break;
 		case KEY_DOWN:
 			for (i = 0; i < STATION_PER_LINE; i++)
+			{
 				menu_control(&bbsnet_menu, KEY_DOWN);
+			}
 			pos = bbsnet_menu.p_menu[0]->item_cur_pos;
 			bbsnet_selchange(pos);
 			break;

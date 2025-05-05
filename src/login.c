@@ -41,11 +41,10 @@ int bbs_login()
 {
 	char username[BBS_username_max_len + 1];
 	char password[BBS_password_max_len + 1];
-	int count, ok;
+	int count = 0;
+	int ok = 0;
 
 	// Input username
-	count = 0;
-	ok = 0;
 	while (!ok)
 	{
 		prints("\033[1;33m«Î ‰»Î’ ∫≈\033[m( ‘”√«Î ‰»Î `\033[1;36mguest\033[m', "

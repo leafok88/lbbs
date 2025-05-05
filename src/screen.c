@@ -151,7 +151,7 @@ static int _str_input(char *buffer, int buffer_length, int echo_mode)
 		{
 			if (!hz && offset + 2 > buffer_length) // No enough space for Chinese character
 			{
-				igetch(1); // Clear remaining input
+				igetch(1); // Cleanup remaining input
 				outc('\a');
 				iflush();
 				continue;
@@ -181,21 +181,21 @@ static int _str_input(char *buffer, int buffer_length, int echo_mode)
 		}
 	}
 
-	prints("\r\n");
-	iflush();
-
 	return offset;
 }
 
 int str_input(char *buffer, int buffer_length, int echo_mode)
 {
-	int offset;
+	int len;
 
-	memset(buffer, '\0', buffer_length);
+	buffer[0] = '\0';
 
-	offset = _str_input(buffer, buffer_length, echo_mode);
+	len = _str_input(buffer, buffer_length, echo_mode);
 
-	return offset;
+	prints("\r\n");
+	iflush();
+
+	return len;
 };
 
 int get_data(int row, int col, char *prompt, char *buffer, int buffer_length, int echo_mode)
