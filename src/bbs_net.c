@@ -90,7 +90,7 @@ int load_bbsnet_conf(const char *file_config)
 		p_menuitem = p_menu->items[item_count] = malloc(sizeof(MENU_ITEM));
 		p_menuitem->row = 2 + item_count / STATION_PER_LINE;
 		p_menuitem->col = 5 + item_count % STATION_PER_LINE * 20;
-		sprintf(p_menuitem->action, "%d", item_count);
+		snprintf(p_menuitem->action, sizeof(p_menuitem->action), "%d", item_count);
 		p_menuitem->submenu = 0;
 		p_menuitem->priv = 0;
 		p_menuitem->level = 0;
@@ -125,7 +125,7 @@ static void process_bar(int n, int len)
 
 	moveto(4, 0);
 	prints("©°©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©´\r\n");
-	sprintf(buf2, "            %3d%%              ", n * 100 / len);
+	snprintf(buf2, sizeof(buf2), "            %3d%%              ", n * 100 / len);
 	ptr = buf;
 	ptr2 = buf2;
 	ptr3 = buf + n;

@@ -96,7 +96,7 @@ int load_priv(MYSQL *db, BBS_user_priv *p_priv, long int uid)
 		return 1;
 
 	// Permission
-	sprintf(sql, "SELECT p_post, p_msg FROM user_list WHERE UID = %ld AND verified",
+	snprintf(sql, sizeof(sql), "SELECT p_post, p_msg FROM user_list WHERE UID = %ld AND verified",
 			uid);
 	if (mysql_query(db, sql) != 0)
 	{
@@ -116,7 +116,7 @@ int load_priv(MYSQL *db, BBS_user_priv *p_priv, long int uid)
 	mysql_free_result(rs);
 
 	// Admin
-	sprintf(sql, "SELECT major FROM admin_config WHERE UID = %ld "
+	snprintf(sql, sizeof(sql), "SELECT major FROM admin_config WHERE UID = %ld "
 				 "AND enable AND (NOW() BETWEEN begin_dt AND end_dt)",
 			uid);
 	if (mysql_query(db, sql) != 0)
@@ -137,7 +137,7 @@ int load_priv(MYSQL *db, BBS_user_priv *p_priv, long int uid)
 	mysql_free_result(rs);
 
 	// Section Master
-	sprintf(sql, "SELECT section_master.SID, major FROM section_master "
+	snprintf(sql, sizeof(sql), "SELECT section_master.SID, major FROM section_master "
 				 "INNER JOIN section_config ON section_master.SID = section_config.SID "
 				 "WHERE UID = %ld AND section_master.enable AND section_config.enable "
 				 "AND (NOW() BETWEEN begin_dt AND end_dt)",
@@ -160,7 +160,7 @@ int load_priv(MYSQL *db, BBS_user_priv *p_priv, long int uid)
 	mysql_free_result(rs);
 
 	// Section status
-	sprintf(sql, "SELECT SID, exp_get, read_user_level, write_user_level FROM section_config "
+	snprintf(sql, sizeof(sql), "SELECT SID, exp_get, read_user_level, write_user_level FROM section_config "
 				 "INNER JOIN section_class ON section_config.CID = section_class.CID "
 				 "WHERE section_config.enable AND section_class.enable "
 				 "ORDER BY SID");
@@ -194,7 +194,7 @@ int load_priv(MYSQL *db, BBS_user_priv *p_priv, long int uid)
 	mysql_free_result(rs);
 
 	// Section ban
-	sprintf(sql, "SELECT SID FROM ban_user_list WHERE UID = %ld AND enable "
+	snprintf(sql, sizeof(sql), "SELECT SID FROM ban_user_list WHERE UID = %ld AND enable "
 				 "AND (NOW() BETWEEN ban_dt AND unban_dt)",
 			uid);
 	if (mysql_query(db, sql) != 0)

@@ -51,13 +51,13 @@ int chicken_main()
 	FILE *fp;
 	time_t now;
 	struct tm *ptime;
-	char fname[50];
+	char fname[FILE_PATH_LEN];
 
 	agetmp = 1;
 	//  modify_user_mode(CHICK);
 	time(&now);
 	ptime = localtime(&now);
-	setuserfile(fname, DATA_FILE);
+	setuserfile(fname, sizeof(fname), DATA_FILE);
 	if ((fp = fopen(fname, "r+")) == NULL)
 	{
 		creat_a_egg();
@@ -108,7 +108,7 @@ static int creat_a_egg()
 		get_data(2, 0, "°ïÐ¡¼¦È¡¸öºÃÃû×Ö£º", Name, 21, DOECHO);
 	}
 
-	setuserfile(fname, DATA_FILE);
+	setuserfile(fname, sizeof(fname), DATA_FILE);
 	if ((fp = fopen(fname, "w")) == NULL)
 	{
 		log_error("Error!!cannot open file '%s'!\n", fname);
@@ -345,7 +345,7 @@ static int select_menu()
 	{
 		moveto(23, 0);
 		prints("[0;46;31m  Ê¹ÓÃ°ïÖú  [0;47;34m c ¸ÄÃû×Ö   k É±¼¦   t Ïû³ý·ÇÆ£ÀÍ($50)        [m");
-		strcpy(inbuf, "");
+		inbuf[0] = '\0';
 		get_data(22, 0, "Òª×öÐ©Ê²÷áÄØ?£º[0]", inbuf, 4, DOECHO);
 		if (tiredstrong > 20)
 		{
@@ -552,10 +552,9 @@ int death()
 	prints("ÎØ...Ð¡¼¦¹ÒÁË....");
 	prints("\r\n±¿Ê·ÁË...¸Ï³öÏµÍ³...");
 	press_any_key();
-	setuserfile(fname, DATA_FILE);
+	setuserfile(fname, sizeof(fname), DATA_FILE);
 
 	unlink(fname);
-	// strcpy(Name,"");
 	creat_a_egg();
 	chicken_main();
 	// abort_bbs();
@@ -720,7 +719,7 @@ void p_bf()
 		press_any_key();
 		return;
 	}
-	setuserfile(fname, "chicken");
+	setuserfile(fname, sizeof(fname), "chicken");
 	if ((fp = fopen(fname, "r+")) == NULL)
 	{
 		prints("Ã»Ñø¼¦..²»¸øÄãÂò..¹þ¹þ...");
@@ -800,7 +799,7 @@ int sell()
 	clearscr();
 
 	inmoney(sel);
-	strcpy(Name, "");
+	Name[0] = '\0';
 	creat_a_egg();
 	chicken_main();
 	return 0;
@@ -1058,7 +1057,6 @@ static int show_m()
 		/*    demoney(j);*/
 		q_mon -= j;
 		p_mon += j;
-		/*       strcpy(buf," ");*/
 		show_m();
 		return 0;
 		break;

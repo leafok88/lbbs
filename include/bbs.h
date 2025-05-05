@@ -45,6 +45,6 @@ extern time_t BBS_last_access_tm;
 
 extern char BBS_current_section_name[20];
 
-extern char *setuserfile(char *buf, const char *filename);
+extern char *setuserfile(char *buf, int len, const char *filename);
 
 #endif //_BBS_H_

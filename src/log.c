@@ -51,14 +51,14 @@ void log_end()
 	fclose(fp_log_err);
 }
 
-int log_head(char *buf)
+int log_head(char *buf, int len)
 {
 	time_t t;
 	char s_time[256];
 	t = time(0);
 
 	strftime(s_time, sizeof(s_time), "%Y-%m-%d %H:%M:%S", localtime(&t));
-	sprintf(buf, "[%s] [%d] ", s_time, getpid());
+	snprintf(buf, len, "[%s] [%d] ", s_time, getpid());
 
 	return 0;
 }
@@ -69,7 +69,7 @@ int log_std(const char *format, ...)
 	int retval;
 	char buf[1024];
 
-	log_head(buf);
+	log_head(buf, sizeof(buf));
 	strncat(buf, format, sizeof(buf) - strnlen(buf, sizeof(buf)));
 
 	va_start(args, format);
@@ -87,7 +87,7 @@ int log_error(const char *format, ...)
 	int retval;
 	char buf[1024];
 
-	log_head(buf);
+	log_head(buf, sizeof(buf));
 	strncat(buf, format, sizeof(buf) - strnlen(buf, sizeof(buf)));
 
 	va_start(args, format);

@@ -118,7 +118,7 @@ int load_conf(const char *conf_file)
 		{
 			int y = 0, m = 0, d = 0;
 			fscanf(fin, "%d-%d-%d", &y, &m, &d);
-			sprintf(BBS_start_dt, "%4d年%2d月%2d日", y, m, d);
+			snprintf(BBS_start_dt, sizeof(BBS_start_dt), "%4d年%2d月%2d日", y, m, d);
 		}
 		if (strcmp(c_name, "db_host") == 0)
 		{

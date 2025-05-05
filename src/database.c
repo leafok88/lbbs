@@ -54,7 +54,7 @@ MYSQL *db_open()
 		return NULL;
 	}
 
-	sprintf(sql,
+	snprintf(sql, sizeof(sql),
 			"SET time_zone = '%s'",
 			DB_timezone);
 

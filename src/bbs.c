@@ -39,8 +39,8 @@ time_t BBS_last_access_tm;
 
 char BBS_current_section_name[20];
 
-char *setuserfile(char *buf, const char *filename)
+char *setuserfile(char *buf, int len, const char *filename)
 {
-	sprintf(buf, "%s/%ld", filename, BBS_priv.uid);
+	snprintf(buf, len, "%s/%ld", filename, BBS_priv.uid);
 	return buf;
 }

@@ -65,7 +65,7 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 				strncpy(temp, buffer + pmatch[1].rm_so,
 						pmatch[1].rm_eo - pmatch[1].rm_so);
 				temp[pmatch[1].rm_eo - pmatch[1].rm_so] = '\0';
-				sprintf(screen_filename, "%s/MENU_SCR_%s", MENU_TEMP_DIR, temp);
+				snprintf(screen_filename, sizeof(screen_filename), "%s/MENU_SCR_%s", MENU_TEMP_DIR, temp);
 
 				if ((fout = fopen(screen_filename, "w")) == NULL)
 				{
@@ -250,8 +250,9 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 								buffer + pmatch[3].rm_so,
 								pmatch[3].rm_eo - pmatch[3].rm_so);
 						temp[pmatch[3].rm_eo - pmatch[3].rm_so] = '\0';
-						sprintf(p_menu_set->p_menu[i]->screen.filename,
-								"%s/MENU_SCR_%s", MENU_TEMP_DIR, temp);
+						snprintf(p_menu_set->p_menu[i]->screen.filename,
+								 sizeof(p_menu_set->p_menu[i]->screen.filename),
+								 "%s/MENU_SCR_%s", MENU_TEMP_DIR, temp);
 						continue;
 					}
 				}

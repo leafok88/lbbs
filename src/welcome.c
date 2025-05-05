@@ -45,7 +45,7 @@ int bbs_welcome()
 		return -1;
 	}
 
-	strcpy(sql,
+	snprintf(sql, sizeof(sql),
 		   "SELECT COUNT(*) AS cc FROM "
 		   "(SELECT DISTINCT SID FROM user_online "
 		   "WHERE current_action NOT IN ('exit')) AS t1");
@@ -65,7 +65,7 @@ int bbs_welcome()
 	}
 	mysql_free_result(rs);
 
-	strcpy(sql,
+	snprintf(sql, sizeof(sql),
 		   "SELECT COUNT(*) AS cc FROM "
 		   "(SELECT DISTINCT SID FROM user_online "
 		   "WHERE UID = 0 AND current_action NOT IN ('exit')) AS t1");
@@ -85,7 +85,7 @@ int bbs_welcome()
 	}
 	mysql_free_result(rs);
 
-	strcpy(sql, "SELECT COUNT(UID) AS cc FROM user_list WHERE enable");
+	snprintf(sql, sizeof(sql), "SELECT COUNT(UID) AS cc FROM user_list WHERE enable");
 	if (mysql_query(db, sql) != 0)
 	{
 		log_error("Query user_list failed\n");
@@ -102,7 +102,7 @@ int bbs_welcome()
 	}
 	mysql_free_result(rs);
 
-	strcpy(sql, "SELECT ID FROM user_login_log ORDER BY ID LIMIT 1");
+	snprintf(sql, sizeof(sql), "SELECT ID FROM user_login_log ORDER BY ID LIMIT 1");
 	if (mysql_query(db, sql) != 0)
 	{
 		log_error("Query user_login_log failed\n");

@@ -135,7 +135,7 @@ int check_user(MYSQL *db, char *username, char *password)
 		return -1;
 	}
 
-	sprintf(sql,
+	snprintf(sql, sizeof(sql),
 			"SELECT UID, username, p_login FROM user_list "
 			"WHERE username = '%s' AND password = SHA2('%s', 256) AND enable",
 			username, password);
@@ -159,7 +159,7 @@ int check_user(MYSQL *db, char *username, char *password)
 		mysql_free_result(rs);
 
 		// Add user login log
-		sprintf(sql,
+		snprintf(sql, sizeof(sql),
 				"INSERT INTO user_login_log(UID, login_dt, login_ip) "
 				"VALUES(%ld, NOW(), '%s')",
 				BBS_uid, hostaddr_client);
@@ -189,7 +189,7 @@ int check_user(MYSQL *db, char *username, char *password)
 	{
 		mysql_free_result(rs);
 
-		sprintf(sql,
+		snprintf(sql, sizeof(sql),
 				"INSERT INTO user_err_login_log(username, password, login_dt, login_ip) "
 				"VALUES('%s', '%s', NOW(), '%s')",
 				username, password, hostaddr_client);
@@ -240,7 +240,7 @@ int check_user(MYSQL *db, char *username, char *password)
 		return -2;
 	}
 
-	sprintf(sql,
+	snprintf(sql, sizeof(sql),
 			"UPDATE user_pubinfo SET visit_count = visit_count + 1, "
 			"last_login_dt = NOW() WHERE UID = %ld",
 			BBS_uid);
@@ -268,7 +268,7 @@ int load_user_info(MYSQL *db, long int BBS_uid)
 	int life;
 	time_t last_login_dt;
 
-	sprintf(sql,
+	snprintf(sql, sizeof(sql),
 			"SELECT life, UNIX_TIMESTAMP(last_login_dt) "
 			"FROM user_pubinfo WHERE UID = %ld",
 			BBS_uid);
@@ -337,7 +337,7 @@ int user_online_add(MYSQL *db)
 		return -1;
 	}
 
-	sprintf(sql,
+	snprintf(sql, sizeof(sql),
 			"INSERT INTO user_online(SID, UID, ip, login_tm, last_tm) "
 			"VALUES('Telnet_Process_%d', %ld, '%s', NOW(), NOW())",
 			getpid(), BBS_priv.uid, hostaddr_client);
@@ -354,7 +354,7 @@ int user_online_del(MYSQL *db)
 {
 	char sql[SQL_BUFFER_LEN];
 
-	sprintf(sql,
+	snprintf(sql, sizeof(sql),
 			"DELETE FROM user_online WHERE SID = 'Telnet_Process_%d'",
 			getpid());
 	if (mysql_query(db, sql) != 0)
