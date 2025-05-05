@@ -124,7 +124,7 @@ static void process_bar(int n, int len)
 	char *ptr3;
 
 	moveto(4, 0);
-	prints("┌──────────────────────────────┐\r\n");
+	prints(" ------------------------------ \r\n");
 	snprintf(buf2, sizeof(buf2), "            %3d%%              ", n * 100 / len);
 	ptr = buf;
 	ptr2 = buf2;
@@ -139,8 +139,8 @@ static void process_bar(int n, int len)
 	while (*ptr2 != '\0')
 		*ptr++ = *ptr2++;
 	*ptr++ = '\0';
-	prints("│\033[46m%s\033[m│\r\n", buf);
-	prints("└──────────────────────────────┘\r\n");
+	prints("|\033[46m%s\033[m|\r\n", buf);
+	prints(" ------------------------------ \r\n");
 	iflush();
 }
 
@@ -318,18 +318,18 @@ bbsnet_refresh()
 {
 	clearscr();
 	moveto(1, 0);
-	prints("╭═════════════════════════════════════════════════════════════════════════════╮");
+	prints(" ----------------------------------------------------------------------------- ");
 	for (int i = 2; i < 19; i++)
 	{
 		moveto(i, 0);
-		prints("║");
+		prints("|");
 		moveto(i, 79);
-		prints("║");
+		prints("|");
 	}
 	moveto(19, 0);
-	prints("║—————————————————————————————————————————————————————————————————————————————║");
+	prints("|-----------------------------------------------------------------------------|");
 	moveto(22, 0);
-	prints("╰═════════════════════════════════════════════════════════════════════════════╯");
+	prints(" ----------------------------------------------------------------------------- ");
 	moveto(23, 0);
 	prints(" [\x1b[1;32mCtrl+C\x1b[m]退出");
 
@@ -342,20 +342,20 @@ int bbsnet_selchange(int new_pos)
 {
 	moveto(20, 0);
 	clrtoeol();
-	prints("║\x1b[1m单位:\x1b[1;33m%-18s\x1b[m  站名:\x1b[1;33m%s\x1b[m",
+	prints("|\x1b[1m单位:\x1b[1;33m%-18s\x1b[m  站名:\x1b[1;33m%s\x1b[m",
 		   bbsnet_conf[new_pos].host2, bbsnet_conf[new_pos].host1);
 	moveto(20, 79);
-	prints("║");
+	prints("|");
 	moveto(21, 0);
 	clrtoeol();
-	prints("║\x1b[1m连往:\x1b[1;33m%-20s", bbsnet_conf[new_pos].ip);
+	prints("|\x1b[1m连往:\x1b[1;33m%-20s", bbsnet_conf[new_pos].ip);
 	if (bbsnet_conf[new_pos].port != 23)
 	{
 		prints("  %d", bbsnet_conf[new_pos].port);
 	}
 	prints("\x1b[m");
 	moveto(21, 79);
-	prints("║");
+	prints("|");
 	iflush();
 
 	return 0;
