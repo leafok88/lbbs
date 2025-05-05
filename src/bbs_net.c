@@ -52,7 +52,7 @@ int load_bbsnet_conf(const char *file_config)
 	FILE *fp;
 	MENU *p_menu;
 	MENU_ITEM *p_menuitem;
-	char t[256], *t1, *t2, *t3, *t4;
+	char t[256], *t1, *t2, *t3, *t4, *saveptr;
 	int item_count = 0;
 
 	fp = fopen(file_config, "r");
@@ -66,19 +66,24 @@ int load_bbsnet_conf(const char *file_config)
 
 	while (fgets(t, 255, fp) && item_count < MAXSTATION)
 	{
-		t1 = strtok(t, " \t");
-		t2 = strtok(NULL, " \t\n");
-		t3 = strtok(NULL, " \t\n");
-		t4 = strtok(NULL, " \t\n");
-
-		if (t1[0] == '#' || t1[0] == '*' || t1 == NULL || t2 == NULL || t3 == NULL)
+		if (t[0] == '#' || t[0] == '*')
+		{
 			continue;
-		strncpy(bbsnet_conf[item_count].host1, t2, 18);
-		bbsnet_conf[item_count].host1[18] = 0;
-		strncpy(bbsnet_conf[item_count].host2, t1, 36);
-		bbsnet_conf[item_count].host2[36] = 0;
-		strncpy(bbsnet_conf[item_count].ip, t3, 36);
-		bbsnet_conf[item_count].ip[36] = 0;
+		}
+
+		t1 = strtok_r(t, " \t", &saveptr);
+		t2 = strtok_r(NULL, " \t\n", &saveptr);
+		t3 = strtok_r(NULL, " \t\n", &saveptr);
+		t4 = strtok_r(NULL, " \t\n", &saveptr);
+
+		if (t1 == NULL || t2 == NULL || t3 == NULL)
+		{
+			continue;
+		}
+
+		strncpy(bbsnet_conf[item_count].host1, t2, sizeof(bbsnet_conf[item_count].host1));
+		strncpy(bbsnet_conf[item_count].host2, t1, sizeof(bbsnet_conf[item_count].host2));
+		strncpy(bbsnet_conf[item_count].ip, t3, sizeof(bbsnet_conf[item_count].ip));
 		bbsnet_conf[item_count].port = t4 ? atoi(t4) : 23;
 
 		p_menuitem = p_menu->items[item_count] = malloc(sizeof(MENU_ITEM));
@@ -92,8 +97,8 @@ int load_bbsnet_conf(const char *file_config)
 		p_menuitem->name[0] =
 			(item_count < MAXSTATION / 2 ? 'A' + item_count : 'a' + item_count);
 		p_menuitem->name[1] = '\0';
-		sprintf(p_menuitem->text, "[1;36m%c.[m %s",
-				p_menuitem->name[0], bbsnet_conf[item_count].host1);
+		snprintf(p_menuitem->text, sizeof(p_menuitem->text), "[1;36m%c.[m %s",
+				p_menuitem->name[0], t2);
 
 		item_count++;
 	}
