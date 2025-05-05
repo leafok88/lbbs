@@ -96,13 +96,15 @@ static int creat_a_egg()
 	struct tm *ptime;
 	FILE *fp;
 	time_t now;
-
 	time(&now);
 	ptime = localtime(&now);
+
 	clrtobot(2);
 	while (Name[0] == '\0')
 	{
-		strncpy(Name, "宝宝", sizeof(Name));
+		strncpy(Name, "宝宝", sizeof(Name) - 1);
+		Name[sizeof(Name) - 1] = '\0';
+
 		get_data(2, 0, "帮小鸡取个好名字：", Name, 21, DOECHO);
 	}
 

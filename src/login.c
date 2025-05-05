@@ -77,7 +77,7 @@ int bbs_login()
 				return -2;
 		}
 
-		if (username[0] == '\0')
+		if (username[0] != '\0')
 		{
 			// Input password
 			prints("\033[1;37m«Î ‰»Î√‹¬Î\033[m: ");
@@ -152,7 +152,8 @@ int check_user(MYSQL *db, char *username, char *password)
 	if ((row = mysql_fetch_row(rs)))
 	{
 		BBS_uid = atol(row[0]);
-		strcpy(BBS_username, row[1]);
+		strncpy(BBS_username, row[1], sizeof(BBS_username) - 1);
+		BBS_username[sizeof(BBS_username) - 1] = '\0';
 		int p_login = atoi(row[2]);
 
 		mysql_free_result(rs);
@@ -309,7 +310,8 @@ int load_user_info(MYSQL *db, long int BBS_uid)
 
 int load_guest_info(MYSQL *db)
 {
-	strcpy(BBS_username, "guest");
+	strncpy(BBS_username, "guest", sizeof(BBS_username) - 1);
+	BBS_username[sizeof(BBS_username) - 1] = '\0';
 
 	if (load_priv(db, &BBS_priv, 0) != 0)
 	{

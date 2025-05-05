@@ -50,7 +50,8 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 		return -1;
 	}
 
-	strcpy(p_menu_set->conf_file, conf_file);
+	strncpy(p_menu_set->conf_file, conf_file, sizeof(p_menu_set->conf_file) - 1);
+	p_menu_set->conf_file[sizeof(p_menu_set->conf_file) - 1] = '\0';
 
 	while (fgets(buffer, sizeof(buffer), fin))
 	{
@@ -514,7 +515,9 @@ int reload_menu(MENU_SET *p_menu_set)
 	int result;
 	char conf_file[FILE_PATH_LEN];
 
-	strncpy(conf_file, p_menu_set->conf_file, sizeof(conf_file));
+	strncpy(conf_file, p_menu_set->conf_file, sizeof(conf_file) - 1);
+	conf_file[sizeof(conf_file) - 1] = '\0';
+
 	unload_menu(p_menu_set);
 	result = load_menu(p_menu_set, conf_file);
 

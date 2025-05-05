@@ -60,7 +60,9 @@ int net_server(const char *hostaddr, unsigned int port)
 		exit(3);
 	}
 
-	strcpy(hostaddr_server, inet_ntoa(sin.sin_addr));
+	strncpy(hostaddr_server, inet_ntoa(sin.sin_addr), sizeof(hostaddr_server) - 1);
+	hostaddr_server[sizeof(hostaddr_server) - 1] = '\0';
+
 	port_server = ntohs(sin.sin_port);
 
 	log_std("Listening at %s:%d\n", hostaddr_server, port_server);
@@ -108,7 +110,9 @@ int net_server(const char *hostaddr, unsigned int port)
 			continue;
 		}
 
-		strcpy(hostaddr_client, (const char *)inet_ntoa(sin.sin_addr));
+		strncpy(hostaddr_client, inet_ntoa(sin.sin_addr), sizeof(hostaddr_client) - 1);
+		hostaddr_client[sizeof(hostaddr_client) - 1] = '\0';
+
 		port_client = ntohs(sin.sin_port);
 
 		log_std("Accept connection from %s:%d\n", hostaddr_client,

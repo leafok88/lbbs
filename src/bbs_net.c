@@ -62,7 +62,8 @@ int load_bbsnet_conf(const char *file_config)
 	}
 
 	p_menu = bbsnet_menu.p_menu[0] = malloc(sizeof(MENU));
-	strcpy(p_menu->name, "BBSNET");
+	strncpy(p_menu->name, "BBSNET", sizeof(p_menu->name) - 1);
+	p_menu->name[sizeof(p_menu->name) - 1] = '\0';
 	p_menu->title.show = 0;
 	p_menu->screen.show = 0;
 
@@ -78,9 +79,12 @@ int load_bbsnet_conf(const char *file_config)
 			continue;
 		}
 
-		strncpy(bbsnet_conf[item_count].host1, t2, sizeof(bbsnet_conf[item_count].host1));
-		strncpy(bbsnet_conf[item_count].host2, t1, sizeof(bbsnet_conf[item_count].host2));
-		strncpy(bbsnet_conf[item_count].ip, t3, sizeof(bbsnet_conf[item_count].ip));
+		strncpy(bbsnet_conf[item_count].host1, t2, sizeof(bbsnet_conf[item_count].host1) - 1);
+		bbsnet_conf[item_count].host1[sizeof(bbsnet_conf[item_count].host1) - 1] = '\0';
+		strncpy(bbsnet_conf[item_count].host2, t1, sizeof(bbsnet_conf[item_count].host2) - 1);
+		bbsnet_conf[item_count].host2[sizeof(bbsnet_conf[item_count].host2) - 1] = '\0';
+		strncpy(bbsnet_conf[item_count].ip, t3, sizeof(bbsnet_conf[item_count].ip) - 1);
+		bbsnet_conf[item_count].ip[sizeof(bbsnet_conf[item_count].ip) - 1] = '\0';
 		bbsnet_conf[item_count].port = t4 ? atoi(t4) : 23;
 
 		p_menuitem = p_menu->items[item_count] = malloc(sizeof(MENU_ITEM));
@@ -95,7 +99,7 @@ int load_bbsnet_conf(const char *file_config)
 			(item_count < MAXSTATION / 2 ? 'A' + item_count : 'a' + item_count);
 		p_menuitem->name[1] = '\0';
 		snprintf(p_menuitem->text, sizeof(p_menuitem->text), "[1;36m%c.[m %s",
-				 p_menuitem->name[0], t2);
+				 p_menuitem->name[0], bbsnet_conf[item_count].host1);
 
 		item_count++;
 	}
@@ -198,7 +202,8 @@ int bbsnet_connect(int n)
 	sin.sin_addr = *(struct in_addr *)pHost->h_addr_list[0];
 	sin.sin_port = htons(bbsnet_conf[n].port);
 
-	strcpy(remote_addr, inet_ntoa(sin.sin_addr));
+	strncpy(remote_addr, inet_ntoa(sin.sin_addr), sizeof(remote_addr) - 1);
+	remote_addr[sizeof(remote_addr) - 1] = '\0';
 	remote_port = ntohs(sin.sin_port);
 
 	prints("\033[1;32m´©Ëó½ø¶ÈÌõÌáÊ¾Äúµ±Ç°ÒÑÊ¹ÓÃµÄÊ±¼ä¡£\033[m\r\n");

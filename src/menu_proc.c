@@ -34,9 +34,11 @@ int exec_mbem(const char *str)
 	void *hdll;
 	int (*func)();
 	char *c, *s;
-	char buf[1024];
+	char buf[FILE_PATH_LEN];
 
-	strcpy(buf, str);
+	strncpy(buf, str, sizeof(buf) - 1);
+	buf[sizeof(buf) - 1] = '\0';
+
 	s = strstr(buf, "@mod:");
 	if (s)
 	{

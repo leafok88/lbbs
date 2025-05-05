@@ -119,6 +119,8 @@ int main(int argc, char *argv[])
 
 	// Change current dir
 	strncpy(file_path_temp, argv[0], sizeof(file_path_temp) - 1);
+	file_path_temp[sizeof(file_path_temp) - 1] = '\0';
+
 	chdir(dirname(file_path_temp));
 	chdir("..");
 

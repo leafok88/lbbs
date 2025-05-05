@@ -50,47 +50,45 @@ const char *str_space(char *string, int length)
 	return string;
 }
 
-const char *get_time_str(char *string, size_t length)
+const char *get_time_str(char *s, size_t len)
 {
-	char week[20];
-	char buffer[LINE_BUFFER_LEN];
-	time_t curtime;
+	time_t curtime = time(NULL);
 	struct tm *loctime;
-
-	curtime = time(NULL);
 	loctime = localtime(&curtime);
 
-	strftime(buffer, sizeof(buffer), "%Y年%m月%d日%H:%M:%S ", loctime);
+	size_t j = strftime(s, len, "%Y年%m月%d日%H:%M:%S ", loctime);
+
+	if (j == 0)
+	{
+		return NULL;
+	}
 
 	switch (loctime->tm_wday)
 	{
 	case 0:
-		strncpy(week, "星期天", sizeof(week));
+		strncat(s, "星期天", len - j);
 		break;
 	case 1:
-		strncpy(week, "星期一", sizeof(week));
+		strncat(s, "星期一", len - j);
 		break;
 	case 2:
-		strncpy(week, "星期二", sizeof(week));
+		strncat(s, "星期二", len - j);
 		break;
 	case 3:
-		strncpy(week, "星期三", sizeof(week));
+		strncat(s, "星期三", len - j);
 		break;
 	case 4:
-		strncpy(week, "星期四", sizeof(week));
+		strncat(s, "星期四", len - j);
 		break;
 	case 5:
-		strncpy(week, "星期五", sizeof(week));
+		strncat(s, "星期五", len - j);
 		break;
 	case 6:
-		strncpy(week, "星期六", sizeof(week));
+		strncat(s, "星期六", len - j);
 		break;
 	}
-	strncat(buffer, week, sizeof(buffer) - 1 - strnlen(buffer, sizeof(buffer)));
 
-	strncpy(string, buffer, length);
-
-	return string;
+	return s;
 }
 
 void reload_bbs_menu(int i)
