@@ -98,7 +98,7 @@ int load_bbsnet_conf(const char *file_config)
 			(item_count < MAXSTATION / 2 ? 'A' + item_count : 'a' + item_count);
 		p_menuitem->name[1] = '\0';
 		snprintf(p_menuitem->text, sizeof(p_menuitem->text), "[1;36m%c.[m %s",
-				p_menuitem->name[0], t2);
+				 p_menuitem->name[0], t2);
 
 		item_count++;
 	}
@@ -124,7 +124,7 @@ process_bar(int n, int len)
 	char *ptr3;
 
 	moveto(4, 0);
-	prints("©°©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©´\r\n");
+	prints("©°©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©´\r\n");
 	sprintf(buf2, "            %3d%%              ", n * 100 / len);
 	ptr = buf;
 	ptr2 = buf2;
@@ -140,7 +140,7 @@ process_bar(int n, int len)
 		*ptr++ = *ptr2++;
 	*ptr++ = '\0';
 	prints("©¦\033[46m%s\033[m©¦\r\n", buf);
-	prints("©¸©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¼\r\n");
+	prints("©¸©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¼\r\n");
 	iflush();
 }
 
@@ -317,7 +317,7 @@ bbsnet_refresh()
 
 	clearscr();
 	moveto(1, 0);
-	prints("¨q¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨r");
+	prints("¨q¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨r");
 	for (i = 2; i < 19; i++)
 	{
 		moveto(i, 0);
@@ -326,9 +326,9 @@ bbsnet_refresh()
 		prints("¨U");
 	}
 	moveto(19, 0);
-	prints("¨U¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¨U");
+	prints("¨U¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¨U");
 	moveto(22, 0);
-	prints("¨t¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨s");
+	prints("¨t¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨s");
 	moveto(23, 0);
 	prints(" [\x1b[1;32mCtrl+C\x1b[m]ÍË³ö");
 
