@@ -287,59 +287,77 @@ static void display_menu_cursor(MENU *p_menu, int show)
 {
 	moveto((p_menu->items[p_menu->item_cur_pos])->r_row,
 		   (p_menu->items[p_menu->item_cur_pos])->r_col - 2);
-	prints(show ? ">" : " ");
+	outc(show ? '>' : ' ');
 	iflush();
 }
 
 int display_menu(MENU *p_menu)
 {
-	int i, row, col, menu_selectable = 0;
+	int row = 0;
+	int col = 0;
+	int menu_selectable = 0;
 
 	if (p_menu == NULL)
+	{
 		return -1;
+	}
 
 	if (p_menu->title.show)
+	{
 		show_top(p_menu->title.text);
+	}
 
 	if (p_menu->screen.show)
 	{
 		moveto(p_menu->screen.row, p_menu->screen.col);
 		if (display_file(p_menu->screen.filename) != 0)
+		{
 			log_error("Display menu screen <%s> failed!\n",
 					  p_menu->screen.filename);
+		}
 	}
 
-	row = p_menu->items[0]->row;
-	col = p_menu->items[0]->col;
-
-	for (i = 0; i < p_menu->item_count; i++)
+	for (int i = 0; i < p_menu->item_count; i++)
 	{
+		if (p_menu->items[i]->row != 0)
+		{
+			row = p_menu->items[i]->row;
+		}
+		if (p_menu->items[i]->col != 0)
+		{
+			col = p_menu->items[i]->col;
+		}
+
 		if (checkpriv(&BBS_priv, 0, p_menu->items[i]->priv) == 0 || checklevel(&BBS_priv, p_menu->items[i]->level) == 0)
 		{
 			p_menu->items[i]->display = 0;
+			p_menu->items[i]->r_row = 0;
+			p_menu->items[i]->r_col = 0;
 		}
 		else
 		{
 			p_menu->items[i]->display = 1;
 
-			menu_selectable = 1;
+			if (!menu_selectable)
+			{
+				p_menu->item_cur_pos = i;
+				menu_selectable = 1;
+			}
 
-			if (p_menu->items[i]->row != 0)
-				row = p_menu->items[i]->row;
-			else
-				row++;
 			p_menu->items[i]->r_row = row;
-			if (p_menu->items[i]->col != 0)
-				col = p_menu->items[i]->col;
 			p_menu->items[i]->r_col = col;
+
 			moveto(row, col);
-			prints(p_menu->items[i]->text);
-			iflush();
+			prints("%s", p_menu->items[i]->text);
+
+			row++;
 		}
 	}
 
 	if (!menu_selectable)
+	{
 		return -1;
+	}
 
 	display_menu_cursor(p_menu, 1);
 
@@ -361,7 +379,9 @@ int menu_control(MENU_SET *p_menu_set, int key)
 	MENU *p_menu;
 
 	if (p_menu_set->menu_count == 0)
+	{
 		return 0;
+	}
 
 	p_menu = p_menu_set->p_menu_select[p_menu_set->menu_select_depth];
 
@@ -373,14 +393,17 @@ int menu_control(MENU_SET *p_menu_set, int key)
 		if (p_menu->items[p_menu->item_cur_pos]->submenu)
 		{
 			if (strcmp(p_menu->items[p_menu->item_cur_pos]->action, "..") == 0)
+			{
 				return menu_control(p_menu_set, KEY_LEFT);
+			}
 			p_menu_set->menu_select_depth++;
-			p_menu =
-				p_menu_set->p_menu_select[p_menu_set->menu_select_depth] =
-					get_menu(p_menu_set,
-							 p_menu->items[p_menu->item_cur_pos]->action);
+			p_menu = get_menu(p_menu_set, p_menu->items[p_menu->item_cur_pos]->action);
+			p_menu_set->p_menu_select[p_menu_set->menu_select_depth] = p_menu;
+
 			if (display_menu(p_menu) != 0)
+			{
 				return menu_control(p_menu_set, KEY_LEFT);
+			}
 			break;
 		}
 		else
@@ -393,15 +416,21 @@ int menu_control(MENU_SET *p_menu_set, int key)
 		{
 			p_menu_set->menu_select_depth--;
 			if (display_current_menu(p_menu_set) != 0)
+			{
 				return menu_control(p_menu_set, KEY_LEFT);
+			}
 			break;
 		}
 		else
 		{
 			display_menu_cursor(p_menu, 0);
 			p_menu->item_cur_pos = p_menu->item_count - 1;
-			while (!p_menu->items[p_menu->item_cur_pos]->display || p_menu->items[p_menu->item_cur_pos]->priv != 0 || p_menu->items[p_menu->item_cur_pos]->level != 0)
+			while (!p_menu->items[p_menu->item_cur_pos]->display ||
+				   p_menu->items[p_menu->item_cur_pos]->priv != 0 ||
+				   p_menu->items[p_menu->item_cur_pos]->level != 0)
+			{
 				p_menu->item_cur_pos--;
+			}
 			display_menu_cursor(p_menu, 1);
 			break;
 		}
@@ -411,7 +440,9 @@ int menu_control(MENU_SET *p_menu_set, int key)
 		{
 			p_menu->item_cur_pos--;
 			if (p_menu->item_cur_pos < 0)
+			{
 				p_menu->item_cur_pos = p_menu->item_count - 1;
+			}
 		} while (!p_menu->items[p_menu->item_cur_pos]->display);
 		display_menu_cursor(p_menu, 1);
 		break;
@@ -421,7 +452,9 @@ int menu_control(MENU_SET *p_menu_set, int key)
 		{
 			p_menu->item_cur_pos++;
 			if (p_menu->item_cur_pos >= p_menu->item_count)
+			{
 				p_menu->item_cur_pos = 0;
+			}
 		} while (!p_menu->items[p_menu->item_cur_pos]->display);
 		display_menu_cursor(p_menu, 1);
 		break;
