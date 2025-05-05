@@ -126,9 +126,19 @@ static int _str_input(char *buffer, int buffer_length, int echo_mode)
 		{
 			if (offset > 0)
 			{
-				buffer[--offset] = '\0';
-				prints("\b \b");
-				//            clrtoeol ();
+				offset--;
+				if (buffer[offset] < 0 || buffer[offset] > 127)
+				{
+					prints("\033[D \033[D");
+					offset--;
+					if (offset < 0) // should not happen
+					{
+						log_error("Offset of buffer is negative\n");
+						offset = 0;
+					}
+				}
+				buffer[offset] = '\0';
+				prints("\033[D \033[D");
 				iflush();
 			}
 			continue;
@@ -139,11 +149,19 @@ static int _str_input(char *buffer, int buffer_length, int echo_mode)
 		}
 		if (c > 127 && c <= 255)
 		{
+			if (!hz && offset + 2 > buffer_length) // No enough space for Chinese character
+			{
+				igetch(1); // Clear remaining input
+				outc('\a');
+				iflush();
+				continue;
+			}
 			hz = (!hz);
 		}
 		if (offset >= buffer_length)
 		{
 			outc('\a');
+			iflush();
 			continue;
 		}
 		buffer[offset++] = (char)c;
