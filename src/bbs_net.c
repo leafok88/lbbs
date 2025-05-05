@@ -183,7 +183,7 @@ int bbsnet_connect(int n)
 
 	sin.sin_family = AF_INET;
 	sin.sin_addr.s_addr =
-		(strlen(hostaddr_server) > 0 ? inet_addr(hostaddr_server) : INADDR_ANY);
+		(strnlen(hostaddr_server, sizeof(hostaddr_server)) > 0 ? inet_addr(hostaddr_server) : INADDR_ANY);
 	sin.sin_port = 0;
 
 	if (bind(sock, (struct sockaddr *)&sin, sizeof(sin)) < 0)

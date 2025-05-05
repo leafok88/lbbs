@@ -420,7 +420,7 @@ int show_top(char *status)
 {
 	char buffer[LINE_BUFFER_LEN];
 
-	str_space(buffer, 20 - strlen(BBS_current_section_name));
+	str_space(buffer, 20 - strnlen(BBS_current_section_name, sizeof(BBS_current_section_name)));
 
 	moveto(1, 0);
 	clrtoeol();
@@ -440,7 +440,7 @@ int show_bottom(char *msg)
 	struct tm *tm_online;
 
 	get_time_str(str_time, sizeof(str_time));
-	str_space(buffer, 33 - strlen(BBS_username));
+	str_space(buffer, 33 - strnlen(BBS_username, sizeof(BBS_username)));
 
 	time_online = time(0) - BBS_login_tm;
 	tm_online = gmtime(&time_online);

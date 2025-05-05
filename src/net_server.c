@@ -44,7 +44,7 @@ int net_server(const char *hostaddr, unsigned int port)
 
 	sin.sin_family = AF_INET;
 	sin.sin_addr.s_addr =
-		(strlen(hostaddr) > 0 ? inet_addr(hostaddr) : INADDR_ANY);
+		(strnlen(hostaddr, sizeof(hostaddr)) > 0 ? inet_addr(hostaddr) : INADDR_ANY);
 	sin.sin_port = htons(port);
 
 	if (bind(socket_server, (struct sockaddr *)&sin, sizeof(sin)) < 0)

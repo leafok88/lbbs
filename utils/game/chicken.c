@@ -100,9 +100,9 @@ static int creat_a_egg()
 	time(&now);
 	ptime = localtime(&now);
 	clrtobot(2);
-	while (strlen(Name) < 1)
+	while (Name[0] == '\0')
 	{
-		strcpy(Name, "宝宝");
+		strncpy(Name, "宝宝", sizeof(Name));
 		get_data(2, 0, "帮小鸡取个好名字：", Name, 21, DOECHO);
 	}
 
@@ -815,8 +815,7 @@ int gagb_c()
 	clearscr();
 	do
 	{
-		/* while(strlen(buf1)<1)*/
-		get_data(0, 0, "要押多少糖果啊(最大2000)：", buf1, 5, DOECHO);
+		get_data(0, 0, "要押多少糖果啊(最大2000)：", buf1, sizeof(buf1) - 1, DOECHO);
 		money = atoi(buf1);
 		if (BBS_user_money < money)
 		{
