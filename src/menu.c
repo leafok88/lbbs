@@ -63,7 +63,7 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 			if (ireg("^%S_([A-Za-z0-9_]+)", buffer, 2, pmatch) == 0)
 			{
 				strncpy(temp, buffer + pmatch[1].rm_so,
-						pmatch[1].rm_eo - pmatch[1].rm_so);
+						(size_t)(pmatch[1].rm_eo - pmatch[1].rm_so));
 				temp[pmatch[1].rm_eo - pmatch[1].rm_so] = '\0';
 				snprintf(screen_filename, sizeof(screen_filename), "%s/MENU_SCR_%s", MENU_TEMP_DIR, temp);
 
@@ -93,7 +93,7 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 
 				strncpy(p_menu_set->p_menu[i]->name,
 						buffer + pmatch[1].rm_so,
-						pmatch[1].rm_eo - pmatch[1].rm_so);
+						(size_t)(pmatch[1].rm_eo - pmatch[1].rm_so));
 				p_menu_set->p_menu[i]->name[pmatch[1].rm_eo - pmatch[1].rm_so] =
 					'\0';
 
@@ -123,37 +123,37 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 						p_menu_set->p_menu[i]->items[j]->submenu = 1;
 						strncpy(p_menu_set->p_menu[i]->items[j]->action,
 								buffer + pmatch[1].rm_so,
-								pmatch[1].rm_eo - pmatch[1].rm_so);
+								(size_t)(pmatch[1].rm_eo - pmatch[1].rm_so));
 						p_menu_set->p_menu[i]->items[j]->action[pmatch[1].rm_eo -
 																pmatch[1].rm_so] = '\0';
 						strncpy(temp, buffer + pmatch[2].rm_so,
-								pmatch[2].rm_eo - pmatch[2].rm_so);
+								(size_t)(pmatch[2].rm_eo - pmatch[2].rm_so));
 						temp[pmatch[2].rm_eo - pmatch[2].rm_so] = '\0';
 						p_menu_set->p_menu[i]->items[j]->row = atoi(temp);
 						strncpy(temp,
 								buffer + pmatch[3].rm_so,
-								pmatch[3].rm_eo - pmatch[3].rm_so);
+								(size_t)(pmatch[3].rm_eo - pmatch[3].rm_so));
 						temp[pmatch[3].rm_eo - pmatch[3].rm_so] = '\0';
 						p_menu_set->p_menu[i]->items[j]->col = atoi(temp);
 						strncpy(temp,
 								buffer + pmatch[4].rm_so,
-								pmatch[4].rm_eo - pmatch[4].rm_so);
+								(size_t)(pmatch[4].rm_eo - pmatch[4].rm_so));
 						temp[pmatch[4].rm_eo - pmatch[4].rm_so] = '\0';
 						p_menu_set->p_menu[i]->items[j]->priv = atoi(temp);
 						strncpy(temp,
 								buffer + pmatch[5].rm_so,
-								pmatch[5].rm_eo - pmatch[5].rm_so);
+								(size_t)(pmatch[5].rm_eo - pmatch[5].rm_so));
 						temp[pmatch[5].rm_eo - pmatch[5].rm_so] = '\0';
 						p_menu_set->p_menu[i]->items[j]->level = atoi(temp);
 						strncpy(p_menu_set->p_menu[i]->items[j]->name,
 								buffer + pmatch[6].rm_so,
-								pmatch[6].rm_eo - pmatch[6].rm_so);
+								(size_t)(pmatch[6].rm_eo - pmatch[6].rm_so));
 						p_menu_set->p_menu[i]->items[j]->name[pmatch[6].rm_eo -
 															  pmatch[6].rm_so] =
 							'\0';
 						strncpy(p_menu_set->p_menu[i]->items[j]->text,
 								buffer + pmatch[7].rm_so,
-								pmatch[7].rm_eo - pmatch[7].rm_so);
+								(size_t)(pmatch[7].rm_eo - pmatch[7].rm_so));
 						p_menu_set->p_menu[i]->items[j]->text[pmatch[7].rm_eo -
 															  pmatch[7].rm_so] =
 							'\0';
@@ -171,37 +171,37 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 						p_menu_set->p_menu[i]->items[j]->submenu = 0;
 						strncpy(p_menu_set->p_menu[i]->items[j]->action,
 								buffer + pmatch[1].rm_so,
-								pmatch[1].rm_eo - pmatch[1].rm_so);
+								(size_t)(pmatch[1].rm_eo - pmatch[1].rm_so));
 						p_menu_set->p_menu[i]->items[j]->action[pmatch[1].rm_eo -
 																pmatch[1].rm_so] = '\0';
 						strncpy(temp, buffer + pmatch[2].rm_so,
-								pmatch[2].rm_eo - pmatch[2].rm_so);
+								(size_t)(pmatch[2].rm_eo - pmatch[2].rm_so));
 						temp[pmatch[2].rm_eo - pmatch[2].rm_so] = '\0';
 						p_menu_set->p_menu[i]->items[j]->row = atoi(temp);
 						strncpy(temp,
 								buffer + pmatch[3].rm_so,
-								pmatch[3].rm_eo - pmatch[3].rm_so);
+								(size_t)(pmatch[3].rm_eo - pmatch[3].rm_so));
 						temp[pmatch[3].rm_eo - pmatch[3].rm_so] = '\0';
 						p_menu_set->p_menu[i]->items[j]->col = atoi(temp);
 						strncpy(temp,
 								buffer + pmatch[4].rm_so,
-								pmatch[4].rm_eo - pmatch[4].rm_so);
+								(size_t)(pmatch[4].rm_eo - pmatch[4].rm_so));
 						temp[pmatch[4].rm_eo - pmatch[4].rm_so] = '\0';
 						p_menu_set->p_menu[i]->items[j]->priv = atoi(temp);
 						strncpy(temp,
 								buffer + pmatch[5].rm_so,
-								pmatch[5].rm_eo - pmatch[5].rm_so);
+								(size_t)(pmatch[5].rm_eo - pmatch[5].rm_so));
 						temp[pmatch[5].rm_eo - pmatch[5].rm_so] = '\0';
 						p_menu_set->p_menu[i]->items[j]->level = atoi(temp);
 						strncpy(p_menu_set->p_menu[i]->items[j]->name,
 								buffer + pmatch[6].rm_so,
-								pmatch[6].rm_eo - pmatch[6].rm_so);
+								(size_t)(pmatch[6].rm_eo - pmatch[6].rm_so));
 						p_menu_set->p_menu[i]->items[j]->name[pmatch[6].rm_eo -
 															  pmatch[6].rm_so] =
 							'\0';
 						strncpy(p_menu_set->p_menu[i]->items[j]->text,
 								buffer + pmatch[7].rm_so,
-								pmatch[7].rm_eo - pmatch[7].rm_so);
+								(size_t)(pmatch[7].rm_eo - pmatch[7].rm_so));
 						p_menu_set->p_menu[i]->items[j]->text[pmatch[7].rm_eo -
 															  pmatch[7].rm_so] =
 							'\0';
@@ -215,17 +215,17 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 						p_menu_set->p_menu[i]->title.show = 1;
 						strncpy(temp,
 								buffer + pmatch[1].rm_so,
-								pmatch[1].rm_eo - pmatch[1].rm_so);
+								(size_t)(pmatch[1].rm_eo - pmatch[1].rm_so));
 						temp[pmatch[1].rm_eo - pmatch[1].rm_so] = '\0';
 						p_menu_set->p_menu[i]->title.row = atoi(temp);
 						strncpy(temp,
 								buffer + pmatch[2].rm_so,
-								pmatch[2].rm_eo - pmatch[2].rm_so);
+								(size_t)(pmatch[2].rm_eo - pmatch[2].rm_so));
 						temp[pmatch[2].rm_eo - pmatch[2].rm_so] = '\0';
 						p_menu_set->p_menu[i]->title.col = atoi(temp);
 						strncpy(p_menu_set->p_menu[i]->title.text,
 								buffer + pmatch[3].rm_so,
-								pmatch[3].rm_eo - pmatch[3].rm_so);
+								(size_t)(pmatch[3].rm_eo - pmatch[3].rm_so));
 						p_menu_set->p_menu[i]->title.text[pmatch[3].rm_eo -
 														  pmatch[3].rm_so] =
 							'\0';
@@ -238,17 +238,17 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 						p_menu_set->p_menu[i]->screen.show = 1;
 						strncpy(temp,
 								buffer + pmatch[1].rm_so,
-								pmatch[1].rm_eo - pmatch[1].rm_so);
+								(size_t)(pmatch[1].rm_eo - pmatch[1].rm_so));
 						temp[pmatch[1].rm_eo - pmatch[1].rm_so] = '\0';
 						p_menu_set->p_menu[i]->screen.row = atoi(temp);
 						strncpy(temp,
 								buffer + pmatch[2].rm_so,
-								pmatch[2].rm_eo - pmatch[2].rm_so);
+								(size_t)(pmatch[2].rm_eo - pmatch[2].rm_so));
 						temp[pmatch[2].rm_eo - pmatch[2].rm_so] = '\0';
 						p_menu_set->p_menu[i]->screen.col = atoi(temp);
 						strncpy(temp,
 								buffer + pmatch[3].rm_so,
-								pmatch[3].rm_eo - pmatch[3].rm_so);
+								(size_t)(pmatch[3].rm_eo - pmatch[3].rm_so));
 						temp[pmatch[3].rm_eo - pmatch[3].rm_so] = '\0';
 						snprintf(p_menu_set->p_menu[i]->screen.filename,
 								 sizeof(p_menu_set->p_menu[i]->screen.filename),

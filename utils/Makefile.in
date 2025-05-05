@@ -306,6 +306,7 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 EXTRA_DIST = makedist.sh
 SUBDIRS = game
+AM_CFLAGS = -Wall -Werror -Wno-unused-parameter -Wformat -Wconversion -Wdeprecated -finline-functions
 CLEANFILES = @EXTRA_CLEAN@
 all: all-recursive
 

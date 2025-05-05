@@ -324,8 +324,8 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 lib_LTLIBRARIES = libgame.la
 libgame_la_SOURCES = chicken.c
+AM_CFLAGS = -Wall -Werror -Wno-unused-parameter -Wformat -Wconversion -Wdeprecated -finline-functions
 AM_CPPFLAGS = -I$(top_builddir)/include -I/usr/include/mysql
-AM_CFLAGS = -I$(top_builddir)/src
 CLEANFILES = @EXTRA_CLEAN@
 all: all-am
 

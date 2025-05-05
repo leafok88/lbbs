@@ -19,6 +19,7 @@
 #define _BBS_H_
 
 #include <time.h>
+#include <netinet/in.h>
 
 // BBS
 #define BBS_max_section 1024
@@ -29,7 +30,7 @@ extern char BBS_id[20];
 extern char BBS_name[50];
 extern char BBS_server[256];
 extern char BBS_address[50];
-extern unsigned int BBS_port;
+extern in_port_t BBS_port;
 extern unsigned int BBS_max_client;
 extern unsigned int BBS_max_user;
 extern char BBS_start_dt[50];
@@ -45,6 +46,6 @@ extern time_t BBS_last_access_tm;
 
 extern char BBS_current_section_name[20];
 
-extern char *setuserfile(char *buf, int len, const char *filename);
+extern char *setuserfile(char *buf, size_t len, const char *filename);
 
 #endif //_BBS_H_

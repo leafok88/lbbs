@@ -18,6 +18,8 @@
 #ifndef _NET_SERVER_H_
 #define _NET_SERVER_H_
 
-extern int net_server(const char *hostaddr, unsigned int port);
+#include <netinet/in.h>
+
+extern int net_server(const char *hostaddr, in_port_t port);
 
 #endif //_NET_SERVER_H_

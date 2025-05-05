@@ -61,7 +61,7 @@ int bbs_welcome()
 	}
 	if ((row = mysql_fetch_row(rs)))
 	{
-		u_online = atol(row[0]);
+		u_online = (u_int32_t)atoi(row[0]);
 	}
 	mysql_free_result(rs);
 
@@ -81,7 +81,7 @@ int bbs_welcome()
 	}
 	if ((row = mysql_fetch_row(rs)))
 	{
-		u_anonymous = atol(row[0]);
+		u_anonymous = (u_int32_t)atoi(row[0]);
 	}
 	mysql_free_result(rs);
 
@@ -98,7 +98,7 @@ int bbs_welcome()
 	}
 	if ((row = mysql_fetch_row(rs)))
 	{
-		u_total = atol(row[0]);
+		u_total = (u_int32_t)atoi(row[0]);
 	}
 	mysql_free_result(rs);
 
@@ -115,7 +115,7 @@ int bbs_welcome()
 	}
 	if ((row = mysql_fetch_row(rs)))
 	{
-		u_login_count = atol(row[0]);
+		u_login_count = (u_int32_t)atoi(row[0]);
 	}
 	mysql_free_result(rs);
 

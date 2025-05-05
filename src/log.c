@@ -51,7 +51,7 @@ void log_end()
 	fclose(fp_log_err);
 }
 
-int log_head(char *buf, int len)
+int log_head(char *buf, size_t len)
 {
 	time_t t;
 	char s_time[256];

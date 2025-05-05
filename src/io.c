@@ -59,8 +59,8 @@ int iflush()
 int igetch(int clear_buf)
 {
 	// static input buffer
-	static char buf[256];
-	static int len = 0;
+	static unsigned char buf[256];
+	static ssize_t len = 0;
 	static int pos = 0;
 
 	unsigned char tmp[256];

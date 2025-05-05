@@ -104,7 +104,7 @@ int load_conf(const char *conf_file)
 		}
 		if (strcmp(c_name, "bbs_port") == 0)
 		{
-			fscanf(fin, "%ud", &BBS_port);
+			fscanf(fin, "%hu", &BBS_port);
 		}
 		if (strcmp(c_name, "bbs_max_client") == 0)
 		{

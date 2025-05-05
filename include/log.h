@@ -18,11 +18,13 @@
 #ifndef _LOG_H_
 #define _LOG_H_
 
+#include <stddef.h>
+
 extern int log_begin(char *file_log_std, char *file_log_err);
 
 extern void log_end();
 
-extern int log_head(char *buf, int len);
+extern int log_head(char *buf, size_t len);
 
 extern int log_std(const char *format, ...);
 

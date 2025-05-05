@@ -216,7 +216,7 @@ int display_file(const char *filename)
 {
 	char buffer[LINE_BUFFER_LEN];
 	FILE *fin;
-	int i;
+	size_t i;
 
 	if ((fin = fopen(filename, "r")) == NULL)
 	{
@@ -245,11 +245,12 @@ int display_file_ex(const char *filename, int begin_line, int wait)
 	char buffer[LINE_BUFFER_LEN];
 	int ch = 0;
 	int input_ok, line, max_lines;
-	long int c_line_current = 0, c_line_total = 0;
+	long int c_line_current = 0;
+	long int c_line_total = 0;
 	FILE *fin;
 	long *p_line_offsets;
-	int len;
-	int percentile;
+	long int len;
+	long int percentile;
 	int loop = 1;
 
 	if ((fin = fopen(filename, "r")) == NULL)
@@ -398,7 +399,7 @@ int display_file_ex(const char *filename, int begin_line, int wait)
 			log_error("Error length exceeds buffer size: %d\n", len);
 			len = LINE_BUFFER_LEN - 1;
 		}
-		if (fgets(buffer, len + 1, fin) == NULL)
+		if (fgets(buffer, (int)len + 1, fin) == NULL)
 		{
 			log_error("Reach EOF\n");
 			break;
@@ -420,7 +421,7 @@ int show_top(char *status)
 {
 	char buffer[LINE_BUFFER_LEN];
 
-	str_space(buffer, 20 - strnlen(BBS_current_section_name, sizeof(BBS_current_section_name)));
+	str_space(buffer, 20 - (int)strnlen(BBS_current_section_name, sizeof(BBS_current_section_name)));
 
 	moveto(1, 0);
 	clrtoeol();
@@ -440,7 +441,7 @@ int show_bottom(char *msg)
 	struct tm *tm_online;
 
 	get_time_str(str_time, sizeof(str_time));
-	str_space(buffer, 33 - strnlen(BBS_username, sizeof(BBS_username)));
+	str_space(buffer, 33 - (int)strnlen(BBS_username, sizeof(BBS_username)));
 
 	time_online = time(0) - BBS_login_tm;
 	tm_online = gmtime(&time_online);
@@ -463,7 +464,7 @@ int show_active_board()
 	char buffer[LINE_BUFFER_LEN];
 	FILE *fin;
 	static int line;
-	int len;
+	unsigned int len;
 	int end_of_line;
 
 	clrline(3, 2 + ACTIVE_BOARD_HEIGHT);

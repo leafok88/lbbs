@@ -32,18 +32,14 @@ char buf[1], buf1[6];
 
 static int creat_a_egg(void);
 static int death(void);
-static int doit(void);
 static int guess(void);
 static int lose(void);
 static int pressany(int i);
 static int sell(void);
 static int show_chicken(void);
-static int show_m(void);
 static int situ(void);
 static int select_menu(void);
 static int tie(void);
-static int compare(char ans[], char buf[], int c);
-static int ga(char buf[], int l);
 static int win_c(void);
 
 int chicken_main()
@@ -600,12 +596,13 @@ int guess()
 		DOECHO,NULL);*/
 		moveto(23, 0);
 		prints("[1]-ºÙµ∂ [2]- ØÕ∑ [3]-≤º£∫");
+		clrtoeol();
 		iflush();
 		ch = igetch(0);
 	} while ((ch != '1') && (ch != '2') && (ch != '3'));
 
 	/* com=qtime->tm_sec%3;*/
-	srand(time(NULL));
+	srand((unsigned int)time(NULL));
 	com = rand() % 3;
 	moveto(21, 35);
 	switch (com)
@@ -706,62 +703,6 @@ int situ()
 	return 0;
 }
 
-void p_bf()
-{
-	FILE *fp;
-	char fname[50];
-	//  modify_user_mode(CHICK);
-	clearscr();
-	moveto(21, 0);
-	if (BBS_user_money < 100)
-	{
-		prints("Ã«π˚≤ª◊„!!");
-		press_any_key();
-		return;
-	}
-	setuserfile(fname, sizeof(fname), "chicken");
-	if ((fp = fopen(fname, "r+")) == NULL)
-	{
-		prints("√ª—¯º¶..≤ª∏¯ƒ„¬Ú..π˛π˛...");
-		press_any_key();
-		return;
-	}
-	else
-	{
-		fp = fopen(fname, "r");
-		fscanf(fp, "%d %d %d %d %d %d %d %d %d %d %s %d %d", &weight, &mon, &day, &satis, &age, &oo, &happy, &clean, &tiredstrong, &play, Name, &winn, &losee);
-		fclose(fp);
-		oo++;
-		prints("\r\n¥Û≤πÕË”– %d ø≈", oo);
-		prints("   £œ¬ %d Ã«,ª®«Æ100", demoney(100));
-		press_any_key();
-		fp = fopen(fname, "r+");
-		/*if (last!=1)
-		  { */
-		fprintf(fp, "%d %d %d %d %d %d %d %d %d %d %s %d %d", weight, mon, day, satis, age, oo, happy, clean, tiredstrong, play, Name, winn, losee);
-		fclose(fp);
-	}
-	return;
-}
-
-/*
-int year(char *useri) {
-	FILE *fp;
-	char fname[50];
-	getuser(useri);
-	sethomefile(fname, useri, "chicken");
-	if ((fp = fopen(fname, "r+")) == NULL) {
-		return -1;
-	}
-	fscanf(fp,"%d %d %d %d %d %d %d %d %d %d %d %d %d %d %s "
-		   ,&weight,&mon,&day,&satis,&age,&oo,&happy,&clean,&tiredstrong,&play
-		   ,&winn,&losee,&food,&zfood,Name);
-	fclose(fp);
-	return age;
-
-}
-*/
-
 int sell()
 {
 	int sel = 0;
@@ -775,12 +716,20 @@ int sell()
 
 	get_data(20, 0, "»∑∂®“™¬ÙµÙ–°º¶?[y/N]", ans, 3, DOECHO);
 	if (ans[0] != 'y')
+	{
 		return -1;
+	}
 	sel += (happy * 10);
 	sel += (satis * 7);
 	sel += ((ptime->tm_sec % 9) * 10);
 	sel += weight;
 	sel += age * 10;
+
+	if (sel < 0)
+	{
+		return -2;
+	}
+
 	moveto(20, 0);
 	prints("–°º¶÷µ[33;45m$$ %d [mÃ«Ã«", sel);
 	get_data(19, 0, "’Êµƒ“™¬ÙµÙ–°º¶?[y/N]", ans, 3, DOECHO);
@@ -798,455 +747,9 @@ int sell()
 	fclose(fp);
 	clearscr();
 
-	inmoney(sel);
+	inmoney((unsigned int)sel);
 	Name[0] = '\0';
 	creat_a_egg();
 	chicken_main();
-	return 0;
-}
-
-int gagb_c()
-{
-	char abuf[5], buf1[6];
-	char ans[5];
-	int i, k, flag[11], count = 0, GET = 0;
-	int l = 1, money = 0;
-
-	// setutmpmode(NANB);
-	clearscr();
-	do
-	{
-		get_data(0, 0, "“™—∫∂‡…ŸÃ«π˚∞°(◊Ó¥Û2000)£∫", buf1, sizeof(buf1) - 1, DOECHO);
-		money = atoi(buf1);
-		if (BBS_user_money < money)
-		{
-			prints("≤ªπª$$");
-			press_any_key();
-			return 0;
-		}
-	} while ((money <= 0) || (money > 2000));
-	demoney(money);
-	for (i = 0; i < 11; i++)
-		flag[i] = 0;
-	for (i = 0; i < 4; i++)
-	{
-		do
-		{
-			srand(time(NULL));
-			k = rand() % 9;
-		} while (flag[k] != 0);
-		flag[k] = 1;
-		ans[i] = k + '0';
-	}
-	while (!GET)
-	{
-		ga(abuf, l);
-		if (abuf[0] == 'q' && abuf[1] == 'k')
-		{
-			prints("Õ∂Ωµ..≤¬¡À %d¥Œ", count);
-			prints("\r\n¥∞∏ «:%s", ans);
-			press_any_key();
-			/*return 0*/
-			;
-		}
-		if (abuf[0] == 'q')
-		{
-			prints("\r\n¥∞∏ «:%s", ans);
-			press_any_key();
-			return 0;
-		}
-		if (compare(ans, abuf, count))
-			/* GET=1;*/
-			break;
-		if (count > 8)
-		{
-			prints("[1;32mÕ€ﬂ÷..≤¬ Æ¥Œªπ≤ª∂‘...Ã«Ã«√ª ’..[m");
-			press_any_key();
-			return 0;
-		}
-		count++;
-		l += 2;
-	}
-	count++;
-	switch (count)
-	{
-	case 1:
-		money *= 10;
-		break;
-	case 2:
-	case 3:
-		money *= 6;
-		break;
-	case 4:
-	case 5:
-		money *= 3;
-		break;
-	case 6:
-		money *= 2;
-		break;
-	case 7:
-		money *= 2;
-		break;
-	case 8:
-		money *= 1.1;
-		break;
-	case 9:
-		money += 10;
-		break;
-		/*   case 8:
-			 money*=2;
-			 break;*/
-	default:
-		/*    money/=2;*/
-		money = 1;
-		break;
-	}
-	inmoney(money);
-
-	prints("\r\n÷’Ï∂∂‘¡À..≤¬¡À[32m %d[m ¥Œ …ÕÃ«Ã« [33;45m%d[m ø≈", count, money);
-	press_any_key();
-
-	return 0;
-}
-
-static int compare(char ans[], char buf[], int c)
-{
-	int i, j, A, B;
-
-	A = 0;
-	B = 0;
-	for (i = 0; i < 4; i++)
-		if (ans[i] == buf[i])
-			A++;
-	for (i = 0; i < 4; i++)
-		for (j = 0; j < 4; j++)
-			if ((ans[i] == buf[j]) && (i != j))
-				B++;
-	prints("%s", buf);
-	prints("  Ω·π˚: %d A %d B  £ %d ¥Œ\r\n", A, B, 9 - c);
-	/*  press_any_key (); */
-	if (A == 4)
-		return 1;
-	else
-		return 0;
-}
-
-static int ga(char buf[], int l)
-{
-	int ok = 0;
-
-	get_data(l, 0, " ‰»ÎÀ˘≤¬µƒ ˝◊÷(ÀƒŒª≤ª÷ÿ∏≤)£∫", buf, 5, DOECHO);
-	if (strlen(buf) != 4)
-	{
-		if (buf[0] == 'z' && buf[1] == 'k')
-			return 0;
-		if (buf[0] == 'q')
-			return 0;
-		prints("¬“¿¥..≤ª◊„4Œª");
-		/* press_any_key ();*/
-		return 0;
-	}
-	if ((buf[0] != buf[1]) && (buf[0] != buf[2]) && (buf[0] != buf[3]) && (buf[1] != buf[2]) &&
-		(buf[1] != buf[3]) && (buf[2] != buf[3]))
-		ok = 1;
-	if (ok != 1)
-	{
-		prints("÷ÿ∏≤¬ﬁ");
-		/*press_any_key ();*/
-		return 0;
-	}
-
-	return 0;
-}
-/*
-int nam(char *useri) {
-	FILE *fp;
-	char fname[50];
-	getuser(useri);
-	sethomefile(fname, useri, "chicken");
-	if ((fp = fopen(fname, "r+")) == NULL) {
-		return -1;
-	}
-	fscanf(fp,"%d %d %d %d %d %d %d %d %d %d %d %d %d %d %s "
-		   ,&weight,&mon,&day,&satis,&age,&oo,&happy,&clean,&tiredstrong,&play
-		   ,&winn,&losee,&food,&zfood,Name);
-	fclose(fp);
-	//return Name;
-	return 1;
-}
-*/
-
-int mary_m()
-{
-	FILE *fp;
-	//  modify_user_mode(MARY);
-	if ((fp = fopen("game/bank", "r")) == NULL)
-	{
-		fp = fopen("game/bank", "w");
-		fprintf(fp, "%ld", 1000000L);
-		fclose(fp);
-	}
-	fp = fopen("game/bank", "r");
-	fscanf(fp, "%ld", &bank);
-	fclose(fp);
-	clearscr();
-	p_mon = 0;
-	q_mon = BBS_user_money;
-	show_m();
-
-	fp = fopen("game/bank", "r+");
-	fprintf(fp, "%ld", bank);
-	fclose(fp);
-	return 0;
-}
-
-static int show_m()
-{
-	int i, j, k, m;
-
-	moveto(0, 0);
-	clearscr();
-	prints("              °ı°ı    °ı°ı\r\n"
-		   "            £Ø    £‹£Ø    £‹\r\n"
-		   "           £¸ °ı°ı £¸ °ı°ı £¸\r\n"
-		   "            £‹___£Ø°°£‹°ı°ı£Ø\r\n"
-		   "            ©¶  ___  ___  ©¶\r\n"
-		   "          £®©¶°ı_°ˆ°ı_°ˆ  ©¶£©\r\n"
-		   "        (~~.©¶   £‹£˜£Ø    ©¶.~~)\r\n"
-		   "       `£‹£Ø £‹    £Ô    £Ø £‹£Ø\r\n"
-		   "   °°     £‹   £‹°ı°ı°ı£Ø   £Ø\r\n"
-		   "   °°       £‹£Ø£¸ £¸ £¸£‹£Ø\r\n"
-		   "     °°      ©¶  °ı£œ°ı  ©¶\r\n"
-		   "     °°     °ı___£Ø£œ£‹___°ı\r\n"
-		   "       °°      £‹__£¸__£Ø    [31;40mª∂”≠π‚¡Ÿ–°¬Í¿Ú..[m");
-
-	moveto(13, 0);
-	prints("œ÷”–Ã«π˚: %-d            ±æª˙Ã®ƒ⁄œ÷Ω: %-ld", q_mon, bank);
-	moveto(14, 0);
-
-	prints("[36m°™°™°™°™°™°™°™°™°™°™°™°™°™°™°™°™°™°™°™°™°™°™°™°™°™°™°™°™°™°™°™°™°™°™°™°™°™°™[m\r\n");
-
-	prints("∆ªπ˚-1 bar-2  777-3  Õıπ⁄-4 BAR-5  ¡ÂÓı-6 Œ˜πœ-7 ÈŸ◊”-8 ¿Û÷¶-9\r\n");
-	prints("x5     x40    x30    x25    x50    x20    x15    x10    x2±∂\r\n");
-	prints("%-7d%-7d%-7d%-7d%-7d%-7d%-7d%-7d%-7d\r\n", x[0], x[1], x[2], x[3], x[4], x[5],
-		   x[6], x[7], x[8]);
-
-	prints("\r\n[36m°™°™°™°™°™°™°™°™°™°™°™°™°™°™°™°™°™°™°™°™∞¥a»´—π°™°™°™°™∞¥sø™ º°™°™∞¥q¿Îø™°™°™[m");
-	get_data(20, 0, "“™—∫º∏∫≈(ø…—∫∂‡¥Œ)£∫", buf, 2, DOECHO);
-	switch (buf[0])
-	{
-	case 's':
-		doit();
-		return 0;
-		break;
-	case 'a':
-		get_data(21, 0, "“™—∫∂‡…ŸÃ«£∫", buf1, 6, DOECHO);
-		for (i = 0; i <= 8; i++)
-			x[i] = atoi(buf1);
-		j = (x[0] * 9);
-		j = abs(j);
-		if (q_mon < j)
-		{
-			prints("Ã«π˚≤ª◊„");
-			press_any_key();
-			for (i = 0; i <= 8; i++)
-				x[i] = 0;
-			show_m();
-			return -1;
-		}
-		/*    demoney(j);*/
-		q_mon -= j;
-		p_mon += j;
-		show_m();
-		return 0;
-		break;
-	case 'q':
-		for (i = 0; i <= 8; i++)
-			x[i] = 0;
-		return 0;
-		break;
-	case 't':
-		m = 10000000;
-		for (i = 1; i <= 5; i++)
-		{
-			clearscr();
-			moveto(20, i);
-			prints("x");
-			if (i % 3 == 0)
-				m *= 10;
-			for (j = 1; j <= m; j++)
-				k = 0;
-
-			iflush();
-		}
-		return 0;
-		break;
-	default:
-		i = atoi(buf);
-		break;
-	}
-	k = x[i - 1];
-	do
-	{
-		get_data(21, 0, "“™—∫∂‡…ŸÃ«£∫", buf1, 6, DOECHO);
-		x[i - 1] += atoi(buf1);
-		j = atoi(buf1);
-	} while (x[i - 1] < 0);
-
-	/*   j=x[i-1];*/
-	if (j < 0)
-		j = abs(j);
-	if (q_mon < j)
-	{
-		prints("Ã«π˚≤ª◊„");
-		press_any_key();
-		x[i - 1] = k;
-		clearscr();
-		j = 0;
-	}
-	q_mon -= j;
-	p_mon += j;
-	/* demoney(j);*/
-	show_m();
-	return 0;
-}
-
-static int doit()
-{
-	int j, seed, flag = 0, flag1 = 0;
-	int g[10] = {5, 40, 30, 25, 50, 20, 15, 10, 2, 0};
-
-	clearscr();
-	moveto(0, 0);
-	/*   prints ("
-						   °ı°ı°ı°ı°ı°ı°ı°ı°ı°ı°ı
-						   °ı                  °ı
-						   °ı                  °ı
-						   °ı £Œ£…£Œ£‘£≈£Œ£ƒ£œ °ı
-						   °ı  ’˝‘⁄◊™µ±÷–      °ı
-						   °ı      ◊‘––œÎœÒ    °ı
-						   °ı                  °ı
-						   °ı°ı°ı°ı°ı°ı°ı°ı°ı°ı°ı
-								  NINTENDO
-
-							  °¸
-							°˚°Ú°˙           °Ò
-							  °˝          °Ò
-								   °ı  °ı    .....
-											.......
-											.....°ı
-																  ");
-	*/
-	for (int i = 1; i <= 30; i++)
-	{
-		clearscr();
-		moveto(10, i);
-		prints("°Ò");
-
-		iflush();
-	}
-	demoney(p_mon);
-	iflush();
-	sleep(1);
-	clearscr();
-	moveto(10, 31);
-	gold = 0;
-	seed = time(0) % 10000;
-	// if(p_mon>=50000)
-	//  seed=1500;
-
-	do
-	{
-		srand(time(NULL));
-		ran = rand() % seed;
-		flag1 = 0;
-
-		moveto(10, 31);
-		if (ran <= 480)
-		{
-			prints("¿Û÷¶");
-			j = 8;
-		}
-		else if (ran <= 670)
-		{
-			prints("∆ªπ˚");
-			j = 0;
-		}
-		else if (ran <= 765)
-		{
-			prints("ÈŸ◊”");
-			j = 7;
-		}
-		else if (ran <= 830)
-		{
-			prints("Œ˜πœ");
-			j = 6;
-		}
-		else if (ran <= 875)
-		{
-			prints("¡ÂÓı");
-			j = 5;
-		}
-		else if (ran <= 910)
-		{
-			prints("Õıπ⁄");
-			j = 3;
-		}
-		else if (ran <= 940)
-		{
-			prints("777!");
-			j = 2;
-		}
-		else if (ran <= 960)
-		{
-			prints("bar!");
-			j = 1;
-		}
-		else if (ran <= 975)
-		{
-			prints("BAR!");
-			j = 4;
-		}
-		else
-		{
-			/*  prints ("test          œ˚»•”“±ﬂ  ‘Ÿ≈‹“ª¥Œ\r\n");
-			  for(i=4;i<=8;i++)*/
-			prints("√˙–ªª›πÀ");
-			/* for(i=0;i<=8;i++)
-			  x[i]=0;*/
-			j = 9;
-		}
-		gold = x[j] * g[j];
-		if (!flag)
-			if (gold >= 10000)
-			{
-				flag = 1;
-				flag1 = 1;
-			}
-		/*    } while( ran>976 || flag1 );*/
-	} while (flag1);
-	iflush();
-	sleep(1);
-	moveto(11, 25);
-	prints("[32;40mƒ„ø…µ√[33;41m %d [32;40mÃ«Ã«[m", gold);
-	iflush();
-	if (gold > 0)
-	{
-		bank -= gold;
-		bank += p_mon;
-	}
-	else
-		bank += p_mon;
-
-	inmoney(gold);
-	press_any_key();
-	for (int i = 0; i <= 8; i++)
-	{
-		x[i] = 0;
-	}
-	p_mon = 0;
-	q_mon = BBS_user_money;
-
-	show_m();
 	return 0;
 }

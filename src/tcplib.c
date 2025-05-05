@@ -6,7 +6,7 @@ void MsToTimeval(const int ms, struct timeval *tv)
 	tv->tv_usec = (ms - tv->tv_sec * TIME_CNV_RATIO) * TIME_CNV_RATIO;
 }
 
-int TimevalToMs(const struct timeval *tv)
+long int TimevalToMs(const struct timeval *tv)
 {
 	return (tv->tv_sec * TIME_CNV_RATIO + tv->tv_usec / TIME_CNV_RATIO);
 }
@@ -143,7 +143,7 @@ done:
 	return 0; /* 连接服务器成功 */
 }
 
-int DoConnect(const char *ip, const int port, const int msec)
+int DoConnect(const char *ip, const in_port_t port, const int msec)
 {
 	struct sockaddr_in sa;
 	int conn_fd;
@@ -241,12 +241,12 @@ int SafeAccept(int sockfd, struct sockaddr *cliaddr, socklen_t *addrlen)
 	return conn_fd;
 }
 
-int DoSendData(int sockfd, const void *buf, const size_t len, int msec)
+long int DoSendData(int sockfd, const void *buf, const size_t len, int msec)
 {
 	struct timeval tv;
 	fd_set wset;
 	int rv;
-	int wc;
+	ssize_t wc;
 
 	MsToTimeval(msec, &tv);
 	FD_ZERO(&wset);
@@ -267,12 +267,12 @@ int DoSendData(int sockfd, const void *buf, const size_t len, int msec)
 	return 0; /* nothing had sent */
 }
 
-int DoRecvData(int sockfd, void *buf, const size_t len, int msec)
+long int DoRecvData(int sockfd, void *buf, const size_t len, int msec)
 {
 	struct timeval tv;
 	fd_set rset;
 	int rv;
-	int rc;
+	ssize_t rc;
 
 	MsToTimeval(msec, &tv);
 	FD_ZERO(&rset);

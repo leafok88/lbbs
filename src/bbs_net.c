@@ -42,7 +42,7 @@ struct _bbsnet_conf
 	char host1[20];
 	char host2[40];
 	char ip[40];
-	int port;
+	in_port_t port;
 } bbsnet_conf[MAXSTATION];
 
 MENU_SET bbsnet_menu;
@@ -85,7 +85,7 @@ int load_bbsnet_conf(const char *file_config)
 		bbsnet_conf[item_count].host2[sizeof(bbsnet_conf[item_count].host2) - 1] = '\0';
 		strncpy(bbsnet_conf[item_count].ip, t3, sizeof(bbsnet_conf[item_count].ip) - 1);
 		bbsnet_conf[item_count].ip[sizeof(bbsnet_conf[item_count].ip) - 1] = '\0';
-		bbsnet_conf[item_count].port = t4 ? atoi(t4) : 23;
+		bbsnet_conf[item_count].port = (in_port_t)(t4 ? atoi(t4) : 23);
 
 		p_menuitem = p_menu->items[item_count] = malloc(sizeof(MENU_ITEM));
 		p_menuitem->row = 2 + item_count / STATION_PER_LINE;
@@ -96,7 +96,7 @@ int load_bbsnet_conf(const char *file_config)
 		p_menuitem->level = 0;
 		p_menuitem->display = 0;
 		p_menuitem->name[0] =
-			(item_count < MAXSTATION / 2 ? 'A' + item_count : 'a' + item_count);
+			(char)(item_count < MAXSTATION / 2 ? 'A' + item_count : 'a' + item_count);
 		p_menuitem->name[1] = '\0';
 		snprintf(p_menuitem->text, sizeof(p_menuitem->text), "[1;36m%c.[m %s",
 				 p_menuitem->name[0], bbsnet_conf[item_count].host1);
@@ -146,7 +146,8 @@ static void process_bar(int n, int len)
 
 int bbsnet_connect(int n)
 {
-	int sock, result, len, loop;
+	int sock, result, loop;
+	ssize_t len;
 	struct sockaddr_in sin;
 	char buf[256];
 	fd_set inputs, testfds;
@@ -283,7 +284,7 @@ int bbsnet_connect(int n)
 				{
 					loop = 0;
 				}
-				write(sock, buf, len);
+				write(sock, buf, (size_t)len);
 			}
 			if (FD_ISSET(sock, &testfds))
 			{
@@ -292,7 +293,7 @@ int bbsnet_connect(int n)
 				{
 					loop = 0;
 				}
-				write(1, buf, len);
+				write(1, buf, (size_t)len);
 			}
 			BBS_last_access_tm = time(0);
 		}

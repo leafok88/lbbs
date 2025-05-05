@@ -19,8 +19,8 @@
 
 #include <stdio.h>
 
-extern int split_line(const char *buffer, int max_len, int *p_eol);
+extern unsigned int split_line(const char *buffer, int max_len, int *p_eol);
 
-extern int split_file_lines(FILE *fin, int max_len, long *p_line_offsets, int max_line_cnt);
+extern unsigned int split_file_lines(FILE *fin, int max_len, long *p_line_offsets, int max_line_cnt);
 
 #endif //_STR_PROCESS_H_

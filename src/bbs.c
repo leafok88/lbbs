@@ -26,7 +26,7 @@ char BBS_id[20] = "";
 char BBS_name[50] = "";
 char BBS_server[256] = "";
 char BBS_address[50] = "";
-unsigned int BBS_port = 23;
+in_port_t BBS_port = 23;
 unsigned int BBS_max_client = 256;
 unsigned int BBS_max_user = 10000;
 char BBS_start_dt[50] = "2004Äê 1ÔÂ 1ÈÕ";
@@ -39,7 +39,7 @@ time_t BBS_last_access_tm;
 
 char BBS_current_section_name[20];
 
-char *setuserfile(char *buf, int len, const char *filename)
+char *setuserfile(char *buf, size_t len, const char *filename)
 {
 	snprintf(buf, len, "%s/%ld", filename, BBS_priv.uid);
 	return buf;

@@ -22,10 +22,9 @@
 #include "fork.h"
 #include "tcplib.h"
 #include <sys/socket.h>
-#include <netinet/in.h>
 #include <arpa/inet.h>
 
-int net_server(const char *hostaddr, unsigned int port)
+int net_server(const char *hostaddr, in_port_t port)
 {
 	unsigned int namelen;
 	int result;

@@ -70,7 +70,7 @@ extern "C"
 	 * @return 转换后的毫秒数值
 	 * @see MsToTimeval()
 	 */
-	int TimevalToMs(const struct timeval *tv);
+	long int TimevalToMs(const struct timeval *tv);
 
 	/**
 	 * 用于两个 timeval 结构体的相减.
@@ -117,7 +117,7 @@ extern "C"
 	 *         <0  连接失败
 	 * @see NonBlockConnect()
 	 */
-	int DoConnect(const char *ip, const int port, const int msec);
+	int DoConnect(const char *ip, const in_port_t port, const int msec);
 
 	/**
 	 * 断开 TCP 连接的函数.
@@ -167,12 +167,12 @@ extern "C"
 	/**
 	 * 带超时控制的报文发送函数.
 	 */
-	int DoSendData(int sockfd, const void *buf, const size_t len, int msec);
+	long int DoSendData(int sockfd, const void *buf, const size_t len, int msec);
 
 	/**
 	 * 带超时控制的报文接收函数.
 	 */
-	int DoRecvData(int sockfd, void *buf, const size_t len, int msec);
+	long int DoRecvData(int sockfd, void *buf, const size_t len, int msec);
 
 #ifdef __cplusplus
 }
