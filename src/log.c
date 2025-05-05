@@ -57,7 +57,7 @@ int log_head(char *buf)
 	char s_time[256];
 	t = time(0);
 
-	strftime(s_time, 256, "%Y-%m-%d %H:%M:%S", localtime(&t));
+	strftime(s_time, sizeof(s_time), "%Y-%m-%d %H:%M:%S", localtime(&t));
 	sprintf(buf, "[%s] [%d] ", s_time, getpid());
 
 	return 0;
@@ -70,7 +70,7 @@ int log_std(const char *format, ...)
 	char buf[1024];
 
 	log_head(buf);
-	strcat(buf, format);
+	strncat(buf, format, sizeof(buf) - strnlen(buf, sizeof(buf)));
 
 	va_start(args, format);
 	retval = vfprintf(fp_log_std, buf, args);
@@ -88,7 +88,7 @@ int log_error(const char *format, ...)
 	char buf[1024];
 
 	log_head(buf);
-	strcat(buf, format);
+	strncat(buf, format, sizeof(buf) - strnlen(buf, sizeof(buf)));
 
 	va_start(args, format);
 	retval = vfprintf(fp_log_err, buf, args);
