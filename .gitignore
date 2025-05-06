@@ -2,6 +2,7 @@
 /utils/conf/db_conn.conf.php
 /aclocal.m4
 /autom4te.cache
+/COPYING
 /compile
 /config.guess
 /config.log
@@ -9,9 +10,11 @@
 /config.sub
 /configure
 /depcomp
+/install-sh
 /libtool
 /ltmain.sh
 /m4
+/missing
 /log
 /var
 CVS
