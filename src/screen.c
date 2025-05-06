@@ -243,6 +243,7 @@ int display_file(const char *filename)
 
 int display_file_ex(const char *filename, int begin_line, int wait)
 {
+	static int show_help = 1;
 	char buffer[LINE_BUFFER_LEN];
 	int ch = 0;
 	int input_ok, line, max_lines;
@@ -375,8 +376,15 @@ int display_file_ex(const char *filename, int begin_line, int wait)
 				case '?':
 				case 'h':
 				case 'H':
+					if (!show_help)
+					{
+						break;
+					}
+
 					// Display help information
+					show_help = 0;
 					display_file_ex(DATA_READ_HELP, begin_line, 1);
+					show_help = 1;
 
 					// Refresh after display help information
 					c_line_current -= (line - 1);
