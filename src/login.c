@@ -115,6 +115,7 @@ int check_user(MYSQL *db, char *username, char *password)
 	char sql[SQL_BUFFER_LEN];
 	int ret;
 	long BBS_uid = 0;
+	char client_addr[IP_ADDR_LEN];
 
 	// Verify format
 	if (ireg("^[A-Za-z][A-Za-z0-9]{2,11}$", username, 0, NULL) != 0 ||
@@ -138,10 +139,72 @@ int check_user(MYSQL *db, char *username, char *password)
 		return -1;
 	}
 
+	// Failed login attempts from the same source (subnet /24) during certain time period
+	strncpy(client_addr, hostaddr_client, sizeof(client_addr) - 1);
+	client_addr[sizeof(client_addr) - 1] = '\0';
+
 	snprintf(sql, sizeof(sql),
-			"SELECT UID, username, p_login FROM user_list "
-			"WHERE username = '%s' AND password = SHA2('%s', 256) AND enable",
-			username, password);
+			 "SELECT COUNT(*) AS err_count FROM user_err_login_log "
+			 "WHERE login_dt >= SUBDATE(NOW(), INTERVAL 10 MINUTE) "
+			 "AND login_ip LIKE '%s'",
+			 ip_mask(client_addr, 1, '%'));
+	if (mysql_query(db, sql) != 0)
+	{
+		log_error("Query user_list failed\n");
+		return -1;
+	}
+	if ((rs = mysql_store_result(db)) == NULL)
+	{
+		log_error("Get user_list data failed\n");
+		return -1;
+	}
+	if ((row = mysql_fetch_row(rs)))
+	{
+		if (atoi(row[0]) >= 2)
+		{
+			mysql_free_result(rs);
+
+			prints("\033[1;31m来源存在多次失败登陆尝试，请稍后再试\033[m\r\n");
+			iflush();
+
+			return 1;
+		}
+	}
+	mysql_free_result(rs);
+
+	// Failed login attempts against the current username during certain time period
+	snprintf(sql, sizeof(sql),
+			 "SELECT COUNT(*) AS err_count FROM user_err_login_log "
+			 "WHERE username = '%s' AND login_dt >= SUBDATE(NOW(), INTERVAL 1 DAY)",
+			 username);
+	if (mysql_query(db, sql) != 0)
+	{
+		log_error("Query user_list failed\n");
+		return -1;
+	}
+	if ((rs = mysql_store_result(db)) == NULL)
+	{
+		log_error("Get user_list data failed\n");
+		return -1;
+	}
+	if ((row = mysql_fetch_row(rs)))
+	{
+		if (atoi(row[0]) >= 5)
+		{
+			mysql_free_result(rs);
+
+			prints("\033[1;31m账户存在多次失败登陆尝试，请使用Web方式登录\033[m\r\n");
+			iflush();
+
+			return 1;
+		}
+	}
+	mysql_free_result(rs);
+
+	snprintf(sql, sizeof(sql),
+			 "SELECT UID, username, p_login FROM user_list "
+			 "WHERE username = '%s' AND password = SHA2('%s', 256) AND enable",
+			 username, password);
 	if (mysql_query(db, sql) != 0)
 	{
 		log_error("Query user_list failed\n");
@@ -163,9 +226,9 @@ int check_user(MYSQL *db, char *username, char *password)
 
 		// Add user login log
 		snprintf(sql, sizeof(sql),
-				"INSERT INTO user_login_log(UID, login_dt, login_ip) "
-				"VALUES(%ld, NOW(), '%s')",
-				BBS_uid, hostaddr_client);
+				 "INSERT INTO user_login_log(UID, login_dt, login_ip) "
+				 "VALUES(%ld, NOW(), '%s')",
+				 BBS_uid, hostaddr_client);
 		if (mysql_query(db, sql) != 0)
 		{
 			log_error("Insert into user_login_log failed\n");
@@ -193,9 +256,9 @@ int check_user(MYSQL *db, char *username, char *password)
 		mysql_free_result(rs);
 
 		snprintf(sql, sizeof(sql),
-				"INSERT INTO user_err_login_log(username, password, login_dt, login_ip) "
-				"VALUES('%s', '%s', NOW(), '%s')",
-				username, password, hostaddr_client);
+				 "INSERT INTO user_err_login_log(username, password, login_dt, login_ip) "
+				 "VALUES('%s', '%s', NOW(), '%s')",
+				 username, password, hostaddr_client);
 		if (mysql_query(db, sql) != 0)
 		{
 			log_error("Insert into user_err_login_log failed\n");
@@ -244,9 +307,9 @@ int check_user(MYSQL *db, char *username, char *password)
 	}
 
 	snprintf(sql, sizeof(sql),
-			"UPDATE user_pubinfo SET visit_count = visit_count + 1, "
-			"last_login_dt = NOW() WHERE UID = %ld",
-			BBS_uid);
+			 "UPDATE user_pubinfo SET visit_count = visit_count + 1, "
+			 "last_login_dt = NOW() WHERE UID = %ld",
+			 BBS_uid);
 	if (mysql_query(db, sql) != 0)
 	{
 		log_error("Update user_pubinfo failed\n");
@@ -272,9 +335,9 @@ int load_user_info(MYSQL *db, long int BBS_uid)
 	time_t last_login_dt;
 
 	snprintf(sql, sizeof(sql),
-			"SELECT life, UNIX_TIMESTAMP(last_login_dt) "
-			"FROM user_pubinfo WHERE UID = %ld",
-			BBS_uid);
+			 "SELECT life, UNIX_TIMESTAMP(last_login_dt) "
+			 "FROM user_pubinfo WHERE UID = %ld",
+			 BBS_uid);
 	if (mysql_query(db, sql) != 0)
 	{
 		log_error("Query user_pubinfo failed\n");
@@ -341,9 +404,9 @@ int user_online_add(MYSQL *db)
 	}
 
 	snprintf(sql, sizeof(sql),
-			"INSERT INTO user_online(SID, UID, ip, login_tm, last_tm) "
-			"VALUES('Telnet_Process_%d', %ld, '%s', NOW(), NOW())",
-			getpid(), BBS_priv.uid, hostaddr_client);
+			 "INSERT INTO user_online(SID, UID, ip, login_tm, last_tm) "
+			 "VALUES('Telnet_Process_%d', %ld, '%s', NOW(), NOW())",
+			 getpid(), BBS_priv.uid, hostaddr_client);
 	if (mysql_query(db, sql) != 0)
 	{
 		log_error("Add user_online failed\n");
@@ -358,8 +421,8 @@ int user_online_del(MYSQL *db)
 	char sql[SQL_BUFFER_LEN];
 
 	snprintf(sql, sizeof(sql),
-			"DELETE FROM user_online WHERE SID = 'Telnet_Process_%d'",
-			getpid());
+			 "DELETE FROM user_online WHERE SID = 'Telnet_Process_%d'",
+			 getpid());
 	if (mysql_query(db, sql) != 0)
 	{
 		log_error("Delete user_online failed\n");
