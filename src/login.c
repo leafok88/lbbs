@@ -72,9 +72,13 @@ int bbs_login()
 		if (strcmp(username, "new") == 0)
 		{
 			if (user_register() == 0)
+			{
 				return 0;
+			}
 			else
+			{
 				return -2;
+			}
 		}
 
 		if (username[0] != '\0')

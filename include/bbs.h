@@ -39,7 +39,6 @@ extern char BBS_start_dt[50];
 #define MAX_DELAY_TIME 600
 
 extern char BBS_username[BBS_username_max_len + 1];
-extern int BBS_user_money;
 
 extern time_t BBS_login_tm;
 extern time_t BBS_last_access_tm;

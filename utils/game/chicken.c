@@ -21,6 +21,7 @@ char
 char *cage[9] = {"µ®Éú", "ÖÜËê", "Ó×Äê", "ÉÙÄê", "ÇàÄê", "»îÁ¦", "×³Äê", "ÖĞÄê"};
 char *menu[8] = {"ÓÎÏ·", "ÔË¶¯", "µ÷½Ì¼ÆÄÜ", "ÂòÂô¹¤¾ß", "ÇåÀí¼¦Éá"};
 
+char fname[FILE_PATH_LEN];
 time_t birth;
 int weight, satis, mon, day, age, angery, sick, oo, happy, clean, tiredstrong, play;
 int winn, losee, last, chictime, agetmp, food, zfood;
@@ -30,6 +31,8 @@ int gold, x[9] = {0}, ran, q_mon, p_mon;
 unsigned long int bank;
 char buf[1], buf1[6];
 
+static int load_chicken(void);
+static int save_chicken(void);
 static int creat_a_egg(void);
 static int death(void);
 static int guess(void);
@@ -44,18 +47,34 @@ static int win_c(void);
 
 int chicken_main()
 {
+	if (money_refresh() < 0)
+	{
+		return -1;
+	}
+
+	setuserfile(fname, sizeof(fname), DATA_FILE);
+	load_chicken();
+	show_chicken();
+	select_menu();
+	save_chicken();
+
+	return 0;
+}
+
+static int load_chicken()
+{
 	FILE *fp;
 	time_t now;
 	struct tm *ptime;
-	char fname[FILE_PATH_LEN];
 
 	agetmp = 1;
 	//  modify_user_mode(CHICK);
 	time(&now);
 	ptime = localtime(&now);
-	setuserfile(fname, sizeof(fname), DATA_FILE);
+
 	if ((fp = fopen(fname, "r+")) == NULL)
 	{
+		Name[0] = '\0';
 		creat_a_egg();
 		last = 1;
 		fp = fopen(fname, "r");
@@ -68,29 +87,35 @@ int chicken_main()
 		fscanf(fp, "%d %d %d %d %d %d %d %d %d %d %d %d %d %d %s ", &weight, &mon, &day, &satis, &age, &oo, &happy, &clean, &tiredstrong, &play, &winn, &losee, &food, &zfood, Name);
 		fclose(fp);
 	}
-	/*¡õ*/
+
 	if (day < (ptime->tm_mon + 1))
 	{
 		age = ptime->tm_mday;
 		age = age + 31 - mon;
 	}
 	else
+	{
 		age = ptime->tm_mday - mon;
+	}
 
-	show_chicken();
-	select_menu();
+	return 0;
+}
+
+int save_chicken()
+{
+	FILE *fp;
+
 	fp = fopen(fname, "r+");
 	fprintf(fp, "%d %d %d %d %d %d %d %d %d %d %d %d %d %d %s ", weight, mon, day, satis, age, oo, happy, clean, tiredstrong, play, winn, losee, food, zfood, Name);
-
 	fclose(fp);
+
 	return 0;
 }
 
 static int creat_a_egg()
 {
-	char fname[50];
-	struct tm *ptime;
 	FILE *fp;
+	struct tm *ptime;
 	time_t now;
 	time(&now);
 	ptime = localtime(&now);
@@ -104,7 +129,6 @@ static int creat_a_egg()
 		get_data(2, 0, "°ïĞ¡¼¦È¡¸öºÃÃû×Ö£º", Name, 21, DOECHO);
 	}
 
-	setuserfile(fname, sizeof(fname), DATA_FILE);
 	if ((fp = fopen(fname, "w")) == NULL)
 	{
 		log_error("Error!!cannot open file '%s'!\n", fname);
@@ -112,6 +136,7 @@ static int creat_a_egg()
 	}
 	fprintf(fp, "%d %d %d %d %d %d %d %d %d %d %d %d %d %d %s ", ptime->tm_hour * 2, ptime->tm_mday, ptime->tm_mon + 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10, 5, Name);
 	fclose(fp);
+
 	if ((fp = fopen(LOG_FILE, "a")) == NULL)
 	{
 		log_error("Error!!cannot open file '%s'!\n", LOG_FILE);
@@ -121,30 +146,26 @@ static int creat_a_egg()
 			BBS_username, ptime->tm_mon + 1, ptime->tm_mday,
 			ptime->tm_hour, ptime->tm_min, Name);
 	fclose(fp);
+
 	return 0;
 }
 
 static int show_chicken()
 {
-	// int diff;
-	/*int chictime;*/
-
-	// diff = (time(0)/* - login_start_time*/) / 120;
-
 	if (chictime >= 200)
 	{
 		weight -= 5;
 		clean += 3;
 		if (tiredstrong > 2)
+		{
 			tiredstrong -= 2;
+		}
 	}
-	/*food=food-diff*3;*/
 	if (weight < 0)
+	{
 		death();
-	/*  if((diff-age)>1 && agetmp) »¹ÊÇÓĞÎÊÌâ
-	   {age++;
-		agetmp=0;}
-	*/
+	}
+
 	clrtobot(1);
 	prints(
 		"[33mName:%s[m"
@@ -159,7 +180,7 @@ static int show_chicken()
 		"  ¿ìÀÖ¶È:%d"
 		"  ÂúÒâ¶È:%d",
 		// "  ´ó²¹Íè:%d\r\n",
-		Name, age, weight, food, zfood, tiredstrong, clean, day, mon, BBS_user_money, happy, satis); //,oo);
+		Name, age, weight, food, zfood, tiredstrong, clean, day, mon, money_balance(), happy, satis); //,oo);
 
 	moveto(3, 0);
 	if (age <= 16)
@@ -329,20 +350,19 @@ static int show_chicken()
 
 static int select_menu()
 {
+	int loop = 1;
 	char inbuf[80];
-	// int diff;
 	struct tm *ptime;
 	time_t now;
-
 	time(&now);
 	ptime = localtime(&now);
-	// diff = (time(0) /*- login_start_time*/) / 60;
-	while (1)
+
+	while (loop)
 	{
 		moveto(23, 0);
-		prints("[0;46;31m  Ê¹ÓÃ°ïÖú  [0;47;34m c ¸ÄÃû×Ö   k É±¼¦   t Ïû³ı·ÇÆ£ÀÍ($50)        [m");
+		prints("[0;46;31m  Ê¹ÓÃ°ïÖú  [0;47;34m c ¸ÄÃû×Ö   k É±¼¦   t Ïû³ı·ÇÆ£ÀÍ($50)   q ÍË³ö     [m");
 		inbuf[0] = '\0';
-		get_data(22, 0, "Òª×öĞ©Ê²÷áÄØ?£º[0]", inbuf, 4, DOECHO);
+		get_data(22, 0, "Òª×öĞ©Ê²Ã´ÄØ?£º", inbuf, 1, DOECHO);
 		if (tiredstrong > 20)
 		{
 			clearscr();
@@ -358,6 +378,7 @@ static int select_menu()
 				pressany(5);
 				break;
 			}
+			clrtobot(10);
 			moveto(10, 0);
 			prints("       ¡õ¡õ¡õ¡õ¡õ¡õ\r\n"
 				   "         ¡ß¡à ¡õ  ¡õ\r\n"
@@ -376,9 +397,13 @@ static int select_menu()
 			tiredstrong++;
 			satis++;
 			if (age < 5)
+			{
 				weight = weight + (5 - age);
+			}
 			else
+			{
 				weight++;
+			}
 			if (weight > 100)
 			{
 				moveto(9, 30);
@@ -392,7 +417,9 @@ static int select_menu()
 				press_any_key();
 			}
 			if (weight > 200)
+			{
 				death();
+			}
 			break;
 		case '2':
 			if (zfood <= 0)
@@ -400,6 +427,7 @@ static int select_menu()
 				pressany(5);
 				break;
 			}
+			clrtobot(10);
 			moveto(10, 0);
 			prints("             ¡õ\r\n"
 				   "       [33;1m¡õ[m¡õ¡ğ\r\n"
@@ -420,9 +448,12 @@ static int select_menu()
 				press_any_key();
 			}
 			if (weight > 200)
+			{
 				death();
+			}
 			break;
 		case '3':
+			clrtobot(10);
 			moveto(10, 0);
 			prints("[1;36m                              ¡õ¡õ¡õ¡õ¡õ[m\r\n"
 				   "[1;33m                             ¡º[37m¡õ¡õ¡õ¡õ[m\r\n"
@@ -448,8 +479,9 @@ static int select_menu()
 			situ();
 			break;
 		case '6':
+			clrtobot(20);
 			moveto(20, 0);
-			if (BBS_user_money < 20)
+			if (money_withdraw(20) <= 0)
 			{
 				prints("ÌÇ¹û²»×ã!!");
 				press_any_key();
@@ -457,13 +489,13 @@ static int select_menu()
 			}
 			food += 5;
 			prints("\r\nÊ³ÎïÓĞ [33;41m %d [m·İ", food);
-			prints("   Ê£ÏÂ [33;41m %d [mÌÇ", demoney(20));
+			prints("   Ê£ÏÂ [33;41m %d [mÌÇ", money_balance());
 			press_any_key();
 			break;
-
 		case '7':
+			clrtobot(20);
 			moveto(20, 0);
-			if (BBS_user_money < 30)
+			if (money_withdraw(30) <= 0)
 			{
 				prints("ÌÇ¹û²»×ã!!");
 				press_any_key();
@@ -471,13 +503,13 @@ static int select_menu()
 			}
 			zfood += 5;
 			prints("\r\nÁãÊ³ÓĞ [33;41m %d [m·İ", zfood);
-			prints("  Ê£ÏÂ [33;41m %d [mÌÇ", demoney(30));
+			prints("  Ê£ÏÂ [33;41m %d [mÌÇ", money_balance());
 			press_any_key();
 			break;
 		case '8':
-			moveto(21, 0);
 			if (oo > 0)
 			{
+				clrtobot(10);
 				moveto(10, 0);
 				prints("\r\n"
 					   "               ¡õ¡õ¡õ¡õ\r\n"
@@ -490,14 +522,15 @@ static int select_menu()
 				pressany(6);
 				break;
 			}
+			clrtobot(20);
 			moveto(20, 4);
 			prints("Ã»´ó²¹ÍèÀ²!!");
 			press_any_key();
 			break;
-
 		case '9':
 			if (age < 5)
 			{
+				clrtobot(20);
 				moveto(20, 4);
 				prints("Ì«Ğ¡ÁË...²»µÃ··ÊÛÎ´³ÉÄêĞ¡¼¦.....");
 				press_any_key();
@@ -509,27 +542,42 @@ static int select_menu()
 			death();
 			break;
 		case 't':
-			tiredstrong = 0;
-			BBS_user_money -= 50;
+			if (money_withdraw(50) <= 0)
+			{
+				clrtobot(20);
+				moveto(20, 4);
+				prints("ÌÇ¹û²»×ã!!");
+				press_any_key();
+				break;
+			}
+			else
+			{
+				tiredstrong = 0;
+			}
 			break;
 		case 'c':
+			clrline(22, 22);
 			get_data(22, 0, "°ïĞ¡¼¦È¡¸öºÃÃû×Ö£º", Name, 21, DOECHO);
 			break;
+		case 'q':
+			loop = 0;
+			break;
 		default:
-			return -1;
 			break;
 		}
-		show_chicken();
+		
+		if (loop)
+		{
+			show_chicken();
+		}
 	}
 	return 0;
 }
 
 int death()
 {
-	char fname[50];
 	FILE *fp;
 	struct tm *ptime;
-
 	time_t now;
 
 	time(&now);
@@ -548,22 +596,12 @@ int death()
 	prints("ÎØ...Ğ¡¼¦¹ÒÁË....");
 	prints("\r\n±¿Ê·ÁË...¸Ï³öÏµÍ³...");
 	press_any_key();
-	setuserfile(fname, sizeof(fname), DATA_FILE);
 
 	unlink(fname);
-	creat_a_egg();
-	chicken_main();
-	// abort_bbs();
+	load_chicken();
+
 	return 0;
 }
-
-/*int comeclearscr ()
-{
-   extern struct commands cmdlist[];
-
-  domenu(MMENU, "Ö÷¹¦\ÄÜ±í", (chkmail(0) ? 'M' : 'C'), cmdlist);
-}
-*/
 
 int pressany(int i)
 {
@@ -574,11 +612,6 @@ int pressany(int i)
 	do
 	{
 		ch = igetch(0);
-		/*
-				if (ch == KEY_ESC && KEY_ESC_arg == 'c')
-					// capture_screen()
-					clearscr ();
-		*/
 	} while ((ch != ' ') && (ch != KEY_LEFT) && (ch != '\r') && (ch != '\n'));
 	moveto(23, 0);
 	clrtoeol();
@@ -592,8 +625,6 @@ int guess()
 
 	do
 	{
-		/*getdata(22, 0, "[1]-¼ôµ¶ [2]-Ê¯Í· [3]-²¼£º", inbuf, 4,
-		DOECHO,NULL);*/
 		moveto(23, 0);
 		prints("[1]-¼ôµ¶ [2]-Ê¯Í· [3]-²¼£º");
 		clrtoeol();
@@ -601,9 +632,9 @@ int guess()
 		ch = igetch(0);
 	} while ((ch != '1') && (ch != '2') && (ch != '3'));
 
-	/* com=qtime->tm_sec%3;*/
 	srand((unsigned int)time(NULL));
 	com = rand() % 3;
+
 	moveto(21, 35);
 	switch (com)
 	{
@@ -617,6 +648,7 @@ int guess()
 		prints("Ğ¡¼¦:²¼");
 		break;
 	}
+	clrtoeol();
 
 	moveto(19, 0);
 
@@ -650,7 +682,8 @@ int guess()
 			tie();
 		break;
 	}
-	/* sleep(1);*/
+	clrtoeol();
+
 	press_any_key();
 	return 0;
 }
@@ -658,7 +691,7 @@ int guess()
 int win_c()
 {
 	winn++;
-	/* sleep(1);*/
+	clrtobot(20);
 	moveto(20, 0);
 	prints("ÅĞ¶¨:Ğ¡¼¦ÊäÁË....    >_<~~~~~\r\n"
 		   "\r\n"
@@ -667,8 +700,8 @@ int win_c()
 }
 int tie()
 {
-	/* sleep(0);*/
-	moveto(21, 0);
+	clrtobot(20);
+	moveto(20, 0);
 	prints("ÅĞ¶¨:Æ½ÊÖ                    -_-\r\n"
 		   "\r\n"
 		   "                                              ");
@@ -678,8 +711,8 @@ int lose()
 {
 	losee++;
 	happy += 2;
-	/*sleep(0);*/
-	moveto(21, 0);
+	clrtobot(20);
+	moveto(20, 0);
 	prints("Ğ¡¼¦Ó®ÂŞ                      ¡É¡É\r\n"
 		   "                               ¡õ       ");
 	return 0;
@@ -687,7 +720,7 @@ int lose()
 
 int situ()
 {
-
+	clrtobot(16);
 	moveto(16, 0);
 	prints("           ");
 	moveto(17, 0);
@@ -706,7 +739,7 @@ int situ()
 int sell()
 {
 	int sel = 0;
-	char ans[5];
+	char ans[2];
 	struct tm *ptime;
 	FILE *fp;
 	time_t now;
@@ -714,32 +747,35 @@ int sell()
 	time(&now);
 	ptime = localtime(&now);
 
-	get_data(20, 0, "È·¶¨ÒªÂôµôĞ¡¼¦?[y/N]", ans, 3, DOECHO);
-	if (ans[0] != 'y')
-	{
-		return -1;
-	}
+	ans[0] = '\0';
+	
 	sel += (happy * 10);
 	sel += (satis * 7);
 	sel += ((ptime->tm_sec % 9) * 10);
 	sel += weight;
 	sel += age * 10;
 
-	if (sel < 0)
-	{
-		return -2;
-	}
-
+	clrtobot(20);
 	moveto(20, 0);
 	prints("Ğ¡¼¦Öµ[33;45m$$ %d [mÌÇÌÇ", sel);
-	get_data(19, 0, "ÕæµÄÒªÂôµôĞ¡¼¦?[y/N]", ans, 3, DOECHO);
+	get_data(19, 0, "ÕæµÄÒªÂôµôĞ¡¼¦?[y/N]", ans, 1, DOECHO);
 	if (ans[0] != 'y')
+	{
+		return -1;
+	}
+
+	if (money_deposit(sel) <= 0)
+	{
+		log_error("Cannot deposit money %d\n", sel);
+		moveto(21, 0);
+		prints("ÎŞ·¨´æÇ®£¬·ÅÆú½»Ò×£¡");
 		return -2;
+	}
 
 	if ((fp = fopen(LOG_FILE, "a")) == NULL)
 	{
 		log_error("Error!!cannot open file '%s'!\n", LOG_FILE);
-		return -1;
+		return -2;
 	}
 	fprintf(fp, "[32m%s[m ÔÚ [34;43m[%d/%d  %d:%02d][m  °ÑĞ¡¼¦ [33m%s  [31mÒÔ [37;44m%d[m [31mÌÇ¹ûÂôÁË[m\r\n",
 			BBS_username, ptime->tm_mon + 1, ptime->tm_mday,
@@ -747,9 +783,8 @@ int sell()
 	fclose(fp);
 	clearscr();
 
-	inmoney((unsigned int)sel);
-	Name[0] = '\0';
-	creat_a_egg();
-	chicken_main();
+	unlink(fname);
+	load_chicken();
+
 	return 0;
 }

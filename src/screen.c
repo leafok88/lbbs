@@ -202,6 +202,8 @@ int get_data(int row, int col, char *prompt, char *buffer, int buffer_length, in
 {
 	int len;
 
+	igetch(1); // Cleanup input buffer
+
 	moveto(row, col);
 	prints(prompt);
 	prints(buffer);
