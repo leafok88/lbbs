@@ -46,8 +46,8 @@ int bbs_login()
 	// Input username
 	while (!ok)
 	{
-		prints("\033[1;33m«Î ‰»Î’ ∫≈\033[m( ‘”√«Î ‰»Î `\033[1;36mguest\033[m', "
-			   "◊¢≤·«Î ‰»Î `\033[1;31mnew\033[m'): ");
+		prints("\033[1;33m«Î ‰»Î’ ∫≈\033[m( ‘”√«Î ‰»Î`\033[1;36mguest\033[m', "
+			   "◊¢≤·«Î ‰»Î`\033[1;31mnew\033[m'): ");
 		iflush();
 
 		str_input(username, sizeof(username), DOECHO);
