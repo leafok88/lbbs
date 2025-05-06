@@ -41,6 +41,54 @@ please contact me.
 please tell me.
 
 
+System Requirement
+==================
+
+   Operation System: Linux
+
+   Software: 
+      1) GNU C Compiler
+      2) PHP ( Version >= 8.2 )
+      3) MySQL database ( Version >= 8.4 )
+
+
+Quick Installation
+==================
+
+   To install LBBS quickly, please do the following steps:
+
+1) Extract the source files from a tarball or export from GitHub
+   Run the following command to set up the autoconf/automake environment,
+   sh ./autogen.sh
+   and fix any error if exists.
+
+2) Compile source files
+   ./configure --prefix=/usr/local/lbbs
+   make
+
+3) Install binary files and data files
+   make install
+
+4) Create user and group
+   groupadd bbs
+   useradd bbs
+
+5) Set privileges of files
+   cd /usr/local/lbbs
+   chown bbs:bbs -R lbbs
+   chmod 750 -R lbbs
+   chmod 4750 lbbs/bin/bbsd
+
+6) Modify following configuration files
+   Default configuration files is saved as *.default, you should rename them first.
+   /usr/local/lbbs/conf/bbsd.conf
+   /usr/local/lbbs/utils/conf/db_conn.inc.php
+
+7) Startup
+   /usr/local/lbbs/bin/bbsd
+
+
 Installation
 ============
+
     Please see INSTALL for details.
