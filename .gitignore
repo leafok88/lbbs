@@ -21,6 +21,7 @@ CVS
 .cvsignore
 .vscode
 Makefile
+Makefile.in
 *.o
 *.Po
 *.Plo
