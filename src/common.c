@@ -93,9 +93,13 @@ const char *get_time_str(char *s, size_t len)
 void reload_bbs_menu(int i)
 {
 	if (reload_menu(&bbs_menu) < 0)
+	{
 		log_error("Reload menu failed\n");
+	}
 	else
+	{
 		log_std("Reload menu successfully\n");
+	}
 }
 
 void system_exit(int i)
@@ -114,4 +118,42 @@ void child_exit(int i)
 		SYS_child_process_count--;
 		log_std("Child process (%d) exited\n", pid);
 	}
+}
+
+const char * ip_mask(char * s, int level, char mask)
+{
+	char * p = s;
+
+	if (level <= 0)
+	{
+		return s;
+	}
+	if (level > 4)
+	{
+		level = 4;
+	}
+
+	for (int i = 0; i < 4 - level; i++)
+	{
+		p = strchr(p, '.');
+		if (p == NULL)
+		{
+			return s;
+		}
+		p++;
+	}
+
+	for (int i = 0; i < level; i++)
+	{
+		*p = mask;
+		p++;
+		if (i < level - 1)
+		{
+			*p = '.';
+			p++;
+		}
+	}
+	*p = '\0';
+
+	return s;
 }

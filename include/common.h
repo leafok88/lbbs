@@ -44,10 +44,12 @@ extern char app_version[256];
 #define VAR_MAX_USER_ONLINE "var/max_user_online.dat"
 
 // Network
+#define IP_ADDR_LEN 50
+
 extern int socket_server;
 extern int socket_client;
-extern char hostaddr_server[50];
-extern char hostaddr_client[50];
+extern char hostaddr_server[IP_ADDR_LEN];
+extern char hostaddr_client[IP_ADDR_LEN];
 extern int port_server;
 extern int port_client;
 
@@ -65,5 +67,8 @@ extern void child_exit(int);
 // System
 extern int SYS_exit;
 extern int SYS_child_process_count;
+
+// Network
+extern const char * ip_mask(char * s, int level, char mask);
 
 #endif //_COMMON_H_
