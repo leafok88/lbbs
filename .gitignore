@@ -10,6 +10,7 @@
 /config.sub
 /configure
 /depcomp
+/INSTALL
 /install-sh
 /libtool
 /log
