@@ -317,9 +317,9 @@ int display_file_ex(const char *filename, int begin_line, int wait)
 					}
 					c_line_current -= line;
 					line = begin_line;
-					max_lines = begin_line + 1;
-					prints("\033[T"); // Scroll down 1 line
-					// max_lines = screen_rows - 1; // Legacy Fterm only works with this line
+					// max_lines = begin_line + 1;
+					// prints("\033[T"); // Scroll down 1 line
+					max_lines = screen_rows - 1; // Legacy Fterm only works with this line
 					break;
 				case KEY_DOWN:
 				case CR:
