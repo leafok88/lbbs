@@ -35,7 +35,7 @@ extern char app_version[256];
 #define DATA_WELCOME "data/welcome.txt"
 #define DATA_REGISTER "data/register.txt"
 #define DATA_GOODBYE "data/goodbye.txt"
-#define DATA_LICENSE "data/license.txt"
+#define DATA_LICENSE "LICENSE"
 #define DATA_COPYRIGHT "data/copyright.txt"
 #define DATA_LOGIN_ERROR "data/login_error.txt"
 #define DATA_ACTIVE_BOARD "data/active_board.txt"
