@@ -101,14 +101,14 @@ void set_input_echo(int echo)
 	}
 }
 
-static int _str_input(char *buffer, int buffer_length, int echo_mode)
+static int _str_input(char *buffer, int buf_size, int echo_mode)
 {
-	int c, offset = 0, i, hz = 0;
+	int c;
+	int offset = 0;
+	int hz = 0;
 
-	for (i = 0; i < buffer_length && buffer[i] != '\0'; i++)
-	{
-		offset++;
-	}
+	buffer[buf_size - 1] = '\0';
+	for (offset = 0; offset < buf_size - 1 && buffer[offset] != '\0'; offset++);
 
 	while ((c = igetch_t(60)))
 	{
@@ -148,7 +148,7 @@ static int _str_input(char *buffer, int buffer_length, int echo_mode)
 		}
 		if (c > 127 && c <= 255)
 		{
-			if (!hz && offset + 2 > buffer_length) // No enough space for Chinese character
+			if (!hz && offset + 2 > buf_size - 1) // No enough space for Chinese character
 			{
 				igetch(1); // Cleanup remaining input
 				outc('\a');
@@ -157,7 +157,7 @@ static int _str_input(char *buffer, int buffer_length, int echo_mode)
 			}
 			hz = (!hz);
 		}
-		if (offset >= buffer_length)
+		if (offset + 1 > buf_size - 1)
 		{
 			outc('\a');
 			iflush();
@@ -183,13 +183,13 @@ static int _str_input(char *buffer, int buffer_length, int echo_mode)
 	return offset;
 }
 
-int str_input(char *buffer, int buffer_length, int echo_mode)
+int str_input(char *buffer, int buf_size, int echo_mode)
 {
 	int len;
 
 	buffer[0] = '\0';
 
-	len = _str_input(buffer, buffer_length, echo_mode);
+	len = _str_input(buffer, buf_size, echo_mode);
 
 	prints("\r\n");
 	iflush();
@@ -197,7 +197,7 @@ int str_input(char *buffer, int buffer_length, int echo_mode)
 	return len;
 };
 
-int get_data(int row, int col, char *prompt, char *buffer, int buffer_length, int echo_mode)
+int get_data(int row, int col, char *prompt, char *buffer, int buf_size, int echo_mode)
 {
 	int len;
 
@@ -208,7 +208,7 @@ int get_data(int row, int col, char *prompt, char *buffer, int buffer_length, in
 	prints(buffer);
 	iflush();
 
-	len = _str_input(buffer, buffer_length, echo_mode);
+	len = _str_input(buffer, buf_size, echo_mode);
 
 	return len;
 }

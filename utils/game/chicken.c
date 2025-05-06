@@ -25,7 +25,7 @@ char fname[FILE_PATH_LEN];
 time_t birth;
 int weight, satis, mon, day, age, angery, sick, oo, happy, clean, tiredstrong, play;
 int winn, losee, last, chictime, agetmp, food, zfood;
-char Name[20];
+char Name[21];
 FILE *cfp;
 int gold, x[9] = {0}, ran, q_mon, p_mon;
 unsigned long int bank;
@@ -126,7 +126,7 @@ static int creat_a_egg()
 		strncpy(Name, "±¦±¦", sizeof(Name) - 1);
 		Name[sizeof(Name) - 1] = '\0';
 
-		get_data(2, 0, "°ïĞ¡¼¦È¡¸öºÃÃû×Ö£º", Name, 21, DOECHO);
+		get_data(2, 0, "°ïĞ¡¼¦È¡¸öºÃÃû×Ö£º", Name, sizeof(Name), DOECHO);
 	}
 
 	if ((fp = fopen(fname, "w")) == NULL)
@@ -351,7 +351,7 @@ static int show_chicken()
 static int select_menu()
 {
 	int loop = 1;
-	char inbuf[80];
+	char inbuf[2];
 	struct tm *ptime;
 	time_t now;
 	time(&now);
@@ -362,7 +362,7 @@ static int select_menu()
 		moveto(23, 0);
 		prints("[0;46;31m  Ê¹ÓÃ°ïÖú  [0;47;34m c ¸ÄÃû×Ö   k É±¼¦   t Ïû³ı·ÇÆ£ÀÍ($50)   q ÍË³ö     [m");
 		inbuf[0] = '\0';
-		get_data(22, 0, "Òª×öĞ©Ê²Ã´ÄØ?£º", inbuf, 1, DOECHO);
+		get_data(22, 0, "Òª×öĞ©Ê²Ã´ÄØ?£º", inbuf, sizeof(inbuf), DOECHO);
 		if (tiredstrong > 20)
 		{
 			clearscr();
@@ -556,8 +556,11 @@ static int select_menu()
 			}
 			break;
 		case 'c':
-			clrline(22, 22);
-			get_data(22, 0, "°ïĞ¡¼¦È¡¸öºÃÃû×Ö£º", Name, 21, DOECHO);
+			do
+			{
+				clrline(22, 22);
+				get_data(22, 0, "°ïĞ¡¼¦È¡¸öºÃÃû×Ö£º", Name, sizeof(Name), DOECHO);
+			} while (Name[0] == '\0');
 			break;
 		case 'q':
 			loop = 0;
@@ -565,7 +568,7 @@ static int select_menu()
 		default:
 			break;
 		}
-		
+
 		if (loop)
 		{
 			show_chicken();
@@ -748,7 +751,7 @@ int sell()
 	ptime = localtime(&now);
 
 	ans[0] = '\0';
-	
+
 	sel += (happy * 10);
 	sel += (satis * 7);
 	sel += ((ptime->tm_sec % 9) * 10);
@@ -758,7 +761,7 @@ int sell()
 	clrtobot(20);
 	moveto(20, 0);
 	prints("Ğ¡¼¦Öµ[33;45m$$ %d [mÌÇÌÇ", sel);
-	get_data(19, 0, "ÕæµÄÒªÂôµôĞ¡¼¦?[y/N]", ans, 1, DOECHO);
+	get_data(19, 0, "ÕæµÄÒªÂôµôĞ¡¼¦?[y/N]", ans, sizeof(ans), DOECHO);
 	if (ans[0] != 'y')
 	{
 		return -1;

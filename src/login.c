@@ -50,7 +50,7 @@ int bbs_login()
 			   "◊¢≤·«Î ‰»Î`\033[1;31mnew\033[m'): ");
 		iflush();
 
-		str_input(username, sizeof(username) - 1, DOECHO);
+		str_input(username, sizeof(username), DOECHO);
 		count++;
 
 		if (strcmp(username, "guest") == 0)
@@ -86,7 +86,7 @@ int bbs_login()
 			prints("\033[1;37m«Î ‰»Î√‹¬Î\033[m: ");
 			iflush();
 
-			str_input(password, sizeof(password) - 1, NOECHO);
+			str_input(password, sizeof(password), NOECHO);
 
 			MYSQL *db = db_open();
 			if (db == NULL)
