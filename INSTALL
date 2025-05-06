@@ -10,15 +10,18 @@ System Requirement
 
    Software: 
       1) GNU C Compiler
-      2) PHP ( Version >= 4.2 )
-      3) MySQL database ( Version >= 4.0 )
+      2) PHP ( Version >= 8.2 )
+      3) MySQL database ( Version >= 8.4 )
 
 Quick Installation
 ==================
 
    To install LBBS quickly, please do the following steps:
 
-1) Extract the source files from a tarball or export from CVS
+1) Extract the source files from a tarball or export from GitHub
+   Run the following command to set up the autoconf/automake environment,
+   sh ./autogen.sh
+   and fix any error if exists.
 
 2) Compile source files
    ./configure --prefix=/usr/local/lbbs
