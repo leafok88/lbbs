@@ -12,10 +12,11 @@
 /depcomp
 /install-sh
 /libtool
+/log
 /ltmain.sh
 /m4
 /missing
-/log
+/NEWS
 /var
 CVS
 .cvsignore
