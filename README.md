@@ -48,27 +48,15 @@ To install LBBS quickly, please do the following steps:
 
    make
 
-3) Install binary files and data files
+3) Create user and group
 
-   make install
+   sudo useradd bbs
 
-4) Create user and group
+4) Install binary files and data files
 
-   groupadd bbs
+   sudo make install
 
-   useradd bbs
-
-5) Set privileges of files
-
-   cd /usr/local/lbbs
-
-   chown bbs:bbs -R lbbs
-
-   chmod 750 -R lbbs
-
-   chmod 4750 lbbs/bin/bbsd
-
-6) Modify following configuration files
+5) Modify following configuration files
 
    Default configuration files is saved as *.default, you should rename them first.
    
@@ -76,7 +64,7 @@ To install LBBS quickly, please do the following steps:
    
    /usr/local/lbbs/utils/conf/db_conn.inc.php
 
-7) Startup
+6) Startup
 
    /usr/local/lbbs/bin/bbsd
 
