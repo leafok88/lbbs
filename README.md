@@ -66,5 +66,5 @@ To install LBBS quickly, please do the following steps:
 
 6) Startup
 
-   /usr/local/lbbs/bin/bbsd
+   sudo /usr/local/lbbs/bin/bbsd
 
