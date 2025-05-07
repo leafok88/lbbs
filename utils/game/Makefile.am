@@ -4,7 +4,7 @@ libgame_la_SOURCES = chicken.c money.c
 
 AM_CFLAGS = -Wall -Werror -Wno-unused-parameter -Wformat -Wconversion -Wdeprecated -finline-functions
 AM_CPPFLAGS = -I$(top_builddir)/include -I/usr/include/mysql
-LIBS = -L$(top_builddir)/lib -L/usr/lib/mysql -L/usr/lib64/mysql -lmysqlclient -lz
+LIBS = -L/usr/lib/mysql -L/usr/lib64/mysql -lmysqlclient -lz
 
 libdir = ${prefix}/game/so
 
