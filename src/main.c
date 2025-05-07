@@ -157,11 +157,14 @@ int main(int argc, char *argv[])
 	// Wait for child process exit
 	while (SYS_child_process_count > 0)
 	{
+		log_std("Waiting for %d child process to exit\n", SYS_child_process_count);
 		sleep(1);
 	}
 
 	// Cleanup
 	unload_menu(&bbs_menu);
 
+	log_std("Main process exit\n");
+	
 	return 0;
 }

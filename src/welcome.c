@@ -45,9 +45,10 @@ int bbs_welcome()
 	}
 
 	snprintf(sql, sizeof(sql),
-		   "SELECT COUNT(*) AS cc FROM "
-		   "(SELECT DISTINCT SID FROM user_online "
-		   "WHERE current_action NOT IN ('exit')) AS t1");
+			 "SELECT COUNT(*) AS cc FROM "
+			 "(SELECT DISTINCT SID FROM user_online "
+			 "WHERE last_tm >= SUBDATE(NOW(), INTERVAL %d SECOND)) AS t1",
+			 BBS_user_off_line);
 	if (mysql_query(db, sql) != 0)
 	{
 		log_error("Query user_online failed\n");
@@ -65,9 +66,10 @@ int bbs_welcome()
 	mysql_free_result(rs);
 
 	snprintf(sql, sizeof(sql),
-		   "SELECT COUNT(*) AS cc FROM "
-		   "(SELECT DISTINCT SID FROM user_online "
-		   "WHERE UID = 0 AND current_action NOT IN ('exit')) AS t1");
+			 "SELECT COUNT(*) AS cc FROM "
+			 "(SELECT DISTINCT SID FROM user_online "
+			 "WHERE UID = 0 AND last_tm >= SUBDATE(NOW(), INTERVAL %d SECOND)) AS t1",
+			 BBS_user_off_line);
 	if (mysql_query(db, sql) != 0)
 	{
 		log_error("Query user_online failed\n");
