@@ -164,7 +164,7 @@ int main(int argc, char *argv[])
 	// Cleanup
 	unload_menu(&bbs_menu);
 
-	log_std("Main process exit\n");
+	log_std("Main process exit normally\n");
 	
 	return 0;
 }
