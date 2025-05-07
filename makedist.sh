@@ -30,5 +30,4 @@ done
 chown bbs:bbs -R ${PRG_HOME}
 find ${PRG_HOME} -type d -exec chmod 750 {} \;
 find ${PRG_HOME} -type f -exec chmod 640 {} \;
-find ${PRG_HOME} -name *.php -type f -exec chmod 750 {} \;
 chmod 4750 ${PRG_HOME}/bin/bbsd
