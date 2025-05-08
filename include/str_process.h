@@ -19,7 +19,7 @@
 
 #include <stdio.h>
 
-extern unsigned int split_line(const char *buffer, int max_len, int *p_eol);
+extern unsigned int split_line(const char *buffer, int max_len, int *p_eol, int *p_display_len);
 
 extern unsigned int split_file_lines(FILE *fin, int max_len, long *p_line_offsets, int max_line_cnt);
 

@@ -20,12 +20,12 @@
 #include <stdio.h>
 #include <string.h>
 
-unsigned int split_line(const char *buffer, int max_len, int *p_eol)
+unsigned int split_line(const char *buffer, int max_len, int *p_eol, int *p_display_len)
 {
 	size_t len = strnlen(buffer, LINE_BUFFER_LEN);
-	int display_len = 0;
 	unsigned int i = 0;
 	*p_eol = 0;
+	*p_display_len = 0;
 
 	if (len == 0)
 	{
@@ -60,22 +60,22 @@ unsigned int split_line(const char *buffer, int max_len, int *p_eol)
 
 		if (c > 127 && c <= 255) // GBK chinese character
 		{
-			if (display_len + 2 > max_len)
+			if (*p_display_len + 2 > max_len)
 			{
 				*p_eol = 1;
 				break;
 			}
 			i++;
-			display_len += 2;
+			*p_display_len += 2;
 		}
 		else
 		{
-			if (display_len >= max_len)
+			if (*p_display_len + 1 > max_len)
 			{
 				*p_eol = 1;
 				break;
 			}
-			display_len++;
+			(*p_display_len)++;
 		}
 	}
 
@@ -89,6 +89,8 @@ unsigned int split_file_lines(FILE *fin, int max_len, long *p_line_offsets, int 
 	unsigned int line_cnt = 0;
 	unsigned int len = 0;
 	int end_of_line = 0;
+	int display_len = 0;
+
 	p_line_offsets[line_cnt] = 0L;
 
 	while (fgets(p_buf, (int)(sizeof(buffer) - len), fin))
@@ -96,7 +98,7 @@ unsigned int split_file_lines(FILE *fin, int max_len, long *p_line_offsets, int 
 		p_buf = buffer;
 		while (1)
 		{
-			len = split_line(p_buf, max_len, &end_of_line);
+			len = split_line(p_buf, max_len, &end_of_line, &display_len);
 
 			if (len == 0 || !end_of_line)
 			{

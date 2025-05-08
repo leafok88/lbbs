@@ -64,7 +64,7 @@ typedef struct _menu MENU;
 
 struct _menu_set
 {
-	char conf_file[256];
+	char conf_file[FILE_PATH_LEN];
 	MENU *p_menu[MAX_MENUS];
 	MENU *p_menu_select[MAX_MENU_DEPTH];
 	int menu_count;

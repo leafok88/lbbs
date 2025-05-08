@@ -20,6 +20,7 @@
 #include "log.h"
 #include "io.h"
 #include "screen.h"
+#include "menu.h"
 #include <dlfcn.h>
 #include <errno.h>
 #include <signal.h>
@@ -97,10 +98,35 @@ int copyright(const char *s)
 
 int reloadbbsmenu(const char *s)
 {
-	if (kill(getppid(), SIG_RELOAD_MENU) < 0)
+	MENU_SET new_menu;
+
+	clearscr();
+
+	if (load_menu(&new_menu, CONF_MENU) < 0)
 	{
-		log_error("Send SIG_RELOAD_MENU signal failed (%d)\n", errno);
+		log_error("Reload menu failed\n");
+
+		unload_menu(&new_menu);
+
+		prints("菜单配置校验失败\r\n");
 	}
+	else
+	{
+		unload_menu(&new_menu);
+
+		if (kill(getppid(), SIG_RELOAD_MENU) < 0)
+		{
+			log_error("Send SIG_RELOAD_MENU signal failed (%d)\n", errno);
+	
+			prints("发送指令失败\r\n");
+		}
+		else
+		{
+			prints("已发送指令\r\n");
+		}
+	}
+
+	press_any_key();
 
 	return REDRAW;
 }

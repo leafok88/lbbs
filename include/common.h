@@ -27,6 +27,8 @@
 extern char app_version[256];
 
 // Enviroment
+#define CONF_BBSD "conf/bbsd.conf"
+#define CONF_MENU "conf/menu.conf"
 #define CONF_BBSNET "conf/bbsnet.conf"
 
 #define LOG_FILE_INFO "log/bbsd.log"

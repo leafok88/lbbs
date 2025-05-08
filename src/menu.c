@@ -27,26 +27,34 @@
 #include <string.h>
 #include <stdio.h>
 #include <ctype.h>
-#include <regex.h>
 #include <stdlib.h>
 
-#define MENU_TEMP_DIR "var"
+#define MENU_SCREEN_PATH_PREFIX "var/MENU_SCR_"
+#define MENU_CONF_DELIM_WITH_SPACE " ,\t\r\n"
+#define MENU_CONF_DELIM_WITHOUT_SPACE "\r\n"
 
 MENU_SET bbs_menu;
 
 int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 {
 	FILE *fin, *fout;
-	int i = 0, j;
+	int fin_line = 0;
+	int i = 0;
+	int j = 0;
 	char buffer[LINE_BUFFER_LEN];
 	char screen_filename[FILE_PATH_LEN];
-	char temp[LINE_BUFFER_LEN];
-	regmatch_t pmatch[10];
+	char *p = NULL;
+	char *q = NULL;
+	char *saveptr = NULL;
+	MENU *p_menu = NULL;
+	MENU_ITEM *p_item = NULL;
+
+	p_menu_set->menu_count = 0;
 
 	if ((fin = fopen(conf_file, "r")) == NULL)
 	{
 		log_error("Open %s failed", conf_file);
-		return -1;
+		return -2;
 	}
 
 	strncpy(p_menu_set->conf_file, conf_file, sizeof(p_menu_set->conf_file) - 1);
@@ -54,17 +62,454 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 
 	while (fgets(buffer, sizeof(buffer), fin))
 	{
-		switch (buffer[0])
+		fin_line++;
+
+		p = strtok_r(buffer, MENU_CONF_DELIM_WITH_SPACE, &saveptr);
+		if (p == NULL) // Blank line
 		{
-		case '#':
-			break;
-		case '%':
-			if (ireg("^%S_([A-Za-z0-9_]+)", buffer, 2, pmatch) == 0)
+			continue;
+		}
+
+		if (*p == '#' || *p == '\r' || *p == '\n') // Comment or blank line
+		{
+			continue;
+		}
+
+		if (*p == '%')
+		{
+			p++;
+
+			if (strcmp(p, "menu") == 0) // BEGIN of sub-menu
 			{
-				strncpy(temp, buffer + pmatch[1].rm_so,
-						(size_t)(pmatch[1].rm_eo - pmatch[1].rm_so));
-				temp[pmatch[1].rm_eo - pmatch[1].rm_so] = '\0';
-				snprintf(screen_filename, sizeof(screen_filename), "%s/MENU_SCR_%s", MENU_TEMP_DIR, temp);
+				if (p_menu != NULL)
+				{
+					log_error("Begin new menu without end the prior one, in menu config line %d\n", fin_line);
+					return -1;
+				}
+				p_menu = (MENU *)malloc(sizeof(MENU));
+				if (p_menu == NULL)
+				{
+					log_error("Unable to allocate memory for menu\n");
+					return -3;
+				}
+				p_menu_set->p_menu[i] = p_menu;
+				i++;
+				p_menu_set->menu_count = i;
+
+				j = 0; // Menu item counter
+				p_menu->item_count = 0;
+				p_menu->item_cur_pos = 0;
+				p_menu->title.show = 0;
+				p_menu->screen.show = 0;
+
+				q = strtok_r(NULL, MENU_CONF_DELIM_WITH_SPACE, &saveptr);
+				if (q == NULL)
+				{
+					log_error("Error menu name in menu config line %d\n", fin_line);
+					return -1;
+				}
+				p = q;
+				while (isalnum(*q) || *q == '_')
+				{
+					q++;
+				}
+				if (*q != '\0')
+				{
+					log_error("Error menu name in menu config line %d\n", fin_line);
+					return -1;
+				}
+
+				if (q - p > sizeof(p_menu->name) - 1)
+				{
+					log_error("Too longer menu name in menu config line %d\n", fin_line);
+					return -1;
+				}
+				strncpy(p_menu->name, p, sizeof(p_menu->name) - 1);
+				p_menu->name[sizeof(p_menu->name) - 1] = '\0';
+
+				// Check syntax
+				q = strtok_r(NULL, MENU_CONF_DELIM_WITH_SPACE, &saveptr);
+				if (q != NULL)
+				{
+					log_error("Unknown extra content in menu config line %d\n", fin_line);
+					return -1;
+				}
+
+				while (fgets(buffer, sizeof(buffer), fin))
+				{
+					fin_line++;
+
+					p = strtok_r(buffer, MENU_CONF_DELIM_WITH_SPACE, &saveptr);
+					if (p == NULL) // Blank line
+					{
+						continue;
+					}
+
+					if (*p == '#' || *p == '\r' || *p == '\n') // Comment or blank line
+					{
+						continue;
+					}
+
+					if (*p == '%') // END of sub-menu
+					{
+						p_menu = NULL;
+						break;
+					}
+					else if (*p == '!' || *p == '@')
+					{
+						// BEGIN of menu item
+						p_item = (MENU_ITEM *)malloc(sizeof(MENU_ITEM));
+						if (p_item == NULL)
+						{
+							log_error("Unable to allocate memory for menu item\n");
+							return -3;
+						}
+						p_menu->items[j] = p_item;
+						j++;
+						p_menu->item_count = j;
+
+						p_item->submenu = (*p == '!' ? 1 : 0);
+
+						// Menu item action
+						p++;
+						if (strcmp(p, "..") == 0) // Return to parent menu
+						{
+							q = p + 2; // strlen("..")
+						}
+						else
+						{
+							q = p;
+							while (isalnum(*q) || *q == '_')
+							{
+								q++;
+							}
+							if (*q != '\0')
+							{
+								log_error("Error menu item action in menu config line %d\n", fin_line);
+								return -1;
+							}
+						}
+
+						if (q - p > sizeof(p_item->action) - 1)
+						{
+							log_error("Too longer menu action in menu config line %d\n", fin_line);
+							return -1;
+						}
+						strncpy(p_item->action, p, sizeof(p_item->action) - 1);
+						p_item->action[sizeof(p_item->action) - 1] = '\0';
+
+						// Menu item row
+						q = strtok_r(NULL, MENU_CONF_DELIM_WITH_SPACE, &saveptr);
+						if (q == NULL)
+						{
+							log_error("Error menu item row in menu config line %d\n", fin_line);
+							return -1;
+						}
+						p = q;
+						while (isdigit(*q))
+						{
+							q++;
+						}
+						if (*q != '\0')
+						{
+							log_error("Error menu item row in menu config line %d\n", fin_line);
+							return -1;
+						}
+						p_item->row = atoi(p);
+
+						// Menu item col
+						q = strtok_r(NULL, MENU_CONF_DELIM_WITH_SPACE, &saveptr);
+						if (q == NULL)
+						{
+							log_error("Error menu item col in menu config line %d\n", fin_line);
+							return -1;
+						}
+						p = q;
+						while (isdigit(*q))
+						{
+							q++;
+						}
+						if (*q != '\0')
+						{
+							log_error("Error menu item col in menu config line %d\n", fin_line);
+							return -1;
+						}
+						p_item->col = atoi(p);
+
+						// Menu item priv
+						q = strtok_r(NULL, MENU_CONF_DELIM_WITH_SPACE, &saveptr);
+						if (q == NULL)
+						{
+							log_error("Error menu item priv in menu config line %d\n", fin_line);
+							return -1;
+						}
+						p = q;
+						while (isdigit(*q))
+						{
+							q++;
+						}
+						if (*q != '\0')
+						{
+							log_error("Error menu item priv in menu config line %d\n", fin_line);
+							return -1;
+						}
+						p_item->priv = atoi(p);
+
+						// Menu item level
+						q = strtok_r(NULL, MENU_CONF_DELIM_WITH_SPACE, &saveptr);
+						if (q == NULL)
+						{
+							log_error("Error menu item level in menu config line %d\n", fin_line);
+							return -1;
+						}
+						p = q;
+						while (isdigit(*q))
+						{
+							q++;
+						}
+						if (*q != '\0')
+						{
+							log_error("Error menu item level in menu config line %d\n", fin_line);
+							return -1;
+						}
+						p_item->level = atoi(p);
+
+						// Menu item name
+						q = strtok_r(NULL, MENU_CONF_DELIM_WITH_SPACE, &saveptr);
+						if (q == NULL || *q != '\"')
+						{
+							log_error("Error menu item name in menu config line %d\n", fin_line);
+							return -1;
+						}
+						q++;
+						p = q;
+						while (*q != '\0' && *q != '\"')
+						{
+							q++;
+						}
+						if (*q != '\"' || *(q + 1) != '\0')
+						{
+							log_error("Error menu item name in menu config line %d\n", fin_line);
+							return -1;
+						}
+						*q = '\0';
+
+						if (q - p > sizeof(p_item->name) - 1)
+						{
+							log_error("Too longer menu name in menu config line %d\n", fin_line);
+							return -1;
+						}
+						strncpy(p_item->name, p, sizeof(p_item->name) - 1);
+						p_item->name[sizeof(p_item->name) - 1] = '\0';
+
+						// Menu item text
+						q = strtok_r(NULL, MENU_CONF_DELIM_WITHOUT_SPACE, &saveptr);
+						if (q == NULL || (q = strchr(q, '\"')) == NULL)
+						{
+							log_error("Error #1 menu item text in menu config line %d\n", fin_line);
+							return -1;
+						}
+						q++;
+						p = q;
+						while (*q != '\0' && *q != '\"')
+						{
+							q++;
+						}
+						if (*q != '\"')
+						{
+							log_error("Error menu item text in menu config line %d\n", fin_line);
+							return -1;
+						}
+						*q = '\0';
+
+						if (q - p > sizeof(p_item->text) - 1)
+						{
+							log_error("Too longer menu item text in menu config line %d\n", fin_line);
+							return -1;
+						}
+						strncpy(p_item->text, p, sizeof(p_item->text) - 1);
+						p_item->text[sizeof(p_item->text) - 1] = '\0';
+
+						// Check syntax
+						q = strtok_r(q + 1, MENU_CONF_DELIM_WITH_SPACE, &saveptr);
+						if (q != NULL)
+						{
+							log_error("Unknown extra content in menu config line %d\n", fin_line);
+							return -1;
+						}
+					}
+					else if (strcmp(p, "title") == 0)
+					{
+						p_menu->title.show = 1;
+
+						// Menu title row
+						q = strtok_r(NULL, MENU_CONF_DELIM_WITH_SPACE, &saveptr);
+						if (q == NULL)
+						{
+							log_error("Error menu title row in menu config line %d\n", fin_line);
+							return -1;
+						}
+						p = q;
+						while (isdigit(*q))
+						{
+							q++;
+						}
+						if (*q != '\0')
+						{
+							log_error("Error menu title row in menu config line %d\n", fin_line);
+							return -1;
+						}
+						p_menu->title.row = atoi(p);
+
+						// Menu title col
+						q = strtok_r(NULL, MENU_CONF_DELIM_WITH_SPACE, &saveptr);
+						if (q == NULL)
+						{
+							log_error("Error menu title col in menu config line %d\n", fin_line);
+							return -1;
+						}
+						p = q;
+						while (isdigit(*q))
+						{
+							q++;
+						}
+						if (*q != '\0')
+						{
+							log_error("Error menu title col in menu config line %d\n", fin_line);
+							return -1;
+						}
+						p_menu->title.col = atoi(p);
+
+						// Menu title text
+						q = strtok_r(NULL, MENU_CONF_DELIM_WITHOUT_SPACE, &saveptr);
+						if (q == NULL || (q = strchr(q, '\"')) == NULL)
+						{
+							log_error("Error menu title text in menu config line %d\n", fin_line);
+							return -1;
+						}
+						q++;
+						p = q;
+						while (*q != '\0' && *q != '\"')
+						{
+							q++;
+						}
+						if (*q != '\"')
+						{
+							log_error("Error menu title text in menu config line %d\n", fin_line);
+							return -1;
+						}
+						*q = '\0';
+
+						if (q - p > sizeof(p_item->text) - 1)
+						{
+							log_error("Too longer menu title text in menu config line %d\n", fin_line);
+							return -1;
+						}
+						strncpy(p_menu->title.text, p, sizeof(p_menu->title.text) - 1);
+						p_menu->title.text[sizeof(p_menu->title.text) - 1] = '\0';
+
+						// Check syntax
+						q = strtok_r(q + 1, MENU_CONF_DELIM_WITH_SPACE, &saveptr);
+						if (q != NULL)
+						{
+							log_error("Unknown extra content in menu config line %d\n", fin_line);
+							return -1;
+						}
+					}
+					else if (strcmp(p, "screen") == 0)
+					{
+						p_menu->screen.show = 1;
+
+						// Menu screen row
+						q = strtok_r(NULL, MENU_CONF_DELIM_WITH_SPACE, &saveptr);
+						if (q == NULL)
+						{
+							log_error("Error menu screen row in menu config line %d\n", fin_line);
+							return -1;
+						}
+						p = q;
+						while (isdigit(*q))
+						{
+							q++;
+						}
+						if (*q != '\0')
+						{
+							log_error("Error menu screen row in menu config line %d\n", fin_line);
+							return -1;
+						}
+						p_menu->screen.row = atoi(p);
+
+						// Menu screen col
+						q = strtok_r(NULL, MENU_CONF_DELIM_WITH_SPACE, &saveptr);
+						if (q == NULL)
+						{
+							log_error("Error menu screen col in menu config line %d\n", fin_line);
+							return -1;
+						}
+						p = q;
+						while (isdigit(*q))
+						{
+							q++;
+						}
+						if (*q != '\0')
+						{
+							log_error("Error menu screen col in menu config line %d\n", fin_line);
+							return -1;
+						}
+						p_menu->screen.col = atoi(p);
+
+						// Menu screen name
+						q = strtok_r(NULL, MENU_CONF_DELIM_WITH_SPACE, &saveptr);
+						if (q == NULL)
+						{
+							log_error("Error menu screen name in menu config line %d\n", fin_line);
+							return -1;
+						}
+						p = q;
+						while (isalnum(*q) || *q == '_')
+						{
+							q++;
+						}
+						if (*q != '\0')
+						{
+							log_error("Error menu screen name in menu config line %d\n", fin_line);
+							return -1;
+						}
+
+						snprintf(p_menu->screen.filename, sizeof(p_menu->screen.filename), "%s%s", MENU_SCREEN_PATH_PREFIX, p);
+
+						// Check syntax
+						q = strtok_r(NULL, MENU_CONF_DELIM_WITH_SPACE, &saveptr);
+						if (q != NULL)
+						{
+							log_error("Unknown extra content in menu config line %d\n", fin_line);
+							return -1;
+						}
+					}
+				}
+			}
+			else // BEGIN of menu screen
+			{
+				q = p;
+				while (isalnum(*q) || *q == '_')
+				{
+					q++;
+				}
+				if (*q != '\0')
+				{
+					log_error("Error menu screen name in menu config line %d\n", fin_line);
+					return -1;
+				}
+
+				snprintf(screen_filename, sizeof(screen_filename), "%s%s", MENU_SCREEN_PATH_PREFIX, p);
+
+				// Check syntax
+				q = strtok_r(NULL, MENU_CONF_DELIM_WITH_SPACE, &saveptr);
+				if (q != NULL)
+				{
+					log_error("Unknown extra content in menu config line %d\n", fin_line);
+					return -1;
+				}
 
 				if ((fout = fopen(screen_filename, "w")) == NULL)
 				{
@@ -74,189 +519,28 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 
 				while (fgets(buffer, sizeof(buffer), fin))
 				{
-					if (buffer[0] != '%')
-						fputs(buffer, fout);
-					else
+					fin_line++;
+
+					p = strtok_r(buffer, MENU_CONF_DELIM_WITH_SPACE, &saveptr);
+					if (p != NULL && *p == '%') // END of menu screen
+					{
 						break;
+					}
+
+					if (fputs(buffer, fout) < 0)
+					{
+						log_error("Write %s failed", screen_filename);
+						return -2;
+					}
 				}
 
 				fclose(fout);
-				break;
 			}
-
-			if (ireg("^%menu ([A-Za-z0-9_]+)", buffer, 2, pmatch) == 0)
-			{
-				p_menu_set->p_menu[i] = malloc(sizeof(MENU));
-				p_menu_set->p_menu[i]->title.show = 0;
-				p_menu_set->p_menu[i]->screen.show = 0;
-
-				strncpy(p_menu_set->p_menu[i]->name,
-						buffer + pmatch[1].rm_so,
-						(size_t)(pmatch[1].rm_eo - pmatch[1].rm_so));
-				p_menu_set->p_menu[i]->name[pmatch[1].rm_eo - pmatch[1].rm_so] =
-					'\0';
-
-				j = 0;
-
-				while (fgets(buffer, sizeof(buffer), fin))
-				{
-					if (buffer[0] == '#')
-					{
-						continue;
-					}
-					if (buffer[0] == '%')
-					{
-						p_menu_set->p_menu[i]->item_count = j;
-						p_menu_set->p_menu[i]->item_cur_pos = 0;
-						i++;
-						break;
-					}
-					if (ireg("^!([A-Za-z0-9_.]+)[[:space:]]*([0-9]+),"
-							 "[[:space:]]*([0-9]+),[[:space:]]*([0-9]+),"
-							 "[[:space:]]*([0-9]+),[[:space:]]*\"([^\"]+)\","
-							 "[[:space:]]*\"([^\"]+)\"",
-							 buffer, 8, pmatch) == 0)
-					{
-						p_menu_set->p_menu[i]->items[j] =
-							malloc(sizeof(MENU_ITEM));
-						p_menu_set->p_menu[i]->items[j]->submenu = 1;
-						strncpy(p_menu_set->p_menu[i]->items[j]->action,
-								buffer + pmatch[1].rm_so,
-								(size_t)(pmatch[1].rm_eo - pmatch[1].rm_so));
-						p_menu_set->p_menu[i]->items[j]->action[pmatch[1].rm_eo -
-																pmatch[1].rm_so] = '\0';
-						strncpy(temp, buffer + pmatch[2].rm_so,
-								(size_t)(pmatch[2].rm_eo - pmatch[2].rm_so));
-						temp[pmatch[2].rm_eo - pmatch[2].rm_so] = '\0';
-						p_menu_set->p_menu[i]->items[j]->row = atoi(temp);
-						strncpy(temp,
-								buffer + pmatch[3].rm_so,
-								(size_t)(pmatch[3].rm_eo - pmatch[3].rm_so));
-						temp[pmatch[3].rm_eo - pmatch[3].rm_so] = '\0';
-						p_menu_set->p_menu[i]->items[j]->col = atoi(temp);
-						strncpy(temp,
-								buffer + pmatch[4].rm_so,
-								(size_t)(pmatch[4].rm_eo - pmatch[4].rm_so));
-						temp[pmatch[4].rm_eo - pmatch[4].rm_so] = '\0';
-						p_menu_set->p_menu[i]->items[j]->priv = atoi(temp);
-						strncpy(temp,
-								buffer + pmatch[5].rm_so,
-								(size_t)(pmatch[5].rm_eo - pmatch[5].rm_so));
-						temp[pmatch[5].rm_eo - pmatch[5].rm_so] = '\0';
-						p_menu_set->p_menu[i]->items[j]->level = atoi(temp);
-						strncpy(p_menu_set->p_menu[i]->items[j]->name,
-								buffer + pmatch[6].rm_so,
-								(size_t)(pmatch[6].rm_eo - pmatch[6].rm_so));
-						p_menu_set->p_menu[i]->items[j]->name[pmatch[6].rm_eo -
-															  pmatch[6].rm_so] =
-							'\0';
-						strncpy(p_menu_set->p_menu[i]->items[j]->text,
-								buffer + pmatch[7].rm_so,
-								(size_t)(pmatch[7].rm_eo - pmatch[7].rm_so));
-						p_menu_set->p_menu[i]->items[j]->text[pmatch[7].rm_eo -
-															  pmatch[7].rm_so] =
-							'\0';
-						j++;
-						continue;
-					}
-					if (ireg("^@([A-Za-z0-9_]+)[[:space:]]*([0-9]+),"
-							 "[[:space:]]*([0-9]+),[[:space:]]*([0-9]+),"
-							 "[[:space:]]*([0-9]+),[[:space:]]*\"([^\"]+)\","
-							 "[[:space:]]*\"([^\"]+)\"",
-							 buffer, 8, pmatch) == 0)
-					{
-						p_menu_set->p_menu[i]->items[j] =
-							malloc(sizeof(MENU_ITEM));
-						p_menu_set->p_menu[i]->items[j]->submenu = 0;
-						strncpy(p_menu_set->p_menu[i]->items[j]->action,
-								buffer + pmatch[1].rm_so,
-								(size_t)(pmatch[1].rm_eo - pmatch[1].rm_so));
-						p_menu_set->p_menu[i]->items[j]->action[pmatch[1].rm_eo -
-																pmatch[1].rm_so] = '\0';
-						strncpy(temp, buffer + pmatch[2].rm_so,
-								(size_t)(pmatch[2].rm_eo - pmatch[2].rm_so));
-						temp[pmatch[2].rm_eo - pmatch[2].rm_so] = '\0';
-						p_menu_set->p_menu[i]->items[j]->row = atoi(temp);
-						strncpy(temp,
-								buffer + pmatch[3].rm_so,
-								(size_t)(pmatch[3].rm_eo - pmatch[3].rm_so));
-						temp[pmatch[3].rm_eo - pmatch[3].rm_so] = '\0';
-						p_menu_set->p_menu[i]->items[j]->col = atoi(temp);
-						strncpy(temp,
-								buffer + pmatch[4].rm_so,
-								(size_t)(pmatch[4].rm_eo - pmatch[4].rm_so));
-						temp[pmatch[4].rm_eo - pmatch[4].rm_so] = '\0';
-						p_menu_set->p_menu[i]->items[j]->priv = atoi(temp);
-						strncpy(temp,
-								buffer + pmatch[5].rm_so,
-								(size_t)(pmatch[5].rm_eo - pmatch[5].rm_so));
-						temp[pmatch[5].rm_eo - pmatch[5].rm_so] = '\0';
-						p_menu_set->p_menu[i]->items[j]->level = atoi(temp);
-						strncpy(p_menu_set->p_menu[i]->items[j]->name,
-								buffer + pmatch[6].rm_so,
-								(size_t)(pmatch[6].rm_eo - pmatch[6].rm_so));
-						p_menu_set->p_menu[i]->items[j]->name[pmatch[6].rm_eo -
-															  pmatch[6].rm_so] =
-							'\0';
-						strncpy(p_menu_set->p_menu[i]->items[j]->text,
-								buffer + pmatch[7].rm_so,
-								(size_t)(pmatch[7].rm_eo - pmatch[7].rm_so));
-						p_menu_set->p_menu[i]->items[j]->text[pmatch[7].rm_eo -
-															  pmatch[7].rm_so] =
-							'\0';
-						j++;
-						continue;
-					}
-					if (ireg("^title[[:space:]]*([0-9]+),"
-							 "[[:space:]]*([0-9]+),[[:space:]]*\"([^\"]+)\"",
-							 buffer, 4, pmatch) == 0)
-					{
-						p_menu_set->p_menu[i]->title.show = 1;
-						strncpy(temp,
-								buffer + pmatch[1].rm_so,
-								(size_t)(pmatch[1].rm_eo - pmatch[1].rm_so));
-						temp[pmatch[1].rm_eo - pmatch[1].rm_so] = '\0';
-						p_menu_set->p_menu[i]->title.row = atoi(temp);
-						strncpy(temp,
-								buffer + pmatch[2].rm_so,
-								(size_t)(pmatch[2].rm_eo - pmatch[2].rm_so));
-						temp[pmatch[2].rm_eo - pmatch[2].rm_so] = '\0';
-						p_menu_set->p_menu[i]->title.col = atoi(temp);
-						strncpy(p_menu_set->p_menu[i]->title.text,
-								buffer + pmatch[3].rm_so,
-								(size_t)(pmatch[3].rm_eo - pmatch[3].rm_so));
-						p_menu_set->p_menu[i]->title.text[pmatch[3].rm_eo -
-														  pmatch[3].rm_so] =
-							'\0';
-						continue;
-					}
-					if (ireg("^screen[[:space:]]*([0-9]+),"
-							 "[[:space:]]*([0-9]+),[[:space:]]*S_([A-Za-z0-9_]+)",
-							 buffer, 4, pmatch) == 0)
-					{
-						p_menu_set->p_menu[i]->screen.show = 1;
-						strncpy(temp,
-								buffer + pmatch[1].rm_so,
-								(size_t)(pmatch[1].rm_eo - pmatch[1].rm_so));
-						temp[pmatch[1].rm_eo - pmatch[1].rm_so] = '\0';
-						p_menu_set->p_menu[i]->screen.row = atoi(temp);
-						strncpy(temp,
-								buffer + pmatch[2].rm_so,
-								(size_t)(pmatch[2].rm_eo - pmatch[2].rm_so));
-						temp[pmatch[2].rm_eo - pmatch[2].rm_so] = '\0';
-						p_menu_set->p_menu[i]->screen.col = atoi(temp);
-						strncpy(temp,
-								buffer + pmatch[3].rm_so,
-								(size_t)(pmatch[3].rm_eo - pmatch[3].rm_so));
-						temp[pmatch[3].rm_eo - pmatch[3].rm_so] = '\0';
-						snprintf(p_menu_set->p_menu[i]->screen.filename,
-								 sizeof(p_menu_set->p_menu[i]->screen.filename),
-								 "%s/MENU_SCR_%s", MENU_TEMP_DIR, temp);
-						continue;
-					}
-				}
-			}
-			break;
+		}
+		else // Invalid prefix
+		{
+			log_error("Error in menu config line %d\n", fin_line);
+			return -1;
 		}
 	}
 	fclose(fin);
@@ -268,8 +552,7 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 	return 0;
 }
 
-MENU *
-get_menu(MENU_SET *p_menu_set, const char *menu_name)
+MENU *get_menu(MENU_SET *p_menu_set, const char *menu_name)
 {
 	int i;
 
@@ -460,18 +743,7 @@ int menu_control(MENU_SET *p_menu_set, int key)
 		display_menu_cursor(p_menu, 1);
 		break;
 	default:
-		for (i = 0; i < p_menu->item_count; i++)
-		{
-			if (key == p_menu->items[i]->name[0] &&
-				p_menu->items[i]->display)
-			{
-				display_menu_cursor(p_menu, 0);
-				p_menu->item_cur_pos = i;
-				display_menu_cursor(p_menu, 1);
-				return 0;
-			}
-		}
-		if (isalpha(key))
+		if (isalnum(key))
 		{
 			for (i = 0; i < p_menu->item_count; i++)
 			{
@@ -502,7 +774,6 @@ void unload_menu(MENU_SET *p_menu_set)
 		{
 			free(p_menu->items[j]);
 		}
-		remove(p_menu->screen.filename);
 		free(p_menu);
 	}
 

@@ -139,12 +139,17 @@ int main(int argc, char *argv[])
 	}
 
 	// Load configuration
-	if (load_conf("conf/bbsd.conf") < 0)
+	if (load_conf(CONF_BBSD) < 0)
+	{
 		exit(-2);
+	}
 
 	// Load menus
-	if (load_menu(&bbs_menu, "conf/menu.conf") < 0)
+	if (load_menu(&bbs_menu, CONF_MENU) < 0)
+	{
+		unload_menu(&bbs_menu);
 		exit(-3);
+	}
 
 	// Set signal handler
 	signal(SIGCHLD, child_exit);

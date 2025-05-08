@@ -298,7 +298,7 @@ int display_file_ex(const char *filename, int begin_line, int wait)
 			}
 
 			moveto(screen_rows, 0);
-			prints("\033[1;44;32m%s (%d%%)%s\033[33m  │ 结束 ← <q> │ ↑/↓/PgUp/PgDn 移动 │ ? 辅助说明 │     \033[m",
+			prints("\033[1;44;32m%s (%d%%)%s\033[33m          │ 结束 ← <q> │ ↑/↓/PgUp/PgDn 移动 │ ? 辅助说明 │     \033[m",
 				   (percentile < 100 ? "下面还有喔" : "没有更多了"), percentile,
 				   (percentile < 10 ? "  " : (percentile < 100 ? " " : "")));
 			iflush();
@@ -428,15 +428,31 @@ int display_file_ex(const char *filename, int begin_line, int wait)
 
 int show_top(char *status)
 {
-	char buffer[LINE_BUFFER_LEN];
+	int end_of_line;
+	int display_len;
+	unsigned int len;
 
-	str_space(buffer, 20 - (int)strnlen(BBS_current_section_name, sizeof(BBS_current_section_name)));
+	char space1[LINE_BUFFER_LEN];
+	char space2[LINE_BUFFER_LEN];
+
+	len = split_line(status, 20, &end_of_line, &display_len);
+	if (end_of_line)
+	{
+		status[len] = '\0';
+	}
+	str_space(space1, 31 - display_len);
+
+	len = split_line(BBS_current_section_name, 20, &end_of_line, &display_len);
+	if (end_of_line)
+	{
+		status[len] = '\0';
+	}
+	str_space(space2, 30 - display_len);
 
 	moveto(1, 0);
 	clrtoeol();
-	prints("\033[1;44;33m%-20s \033[37m%20s"
-		   "         %s\033[33m讨论区 [%s]\033[m",
-		   status, BBS_name, buffer, BBS_current_section_name);
+	prints("\033[1;44;33m%s \033[37m%s%s%s\033[33m 讨论区 [%s]\033[m",
+		   status, space1, BBS_name, space2, BBS_current_section_name);
 	iflush();
 
 	return 0;
@@ -445,22 +461,21 @@ int show_top(char *status)
 int show_bottom(char *msg)
 {
 	char str_time[LINE_BUFFER_LEN];
-	char buffer[LINE_BUFFER_LEN];
+	char space[LINE_BUFFER_LEN];
 	time_t time_online;
 	struct tm *tm_online;
 
 	get_time_str(str_time, sizeof(str_time));
-	str_space(buffer, 33 - (int)strnlen(BBS_username, sizeof(BBS_username)));
+	str_space(space, 34 - (int)strnlen(BBS_username, sizeof(BBS_username)));
 
 	time_online = time(0) - BBS_login_tm;
 	tm_online = gmtime(&time_online);
 
 	moveto(screen_rows, 0);
 	clrtoeol();
-	prints("\033[1;44;33m[\033[36m%s\033[33m]"
-		   "%s帐号[\033[36m%s\033[33m]"
+	prints("\033[1;44;33m[\033[36m%s\033[33m]%s帐号[\033[36m%s\033[33m]"
 		   "[\033[36m%1d\033[33m:\033[36m%2d\033[33m:\033[36m%2d\033[33m]\033[m",
-		   str_time, buffer, BBS_username, tm_online->tm_mday - 1,
+		   str_time, space, BBS_username, tm_online->tm_mday - 1,
 		   tm_online->tm_hour, tm_online->tm_min);
 	iflush();
 
@@ -475,6 +490,7 @@ int show_active_board()
 	static int line;
 	unsigned int len;
 	int end_of_line;
+	int display_len;
 
 	clrline(3, 2 + ACTIVE_BOARD_HEIGHT);
 
@@ -502,7 +518,7 @@ int show_active_board()
 			break;
 		}
 		line++;
-		len = split_line(buffer, screen_cols, &end_of_line);
+		len = split_line(buffer, screen_cols, &end_of_line, &display_len);
 		buffer[len] = '\0'; // Truncate over-length line
 		moveto(3 + i, 0);
 		prints("%s", buffer);
