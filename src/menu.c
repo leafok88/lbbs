@@ -42,6 +42,7 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 	int i = 0;
 	int j = 0;
 	char buffer[LINE_BUFFER_LEN];
+	char temp[LINE_BUFFER_LEN];
 	char screen_filename[FILE_PATH_LEN];
 	char *p = NULL;
 	char *q = NULL;
@@ -83,7 +84,7 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 			{
 				if (p_menu != NULL)
 				{
-					log_error("Begin new menu without end the prior one, in menu config line %d\n", fin_line);
+					log_error("Incomplete menu definition in menu config line %d\n", fin_line);
 					return -1;
 				}
 				p_menu = (MENU *)malloc(sizeof(MENU));
@@ -521,7 +522,8 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 				{
 					fin_line++;
 
-					p = strtok_r(buffer, MENU_CONF_DELIM_WITH_SPACE, &saveptr);
+					memcpy(temp, buffer, sizeof(temp)); // Duplicate line for strtok_r
+					p = strtok_r(temp, MENU_CONF_DELIM_WITH_SPACE, &saveptr);
 					if (p != NULL && *p == '%') // END of menu screen
 					{
 						break;
