@@ -306,7 +306,7 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 						q = strtok_r(NULL, MENU_CONF_DELIM_WITHOUT_SPACE, &saveptr);
 						if (q == NULL || (q = strchr(q, '\"')) == NULL)
 						{
-							log_error("Error #1 menu item text in menu config line %d\n", fin_line);
+							log_error("Error menu item text in menu config line %d\n", fin_line);
 							return -1;
 						}
 						q++;
