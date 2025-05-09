@@ -121,7 +121,7 @@ static int creat_a_egg()
 	ptime = localtime(&now);
 
 	clrtobot(2);
-	while (Name[0] == '\0')
+	while (!SYS_server_exit && Name[0] == '\0')
 	{
 		strncpy(Name, "±¦±¦", sizeof(Name) - 1);
 		Name[sizeof(Name) - 1] = '\0';
@@ -357,7 +357,7 @@ static int select_menu()
 	time(&now);
 	ptime = localtime(&now);
 
-	while (loop)
+	while (!SYS_server_exit && loop)
 	{
 		moveto(23, 0);
 		prints("[0;46;31m  Ê¹ÓÃ°ïÖú  [0;47;34m c ¸ÄÃû×Ö   k É±¼¦   t Ïû³ý·ÇÆ£ÀÍ($50)   q ÍË³ö     [m");
@@ -560,7 +560,7 @@ static int select_menu()
 			{
 				clrline(22, 22);
 				get_data(22, 0, "°ïÐ¡¼¦È¡¸öºÃÃû×Ö£º", Name, sizeof(Name), DOECHO);
-			} while (Name[0] == '\0');
+			} while (!SYS_server_exit && Name[0] == '\0');
 			break;
 		case 'q':
 			loop = 0;
@@ -615,7 +615,7 @@ int pressany(int i)
 	do
 	{
 		ch = igetch(0);
-	} while ((ch != ' ') && (ch != KEY_LEFT) && (ch != '\r') && (ch != '\n'));
+	} while ((ch != KEY_NULL) && (ch != ' ') && (ch != '\r') && (ch != '\n'));
 	moveto(23, 0);
 	clrtoeol();
 	iflush();
@@ -633,7 +633,7 @@ int guess()
 		clrtoeol();
 		iflush();
 		ch = igetch(0);
-	} while ((ch != '1') && (ch != '2') && (ch != '3'));
+	} while ((ch != KEY_NULL) && (ch != '1') && (ch != '2') && (ch != '3'));
 
 	srand((unsigned int)time(NULL));
 	com = rand() % 3;
