@@ -522,7 +522,7 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 				{
 					fin_line++;
 
-					memcpy(temp, buffer, sizeof(temp)); // Duplicate line for strtok_r
+					strncpy(temp, buffer, sizeof(temp)); // Duplicate line for strtok_r
 					p = strtok_r(temp, MENU_CONF_DELIM_WITH_SPACE, &saveptr);
 					if (p != NULL && *p == '%') // END of menu screen
 					{
