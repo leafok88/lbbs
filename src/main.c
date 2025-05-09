@@ -131,11 +131,11 @@ int main(int argc, char *argv[])
 
 	if ((!daemon) && std_log_redir)
 	{
-		log_std_redirect(2);
+		log_std_redirect(STDERR_FILENO);
 	}
 	if ((!daemon) && error_log_redir)
 	{
-		log_err_redirect(3);
+		log_err_redirect(STDERR_FILENO);
 	}
 
 	// Load configuration
