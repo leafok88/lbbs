@@ -14,23 +14,35 @@
  *                                                                         *
  ***************************************************************************/
 
+#define _XOPEN_SOURCE 500
+#define _POSIX_C_SOURCE 200809L
+#define _GNU_SOURCE
+
 #include "net_server.h"
 #include "common.h"
 #include "log.h"
 #include "io.h"
 #include "fork.h"
 #include "tcplib.h"
+#include "menu.h"
+#include <signal.h>
+#include <unistd.h>
+#include <sys/syscall.h>
 #include <sys/socket.h>
+#include <sys/wait.h>
 #include <arpa/inet.h>
 
 int net_server(const char *hostaddr, in_port_t port)
 {
 	unsigned int namelen;
-	int result;
+	int ret;
 	int flags;
 	struct sockaddr_in sin;
 	fd_set testfds;
 	struct timeval timeout;
+	sigset_t nsigset;
+	sigset_t osigset;
+	siginfo_t siginfo;
 
 	socket_server = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 
@@ -62,26 +74,78 @@ int net_server(const char *hostaddr, in_port_t port)
 	hostaddr_server[sizeof(hostaddr_server) - 1] = '\0';
 
 	port_server = ntohs(sin.sin_port);
+	namelen = sizeof(sin);
 
 	log_std("Listening at %s:%d\n", hostaddr_server, port_server);
 
-	namelen = sizeof(sin);
-	while (!SYS_exit)
+	sigemptyset(&nsigset);
+	sigaddset(&nsigset, SIGHUP);
+	sigaddset(&nsigset, SIGCHLD);
+	sigaddset(&nsigset, SIGTERM);
+
+	while (!SYS_server_exit || SYS_child_process_count > 0)
 	{
+		sigprocmask(SIG_BLOCK, &nsigset, &osigset);
+
+		while (SYS_child_exit_count > 0)
+		{
+			siginfo.si_pid = 0;
+			ret = waitid(P_ALL, 0, &siginfo, WEXITED | WNOHANG);
+			if (ret == 0 && siginfo.si_pid > 0)
+			{
+				SYS_child_exit_count--;
+				SYS_child_process_count--;
+				log_std("Child process (%d) exited\n", siginfo.si_pid);
+			}
+			else if (ret == 0)
+			{
+				break;
+			}
+			else if (ret < 0)
+			{
+				log_error("Error in waitid: %d\n", errno);
+				break;
+			}
+		}
+
+		if (SYS_menu_reload)
+		{
+			if (reload_menu(&bbs_menu) < 0)
+			{
+				log_error("Reload menu failed\n");
+			}
+			else
+			{
+				log_std("Reload menu successfully\n");
+			}
+			SYS_menu_reload = 0;
+		}
+
+		sigprocmask(SIG_SETMASK, &osigset, NULL);
+
 		FD_ZERO(&testfds);
 		FD_SET(socket_server, &testfds);
 
 		timeout.tv_sec = 1;
 		timeout.tv_usec = 0;
 
-		result = SignalSafeSelect(FD_SETSIZE, &testfds, NULL, NULL, &timeout);
-		if (result < 0)
+		ret = select(FD_SETSIZE, &testfds, NULL, NULL, &timeout);
+
+		if (ret < 0)
 		{
-			log_error("Accept connection error\n");
+			if (errno != EINTR)
+			{
+				log_error("Accept connection error: %d\n", errno);
+			}
+			continue;
+		}
+		else if (ret == 0) // timeout
+		{
 			continue;
 		}
 
-		if (result == 0)
+		// Stop accept new connection on exit
+		if (SYS_server_exit)
 		{
 			continue;
 		}

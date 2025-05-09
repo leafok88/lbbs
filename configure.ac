@@ -23,8 +23,8 @@ AC_CHECK_LIB([mysqlclient], [mysql_connect])
 AC_CHECK_LIB([z], [unzip])
 
 AC_HEADER_SYS_WAIT
-AC_CHECK_HEADERS([arpa/inet.h dflcn.h fcntl.h memory.h netdb.h netinet/in.h signal.h stdlib.h
-					string.h strings.h sys/ioctl.h sys/param.h sys/socket.h sys/time.h
+AC_CHECK_HEADERS([arpa/inet.h dflcn.h fcntl.h memory.h netdb.h netinet/in.h signal.h stdlib.h \
+					string.h strings.h sys/ioctl.h sys/param.h sys/socket.h sys/time.h \
 					sys/syscall.h sys/wait.h unistd.h mysql.h])
 
 # Checks for typedefs, structures, and compiler characteristics.

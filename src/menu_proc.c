@@ -114,9 +114,9 @@ int reloadbbsmenu(const char *s)
 	{
 		unload_menu(&new_menu);
 
-		if (kill(getppid(), SIG_RELOAD_MENU) < 0)
+		if (kill(getppid(), SIGHUP) < 0)
 		{
-			log_error("Send SIG_RELOAD_MENU signal failed (%d)\n", errno);
+			log_error("Send SIGHUP signal failed (%d)\n", errno);
 	
 			prints("·¢ËÍÖ¸ÁîÊ§°Ü\r\n");
 		}

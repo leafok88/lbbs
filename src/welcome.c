@@ -141,6 +141,10 @@ int bbs_welcome()
 		fclose(fout);
 	}
 
+	// Count current user before login
+	u_online++;
+	u_anonymous++;
+
 	// Display logo
 	display_file(DATA_WELCOME);
 
