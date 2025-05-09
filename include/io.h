@@ -70,6 +70,4 @@ extern int igetch(int clear_buf);
 
 extern int igetch_t(long int sec);
 
-extern int ikbhit();
-
 #endif //_IO_H_

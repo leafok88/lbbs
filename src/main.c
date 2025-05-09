@@ -152,19 +152,12 @@ int main(int argc, char *argv[])
 	}
 
 	// Set signal handler
-	signal(SIGCHLD, child_exit);
-	signal(SIGTERM, system_exit);
-	signal(SIG_RELOAD_MENU, reload_bbs_menu);
+	signal(SIGHUP, sig_hup_handler);
+	signal(SIGCHLD, sig_chld_handler);
+	signal(SIGTERM, sig_term_handler);
 
 	// Initialize socket server
 	net_server(BBS_address, BBS_port);
-
-	// Wait for child process exit
-	while (SYS_child_process_count > 0)
-	{
-		log_std("Waiting for %d child process to exit\n", SYS_child_process_count);
-		sleep(1);
-	}
 
 	// Cleanup
 	unload_menu(&bbs_menu);

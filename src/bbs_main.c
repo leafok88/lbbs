@@ -63,7 +63,7 @@ int bbs_center()
 	show_bottom("");
 	display_menu(get_menu(&bbs_menu, "TOPMENU"));
 
-	while (!SYS_exit)
+	while (!SYS_server_exit)
 	{
 		ch = igetch(0);
 

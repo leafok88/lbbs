@@ -55,20 +55,19 @@ extern char hostaddr_client[IP_ADDR_LEN];
 extern int port_server;
 extern int port_client;
 
-// Signal
-#define SIG_RELOAD_MENU 0x22
-
 extern const char *str_space(char *string, int length);
 extern const char *get_time_str(char *string, size_t length);
 
 // Signal handler
-extern void reload_bbs_menu(int);
-extern void system_exit(int);
-extern void child_exit(int);
+extern void sig_hup_handler(int);
+extern void sig_term_handler(int);
+extern void sig_chld_handler(int);
 
 // System
-extern int SYS_exit;
-extern int SYS_child_process_count;
+extern volatile int SYS_server_exit;
+extern volatile int SYS_child_process_count;
+extern volatile int SYS_child_exit_count;
+extern volatile int SYS_menu_reload;
 
 // Network
 extern const char * ip_mask(char * s, int level, char mask);

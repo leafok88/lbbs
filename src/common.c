@@ -20,7 +20,6 @@
 #include <string.h>
 #include <time.h>
 #include <sys/types.h>
-#include <sys/wait.h>
 
 // Version information
 char app_version[256] = "LBBS-devel version 1.0";
@@ -34,8 +33,10 @@ int port_server;
 int port_client;
 
 // Global declaration for system
-int SYS_exit;
-int SYS_child_process_count;
+volatile int SYS_server_exit = 0;
+volatile int SYS_child_process_count = 0;
+volatile int SYS_child_exit_count = 0;
+volatile int SYS_menu_reload = 0;
 
 // Common function
 const char *str_space(char *string, int length)
@@ -90,34 +91,19 @@ const char *get_time_str(char *s, size_t len)
 	return s;
 }
 
-void reload_bbs_menu(int i)
+void sig_hup_handler(int i)
 {
-	if (reload_menu(&bbs_menu) < 0)
-	{
-		log_error("Reload menu failed\n");
-	}
-	else
-	{
-		log_std("Reload menu successfully\n");
-	}
+	SYS_menu_reload = 1;
 }
 
-void system_exit(int i)
+void sig_term_handler(int i)
 {
-	SYS_exit = 1;
+	SYS_server_exit = 1;
 }
 
-void child_exit(int i)
+void sig_chld_handler(int i)
 {
-	int pid;
-
-	pid = wait(0);
-
-	if (pid > 0)
-	{
-		SYS_child_process_count--;
-		log_std("Child process (%d) exited\n", pid);
-	}
+	SYS_child_exit_count++;
 }
 
 const char * ip_mask(char * s, int level, char mask)

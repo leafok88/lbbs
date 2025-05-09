@@ -62,7 +62,11 @@ int igetch(int clear_buf)
 	static ssize_t len = 0;
 	static int pos = 0;
 
+	fd_set testfds;
+	struct timeval timeout;
+
 	unsigned char tmp[256];
+	int ret;
 	int out = KEY_NULL;
 	int in_esc = 0;
 	int in_ascii = 0;
@@ -77,42 +81,35 @@ int igetch(int clear_buf)
 		return 0;
 	}
 
-	// Stop on system exit
-	if (SYS_exit)
-		return KEY_NULL;
-
-	if (pos >= len)
+	while (!SYS_server_exit && pos >= len)
 	{
-		fd_set testfds;
-		struct timeval timeout;
-
-		pos = 0;
-		len = 0;
-
 		FD_ZERO(&testfds);
-		FD_SET(0, &testfds);
+		FD_SET(STDIN_FILENO, &testfds);
 
 		timeout.tv_sec = 1;
 		timeout.tv_usec = 0;
 
-		int result = SignalSafeSelect(FD_SETSIZE, &testfds, (fd_set *)NULL,
-								  (fd_set *)NULL, &timeout);
+		ret = select(FD_SETSIZE, &testfds, NULL, NULL, &timeout);
 
-		if (result == 0)
+		if (ret < 0)
+		{
+			if (errno != EINTR)
+			{
+				log_error("Select error in igetch: !\n", errno);
+				return KEY_NULL;
+			}
+			continue;
+		}
+		else if (ret == 0)
 		{
 			return KEY_TIMEOUT;
 		}
-		if (result < 0)
+
+		if (FD_ISSET(STDIN_FILENO, &testfds))
 		{
-			log_error("select() error (%d) !\n", result);
-			return KEY_NULL;
-		}
-		if (result > 0)
-		{
-			if (FD_ISSET(0, &testfds))
-			{
-				len = read(0, buf, 255);
-			}
+			len = read(STDIN_FILENO, buf, 255);
+			pos = 0;
+			break;
 		}
 
 		// For debug
@@ -246,13 +243,4 @@ int igetch_t(long int sec)
 	} while ((ch == KEY_TIMEOUT || ch == 0xa) && (time(0) - t_begin < sec));
 
 	return ch;
-}
-
-int ikbhit()
-{
-	int len;
-
-	ioctl(0, FIONREAD, &len);
-
-	return len;
 }
