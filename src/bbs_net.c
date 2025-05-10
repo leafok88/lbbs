@@ -145,7 +145,7 @@ static void process_bar(int n, int len)
 
 int bbsnet_connect(int n)
 {
-	int sock, result, loop;
+	int sock, ret, loop;
 	ssize_t len;
 	struct sockaddr_in sin;
 	char buf[LINE_BUFFER_LEN];
@@ -258,22 +258,24 @@ int bbsnet_connect(int n)
 		timeout.tv_sec = 0;
 		timeout.tv_usec = 100 * 1000; // 0.1 second
 
-		result = SignalSafeSelect(FD_SETSIZE, &testfds, (fd_set *)NULL,
-								  (fd_set *)NULL, &timeout);
+		ret = select(FD_SETSIZE, &testfds, NULL, NULL, &timeout);
 
-		if (result == 0)
+		if (ret == 0)
 		{
 			if (time(0) - BBS_last_access_tm >= MAX_DELAY_TIME)
 			{
 				loop = 0;
 			}
 		}
-		if (result < 0)
+		else if (ret < 0)
 		{
-			log_error("select() error (%d) !\n", result);
-			loop = 0;
+			if (errno != EINTR)
+			{
+				log_error("select() error (%d) !\n", errno);
+				loop = 0;
+			}
 		}
-		if (result > 0)
+		else if (ret > 0)
 		{
 			if (FD_ISSET(STDIN_FILENO, &testfds))
 			{
