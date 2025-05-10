@@ -240,7 +240,7 @@ int igetch_t(long int sec)
 	do
 	{
 		ch = igetch(0);
-	} while (ch == KEY_TIMEOUT && (time(0) - t_begin < sec));
+	} while (!SYS_server_exit && ch == KEY_TIMEOUT && (time(0) - t_begin < sec));
 
 	return ch;
 }

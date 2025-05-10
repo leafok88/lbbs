@@ -111,6 +111,14 @@ int net_server(const char *hostaddr, in_port_t port)
 			}
 		}
 
+		if (SYS_server_exit && SYS_child_exit_count == 0)
+		{
+			if (kill(0, SIGTERM) < 0)
+			{
+				log_error("Send SIGTERM signal failed (%d)\n", errno);
+			}
+		}
+
 		if (SYS_menu_reload && !SYS_server_exit)
 		{
 			if (reload_menu(&bbs_menu) < 0)

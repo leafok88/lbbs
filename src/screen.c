@@ -112,7 +112,7 @@ static int _str_input(char *buffer, int buf_size, int echo_mode)
 	for (offset = 0; offset < buf_size - 1 && buffer[offset] != '\0'; offset++)
 		;
 
-	while ((c = igetch_t(MIN(MAX_DELAY_TIME, 60))))
+	while (!SYS_server_exit && (c = igetch_t(MIN(MAX_DELAY_TIME, 60))))
 	{
 		if (c == CR)
 		{
@@ -278,7 +278,7 @@ int display_file_ex(const char *filename, int begin_line, int wait)
 	line = begin_line;
 	max_lines = screen_rows - 1;
 
-	while (loop)
+	while (!SYS_server_exit && loop)
 	{
 		if (c_line_current >= c_line_total && c_line_total <= screen_rows - 2)
 		{
@@ -313,7 +313,7 @@ int display_file_ex(const char *filename, int begin_line, int wait)
 			iflush();
 
 			input_ok = 0;
-			while (!input_ok)
+			while (!SYS_server_exit && !input_ok)
 			{
 				ch = igetch_t(MAX_DELAY_TIME);
 				input_ok = 1;
