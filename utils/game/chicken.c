@@ -15,6 +15,7 @@
 
 #define DATA_FILE "var/chicken"
 #define LOG_FILE "var/chicken/log"
+#define CHICKEN_NAME_LEN 20
 
 char
 	*cstate[10] = {"ÎÒÔÚ³Ô·¹", "Íµ³ÔÁãÊ³", "À­±ã±ã", "±¿µ°..Êä¸ø¼¦?", "¹ş..Ó®Ğ¡¼¦Ò²Ã»¶à¹âÈÙ", "Ã»Ê³ÎïÀ²..", "Æ£ÀÍÈ«Ïû!"};
@@ -25,7 +26,7 @@ char fname[FILE_PATH_LEN];
 time_t birth;
 int weight, satis, mon, day, age, angery, sick, oo, happy, clean, tiredstrong, play;
 int winn, losee, last, chictime, agetmp, food, zfood;
-char Name[21];
+char chicken_name[CHICKEN_NAME_LEN + 1];
 FILE *cfp;
 int gold, x[9] = {0}, ran, q_mon, p_mon;
 unsigned long int bank;
@@ -33,7 +34,7 @@ char buf[1], buf1[6];
 
 static int load_chicken(void);
 static int save_chicken(void);
-static int creat_a_egg(void);
+static int create_a_egg(void);
 static int death(void);
 static int guess(void);
 static int lose(void);
@@ -53,7 +54,12 @@ int chicken_main()
 	}
 
 	setuserfile(fname, sizeof(fname), DATA_FILE);
-	load_chicken();
+
+	if (load_chicken() < 0)
+	{
+		return -2;
+	}
+
 	show_chicken();
 	select_menu();
 	save_chicken();
@@ -74,17 +80,20 @@ static int load_chicken()
 
 	if ((fp = fopen(fname, "r+")) == NULL)
 	{
-		Name[0] = '\0';
-		creat_a_egg();
+		chicken_name[0] = '\0';
+		if (create_a_egg() < 0)
+		{
+			return -1;
+		}
 		last = 1;
 		fp = fopen(fname, "r");
-		fscanf(fp, "%d %d %d %d %d %d %d %d %d %d %d %d %d %d %s ", &weight, &mon, &day, &satis, &age, &oo, &happy, &clean, &tiredstrong, &play, &winn, &losee, &food, &zfood, Name);
+		fscanf(fp, "%d %d %d %d %d %d %d %d %d %d %d %d %d %d %s ", &weight, &mon, &day, &satis, &age, &oo, &happy, &clean, &tiredstrong, &play, &winn, &losee, &food, &zfood, chicken_name);
 		fclose(fp);
 	}
 	else
 	{
 		last = 0;
-		fscanf(fp, "%d %d %d %d %d %d %d %d %d %d %d %d %d %d %s ", &weight, &mon, &day, &satis, &age, &oo, &happy, &clean, &tiredstrong, &play, &winn, &losee, &food, &zfood, Name);
+		fscanf(fp, "%d %d %d %d %d %d %d %d %d %d %d %d %d %d %s ", &weight, &mon, &day, &satis, &age, &oo, &happy, &clean, &tiredstrong, &play, &winn, &losee, &food, &zfood, chicken_name);
 		fclose(fp);
 	}
 
@@ -106,45 +115,54 @@ int save_chicken()
 	FILE *fp;
 
 	fp = fopen(fname, "r+");
-	fprintf(fp, "%d %d %d %d %d %d %d %d %d %d %d %d %d %d %s ", weight, mon, day, satis, age, oo, happy, clean, tiredstrong, play, winn, losee, food, zfood, Name);
+	fprintf(fp, "%d %d %d %d %d %d %d %d %d %d %d %d %d %d %s ", weight, mon, day, satis, age, oo, happy, clean, tiredstrong, play, winn, losee, food, zfood, chicken_name);
 	fclose(fp);
 
 	return 0;
 }
 
-static int creat_a_egg()
+static int create_a_egg()
 {
 	FILE *fp;
 	struct tm *ptime;
 	time_t now;
 	time(&now);
 	ptime = localtime(&now);
+	char name_tmp[CHICKEN_NAME_LEN + 1];
 
 	clrtobot(2);
-	while (!SYS_server_exit && Name[0] == '\0')
+	while (!SYS_server_exit && chicken_name[0] == '\0')
 	{
-		strncpy(Name, "±¦±¦", sizeof(Name) - 1);
-		Name[sizeof(Name) - 1] = '\0';
+		strncpy(chicken_name, "±¦±¦", sizeof(chicken_name) - 1);
+		chicken_name[sizeof(chicken_name) - 1] = '\0';
 
-		get_data(2, 0, "°ïĞ¡¼¦È¡¸öºÃÃû×Ö£º", Name, sizeof(Name), DOECHO);
+		strncpy(name_tmp, chicken_name, sizeof(name_tmp) - 1);
+		name_tmp[sizeof(name_tmp) - 1] = '\0';
+
+		if (get_data(2, 0, "°ïĞ¡¼¦È¡¸öºÃÃû×Ö£º", name_tmp, sizeof(name_tmp), DOECHO) == 0 &&
+			name_tmp[0] != '\0')
+		{
+			strncpy(chicken_name, name_tmp, sizeof(chicken_name) - 1);
+			chicken_name[sizeof(chicken_name) - 1] = '\0';
+		}
 	}
 
 	if ((fp = fopen(fname, "w")) == NULL)
 	{
 		log_error("Error!!cannot open file '%s'!\n", fname);
-		return -1;
+		return -2;
 	}
-	fprintf(fp, "%d %d %d %d %d %d %d %d %d %d %d %d %d %d %s ", ptime->tm_hour * 2, ptime->tm_mday, ptime->tm_mon + 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10, 5, Name);
+	fprintf(fp, "%d %d %d %d %d %d %d %d %d %d %d %d %d %d %s ", ptime->tm_hour * 2, ptime->tm_mday, ptime->tm_mon + 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10, 5, chicken_name);
 	fclose(fp);
 
 	if ((fp = fopen(LOG_FILE, "a")) == NULL)
 	{
 		log_error("Error!!cannot open file '%s'!\n", LOG_FILE);
-		return -1;
+		return -2;
 	}
 	fprintf(fp, "[32m%s[m ÔÚ [34;43m[%d/%d  %d:%02d][m  ÑøÁËÒ»Ö»½Ğ [33m%s[m µÄĞ¡¼¦\r\n",
 			BBS_username, ptime->tm_mon + 1, ptime->tm_mday,
-			ptime->tm_hour, ptime->tm_min, Name);
+			ptime->tm_hour, ptime->tm_min, chicken_name);
 	fclose(fp);
 
 	return 0;
@@ -180,7 +198,7 @@ static int show_chicken()
 		"  ¿ìÀÖ¶È:%d"
 		"  ÂúÒâ¶È:%d",
 		// "  ´ó²¹Íè:%d\r\n",
-		Name, age, weight, food, zfood, tiredstrong, clean, day, mon, money_balance(), happy, satis); //,oo);
+		chicken_name, age, weight, food, zfood, tiredstrong, clean, day, mon, money_balance(), happy, satis); //,oo);
 
 	moveto(3, 0);
 	if (age <= 16)
@@ -356,13 +374,17 @@ static int select_menu()
 	time_t now;
 	time(&now);
 	ptime = localtime(&now);
+	char name_tmp[CHICKEN_NAME_LEN + 1];
 
 	while (!SYS_server_exit && loop)
 	{
 		moveto(23, 0);
 		prints("[0;46;31m  Ê¹ÓÃ°ïÖú  [0;47;34m c ¸ÄÃû×Ö   k É±¼¦   t Ïû³ı·ÇÆ£ÀÍ($50)   q ÍË³ö     [m");
 		inbuf[0] = '\0';
-		get_data(22, 0, "Òª×öĞ©Ê²Ã´ÄØ?£º", inbuf, sizeof(inbuf), DOECHO);
+		if (get_data(22, 0, "Òª×öĞ©Ê²Ã´ÄØ?£º", inbuf, sizeof(inbuf), DOECHO) < 0)
+		{
+			return 0; // input timeout
+		}
 		if (tiredstrong > 20)
 		{
 			clearscr();
@@ -556,16 +578,20 @@ static int select_menu()
 			}
 			break;
 		case 'c':
-			do
+			strncpy(name_tmp, chicken_name, sizeof(name_tmp) - 1);
+			name_tmp[sizeof(name_tmp) - 1] = '\0';
+
+			clrline(22, 22);
+
+			if (get_data(22, 0, "°ïĞ¡¼¦È¡¸öºÃÃû×Ö£º", name_tmp, sizeof(name_tmp), DOECHO) == 0 &&
+				name_tmp[0] != '\0')
 			{
-				clrline(22, 22);
-				get_data(22, 0, "°ïĞ¡¼¦È¡¸öºÃÃû×Ö£º", Name, sizeof(Name), DOECHO);
-			} while (!SYS_server_exit && Name[0] == '\0');
+				strncpy(chicken_name, name_tmp, sizeof(chicken_name) - 1);
+				chicken_name[sizeof(chicken_name) - 1] = '\0';
+			}
 			break;
 		case 'q':
 			loop = 0;
-			break;
-		default:
 			break;
 		}
 
@@ -594,7 +620,7 @@ int death()
 	}
 	fprintf(fp, "[32m%s[m ÔÚ [34;43m[%d/%d  %d:%02d][m  µÄĞ¡¼¦ [33m%s  [36m¹ÒÁË~~[m \r\n",
 			BBS_username, ptime->tm_mon + 1, ptime->tm_mday,
-			ptime->tm_hour, ptime->tm_min, Name);
+			ptime->tm_hour, ptime->tm_min, chicken_name);
 	fclose(fp);
 	prints("ÎØ...Ğ¡¼¦¹ÒÁË....");
 	prints("\r\n±¿Ê·ÁË...¸Ï³öÏµÍ³...");
@@ -761,7 +787,10 @@ int sell()
 	clrtobot(20);
 	moveto(20, 0);
 	prints("Ğ¡¼¦Öµ[33;45m$$ %d [mÌÇÌÇ", sel);
-	get_data(19, 0, "ÕæµÄÒªÂôµôĞ¡¼¦?[y/N]", ans, sizeof(ans), DOECHO);
+	if (get_data(19, 0, "ÕæµÄÒªÂôµôĞ¡¼¦?[y/N]", ans, sizeof(ans), DOECHO) < 0)
+	{
+		return -1; // input timeout
+	}
 	if (ans[0] != 'y')
 	{
 		return -1;
@@ -782,7 +811,7 @@ int sell()
 	}
 	fprintf(fp, "[32m%s[m ÔÚ [34;43m[%d/%d  %d:%02d][m  °ÑĞ¡¼¦ [33m%s  [31mÒÔ [37;44m%d[m [31mÌÇ¹ûÂôÁË[m\r\n",
 			BBS_username, ptime->tm_mon + 1, ptime->tm_mday,
-			ptime->tm_hour, ptime->tm_min, Name, sel);
+			ptime->tm_hour, ptime->tm_min, chicken_name, sel);
 	fclose(fp);
 	clearscr();
 
