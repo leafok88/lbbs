@@ -3,7 +3,7 @@ EXTRA_PROGRAMS =
 
 bbsd_SOURCES = bbs.c bbs_cmd.c bbs_main.c common.c database.c fork.c init.c \
 			   io.c log.c login.c menu.c main.c menu_proc.c net_server.c \
-			   reg_ex.c register.c screen.c str_process.c tcplib.c user_priv.c \
+			   reg_ex.c register.c screen.c str_process.c user_priv.c \
 			   welcome.c
 
 bbsd_LDFLAGS=-export-dynamic
