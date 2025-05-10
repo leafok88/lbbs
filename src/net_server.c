@@ -86,6 +86,8 @@ int net_server(const char *hostaddr, in_port_t port)
 	sigaddset(&nsigset, SIGCHLD);
 	sigaddset(&nsigset, SIGTERM);
 
+	log_std("Debug: SYS_server_exit = %d\n", SYS_server_exit);
+
 	while (!SYS_server_exit || SYS_child_process_count > 0)
 	{
 		sigprocmask(SIG_BLOCK, &nsigset, &osigset);
