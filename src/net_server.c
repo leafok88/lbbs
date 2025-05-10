@@ -86,8 +86,6 @@ int net_server(const char *hostaddr, in_port_t port)
 	sigaddset(&nsigset, SIGCHLD);
 	sigaddset(&nsigset, SIGTERM);
 
-	log_std("Debug: SYS_server_exit = %d\n", SYS_server_exit);
-
 	while (!SYS_server_exit || SYS_child_process_count > 0)
 	{
 		sigprocmask(SIG_BLOCK, &nsigset, &osigset);
@@ -195,8 +193,6 @@ int net_server(const char *hostaddr, in_port_t port)
 			log_error("Close client socket failed\n");
 		}
 	}
-
-	log_std("Debug #2: SYS_server_exit = %d\n", SYS_server_exit);
 
 	if (close(socket_server) == -1)
 	{
