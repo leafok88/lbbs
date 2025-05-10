@@ -196,6 +196,8 @@ int net_server(const char *hostaddr, in_port_t port)
 		}
 	}
 
+	log_std("Debug #2: SYS_server_exit = %d\n", SYS_server_exit);
+
 	if (close(socket_server) == -1)
 	{
 		log_error("Close server socket failed\n");
