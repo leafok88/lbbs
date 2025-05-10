@@ -51,7 +51,7 @@ int bbs_exit()
 
 int bbs_center()
 {
-	int ch, redraw;
+	int ch;
 	time_t t_last_action;
 
 	BBS_last_access_tm = t_last_action = time(0);
@@ -83,27 +83,23 @@ int bbs_center()
 			{
 				return 0;
 			}
+			continue;
 		default:
-			redraw = 1;
 			switch (menu_control(&bbs_menu, ch))
 			{
 			case EXITBBS:
 				return 0;
 			case REDRAW:
-				break;
-			case NOREDRAW:
-			case UNKNOWN_CMD:
-			default:
-				redraw = 0;
-				break;
-			}
-			if (redraw)
-			{
 				clearscr();
 				show_top("");
 				show_active_board();
 				show_bottom("");
 				display_current_menu(&bbs_menu);
+				break;
+			case NOREDRAW:
+			case UNKNOWN_CMD:
+			default:
+				break;
 			}
 		}
 		BBS_last_access_tm = time(0);
