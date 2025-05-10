@@ -44,8 +44,6 @@ int bbs_exit()
 {
 	display_file_ex(DATA_GOODBYE, 1, 0);
 
-	sleep(1);
-
 	return 0;
 }
 
