@@ -20,16 +20,20 @@
 #include "io.h"
 #include "screen.h"
 #include "menu.h"
-#include "tcplib.h"
 #include <stdio.h>
 #include <stdarg.h>
+#include <errno.h>
+#include <string.h>
+#include <stdlib.h>
+#include <fcntl.h>
+#include <time.h>
+#include <unistd.h>
+#include <netdb.h>
+#include <sys/select.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include <time.h>
-#include <unistd.h>
-#include <netdb.h>
 
 #define MENU_CONF_DELIM " \t\r\n"
 
@@ -145,14 +149,15 @@ static void process_bar(int n, int len)
 
 int bbsnet_connect(int n)
 {
-	int sock, ret, loop;
+	int sock, flags, ret, loop, error;
 	ssize_t len;
 	struct sockaddr_in sin;
 	char buf[LINE_BUFFER_LEN];
-	fd_set testfds;
+	fd_set read_fds;
+	fd_set write_fds;
 	struct timeval timeout;
 	struct hostent *p_host = NULL;
-	int rv, tos = 020, i;
+	int tos = 020, i;
 	char remote_addr[IP_ADDR_LEN];
 	int remote_port;
 	time_t t_used;
@@ -207,31 +212,63 @@ int bbsnet_connect(int n)
 
 	prints("\033[1;32m穿梭进度条提示您当前已使用的时间，按\033[1;33mCtrl+C\033[1;32m中断。\033[m\r\n");
 	process_bar(0, MAX_PROCESS_BAR_LEN);
+
+	// Set socket as non-blocking
+	flags = fcntl(sock, F_GETFL, 0);
+	fcntl(sock, F_SETFL, flags | O_NONBLOCK);
+
+	if ((ret = connect(sock, (struct sockaddr *)&sin, sizeof(sin))) < 0)
+	{
+		if (errno != EINPROGRESS)
+		{
+			prints("\033[1;31m连接失败！\033[m\r\n");
+			press_any_key();
+			return -1;
+		}
+	}
+
 	for (i = 0; i < MAX_PROCESS_BAR_LEN; i++)
 	{
-		ch = igetch(0); // 100 ms
+		ch = igetch(0); // 0.1 second
 		if (ch == KEY_NULL || ch == Ctrl('C') || SYS_server_exit)
 		{
 			return 0;
 		}
 
-		rv = NonBlockConnectEx(sock, (struct sockaddr *)&sin, sizeof(sin),
-							   400, (i == 0 ? 1 : 0)); // 400 ms
+		FD_ZERO(&read_fds);
+		FD_SET(sock, &read_fds);
 
-		if (rv == ERR_TCPLIB_TIMEOUT)
+		FD_ZERO(&write_fds);
+		FD_SET(sock, &write_fds);
+
+		timeout.tv_sec = 0;
+		timeout.tv_usec = 400 * 1000; // 0.4 second
+	
+		ret = select(sock + 1, &read_fds, &write_fds, NULL, &timeout);
+
+		if (ret == 0) // Timeout
 		{
 			process_bar(i + 1, MAX_PROCESS_BAR_LEN);
-			continue;
 		}
-		else if (rv == 0)
+		else if (ret < 0)
 		{
-			break;
+			if (errno != EINTR)
+			{
+				log_error("select() error (%d) !\n", errno);
+				return -1;
+			}
 		}
-		else
+		// ret > 0
+		else if (FD_ISSET(sock, &read_fds) || FD_ISSET(sock, &write_fds))
 		{
-			prints("\033[1;31m连接失败！\033[m\r\n");
-			press_any_key();
-			return -1;
+			len = sizeof(error);
+			if (getsockopt(sock, SOL_SOCKET, SO_ERROR, &error, (socklen_t *)&len) < 0)
+			{
+				log_error("getsockopt() error (%d) !\n", error);
+				return -1;
+			}
+
+			break; // connected
 		}
 	}
 	if (i == MAX_PROCESS_BAR_LEN)
@@ -240,6 +277,8 @@ int bbsnet_connect(int n)
 		press_any_key();
 		return -1;
 	}
+
+	fcntl(sock, F_SETFL, flags); /* restore file status flags */
 	setsockopt(sock, IPPROTO_IP, IP_TOS, &tos, sizeof(int));
 
 	prints("\033[1;31m连接成功！\033[m\r\n");
@@ -251,16 +290,16 @@ int bbsnet_connect(int n)
 
 	while (loop && !SYS_server_exit)
 	{
-		FD_ZERO(&testfds);
-		FD_SET(STDIN_FILENO, &testfds);
-		FD_SET(sock, &testfds);
+		FD_ZERO(&read_fds);
+		FD_SET(STDIN_FILENO, &read_fds);
+		FD_SET(sock, &read_fds);
 	
 		timeout.tv_sec = 0;
 		timeout.tv_usec = 100 * 1000; // 0.1 second
 
-		ret = select(FD_SETSIZE, &testfds, NULL, NULL, &timeout);
+		ret = select(FD_SETSIZE, &read_fds, NULL, NULL, &timeout);
 
-		if (ret == 0)
+		if (ret == 0) // timeout
 		{
 			if (time(0) - BBS_last_access_tm >= MAX_DELAY_TIME)
 			{
@@ -277,7 +316,7 @@ int bbsnet_connect(int n)
 		}
 		else if (ret > 0)
 		{
-			if (FD_ISSET(STDIN_FILENO, &testfds))
+			if (FD_ISSET(STDIN_FILENO, &read_fds))
 			{
 				len = read(STDIN_FILENO, buf, sizeof(buf));
 				if (len == 0)
@@ -285,8 +324,10 @@ int bbsnet_connect(int n)
 					loop = 0;
 				}
 				write(sock, buf, (size_t)len);
+
+				BBS_last_access_tm = time(0);
 			}
-			if (FD_ISSET(sock, &testfds))
+			if (FD_ISSET(sock, &read_fds))
 			{
 				len = read(sock, buf, sizeof(buf));
 				if (len == 0)
@@ -295,7 +336,6 @@ int bbsnet_connect(int n)
 				}
 				write(STDOUT_FILENO, buf, (size_t)len);
 			}
-			BBS_last_access_tm = time(0);
 		}
 	}
 
@@ -390,7 +430,7 @@ int bbs_net()
 			{
 				return 0;
 			}
-			break;
+			continue;
 		case CR:
 			pos = bbsnet_menu.p_menu[0]->item_cur_pos;
 			bbsnet_connect(pos);
