@@ -77,13 +77,12 @@ int bbs_center()
 		switch (ch)
 		{
 		case KEY_NULL:
-			return 0;
+			return -1;
 		case KEY_TIMEOUT:
 			if (time(0) - BBS_last_access_tm >= MAX_DELAY_TIME)
 			{
-				return -1;
+				return 0;
 			}
-			continue;
 		default:
 			redraw = 1;
 			switch (menu_control(&bbs_menu, ch))

@@ -23,9 +23,12 @@
 #include "log.h"
 #include "io.h"
 #include "fork.h"
-#include "tcplib.h"
 #include "menu.h"
+#include <errno.h>
+#include <fcntl.h>
+#include <string.h>
 #include <signal.h>
+#include <stdlib.h>
 #include <unistd.h>
 #include <sys/syscall.h>
 #include <sys/socket.h>
@@ -108,7 +111,7 @@ int net_server(const char *hostaddr, in_port_t port)
 			}
 		}
 
-		if (SYS_menu_reload)
+		if (SYS_menu_reload && !SYS_server_exit)
 		{
 			if (reload_menu(&bbs_menu) < 0)
 			{
@@ -125,10 +128,10 @@ int net_server(const char *hostaddr, in_port_t port)
 
 		FD_ZERO(&testfds);
 		FD_SET(socket_server, &testfds);
-
-		timeout.tv_sec = 1;
-		timeout.tv_usec = 0;
-
+	
+		timeout.tv_sec = 0;
+		timeout.tv_usec = 100 * 1000; // 0.1 second
+	
 		ret = select(FD_SETSIZE, &testfds, NULL, NULL, &timeout);
 
 		if (ret < 0)

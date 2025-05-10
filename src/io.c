@@ -17,12 +17,13 @@
 #include "io.h"
 #include "log.h"
 #include "common.h"
-#include "tcplib.h"
+#include <errno.h>
 #include <stdio.h>
 #include <stdarg.h>
 #include <time.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <sys/select.h>
 #include <sys/ioctl.h>
 
 int outc(char c)
@@ -58,14 +59,14 @@ int iflush()
 int igetch(int clear_buf)
 {
 	// static input buffer
-	static unsigned char buf[256];
+	static unsigned char buf[LINE_BUFFER_LEN];
 	static ssize_t len = 0;
 	static int pos = 0;
 
 	fd_set testfds;
 	struct timeval timeout;
 
-	unsigned char tmp[256];
+	unsigned char tmp[LINE_BUFFER_LEN];
 	int ret;
 	int out = KEY_NULL;
 	int in_esc = 0;
@@ -86,8 +87,8 @@ int igetch(int clear_buf)
 		FD_ZERO(&testfds);
 		FD_SET(STDIN_FILENO, &testfds);
 
-		timeout.tv_sec = 1;
-		timeout.tv_usec = 0;
+		timeout.tv_sec = 0;
+		timeout.tv_usec = 100 * 1000; // 0.1 second
 
 		ret = select(FD_SETSIZE, &testfds, NULL, NULL, &timeout);
 
@@ -107,7 +108,7 @@ int igetch(int clear_buf)
 
 		if (FD_ISSET(STDIN_FILENO, &testfds))
 		{
-			len = read(STDIN_FILENO, buf, 255);
+			len = read(STDIN_FILENO, buf, sizeof(buf));
 			pos = 0;
 			break;
 		}

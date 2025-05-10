@@ -31,7 +31,8 @@
 #include <unistd.h>
 #include <netdb.h>
 
-#define TIME_OUT 15
+#define MENU_CONF_DELIM " \t\r\n"
+
 #define MAX_PROCESS_BAR_LEN 30
 #define MAXSTATION 26 * 2
 #define STATION_PER_LINE 4
@@ -68,12 +69,12 @@ int load_bbsnet_conf(const char *file_config)
 
 	while (fgets(t, 255, fp) && item_count < MAXSTATION)
 	{
-		t1 = strtok_r(t, " \t", &saveptr);
-		t2 = strtok_r(NULL, " \t\n", &saveptr);
-		t3 = strtok_r(NULL, " \t\n", &saveptr);
-		t4 = strtok_r(NULL, " \t\n", &saveptr);
+		t1 = strtok_r(t, MENU_CONF_DELIM, &saveptr);
+		t2 = strtok_r(NULL, MENU_CONF_DELIM, &saveptr);
+		t3 = strtok_r(NULL, MENU_CONF_DELIM, &saveptr);
+		t4 = strtok_r(NULL, MENU_CONF_DELIM, &saveptr);
 
-		if (t1 == NULL || t2 == NULL || t3 == NULL || t[0] == '#' || t[0] == '*')
+		if (t1 == NULL || t2 == NULL || t3 == NULL || t4 == NULL || t[0] == '#' || t[0] == '*')
 		{
 			continue;
 		}
@@ -148,28 +149,27 @@ int bbsnet_connect(int n)
 	int sock, result, loop;
 	ssize_t len;
 	struct sockaddr_in sin;
-	char buf[256];
-	fd_set inputs, testfds;
+	char buf[LINE_BUFFER_LEN];
+	fd_set testfds;
 	struct timeval timeout;
-	struct hostent *pHost = NULL;
+	struct hostent *p_host = NULL;
 	int rv, tos = 020, i;
-	char remote_addr[256];
+	char remote_addr[IP_ADDR_LEN];
 	int remote_port;
 	time_t t_used;
 	struct tm *tm_used;
+	int ch;
 
 	clearscr();
 
 	moveto(0, 0);
 	prints("\033[1;32m正在测试往 %s (%s) 的连接，请稍候... \033[m\r\n",
 		   bbsnet_conf[n].host1, bbsnet_conf[n].ip);
-	prints("\033[1;32m如果在 %d 秒内无法连上，穿梭程序将放弃连接。\033[m\r\n",
-		   TIME_OUT);
 	iflush();
 
-	pHost = gethostbyname(bbsnet_conf[n].ip);
+	p_host = gethostbyname(bbsnet_conf[n].ip);
 
-	if (pHost == NULL)
+	if (p_host == NULL)
 	{
 		prints("\033[1;31m查找主机名失败！\033[m\r\n");
 		press_any_key();
@@ -199,25 +199,26 @@ int bbsnet_connect(int n)
 
 	bzero(&sin, sizeof(sin));
 	sin.sin_family = AF_INET;
-	sin.sin_addr = *(struct in_addr *)pHost->h_addr_list[0];
+	sin.sin_addr = *(struct in_addr *)p_host->h_addr_list[0];
 	sin.sin_port = htons(bbsnet_conf[n].port);
 
 	strncpy(remote_addr, inet_ntoa(sin.sin_addr), sizeof(remote_addr) - 1);
 	remote_addr[sizeof(remote_addr) - 1] = '\0';
 	remote_port = ntohs(sin.sin_port);
 
-	prints("\033[1;32m穿梭进度条提示您当前已使用的时间。\033[m\r\n");
+	prints("\033[1;32m穿梭进度条提示您当前已使用的时间，按Ctrl-C中断。\033[m\r\n");
 	process_bar(0, MAX_PROCESS_BAR_LEN);
 	for (i = 0; i < MAX_PROCESS_BAR_LEN; i++)
 	{
-		if (i == 0)
-			rv =
-				NonBlockConnectEx(sock, (struct sockaddr *)&sin, sizeof(sin),
-								  500, 1);
-		else
-			rv =
-				NonBlockConnectEx(sock, (struct sockaddr *)&sin, sizeof(sin),
-								  500, 0);
+		ch = igetch(0); // 100 ms
+		if (ch == KEY_NULL || ch == Ctrl('C') || SYS_server_exit)
+		{
+			return 0;
+		}
+
+		rv = NonBlockConnectEx(sock, (struct sockaddr *)&sin, sizeof(sin),
+							   400, (i == 0 ? 1 : 0)); // 400 ms
+
 		if (rv == ERR_TCPLIB_TIMEOUT)
 		{
 			process_bar(i + 1, MAX_PROCESS_BAR_LEN);
@@ -245,19 +246,18 @@ int bbsnet_connect(int n)
 	prints("\033[1;31m连接成功！\033[m\r\n");
 	log_std("BBSNET connect to %s:%d\n", remote_addr, remote_port);
 
-	FD_ZERO(&inputs);
-	FD_SET(0, &inputs);
-	FD_SET(sock, &inputs);
-
 	BBS_last_access_tm = t_used = time(0);
 
 	loop = 1;
 
-	while (loop)
+	while (loop && !SYS_server_exit)
 	{
-		testfds = inputs;
-		timeout.tv_sec = TIME_OUT;
-		timeout.tv_usec = 0;
+		FD_ZERO(&testfds);
+		FD_SET(STDIN_FILENO, &testfds);
+		FD_SET(sock, &testfds);
+	
+		timeout.tv_sec = 0;
+		timeout.tv_usec = 100 * 1000; // 0.1 second
 
 		result = SignalSafeSelect(FD_SETSIZE, &testfds, (fd_set *)NULL,
 								  (fd_set *)NULL, &timeout);
@@ -276,9 +276,9 @@ int bbsnet_connect(int n)
 		}
 		if (result > 0)
 		{
-			if (FD_ISSET(0, &testfds))
+			if (FD_ISSET(STDIN_FILENO, &testfds))
 			{
-				len = read(0, buf, 255);
+				len = read(STDIN_FILENO, buf, sizeof(buf));
 				if (len == 0)
 				{
 					loop = 0;
@@ -287,12 +287,12 @@ int bbsnet_connect(int n)
 			}
 			if (FD_ISSET(sock, &testfds))
 			{
-				len = read(sock, buf, 255);
+				len = read(sock, buf, sizeof(buf));
 				if (len == 0)
 				{
 					loop = 0;
 				}
-				write(1, buf, (size_t)len);
+				write(STDOUT_FILENO, buf, (size_t)len);
 			}
 			BBS_last_access_tm = time(0);
 		}
@@ -375,20 +375,21 @@ int bbs_net()
 	display_menu(get_menu(&bbsnet_menu, "BBSNET"));
 	bbsnet_selchange(pos);
 
-	while (1)
+	while (!SYS_server_exit)
 	{
 		ch = igetch(0);
 		switch (ch)
 		{
 		case KEY_NULL:
+			return -1;
 		case Ctrl('C'):
 			return 0;
 		case KEY_TIMEOUT:
 			if (time(0) - BBS_last_access_tm >= MAX_DELAY_TIME)
 			{
-				return -1;
+				return 0;
 			}
-			continue;
+			break;
 		case CR:
 			pos = bbsnet_menu.p_menu[0]->item_cur_pos;
 			bbsnet_connect(pos);

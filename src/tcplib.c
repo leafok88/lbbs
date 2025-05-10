@@ -3,7 +3,7 @@
 void MsToTimeval(const int ms, struct timeval *tv)
 {
 	tv->tv_sec = ms / TIME_CNV_RATIO;
-	tv->tv_usec = (ms - tv->tv_sec * TIME_CNV_RATIO) * TIME_CNV_RATIO;
+	tv->tv_usec = ms % TIME_CNV_RATIO * TIME_CNV_RATIO;
 }
 
 long int TimevalToMs(const struct timeval *tv)
