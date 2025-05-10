@@ -139,8 +139,7 @@ static int create_a_egg()
 		strncpy(name_tmp, chicken_name, sizeof(name_tmp) - 1);
 		name_tmp[sizeof(name_tmp) - 1] = '\0';
 
-		if (get_data(2, 0, "帮小鸡取个好名字：", name_tmp, sizeof(name_tmp), DOECHO) == 0 &&
-			name_tmp[0] != '\0')
+		if (get_data(2, 0, "帮小鸡取个好名字：", name_tmp, sizeof(name_tmp), DOECHO) > 0)
 		{
 			strncpy(chicken_name, name_tmp, sizeof(chicken_name) - 1);
 			chicken_name[sizeof(chicken_name) - 1] = '\0';
@@ -583,8 +582,7 @@ static int select_menu()
 
 			clrline(22, 22);
 
-			if (get_data(22, 0, "帮小鸡取个好名字：", name_tmp, sizeof(name_tmp), DOECHO) == 0 &&
-				name_tmp[0] != '\0')
+			if (get_data(22, 0, "帮小鸡取个好名字：", name_tmp, sizeof(name_tmp), DOECHO) > 0)
 			{
 				strncpy(chicken_name, name_tmp, sizeof(chicken_name) - 1);
 				chicken_name[sizeof(chicken_name) - 1] = '\0';

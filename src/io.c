@@ -124,8 +124,7 @@ int igetch(int clear_buf)
 
 		if (c == '\0')
 		{
-			out = c;
-			break;
+			return KEY_NULL;
 		}
 
 		if (c == KEY_CONTROL)

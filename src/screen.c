@@ -114,7 +114,7 @@ static int _str_input(char *buffer, int buf_size, int echo_mode)
 
 	while ((c = igetch_t(MIN(MAX_DELAY_TIME, 60))))
 	{
-		if (c == KEY_NULL || c == CR)
+		if (c == CR)
 		{
 			igetch(1); // Cleanup remaining '\n' in the buffer
 			break;
@@ -123,7 +123,7 @@ static int _str_input(char *buffer, int buf_size, int echo_mode)
 		{
 			return -1;
 		}
-		if (c == LF)
+		if (c == KEY_NULL || c == LF)
 		{
 			continue;
 		}
