@@ -718,7 +718,9 @@ int menu_control(MENU_SET *p_menu_set, int key)
 		{
 			display_menu_cursor(p_menu, 0);
 			p_menu->item_cur_pos = p_menu->item_count - 1;
-			while (p_menu->item_cur_pos >= 0 && !p_menu->items[p_menu->item_cur_pos]->display)
+			while (p_menu->item_cur_pos >= 0 && (!p_menu->items[p_menu->item_cur_pos]->display ||
+												 p_menu->items[p_menu->item_cur_pos]->priv != 0 ||
+												 p_menu->items[p_menu->item_cur_pos]->level != 0))
 			{
 				p_menu->item_cur_pos--;
 			}
