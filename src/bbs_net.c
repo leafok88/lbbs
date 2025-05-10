@@ -117,29 +117,28 @@ int load_bbsnet_conf(const char *file_config)
 
 static void process_bar(int n, int len)
 {
-	char buf[256];
-	char buf2[256];
-	char *ptr;
-	char *ptr2;
-	char *ptr3;
+	char buf[LINE_BUFFER_LEN];
+	char buf2[LINE_BUFFER_LEN];
+
+	if (len > LINE_BUFFER_LEN)
+	{
+		len = LINE_BUFFER_LEN - 1;
+	}
+	if (n < 0)
+	{
+		n = 0;
+	}
+	else if (n > len)
+	{
+		n = len;
+	}
 
 	moveto(4, 0);
 	prints(" ------------------------------ \r\n");
-	snprintf(buf2, sizeof(buf2), "            %3d%%              ", n * 100 / len);
-	ptr = buf;
-	ptr2 = buf2;
-	ptr3 = buf + n;
-	while (ptr != ptr3)
-		*ptr++ = *ptr2++;
-	*ptr++ = '\x1b';
-	*ptr++ = '[';
-	*ptr++ = '4';
-	*ptr++ = '4';
-	*ptr++ = 'm';
-	while (*ptr2 != '\0')
-		*ptr++ = *ptr2++;
-	*ptr++ = '\0';
-	prints("|\033[46m%s\033[m|\r\n", buf);
+	snprintf(buf, sizeof(buf), "            %3d%%              ", n * 100 / len);
+	strncpy(buf2, buf, (size_t) n);
+	buf2[n] = '\0';
+	prints("|\033[46m%s\033[44m%s\033[m|\r\n", buf2, buf + n);
 	prints(" ------------------------------ \r\n");
 	iflush();
 }
@@ -206,7 +205,7 @@ int bbsnet_connect(int n)
 	remote_addr[sizeof(remote_addr) - 1] = '\0';
 	remote_port = ntohs(sin.sin_port);
 
-	prints("\033[1;32m穿梭进度条提示您当前已使用的时间，按Ctrl-C中断。\033[m\r\n");
+	prints("\033[1;32m穿梭进度条提示您当前已使用的时间，按\033[1;33mCtrl+C\033[1;32m中断。\033[m\r\n");
 	process_bar(0, MAX_PROCESS_BAR_LEN);
 	for (i = 0; i < MAX_PROCESS_BAR_LEN; i++)
 	{
