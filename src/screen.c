@@ -22,10 +22,11 @@
 #include "screen.h"
 #include <string.h>
 #include <ctype.h>
-#include <sys/types.h>
-#include <sys/stat.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <sys/param.h>
 
 #define ACTIVE_BOARD_HEIGHT 8
 
@@ -81,7 +82,7 @@ int press_any_key()
 	prints("                           \033[1;33m按任意键继续...\033[0;37m");
 	iflush();
 
-	return igetch_t(60);
+	return igetch_t(MIN(MAX_DELAY_TIME, 60));
 }
 
 void set_input_echo(int echo)
@@ -108,14 +109,19 @@ static int _str_input(char *buffer, int buf_size, int echo_mode)
 	int hz = 0;
 
 	buffer[buf_size - 1] = '\0';
-	for (offset = 0; offset < buf_size - 1 && buffer[offset] != '\0'; offset++);
+	for (offset = 0; offset < buf_size - 1 && buffer[offset] != '\0'; offset++)
+		;
 
-	while ((c = igetch_t(60)))
+	while ((c = igetch_t(MIN(MAX_DELAY_TIME, 60))))
 	{
-		if (c == KEY_NULL || c == KEY_TIMEOUT || c == CR)
+		if (c == KEY_NULL || c == CR)
 		{
 			igetch(1); // Cleanup remaining '\n' in the buffer
 			break;
+		}
+		if (c == KEY_TIMEOUT)
+		{
+			return -1;
 		}
 		if (c == LF)
 		{
@@ -310,6 +316,9 @@ int display_file_ex(const char *filename, int begin_line, int wait)
 				input_ok = 1;
 				switch (ch)
 				{
+				case KEY_NULL:
+				case KEY_TIMEOUT:
+					goto cleanup;
 				case KEY_UP:
 					if (c_line_current - line < 0) // Reach top
 					{
@@ -366,8 +375,6 @@ int display_file_ex(const char *filename, int begin_line, int wait)
 					max_lines = screen_rows - 1;
 					clrline(begin_line, screen_rows);
 					break;
-				case KEY_NULL:
-				case KEY_TIMEOUT:
 				case KEY_LEFT:
 				case 'q':
 				case 'Q':
@@ -396,6 +403,8 @@ int display_file_ex(const char *filename, int begin_line, int wait)
 					input_ok = 0;
 					break;
 				}
+
+				BBS_last_access_tm = time(0);
 			}
 
 			continue;
@@ -420,6 +429,7 @@ int display_file_ex(const char *filename, int begin_line, int wait)
 		line++;
 	}
 
+cleanup:
 	free(p_line_offsets);
 	fclose(fin);
 

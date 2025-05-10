@@ -43,15 +43,16 @@ int bbs_login()
 	int count = 0;
 	int ok = 0;
 
-	// Input username
-	while (!ok)
+	for (; !ok && count < 3; count++)
 	{
 		prints("\033[1;33mÇëÊäÈëÕÊºÅ\033[m(ÊÔÓÃÇëÊäÈë`\033[1;36mguest\033[m', "
 			   "×¢²áÇëÊäÈë`\033[1;31mnew\033[m'): ");
 		iflush();
 
-		str_input(username, sizeof(username), DOECHO);
-		count++;
+		if (str_input(username, sizeof(username), DOECHO) < 0)
+		{
+			continue;
+		}
 
 		if (strcmp(username, "guest") == 0)
 		{
@@ -82,11 +83,13 @@ int bbs_login()
 
 		if (username[0] != '\0')
 		{
-			// Input password
 			prints("\033[1;37mÇëÊäÈëÃÜÂë\033[m: ");
 			iflush();
 
-			str_input(password, sizeof(password), NOECHO);
+			if (str_input(password, sizeof(password), NOECHO) < 0)
+			{
+				continue;
+			}
 
 			MYSQL *db = db_open();
 			if (db == NULL)
@@ -98,11 +101,12 @@ int bbs_login()
 
 			mysql_close(db);
 		}
-		if (count >= 3 && !ok)
-		{
-			login_fail();
-			return -1;
-		}
+	}
+
+	if (!ok)
+	{
+		login_fail();
+		return -1;
 	}
 
 	return 0;
