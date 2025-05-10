@@ -119,15 +119,15 @@ static int _str_input(char *buffer, int buf_size, int echo_mode)
 			igetch(1); // Cleanup remaining '\n' in the buffer
 			break;
 		}
-		if (c == KEY_TIMEOUT)
+		else if (c == KEY_TIMEOUT)
 		{
 			return -1;
 		}
-		if (c == KEY_NULL || c == LF)
+		else if (c == KEY_NULL || c == LF)
 		{
 			continue;
 		}
-		if (c == BACKSPACE)
+		else if (c == BACKSPACE)
 		{
 			if (offset > 0)
 			{
@@ -148,11 +148,11 @@ static int _str_input(char *buffer, int buf_size, int echo_mode)
 			}
 			continue;
 		}
-		if (c > 255 || iscntrl(c))
+		else if (c > 255 || iscntrl(c))
 		{
 			continue;
 		}
-		if (c > 127 && c <= 255)
+		else if (c > 127 && c <= 255)
 		{
 			if (!hz && offset + 2 > buf_size - 1) // No enough space for Chinese character
 			{
@@ -163,14 +163,17 @@ static int _str_input(char *buffer, int buf_size, int echo_mode)
 			}
 			hz = (!hz);
 		}
+
 		if (offset + 1 > buf_size - 1)
 		{
 			outc('\a');
 			iflush();
 			continue;
 		}
+
 		buffer[offset++] = (char)c;
 		buffer[offset] = '\0';
+
 		switch (echo_mode)
 		{
 		case DOECHO:
@@ -316,7 +319,6 @@ int display_file_ex(const char *filename, int begin_line, int wait)
 				input_ok = 1;
 				switch (ch)
 				{
-				case KEY_NULL:
 				case KEY_TIMEOUT:
 					goto cleanup;
 				case KEY_UP:

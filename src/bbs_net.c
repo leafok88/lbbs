@@ -140,7 +140,7 @@ static void process_bar(int n, int len)
 	moveto(4, 0);
 	prints(" ------------------------------ \r\n");
 	snprintf(buf, sizeof(buf), "            %3d%%              ", n * 100 / len);
-	strncpy(buf2, buf, (size_t) n);
+	strncpy(buf2, buf, (size_t)n);
 	buf2[n] = '\0';
 	prints("|\033[46m%s\033[44m%s\033[m|\r\n", buf2, buf + n);
 	prints(" ------------------------------ \r\n");
@@ -230,7 +230,7 @@ int bbsnet_connect(int n)
 	for (i = 0; i < MAX_PROCESS_BAR_LEN; i++)
 	{
 		ch = igetch(0); // 0.1 second
-		if (ch == KEY_NULL || ch == Ctrl('C') || SYS_server_exit)
+		if (ch == Ctrl('C') || SYS_server_exit)
 		{
 			return 0;
 		}
@@ -243,7 +243,7 @@ int bbsnet_connect(int n)
 
 		timeout.tv_sec = 0;
 		timeout.tv_usec = 400 * 1000; // 0.4 second
-	
+
 		ret = select(sock + 1, &read_fds, &write_fds, NULL, &timeout);
 
 		if (ret == 0) // Timeout
@@ -293,7 +293,7 @@ int bbsnet_connect(int n)
 		FD_ZERO(&read_fds);
 		FD_SET(STDIN_FILENO, &read_fds);
 		FD_SET(sock, &read_fds);
-	
+
 		timeout.tv_sec = 0;
 		timeout.tv_usec = 100 * 1000; // 0.1 second
 
@@ -421,10 +421,9 @@ int bbs_net()
 		ch = igetch(0);
 		switch (ch)
 		{
-		case KEY_NULL:
-			return -1;
 		case Ctrl('C'):
 			return 0;
+		case KEY_NULL:
 		case KEY_TIMEOUT:
 			if (time(0) - BBS_last_access_tm >= MAX_DELAY_TIME)
 			{

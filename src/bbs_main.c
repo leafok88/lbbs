@@ -77,7 +77,6 @@ int bbs_center()
 		switch (ch)
 		{
 		case KEY_NULL:
-			return -1;
 		case KEY_TIMEOUT:
 			if (time(0) - BBS_last_access_tm >= MAX_DELAY_TIME)
 			{

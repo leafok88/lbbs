@@ -12,6 +12,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <sys/param.h>
 
 #define DATA_FILE "var/chicken"
 #define LOG_FILE "var/chicken/log"
@@ -636,28 +637,27 @@ int pressany(int i)
 	moveto(23, 0);
 	prints("[33;46;1m                           [34m%s[37m                         [0m", cstate[i]);
 	iflush();
-	do
-	{
-		ch = igetch(0);
-	} while ((ch != KEY_NULL) && (ch != ' ') && (ch != '\r') && (ch != '\n'));
+	ch = igetch_t(MIN(MAX_DELAY_TIME, 60));
 	moveto(23, 0);
 	clrtoeol();
 	iflush();
-	return 0;
+	return ch;
 }
 
 int guess()
 {
 	int ch, com;
 
-	do
+	moveto(23, 0);
+	prints("[1]-¼ôµ¶ [2]-Ê¯Í· [3]-²¼£º");
+	clrtoeol();
+	iflush();
+
+	ch = igetch_t(MIN(MAX_DELAY_TIME, 60));
+	if ((ch != '1') && (ch != '2') && (ch != '3'))
 	{
-		moveto(23, 0);
-		prints("[1]-¼ôµ¶ [2]-Ê¯Í· [3]-²¼£º");
-		clrtoeol();
-		iflush();
-		ch = igetch(0);
-	} while ((ch != KEY_NULL) && (ch != '1') && (ch != '2') && (ch != '3'));
+		return -1; // error input
+	}
 
 	srand((unsigned int)time(NULL));
 	com = rand() % 3;
