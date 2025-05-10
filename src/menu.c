@@ -588,6 +588,13 @@ int display_menu(MENU *p_menu)
 		return -1;
 	}
 
+	if (p_menu->item_cur_pos > 0 &&
+		checkpriv(&BBS_priv, 0, p_menu->items[p_menu->item_cur_pos]->priv) != 0 &&
+		checklevel(&BBS_priv, p_menu->items[p_menu->item_cur_pos]->level) != 0)
+	{
+		menu_selectable = 1;
+	}
+
 	if (p_menu->title.show)
 	{
 		show_top(p_menu->title.text);
@@ -711,9 +718,7 @@ int menu_control(MENU_SET *p_menu_set, int key)
 		{
 			display_menu_cursor(p_menu, 0);
 			p_menu->item_cur_pos = p_menu->item_count - 1;
-			while (!p_menu->items[p_menu->item_cur_pos]->display ||
-				   p_menu->items[p_menu->item_cur_pos]->priv != 0 ||
-				   p_menu->items[p_menu->item_cur_pos]->level != 0)
+			while (p_menu->item_cur_pos >= 0 && !p_menu->items[p_menu->item_cur_pos]->display)
 			{
 				p_menu->item_cur_pos--;
 			}
