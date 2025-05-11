@@ -18,12 +18,12 @@
 #include "register.h"
 #include "bbs.h"
 #include "user_priv.h"
-#include "reg_ex.h"
 #include "common.h"
 #include "log.h"
 #include "io.h"
 #include "screen.h"
 #include "database.h"
+#include <ctype.h>
 #include <string.h>
 #include <mysql.h>
 #include <regex.h>
@@ -118,10 +118,34 @@ int check_user(MYSQL *db, char *username, char *password)
 	int ret;
 	long BBS_uid = 0;
 	char client_addr[IP_ADDR_LEN];
+	int i;
+	int ok = 1;
 
 	// Verify format
-	if (ireg("^[A-Za-z][A-Za-z0-9]{2,11}$", username, 0, NULL) != 0 ||
-		ireg("^[A-Za-z0-9]{5,12}$", password, 0, NULL) != 0)
+	for (i = 0; ok && username[i] != '\0'; i++)
+	{
+		if (!(isalpha(username[i]) || (i > 0 && isdigit(username[i]))))
+		{
+			ok = 0;
+		}
+	}
+	if (ok && (i < 3 || i > 12))
+	{
+		ok = 0;
+	}
+	for (i = 0; ok && password[i] != '\0'; i++)
+	{
+		if (!isalnum(password[i]))
+		{
+			ok = 0;
+		}
+	}
+	if (ok && (i < 5 || i > 12))
+	{
+		ok = 0;
+	}
+
+	if (!ok)
 	{
 		prints("\033[1;31m用户名或密码格式错误...\033[m\r\n");
 		iflush();
