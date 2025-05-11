@@ -303,7 +303,7 @@ int bbsnet_connect(int n)
 		timeout.tv_sec = 0;
 		timeout.tv_usec = 100 * 1000; // 0.1 second
 
-		ret = select(FD_SETSIZE, &read_fds, NULL, NULL, &timeout);
+		ret = select(sock + 1, &read_fds, NULL, NULL, &timeout);
 
 		if (ret == 0) // timeout
 		{

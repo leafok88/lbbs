@@ -151,7 +151,7 @@ int net_server(const char *hostaddr, in_port_t port)
 		timeout.tv_sec = 0;
 		timeout.tv_usec = 100 * 1000; // 0.1 second
 
-		ret = select(FD_SETSIZE, &testfds, NULL, NULL, &timeout);
+		ret = select(socket_server + 1, &testfds, NULL, NULL, &timeout);
 
 		if (ret < 0)
 		{
@@ -176,6 +176,7 @@ int net_server(const char *hostaddr, in_port_t port)
 		{
 			flags = fcntl(socket_server, F_GETFL, 0);
 			fcntl(socket_server, F_SETFL, flags | O_NONBLOCK);
+
 			while ((socket_client =
 						accept(socket_server, (struct sockaddr *)&sin, &namelen)) < 0)
 			{
@@ -185,6 +186,7 @@ int net_server(const char *hostaddr, in_port_t port)
 					break;
 				}
 			}
+
 			fcntl(socket_server, F_SETFL, flags);
 		}
 

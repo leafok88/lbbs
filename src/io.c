@@ -73,6 +73,7 @@ int igetch(int clear_buf)
 	int in_ascii = 0;
 	int in_control = 0;
 	int i = 0;
+	int flags;
 
 	if (clear_buf)
 	{
@@ -90,7 +91,7 @@ int igetch(int clear_buf)
 		timeout.tv_sec = 0;
 		timeout.tv_usec = 100 * 1000; // 0.1 second
 
-		ret = select(FD_SETSIZE, &testfds, NULL, NULL, &timeout);
+		ret = select(STDIN_FILENO + 1, &testfds, NULL, NULL, &timeout);
 
 		if (ret < 0)
 		{
@@ -108,8 +109,22 @@ int igetch(int clear_buf)
 
 		if (FD_ISSET(STDIN_FILENO, &testfds))
 		{
+			flags = fcntl(STDIN_FILENO, F_GETFL, 0);
+			fcntl(socket_server, F_SETFL, flags | O_NONBLOCK);
+
 			len = read(STDIN_FILENO, buf, sizeof(buf));
+			if (len < 0)
+			{
+				if (errno != EAGAIN && errno != EWOULDBLOCK && errno != EINTR)
+				{
+					log_error("Read socket error (%d)\n", errno);
+				}
+			}
+
 			pos = 0;
+
+			fcntl(STDIN_FILENO, F_SETFL, flags);
+
 			break;
 		}
 
