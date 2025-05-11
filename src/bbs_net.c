@@ -336,7 +336,7 @@ int bbsnet_connect(int n)
 				loop = 0;
 			}
 		}
-		else if (ret > 0)
+		else // if (ret > 0)
 		{
 			if ((input_buf_offset >= input_buf_len) && FD_ISSET(STDIN_FILENO, &read_fds))
 			{

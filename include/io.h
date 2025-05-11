@@ -60,8 +60,6 @@
 #define DOECHO (1)
 #define NOECHO (0)
 
-extern int outc(char c);
-
 extern int prints(const char *format, ...);
 
 extern int iflush();
@@ -69,5 +67,10 @@ extern int iflush();
 extern int igetch(int clear_buf);
 
 extern int igetch_t(long int sec);
+
+inline int outc(char c)
+{
+	return prints("%c", c);
+}
 
 #endif //_IO_H_

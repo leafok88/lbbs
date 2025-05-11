@@ -20,40 +20,106 @@
 #include <errno.h>
 #include <stdio.h>
 #include <stdarg.h>
+#include <string.h>
 #include <time.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/select.h>
 #include <sys/ioctl.h>
 
-int outc(char c)
-{
-	int retval;
-
-	retval = fprintf(stdout, "%c", c);
-
-	return retval;
-}
+static char stdout_buf[BUFSIZ];
+static int stdout_buf_len = 0;
 
 int prints(const char *format, ...)
 {
+	char buf[BUFSIZ];
 	va_list args;
-	int retval;
+	int ret;
 
 	va_start(args, format);
-	retval = vfprintf(stdout, format, args);
+	ret = vsnprintf(buf, sizeof(buf), format, args);
 	va_end(args);
 
-	return retval;
+	if (ret > 0 && stdout_buf_len + ret < BUFSIZ)
+	{
+		memcpy(stdout_buf + stdout_buf_len, buf, (size_t)(ret + 1));
+		stdout_buf_len += ret;
+	}
+	else if (ret > 0) // No enough free buffer
+	{
+		ret = (BUFSIZ - stdout_buf_len - ret - 1);
+	}
+
+	return ret;
 }
 
 int iflush()
 {
-	int retval;
+	int flags;
+	fd_set write_fds;
+	struct timeval timeout;
+	int stdout_buf_offset = 0;
+	int loop = 1;
+	int ret = 0;
 
-	retval = fflush(stdout);
+	// Set STDOUT as non-blocking
+	flags = fcntl(STDOUT_FILENO, F_GETFL, 0);
+	fcntl(STDOUT_FILENO, F_SETFL, flags | O_NONBLOCK);
 
-	return retval;
+	while (loop && !SYS_server_exit)
+	{
+		FD_ZERO(&write_fds);
+		FD_SET(STDOUT_FILENO, &write_fds);
+
+		timeout.tv_sec = 0;
+		timeout.tv_usec = 100 * 1000; // 0.1 second
+
+		ret = select(STDOUT_FILENO + 1, NULL, &write_fds, NULL, &timeout);
+
+		if (ret == 0) // timeout
+		{
+			continue;
+		}
+		else if (ret < 0)
+		{
+			if (errno != EINTR)
+			{
+				log_error("select() error (%d) !\n", errno);
+				loop = 0;
+			}
+		}
+		else if (FD_ISSET(STDOUT_FILENO, &write_fds))
+		{
+			ret = (int)write(STDOUT_FILENO, stdout_buf + stdout_buf_offset, (size_t)(stdout_buf_len - stdout_buf_offset));
+			if (ret < 0)
+			{
+				if (errno != EAGAIN && errno != EWOULDBLOCK && errno != EINTR)
+				{
+					log_error("write(STDOUT) error (%d)\n", errno);
+					loop = 0;
+				}
+			}
+			else if (ret == 0) // broken pipe
+			{
+				loop = 0;
+			}
+			else
+			{
+				stdout_buf_offset += ret;
+				if (stdout_buf_offset >= stdout_buf_len) // Flush buffer complete
+				{
+					ret = 0;
+					stdout_buf_len = 0;
+					loop = 0;
+				}
+			}
+		}
+	}
+
+	// Restore STDOUT flags
+	fcntl(STDOUT_FILENO, F_SETFL, flags);
+
+	return ret;
 }
 
 int igetch(int clear_buf)
@@ -63,7 +129,7 @@ int igetch(int clear_buf)
 	static ssize_t len = 0;
 	static int pos = 0;
 
-	fd_set testfds;
+	fd_set readfds;
 	struct timeval timeout;
 
 	unsigned char tmp[LINE_BUFFER_LEN];
@@ -85,13 +151,13 @@ int igetch(int clear_buf)
 
 	while (!SYS_server_exit && pos >= len)
 	{
-		FD_ZERO(&testfds);
-		FD_SET(STDIN_FILENO, &testfds);
+		FD_ZERO(&readfds);
+		FD_SET(STDIN_FILENO, &readfds);
 
 		timeout.tv_sec = 0;
 		timeout.tv_usec = 100 * 1000; // 0.1 second
 
-		ret = select(STDIN_FILENO + 1, &testfds, NULL, NULL, &timeout);
+		ret = select(STDIN_FILENO + 1, &readfds, NULL, NULL, &timeout);
 
 		if (ret < 0)
 		{
@@ -107,7 +173,7 @@ int igetch(int clear_buf)
 			return KEY_TIMEOUT;
 		}
 
-		if (FD_ISSET(STDIN_FILENO, &testfds))
+		if (FD_ISSET(STDIN_FILENO, &readfds))
 		{
 			flags = fcntl(STDIN_FILENO, F_GETFL, 0);
 			fcntl(socket_server, F_SETFL, flags | O_NONBLOCK);
