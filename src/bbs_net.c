@@ -150,10 +150,18 @@ static void process_bar(int n, int len)
 
 int bbsnet_connect(int n)
 {
-	int sock, flags, ret, loop, error;
-	ssize_t len;
+	int sock, ret, loop, error;
+	int flags_sock;
+	int flags_stdin;
+	int flags_stdout;
+	int len;
 	struct sockaddr_in sin;
-	char buf[LINE_BUFFER_LEN];
+	char input_buf[LINE_BUFFER_LEN];
+	char output_buf[LINE_BUFFER_LEN];
+	int input_buf_len = 0;
+	int output_buf_len = 0;
+	int input_buf_offset = 0;
+	int output_buf_offset = 0;
 	fd_set read_fds;
 	fd_set write_fds;
 	struct timeval timeout;
@@ -165,7 +173,6 @@ int bbsnet_connect(int n)
 	time_t t_used;
 	struct tm *tm_used;
 	int ch;
-	int offset;
 
 	clearscr();
 
@@ -216,8 +223,8 @@ int bbsnet_connect(int n)
 	process_bar(0, MAX_PROCESS_BAR_LEN);
 
 	// Set socket as non-blocking
-	flags = fcntl(sock, F_GETFL, 0);
-	fcntl(sock, F_SETFL, flags | O_NONBLOCK);
+	flags_sock = fcntl(sock, F_GETFL, 0);
+	fcntl(sock, F_SETFL, flags_sock | O_NONBLOCK);
 
 	if ((ret = connect(sock, (struct sockaddr *)&sin, sizeof(sin))) < 0)
 	{
@@ -280,8 +287,6 @@ int bbsnet_connect(int n)
 		return -1;
 	}
 
-	fcntl(sock, F_SETFL, flags); /* restore file status flags */
-
 	tos = IPTOS_LOWDELAY;
 	if (setsockopt(sock, IPPROTO_IP, IP_TOS, &tos, sizeof(tos)) < 0)
 	{
@@ -291,6 +296,12 @@ int bbsnet_connect(int n)
 	prints("\033[1;31m连接成功！\033[m\r\n");
 	iflush();
 	log_std("BBSNET connect to %s:%d\n", remote_addr, remote_port);
+
+	// Set STDIN/STDOUT as non-blocking
+	flags_stdin = fcntl(STDIN_FILENO, F_GETFL, 0);
+	flags_stdout = fcntl(STDOUT_FILENO, F_GETFL, 0);
+	fcntl(STDIN_FILENO, F_SETFL, flags_stdin | O_NONBLOCK);
+	fcntl(STDOUT_FILENO, F_SETFL, flags_stdout | O_NONBLOCK);
 
 	BBS_last_access_tm = t_used = time(0);
 	loop = 1;
@@ -302,7 +313,7 @@ int bbsnet_connect(int n)
 		FD_SET(sock, &read_fds);
 
 		FD_ZERO(&write_fds);
-		FD_SET(STDIN_FILENO, &write_fds);
+		FD_SET(STDOUT_FILENO, &write_fds);
 		FD_SET(sock, &write_fds);
 
 		timeout.tv_sec = 0;
@@ -327,14 +338,10 @@ int bbsnet_connect(int n)
 		}
 		else if (ret > 0)
 		{
-			if (FD_ISSET(STDIN_FILENO, &read_fds) && FD_ISSET(sock, &write_fds))
+			if ((input_buf_offset >= input_buf_len) && FD_ISSET(STDIN_FILENO, &read_fds))
 			{
-				// Set STDIN as non-blocking
-				flags = fcntl(STDIN_FILENO, F_GETFL, 0);
-				fcntl(STDIN_FILENO, F_SETFL, flags | O_NONBLOCK);
-
-				len = read(STDIN_FILENO, buf, sizeof(buf));
-				if (len < 0)
+				ret = (int)read(STDIN_FILENO, input_buf, sizeof(input_buf));
+				if (ret < 0)
 				{
 					if (errno != EAGAIN && errno != EWOULDBLOCK && errno != EINTR)
 					{
@@ -342,40 +349,44 @@ int bbsnet_connect(int n)
 						loop = 0;
 					}
 				}
-				else if (len == 0)
+				else if (ret == 0) // broken pipe
 				{
-					log_error("read(STDIN) reach EOF\n");
 					loop = 0;
 				}
 				else
 				{
-					offset = 0;
-					do
-					{
-						ret = (int)write(sock, buf + offset, (size_t)(len - offset));
-						if (ret < 0)
-						{
-							log_error("write(socket) error (%d)\n", errno);
-							loop = 0;
-							break;
-						}
-						offset += ret;
-					} while (offset < len);
+					input_buf_len = ret;
+					input_buf_offset = 0;
 
 					BBS_last_access_tm = time(0);
 				}
-
-				// Restore STDIN flags
-				fcntl(STDIN_FILENO, F_SETFL, flags);
 			}
-			if (FD_ISSET(sock, &read_fds) && FD_ISSET(STDIN_FILENO, &write_fds))
-			{
-				// Set socket as non-blocking
-				flags = fcntl(sock, F_GETFL, 0);
-				fcntl(sock, F_SETFL, flags | O_NONBLOCK);
 
-				len = read(sock, buf, sizeof(buf));
-				if (len < 0)
+			if ((input_buf_offset < input_buf_len) && FD_ISSET(sock, &write_fds))
+			{
+				ret = (int)write(sock, input_buf + input_buf_offset, (size_t)(input_buf_len - input_buf_offset));
+				if (ret < 0)
+				{
+					if (errno != EAGAIN && errno != EWOULDBLOCK && errno != EINTR)
+					{
+						log_error("write(socket) error (%d)\n", errno);
+						loop = 0;
+					}
+				}
+				else if (ret == 0) // broken pipe
+				{
+					loop = 0;
+				}
+				else
+				{
+					input_buf_offset += ret;
+				}
+			}
+
+			if ((output_buf_offset >= output_buf_len) && FD_ISSET(sock, &read_fds))
+			{
+				ret = (int)read(sock, output_buf, sizeof(output_buf));
+				if (ret < 0)
 				{
 					if (errno != EAGAIN && errno != EWOULDBLOCK && errno != EINTR)
 					{
@@ -383,32 +394,46 @@ int bbsnet_connect(int n)
 						loop = 0;
 					}
 				}
-				else if (len == 0)
+				else if (ret == 0) // broken pipe
 				{
-					log_error("read(socket) reach EOF\n");
 					loop = 0;
 				}
 				else
 				{
-					offset = 0;
-					do
-					{
-						ret = (int)write(STDOUT_FILENO, buf + offset, (size_t)(len - offset));
-						if (ret < 0)
-						{
-							log_error("write(STDOUT) error (%d)\n", errno);
-							loop = 0;
-							break;
-						}
-						offset += ret;
-					} while (offset < len);
+					output_buf_len = ret;
+					output_buf_offset = 0;
 				}
+			}
 
-				// Restore socket flags
-				fcntl(sock, F_SETFL, flags);
+			if ((output_buf_offset < output_buf_len) && FD_ISSET(STDOUT_FILENO, &write_fds))
+			{
+				ret = (int)write(STDOUT_FILENO, output_buf + output_buf_offset, (size_t)(output_buf_len - output_buf_offset));
+				if (ret < 0)
+				{
+					if (errno != EAGAIN && errno != EWOULDBLOCK && errno != EINTR)
+					{
+						log_error("write(STDOUT) error (%d)\n", errno);
+						loop = 0;
+					}
+				}
+				else if (ret == 0) // broken pipe
+				{
+					loop = 0;
+				}
+				else
+				{
+					output_buf_offset += ret;
+				}
 			}
 		}
 	}
+
+	// Restore STDIN/STDOUT flags
+	fcntl(STDIN_FILENO, F_SETFL, flags_stdin);
+	fcntl(STDOUT_FILENO, F_SETFL, flags_stdout);
+
+	// Restore socket flags
+	fcntl(sock, F_SETFL, flags_sock);
 
 	if (close(sock) == -1)
 	{
@@ -492,7 +517,7 @@ int bbs_net()
 		ch = igetch(0);
 		switch (ch)
 		{
-		case KEY_NULL: // broken pipe
+		case KEY_NULL:	// broken pipe
 		case Ctrl('C'): // user cancel
 			return 0;
 		case KEY_TIMEOUT:
