@@ -319,6 +319,7 @@ int display_file_ex(const char *filename, int begin_line, int wait)
 				input_ok = 1;
 				switch (ch)
 				{
+				case KEY_NULL:
 				case KEY_TIMEOUT:
 					goto cleanup;
 				case KEY_UP:
