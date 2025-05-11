@@ -333,8 +333,6 @@ int bbsnet_connect(int n)
 				flags = fcntl(STDIN_FILENO, F_GETFL, 0);
 				fcntl(STDIN_FILENO, F_SETFL, flags | O_NONBLOCK);
 
-				log_std("Try read(STDIN)\n");
-
 				len = read(STDIN_FILENO, buf, sizeof(buf));
 				if (len < 0)
 				{
@@ -375,8 +373,6 @@ int bbsnet_connect(int n)
 				// Set socket as non-blocking
 				flags = fcntl(sock, F_GETFL, 0);
 				fcntl(sock, F_SETFL, flags | O_NONBLOCK);
-
-				log_std("Try read(socket)\n");
 
 				len = read(sock, buf, sizeof(buf));
 				if (len < 0)
