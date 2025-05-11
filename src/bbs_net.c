@@ -33,6 +33,7 @@
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <netinet/ip.h>
 #include <arpa/inet.h>
 
 #define MENU_CONF_DELIM " \t\r\n"
@@ -157,7 +158,8 @@ int bbsnet_connect(int n)
 	fd_set write_fds;
 	struct timeval timeout;
 	struct hostent *p_host = NULL;
-	int tos = 020, i;
+	int tos;
+	int i;
 	char remote_addr[IP_ADDR_LEN];
 	int remote_port;
 	time_t t_used;
@@ -190,14 +192,13 @@ int bbsnet_connect(int n)
 	}
 
 	sin.sin_family = AF_INET;
-	sin.sin_addr.s_addr =
-		(strnlen(hostaddr_server, sizeof(hostaddr_server)) > 0 ? inet_addr(hostaddr_server) : INADDR_ANY);
+	sin.sin_addr.s_addr = (hostaddr_server[0] != '\0' ? inet_addr(hostaddr_server) : INADDR_ANY);
 	sin.sin_port = 0;
 
 	if (bind(sock, (struct sockaddr *)&sin, sizeof(sin)) < 0)
 	{
-		log_error("Bind address %s:%u failed\n",
-				  inet_ntoa(sin.sin_addr), ntohs(sin.sin_port));
+		log_error("Bind address %s:%u failed (%d)\n",
+				  inet_ntoa(sin.sin_addr), ntohs(sin.sin_port), errno);
 		return -2;
 	}
 
@@ -279,7 +280,12 @@ int bbsnet_connect(int n)
 	}
 
 	fcntl(sock, F_SETFL, flags); /* restore file status flags */
-	setsockopt(sock, IPPROTO_IP, IP_TOS, &tos, sizeof(int));
+
+	tos = IPTOS_LOWDELAY;
+	if (setsockopt(sock, IPPROTO_IP, IP_TOS, &tos, sizeof(tos)) < 0)
+	{
+		log_error("setsockopt IP_TOS=%d error (%d)\n", tos, errno);
+	}
 
 	prints("\033[1;31m连接成功！\033[m\r\n");
 	log_std("BBSNET connect to %s:%d\n", remote_addr, remote_port);

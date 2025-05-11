@@ -56,20 +56,30 @@ int net_server(const char *hostaddr, in_port_t port)
 	}
 
 	sin.sin_family = AF_INET;
-	sin.sin_addr.s_addr =
-		(strnlen(hostaddr, sizeof(hostaddr)) > 0 ? inet_addr(hostaddr) : INADDR_ANY);
+	sin.sin_addr.s_addr = (hostaddr[0] != '\0' ? inet_addr(hostaddr) : INADDR_ANY);
 	sin.sin_port = htons(port);
+
+	// Reuse address and port
+	flags = 1;
+	if (setsockopt(socket_server, SOL_SOCKET, SO_REUSEADDR, &flags, sizeof(flags)) < 0)
+	{
+		log_error("setsockopt SO_REUSEADDR error (%d)\n", errno);
+	}
+	if (setsockopt(socket_server, SOL_SOCKET, SO_REUSEPORT, &flags, sizeof(flags)) < 0)
+	{
+		log_error("setsockopt SO_REUSEPORT error (%d)\n", errno);
+	}
 
 	if (bind(socket_server, (struct sockaddr *)&sin, sizeof(sin)) < 0)
 	{
-		log_error("Bind address %s:%u failed\n",
-				  inet_ntoa(sin.sin_addr), ntohs(sin.sin_port));
+		log_error("Bind address %s:%u failed (%d)\n",
+				  inet_ntoa(sin.sin_addr), ntohs(sin.sin_port), errno);
 		exit(2);
 	}
 
 	if (listen(socket_server, 10) < 0)
 	{
-		log_error("Socket listen failed\n");
+		log_error("Socket listen failed (%d)\n", errno);
 		exit(3);
 	}
 
