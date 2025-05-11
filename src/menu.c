@@ -17,7 +17,6 @@
 #include "bbs.h"
 #include "bbs_cmd.h"
 #include "user_priv.h"
-#include "reg_ex.h"
 #include "bbs_cmd.h"
 #include "menu.h"
 #include "log.h"
