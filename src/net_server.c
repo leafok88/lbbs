@@ -90,18 +90,18 @@ int net_server(const char *hostaddr, in_port_t port)
 	{
 		sigprocmask(SIG_BLOCK, &nsigset, &osigset);
 
-		while (SYS_child_exit_count > 0)
+		while ((SYS_child_exit || SYS_server_exit) && SYS_child_process_count > 0)
 		{
 			siginfo.si_pid = 0;
 			ret = waitid(P_ALL, 0, &siginfo, WEXITED | WNOHANG);
 			if (ret == 0 && siginfo.si_pid > 0)
 			{
-				SYS_child_exit_count--;
 				SYS_child_process_count--;
 				log_std("Child process (%d) exited\n", siginfo.si_pid);
 			}
 			else if (ret == 0)
 			{
+				SYS_child_exit = 0;
 				break;
 			}
 			else if (ret < 0)
@@ -111,8 +111,9 @@ int net_server(const char *hostaddr, in_port_t port)
 			}
 		}
 
-		if (SYS_server_exit && SYS_child_exit_count == 0)
+		if (SYS_server_exit && !SYS_child_exit && SYS_child_process_count > 0)
 		{
+			log_std("Notify %d child process to exit\n", SYS_child_process_count);
 			if (kill(0, SIGTERM) < 0)
 			{
 				log_error("Send SIGTERM signal failed (%d)\n", errno);
@@ -136,10 +137,10 @@ int net_server(const char *hostaddr, in_port_t port)
 
 		FD_ZERO(&testfds);
 		FD_SET(socket_server, &testfds);
-	
+
 		timeout.tv_sec = 0;
 		timeout.tv_usec = 100 * 1000; // 0.1 second
-	
+
 		ret = select(FD_SETSIZE, &testfds, NULL, NULL, &timeout);
 
 		if (ret < 0)

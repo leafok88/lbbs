@@ -35,7 +35,7 @@ int port_client;
 // Global declaration for system
 volatile int SYS_server_exit = 0;
 volatile int SYS_child_process_count = 0;
-volatile int SYS_child_exit_count = 0;
+volatile int SYS_child_exit = 0;
 volatile int SYS_menu_reload = 0;
 
 // Common function
@@ -103,7 +103,7 @@ void sig_term_handler(int i)
 
 void sig_chld_handler(int i)
 {
-	SYS_child_exit_count++;
+	SYS_child_exit = 1;
 }
 
 const char * ip_mask(char * s, int level, char mask)

@@ -66,7 +66,7 @@ extern void sig_chld_handler(int);
 // System
 extern volatile int SYS_server_exit;
 extern volatile int SYS_child_process_count;
-extern volatile int SYS_child_exit_count;
+extern volatile int SYS_child_exit;
 extern volatile int SYS_menu_reload;
 
 // Network

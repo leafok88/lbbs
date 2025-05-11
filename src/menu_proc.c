@@ -133,7 +133,9 @@ int reloadbbsmenu(const char *s)
 
 int shutdownbbs(const char *s)
 {
-	if (kill(0, SIGTERM) < 0)
+	log_std("Notify main process to exit\n");
+
+	if (kill(getppid(), SIGTERM) < 0)
 	{
 		log_error("Send SIGTERM signal failed (%d)\n", errno);
 	}
