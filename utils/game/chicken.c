@@ -414,7 +414,6 @@ static int select_menu()
 
 			pressany(0);
 			iflush();
-			sleep(1);
 			food--;
 			tiredstrong++;
 			satis++;

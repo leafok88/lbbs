@@ -32,8 +32,6 @@
 void login_fail()
 {
 	display_file(DATA_LOGIN_ERROR);
-
-	sleep(1);
 }
 
 int bbs_login()
