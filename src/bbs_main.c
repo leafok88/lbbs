@@ -74,7 +74,8 @@ int bbs_center()
 
 		switch (ch)
 		{
-		case KEY_NULL:
+		case KEY_NULL: // broken pipe
+			return 0;
 		case KEY_TIMEOUT:
 			if (time(0) - BBS_last_access_tm >= MAX_DELAY_TIME)
 			{

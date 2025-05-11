@@ -68,7 +68,7 @@ int igetch(int clear_buf)
 
 	unsigned char tmp[LINE_BUFFER_LEN];
 	int ret;
-	int out = KEY_NULL;
+	int out = '\0';
 	int in_esc = 0;
 	int in_ascii = 0;
 	int in_control = 0;
@@ -80,7 +80,7 @@ int igetch(int clear_buf)
 		pos = 0;
 		len = 0;
 
-		return 0;
+		return '\0';
 	}
 
 	while (!SYS_server_exit && pos >= len)
@@ -97,7 +97,7 @@ int igetch(int clear_buf)
 		{
 			if (errno != EINTR)
 			{
-				log_error("Select error in igetch: !\n", errno);
+				log_error("select() error (%d) !\n", errno);
 				return KEY_NULL;
 			}
 			continue;
@@ -117,8 +117,12 @@ int igetch(int clear_buf)
 			{
 				if (errno != EAGAIN && errno != EWOULDBLOCK && errno != EINTR)
 				{
-					log_error("Read socket error (%d)\n", errno);
+					log_error("read(STDIN) error (%d)\n", errno);
 				}
+			}
+			else if (len == 0)
+			{
+				out = KEY_NULL; // broken pipe
 			}
 
 			pos = 0;
@@ -136,11 +140,6 @@ int igetch(int clear_buf)
 	while (pos < len)
 	{
 		unsigned char c = buf[pos++];
-
-		if (c == '\0')
-		{
-			return KEY_NULL;
-		}
 
 		if (c == KEY_CONTROL)
 		{

@@ -119,11 +119,11 @@ static int _str_input(char *buffer, int buf_size, int echo_mode)
 			igetch(1); // Cleanup remaining '\n' in the buffer
 			break;
 		}
-		else if (c == KEY_TIMEOUT)
+		else if (c == KEY_TIMEOUT || c == KEY_NULL) // timeout or broken pipe
 		{
 			return -1;
 		}
-		else if (c == KEY_NULL || c == LF)
+		else if (c == LF || c == '\0')
 		{
 			continue;
 		}

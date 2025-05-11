@@ -492,9 +492,9 @@ int bbs_net()
 		ch = igetch(0);
 		switch (ch)
 		{
-		case Ctrl('C'):
+		case KEY_NULL: // broken pipe
+		case Ctrl('C'): // user cancel
 			return 0;
-		case KEY_NULL:
 		case KEY_TIMEOUT:
 			if (time(0) - BBS_last_access_tm >= MAX_DELAY_TIME)
 			{
