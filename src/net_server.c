@@ -36,8 +36,6 @@
 #include <sys/epoll.h>
 #include <arpa/inet.h>
 
-#define MAX_EVENTS 10
-
 int net_server(const char *hostaddr, in_port_t port)
 {
 	unsigned int namelen;
@@ -106,7 +104,7 @@ int net_server(const char *hostaddr, in_port_t port)
 		return -1;
 	}
 
-	ev.events = EPOLLIN | EPOLLET;
+	ev.events = EPOLLIN;
 	ev.data.fd = socket_server;
 	if (epoll_ctl(epollfd, EPOLL_CTL_ADD, socket_server, &ev) == -1)
 	{
@@ -193,11 +191,19 @@ int net_server(const char *hostaddr, in_port_t port)
 					socket_client = accept(socket_server, (struct sockaddr *)&sin, &namelen);
 					if (socket_client < 0)
 					{
-						if (errno != EAGAIN && errno != EWOULDBLOCK && errno != ECONNABORTED && errno != EINTR)
+						if (errno == EAGAIN || errno == EWOULDBLOCK)
+						{
+							break;
+						}
+						else if (errno == EINTR)
+						{
+							continue;
+						}
+						else
 						{
 							log_error("accept(socket_server) error (%d)\n", errno);
+							break;
 						}
-						break;
 					}
 
 					strncpy(hostaddr_client, inet_ntoa(sin.sin_addr), sizeof(hostaddr_client) - 1);

@@ -47,6 +47,7 @@ extern char app_version[256];
 
 // Network
 #define IP_ADDR_LEN 50
+#define MAX_EVENTS 10
 
 extern int socket_server;
 extern int socket_client;

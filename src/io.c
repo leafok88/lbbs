@@ -26,6 +26,7 @@
 #include <unistd.h>
 #include <sys/select.h>
 #include <sys/ioctl.h>
+#include <sys/epoll.h>
 
 static char stdout_buf[BUFSIZ];
 static int stdout_buf_len = 0;
@@ -56,11 +57,26 @@ int prints(const char *format, ...)
 int iflush()
 {
 	int flags;
-	fd_set write_fds;
-	struct timeval timeout;
+	struct epoll_event ev, events[MAX_EVENTS];
+	int nfds, epollfd;
 	int stdout_buf_offset = 0;
 	int loop = 1;
 	int ret = 0;
+
+	epollfd = epoll_create1(0);
+	if (epollfd < 0)
+	{
+		log_error("epoll_create1() error (%d)\n", errno);
+		return -1;
+	}
+
+	ev.events = EPOLLOUT;
+	ev.data.fd = STDOUT_FILENO;
+	if (epoll_ctl(epollfd, EPOLL_CTL_ADD, STDOUT_FILENO, &ev) == -1)
+	{
+		log_error("epoll_ctl(STDOUT_FILENO) error (%d)\n", errno);
+		return -1;
+	}
 
 	// Set STDOUT as non-blocking
 	flags = fcntl(STDOUT_FILENO, F_GETFL, 0);
@@ -68,49 +84,63 @@ int iflush()
 
 	while (loop && !SYS_server_exit)
 	{
-		FD_ZERO(&write_fds);
-		FD_SET(STDOUT_FILENO, &write_fds);
+		nfds = epoll_wait(epollfd, events, MAX_EVENTS, 100); // 0.1 second
 
-		timeout.tv_sec = 0;
-		timeout.tv_usec = 100 * 1000; // 0.1 second
-
-		ret = select(STDOUT_FILENO + 1, NULL, &write_fds, NULL, &timeout);
-
-		if (ret == 0) // timeout
-		{
-			continue;
-		}
-		else if (ret < 0)
+		if (nfds < 0)
 		{
 			if (errno != EINTR)
 			{
-				log_error("select() error (%d) !\n", errno);
-				loop = 0;
+				log_error("epoll_wait() error (%d)\n", errno);
+				break;
 			}
+			continue;
 		}
-		else if (FD_ISSET(STDOUT_FILENO, &write_fds))
+		else if (nfds == 0) // timeout
 		{
-			ret = (int)write(STDOUT_FILENO, stdout_buf + stdout_buf_offset, (size_t)(stdout_buf_len - stdout_buf_offset));
-			if (ret < 0)
+			continue;
+		}
+
+		for (int i = 0; i < nfds; i++)
+		{
+			if (events[i].data.fd == STDOUT_FILENO)
 			{
-				if (errno != EAGAIN && errno != EWOULDBLOCK && errno != EINTR)
+				while (1) // write until complete or error
 				{
-					log_error("write(STDOUT) error (%d)\n", errno);
-					loop = 0;
-				}
-			}
-			else if (ret == 0) // broken pipe
-			{
-				loop = 0;
-			}
-			else
-			{
-				stdout_buf_offset += ret;
-				if (stdout_buf_offset >= stdout_buf_len) // Flush buffer complete
-				{
-					ret = 0;
-					stdout_buf_len = 0;
-					loop = 0;
+					ret = (int)write(STDOUT_FILENO, stdout_buf + stdout_buf_offset, (size_t)(stdout_buf_len - stdout_buf_offset));
+					if (ret < 0)
+					{
+						if (errno == EAGAIN || errno == EWOULDBLOCK)
+						{
+							break;
+						}
+						else if (errno == EINTR)
+						{
+							continue;
+						}
+						else
+						{
+							log_error("write(STDOUT) error (%d)\n", errno);
+							loop = 0;
+							break;
+						}
+					}
+					else if (ret == 0) // broken pipe
+					{
+						loop = 0;
+						break;
+					}
+					else
+					{
+						stdout_buf_offset += ret;
+						if (stdout_buf_offset >= stdout_buf_len) // Flush buffer complete
+						{
+							ret = 0;
+							stdout_buf_len = 0;
+							loop = 0;
+							break;
+						}
+						continue;
+					}
 				}
 			}
 		}
@@ -129,11 +159,10 @@ int igetch(int clear_buf)
 	static ssize_t len = 0;
 	static int pos = 0;
 
-	fd_set readfds;
-	struct timeval timeout;
+	struct epoll_event ev, events[MAX_EVENTS];
+	int nfds, epollfd;
 
 	unsigned char tmp[LINE_BUFFER_LEN];
-	int ret;
 	int out = '\0';
 	int in_esc = 0;
 	int in_ascii = 0;
@@ -149,59 +178,87 @@ int igetch(int clear_buf)
 		return '\0';
 	}
 
+	epollfd = epoll_create1(0);
+	if (epollfd < 0)
+	{
+		log_error("epoll_create1() error (%d)\n", errno);
+		return -1;
+	}
+
+	ev.events = EPOLLIN;
+	ev.data.fd = STDIN_FILENO;
+	if (epoll_ctl(epollfd, EPOLL_CTL_ADD, STDIN_FILENO, &ev) == -1)
+	{
+		log_error("epoll_ctl(STDIN_FILENO) error (%d)\n", errno);
+		return -1;
+	}
+
+	flags = fcntl(STDIN_FILENO, F_GETFL, 0);
+	fcntl(STDIN_FILENO, F_SETFL, flags | O_NONBLOCK);
+
 	while (!SYS_server_exit && pos >= len)
 	{
-		FD_ZERO(&readfds);
-		FD_SET(STDIN_FILENO, &readfds);
+		nfds = epoll_wait(epollfd, events, MAX_EVENTS, 100); // 0.1 second
 
-		timeout.tv_sec = 0;
-		timeout.tv_usec = 100 * 1000; // 0.1 second
-
-		ret = select(STDIN_FILENO + 1, &readfds, NULL, NULL, &timeout);
-
-		if (ret < 0)
+		if (nfds < 0)
 		{
 			if (errno != EINTR)
 			{
-				log_error("select() error (%d) !\n", errno);
+				log_error("epoll_wait() error (%d)\n", errno);
+				fcntl(STDIN_FILENO, F_SETFL, flags);
 				return KEY_NULL;
 			}
 			continue;
 		}
-		else if (ret == 0)
+		else if (nfds == 0)
 		{
+			fcntl(STDIN_FILENO, F_SETFL, flags);
 			return KEY_TIMEOUT;
 		}
 
-		if (FD_ISSET(STDIN_FILENO, &readfds))
+		for (int i = 0; i < nfds; i++)
 		{
-			flags = fcntl(STDIN_FILENO, F_GETFL, 0);
-			fcntl(socket_server, F_SETFL, flags | O_NONBLOCK);
-
-			len = read(STDIN_FILENO, buf, sizeof(buf));
-			if (len < 0)
+			if (events[i].data.fd == STDIN_FILENO)
 			{
-				if (errno != EAGAIN && errno != EWOULDBLOCK && errno != EINTR)
+				while (1) // read until complete or error
 				{
-					log_error("read(STDIN) error (%d)\n", errno);
+					len = read(STDIN_FILENO, buf, sizeof(buf));
+					if (len < 0)
+					{
+						if (errno == EAGAIN || errno == EWOULDBLOCK)
+						{
+							fcntl(STDIN_FILENO, F_SETFL, flags);
+							return KEY_TIMEOUT;
+						}
+						else if (errno == EINTR)
+						{
+							continue;
+						}
+						else
+						{
+							log_error("read(STDIN) error (%d)\n", errno);
+							fcntl(STDIN_FILENO, F_SETFL, flags);
+							return KEY_NULL;
+						}
+					}
+					else if (len == 0) // broken pipe
+					{
+						fcntl(STDIN_FILENO, F_SETFL, flags);
+						return KEY_NULL;
+					}
+
+					pos = 0;
+					break;
 				}
 			}
-			else if (len == 0)
-			{
-				out = KEY_NULL; // broken pipe
-			}
-
-			pos = 0;
-
-			fcntl(STDIN_FILENO, F_SETFL, flags);
-
-			break;
 		}
 
 		// For debug
 		// for (j = 0; j < len; j++)
 		//   log_std ("<--[%u]\n", (buf[j] + 256) % 256);
 	}
+
+	fcntl(STDIN_FILENO, F_SETFL, flags);
 
 	while (pos < len)
 	{
