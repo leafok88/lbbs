@@ -23,6 +23,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <errno.h>
 
 int fork_server()
 {
@@ -38,6 +39,7 @@ int fork_server()
 	}
 	else if (pid < 0) // Error
 	{
+		log_error("fork() error (%d)\n", errno);
 		return -1;
 	}
 

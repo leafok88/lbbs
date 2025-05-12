@@ -33,7 +33,10 @@
 #include <sys/syscall.h>
 #include <sys/socket.h>
 #include <sys/wait.h>
+#include <sys/epoll.h>
 #include <arpa/inet.h>
+
+#define MAX_EVENTS 10
 
 int net_server(const char *hostaddr, in_port_t port)
 {
@@ -41,8 +44,8 @@ int net_server(const char *hostaddr, in_port_t port)
 	int ret;
 	int flags;
 	struct sockaddr_in sin;
-	fd_set testfds;
-	struct timeval timeout;
+	struct epoll_event ev, events[MAX_EVENTS];
+	int nfds, epollfd;
 	sigset_t nsigset;
 	sigset_t osigset;
 	siginfo_t siginfo;
@@ -96,6 +99,24 @@ int net_server(const char *hostaddr, in_port_t port)
 	sigaddset(&nsigset, SIGCHLD);
 	sigaddset(&nsigset, SIGTERM);
 
+	epollfd = epoll_create1(0);
+	if (epollfd < 0)
+	{
+		log_error("epoll_create1() error (%d)\n", errno);
+		return -1;
+	}
+
+	ev.events = EPOLLIN;
+	ev.data.fd = socket_server;
+	if (epoll_ctl(epollfd, EPOLL_CTL_ADD, socket_server, &ev) == -1)
+	{
+		log_error("epoll_ctl(socket_server) error (%d)\n", errno);
+		return -1;
+	}
+
+	flags = fcntl(socket_server, F_GETFL, 0);
+	fcntl(socket_server, F_SETFL, flags | O_NONBLOCK);
+
 	while (!SYS_server_exit || SYS_child_process_count > 0)
 	{
 		sigprocmask(SIG_BLOCK, &nsigset, &osigset);
@@ -145,24 +166,15 @@ int net_server(const char *hostaddr, in_port_t port)
 
 		sigprocmask(SIG_SETMASK, &osigset, NULL);
 
-		FD_ZERO(&testfds);
-		FD_SET(socket_server, &testfds);
+		nfds = epoll_wait(epollfd, events, MAX_EVENTS, 100); // 0.1 second
 
-		timeout.tv_sec = 0;
-		timeout.tv_usec = 100 * 1000; // 0.1 second
-
-		ret = select(socket_server + 1, &testfds, NULL, NULL, &timeout);
-
-		if (ret < 0)
+		if (nfds < 0)
 		{
 			if (errno != EINTR)
 			{
-				log_error("Accept connection error: %d\n", errno);
+				log_error("epoll_wait() error (%d)\n", errno);
+				break;
 			}
-			continue;
-		}
-		else if (ret == 0) // timeout
-		{
 			continue;
 		}
 
@@ -172,48 +184,44 @@ int net_server(const char *hostaddr, in_port_t port)
 			continue;
 		}
 
-		if (FD_ISSET(socket_server, &testfds))
+		for (int i = 0; i < nfds; i++)
 		{
-			flags = fcntl(socket_server, F_GETFL, 0);
-			fcntl(socket_server, F_SETFL, flags | O_NONBLOCK);
-
-			while ((socket_client =
-						accept(socket_server, (struct sockaddr *)&sin, &namelen)) < 0)
+			if (events[i].data.fd == socket_server)
 			{
-				if (errno != EWOULDBLOCK && errno != ECONNABORTED && errno != EINTR)
+				while (1) // Accept all incoming connections until error
 				{
-					log_error("Accept connection error\n");
-					break;
+					socket_client = accept(socket_server, (struct sockaddr *)&sin, &namelen);
+					if (socket_client < 0)
+					{
+						if (errno != EAGAIN && errno != EWOULDBLOCK && errno != ECONNABORTED && errno != EINTR)
+						{
+							log_error("accept(socket_server) error (%d)\n", errno);
+						}
+						break;
+					}
+
+					strncpy(hostaddr_client, inet_ntoa(sin.sin_addr), sizeof(hostaddr_client) - 1);
+					hostaddr_client[sizeof(hostaddr_client) - 1] = '\0';
+
+					port_client = ntohs(sin.sin_port);
+
+					log_std("Accept connection from %s:%d\n", hostaddr_client, port_client);
+
+					if (fork_server() < 0)
+					{
+						log_error("fork_server() error\n");
+					}
+
+					if (close(socket_client) == -1)
+					{
+						log_error("close(socket_lient) error (%d)\n", errno);
+					}
 				}
 			}
-
-			fcntl(socket_server, F_SETFL, flags);
-		}
-
-		if (socket_client < 0)
-		{
-			log_error("Accept connection error\n");
-			continue;
-		}
-
-		strncpy(hostaddr_client, inet_ntoa(sin.sin_addr), sizeof(hostaddr_client) - 1);
-		hostaddr_client[sizeof(hostaddr_client) - 1] = '\0';
-
-		port_client = ntohs(sin.sin_port);
-
-		log_std("Accept connection from %s:%d\n", hostaddr_client,
-				port_client);
-
-		if (fork_server() < 0)
-		{
-			log_error("Fork error\n");
-		}
-
-		if (close(socket_client) == -1)
-		{
-			log_error("Close client socket failed\n");
 		}
 	}
+
+	fcntl(socket_server, F_SETFL, flags);
 
 	if (close(socket_server) == -1)
 	{
