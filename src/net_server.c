@@ -106,7 +106,7 @@ int net_server(const char *hostaddr, in_port_t port)
 		return -1;
 	}
 
-	ev.events = EPOLLIN;
+	ev.events = EPOLLIN | EPOLLET;
 	ev.data.fd = socket_server;
 	if (epoll_ctl(epollfd, EPOLL_CTL_ADD, socket_server, &ev) == -1)
 	{
