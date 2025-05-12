@@ -52,6 +52,7 @@ int main(int argc, char *argv[])
 	int daemon = 1;
 	int std_log_redir = 0;
 	int error_log_redir = 0;
+	int ret = 0;
 
 	// Parse args
 	for (int i = 1; i < argc; i++)
@@ -157,12 +158,15 @@ int main(int argc, char *argv[])
 	signal(SIGTERM, sig_term_handler);
 
 	// Initialize socket server
-	net_server(BBS_address, BBS_port);
+	if (net_server(BBS_address, BBS_port) < 0)
+	{
+		ret = -4;;
+	}
 
 	// Cleanup
 	unload_menu(&bbs_menu);
 
 	log_std("Main process exit normally\n");
 	
-	return 0;
+	return ret;
 }

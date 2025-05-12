@@ -55,7 +55,7 @@ int net_server(const char *hostaddr, in_port_t port)
 	if (socket_server < 0)
 	{
 		log_error("Create socket failed\n");
-		exit(1);
+		return -1;
 	}
 
 	sin.sin_family = AF_INET;
@@ -77,13 +77,13 @@ int net_server(const char *hostaddr, in_port_t port)
 	{
 		log_error("Bind address %s:%u failed (%d)\n",
 				  inet_ntoa(sin.sin_addr), ntohs(sin.sin_port), errno);
-		exit(2);
+		return -1;
 	}
 
 	if (listen(socket_server, 10) < 0)
 	{
 		log_error("Socket listen failed (%d)\n", errno);
-		exit(3);
+		return -1;
 	}
 
 	strncpy(hostaddr_server, inet_ntoa(sin.sin_addr), sizeof(hostaddr_server) - 1);
