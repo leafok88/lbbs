@@ -100,7 +100,7 @@ unsigned int split_file_lines(FILE *fin, int max_len, long *p_line_offsets, int 
 		{
 			len = split_line(p_buf, max_len, &end_of_line, &display_len);
 
-			if (len == 0 || !end_of_line)
+			if (len == 0 || !end_of_line) // !end_of_line == EOF
 			{
 				break;
 			}
