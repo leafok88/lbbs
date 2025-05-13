@@ -64,10 +64,12 @@ extern int prints(const char *format, ...);
 
 extern int outc(char c);
 
-extern int iflush();
+extern int iflush(void);
 
-extern int igetch(int clear_buf);
+extern int igetch(int timeout);
 
-extern int igetch_t(long int sec);
+extern int igetch_t(int sec);
+
+extern void igetch_reset(void);
 
 #endif //_IO_H_

@@ -680,7 +680,6 @@ int menu_control(MENU_SET *p_menu_set, int key)
 	switch (key)
 	{
 	case CR:
-		igetch(1); // Cleanup remaining '\n' in the buffer
 	case KEY_RIGHT:
 		if (p_menu->items[p_menu->item_cur_pos]->submenu)
 		{
@@ -696,13 +695,13 @@ int menu_control(MENU_SET *p_menu_set, int key)
 			{
 				return menu_control(p_menu_set, KEY_LEFT);
 			}
-			break;
 		}
 		else
 		{
 			return (exec_cmd(p_menu->items[p_menu->item_cur_pos]->action,
 							 p_menu->items[p_menu->item_cur_pos]->name));
 		}
+		break;
 	case KEY_LEFT:
 		if (p_menu_set->menu_select_depth > 0)
 		{
@@ -711,7 +710,6 @@ int menu_control(MENU_SET *p_menu_set, int key)
 			{
 				return menu_control(p_menu_set, KEY_LEFT);
 			}
-			break;
 		}
 		else
 		{
@@ -724,8 +722,8 @@ int menu_control(MENU_SET *p_menu_set, int key)
 				p_menu->item_cur_pos--;
 			}
 			display_menu_cursor(p_menu, 1);
-			break;
 		}
+		break;
 	case KEY_UP:
 		display_menu_cursor(p_menu, 0);
 		do
@@ -765,6 +763,7 @@ int menu_control(MENU_SET *p_menu_set, int key)
 				}
 			}
 		}
+		break;
 	}
 
 	return 0;

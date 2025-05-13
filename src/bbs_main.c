@@ -198,7 +198,7 @@ int bbs_center()
 
 	while (!SYS_server_exit)
 	{
-		ch = igetch(0);
+		ch = igetch(100);
 
 		if (time(0) - t_last_action >= 10)
 		{
@@ -217,6 +217,8 @@ int bbs_center()
 				return 0;
 			}
 			continue;
+		case CR:
+			igetch_reset();
 		default:
 			switch (menu_control(&bbs_menu, ch))
 			{

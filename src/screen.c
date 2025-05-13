@@ -98,7 +98,7 @@ void set_input_echo(int echo)
 		prints("\xff\xfb\x01\xff\xfb\x03");
 		iflush();
 		igetch(0);
-		igetch(1);
+		igetch_reset();
 	}
 }
 
@@ -112,11 +112,13 @@ static int _str_input(char *buffer, int buf_size, int echo_mode)
 	for (offset = 0; offset < buf_size - 1 && buffer[offset] != '\0'; offset++)
 		;
 
+	igetch_reset();
+
 	while (!SYS_server_exit && (c = igetch_t(MIN(MAX_DELAY_TIME, 60))))
 	{
 		if (c == CR)
 		{
-			igetch(1); // Cleanup remaining '\n' in the buffer
+			igetch_reset();
 			break;
 		}
 		else if (c == KEY_TIMEOUT || c == KEY_NULL) // timeout or broken pipe
@@ -156,7 +158,7 @@ static int _str_input(char *buffer, int buf_size, int echo_mode)
 		{
 			if (!hz && offset + 2 > buf_size - 1) // No enough space for Chinese character
 			{
-				igetch(1); // Cleanup remaining input
+				igetch_reset();
 				outc('\a');
 				iflush();
 				continue;
@@ -209,8 +211,6 @@ int str_input(char *buffer, int buf_size, int echo_mode)
 int get_data(int row, int col, char *prompt, char *buffer, int buf_size, int echo_mode)
 {
 	int len;
-
-	igetch(1); // Cleanup input buffer
 
 	moveto(row, col);
 	prints(prompt);
