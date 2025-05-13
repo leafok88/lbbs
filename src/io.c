@@ -30,6 +30,7 @@
 
 static char stdout_buf[BUFSIZ];
 static int stdout_buf_len = 0;
+static int stdout_buf_offset = 0;
 
 int prints(const char *format, ...)
 {
@@ -41,14 +42,46 @@ int prints(const char *format, ...)
 	ret = vsnprintf(buf, sizeof(buf), format, args);
 	va_end(args);
 
-	if (ret > 0 && stdout_buf_len + ret < BUFSIZ)
+	if (ret > 0)
 	{
-		memcpy(stdout_buf + stdout_buf_len, buf, (size_t)(ret + 1));
-		stdout_buf_len += ret;
+		if (stdout_buf_len + ret > BUFSIZ)
+		{
+			iflush();
+		}
+		
+		if (stdout_buf_len + ret <= BUFSIZ)
+		{
+			memcpy(stdout_buf + stdout_buf_len, buf, (size_t)ret);
+			stdout_buf_len += ret;
+		}
+		else
+		{
+			errno = EAGAIN;
+			ret = (BUFSIZ - stdout_buf_len - ret);
+		}
 	}
-	else if (ret > 0) // No enough free buffer
+
+	return ret;
+}
+
+int outc(char c)
+{
+	int ret;
+
+	if (stdout_buf_len + 1 > BUFSIZ)
 	{
-		ret = (BUFSIZ - stdout_buf_len - ret - 1);
+		iflush();
+	}
+
+	if (stdout_buf_len + 1 <= BUFSIZ)
+	{
+		stdout_buf[stdout_buf_len] = c;
+		stdout_buf_len++;
+	}
+	else
+	{
+		errno = EAGAIN;
+		ret = -1;
 	}
 
 	return ret;
@@ -59,8 +92,7 @@ int iflush()
 	int flags;
 	struct epoll_event ev, events[MAX_EVENTS];
 	int nfds, epollfd;
-	int stdout_buf_offset = 0;
-	int loop = 1;
+	int retry;
 	int ret = 0;
 
 	epollfd = epoll_create1(0);
@@ -82,8 +114,12 @@ int iflush()
 	flags = fcntl(STDOUT_FILENO, F_GETFL, 0);
 	fcntl(STDOUT_FILENO, F_SETFL, flags | O_NONBLOCK);
 
-	while (loop && !SYS_server_exit)
+	// Retry wait / flush for at most 3 times
+	retry = 3;
+	while (retry > 0 && !SYS_server_exit)
 	{
+		retry--;
+
 		nfds = epoll_wait(epollfd, events, MAX_EVENTS, 100); // 0.1 second
 
 		if (nfds < 0)
@@ -104,7 +140,7 @@ int iflush()
 		{
 			if (events[i].data.fd == STDOUT_FILENO)
 			{
-				while (1) // write until complete or error
+				while (stdout_buf_offset < stdout_buf_len && !SYS_server_exit) // write until complete or error
 				{
 					ret = (int)write(STDOUT_FILENO, stdout_buf + stdout_buf_offset, (size_t)(stdout_buf_len - stdout_buf_offset));
 					if (ret < 0)
@@ -120,23 +156,24 @@ int iflush()
 						else
 						{
 							log_error("write(STDOUT) error (%d)\n", errno);
-							loop = 0;
+							retry = 0;
 							break;
 						}
 					}
 					else if (ret == 0) // broken pipe
 					{
-						loop = 0;
+						retry = 0;
 						break;
 					}
 					else
 					{
 						stdout_buf_offset += ret;
-						if (stdout_buf_offset >= stdout_buf_len) // Flush buffer complete
+						if (stdout_buf_offset >= stdout_buf_len) // flush buffer completely
 						{
 							ret = 0;
+							stdout_buf_offset = 0;
 							stdout_buf_len = 0;
-							loop = 0;
+							retry = 0;
 							break;
 						}
 						continue;
@@ -220,7 +257,7 @@ int igetch(int clear_buf)
 		{
 			if (events[i].data.fd == STDIN_FILENO)
 			{
-				while (1) // read until complete or error
+				while (!SYS_server_exit) // read until complete or error
 				{
 					len = read(STDIN_FILENO, buf, sizeof(buf));
 					if (len < 0)
