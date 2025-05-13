@@ -27,7 +27,7 @@
 #define MAX_MENUS 256
 #define MAX_MENU_DEPTH 50
 
-struct _menu_item
+struct menu_item_t
 {
 	int row, col, r_row, r_col;
 	char action[MAX_MENUACTION_LENGTH];
@@ -36,23 +36,23 @@ struct _menu_item
 	char name[MAX_MENUNAME_LENGTH];
 	char text[MAX_MENUITEM_LENGTH];
 };
-typedef struct _menu_item MENU_ITEM;
+typedef struct menu_item_t MENU_ITEM;
 
-struct _menu_title
+struct menu_title_t
 {
 	int row, col, show;
 	char text[MAX_MENUTITLE_LENGTH];
 };
-typedef struct _menu_title MENU_TITLE;
+typedef struct menu_title_t MENU_TITLE;
 
-struct _menu_screen
+struct menu_screen_t
 {
 	int row, col, show;
 	char filename[FILE_PATH_LEN];
 };
-typedef struct _menu_screen MENU_SCREEN;
+typedef struct menu_screen_t MENU_SCREEN;
 
-struct _menu
+struct menu_t
 {
 	char name[MAX_MENUNAME_LENGTH];
 	MENU_TITLE title;
@@ -60,9 +60,9 @@ struct _menu
 	MENU_ITEM *items[MAX_MENUITEMS];
 	int item_count, item_cur_pos;
 };
-typedef struct _menu MENU;
+typedef struct menu_t MENU;
 
-struct _menu_set
+struct menu_set_t
 {
 	char conf_file[FILE_PATH_LEN];
 	MENU *p_menu[MAX_MENUS];
@@ -70,7 +70,7 @@ struct _menu_set
 	int menu_count;
 	int menu_select_depth;
 };
-typedef struct _menu_set MENU_SET;
+typedef struct menu_set_t MENU_SET;
 
 extern MENU_SET bbs_menu;
 
