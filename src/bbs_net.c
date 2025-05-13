@@ -226,6 +226,16 @@ int bbsnet_connect(int n)
 	prints("\033[1;32m穿梭进度条提示您当前已使用的时间，按\033[1;33mCtrl+C\033[1;32m中断。\033[m\r\n");
 	process_bar(0, MAX_PROCESS_BAR_LEN);
 
+	// Set socket as non-blocking
+	flags_sock = fcntl(sock, F_GETFL, 0);
+	fcntl(sock, F_SETFL, flags_sock | O_NONBLOCK);
+
+	// Set STDIN/STDOUT as non-blocking
+	flags_stdin = fcntl(STDIN_FILENO, F_GETFL, 0);
+	flags_stdout = fcntl(STDOUT_FILENO, F_GETFL, 0);
+	fcntl(STDIN_FILENO, F_SETFL, flags_stdin | O_NONBLOCK);
+	fcntl(STDOUT_FILENO, F_SETFL, flags_stdout | O_NONBLOCK);
+
 	epollfd = epoll_create1(0);
 	if (epollfd < 0)
 	{
@@ -238,7 +248,7 @@ int bbsnet_connect(int n)
 	if (epoll_ctl(epollfd, EPOLL_CTL_ADD, sock, &ev) == -1)
 	{
 		log_error("epoll_ctl(socket) error (%d)\n", errno);
-		return -1;
+		goto cleanup;
 	}
 
 	ev.events = EPOLLIN;
@@ -246,12 +256,8 @@ int bbsnet_connect(int n)
 	if (epoll_ctl(epollfd, EPOLL_CTL_ADD, STDIN_FILENO, &ev) == -1)
 	{
 		log_error("epoll_ctl(STDIN_FILENO) error (%d)\n", errno);
-		return -1;
+		goto cleanup;
 	}
-
-	// Set socket as non-blocking
-	flags_sock = fcntl(sock, F_GETFL, 0);
-	fcntl(sock, F_SETFL, flags_sock | O_NONBLOCK);
 
 	while (!SYS_server_exit)
 	{
@@ -259,7 +265,6 @@ int bbsnet_connect(int n)
 		{
 			if (errno == EAGAIN || errno == EALREADY || errno == EINPROGRESS)
 			{
-				log_std("Debug: %d\n", errno);
 				// Use select / epoll to check writability of the socket,
 				// then use getsockopt to check the status of the socket.
 				// See man connect(2)
@@ -272,9 +277,11 @@ int bbsnet_connect(int n)
 			else
 			{
 				log_error("connect(socket) error (%d)\n", errno);
+
 				prints("\033[1;31m连接失败！\033[m\r\n");
 				press_any_key();
-				return -1;
+
+				goto cleanup;
 			}
 		}
 	}
@@ -288,7 +295,7 @@ int bbsnet_connect(int n)
 			if (errno != EINTR)
 			{
 				log_error("epoll_wait() error (%d)\n", errno);
-				return -1;
+				break;
 			}
 		}
 		else if (nfds == 0) // timeout
@@ -305,7 +312,7 @@ int bbsnet_connect(int n)
 					if (getsockopt(sock, SOL_SOCKET, SO_ERROR, &error, (socklen_t *)&len) < 0)
 					{
 						log_error("getsockopt() error (%d) !\n", error);
-						return -1;
+						goto cleanup;
 					}
 					if (error == 0)
 					{
@@ -317,7 +324,7 @@ int bbsnet_connect(int n)
 					ch = igetch(0);
 					if (ch == Ctrl('C'))
 					{
-						return 0;
+						goto cleanup;
 					}
 				}
 			}
@@ -325,13 +332,14 @@ int bbsnet_connect(int n)
 	}
 	if (SYS_server_exit)
 	{
-		return 0;
+		goto cleanup;
 	}
 	if (!sock_connected)
 	{
-		prints("\033[1;31m连接超时！\033[m\r\n");
+		prints("\033[1;31m连接失败！\033[m\r\n");
 		press_any_key();
-		return -1;
+
+		goto cleanup;
 	}
 
 	tos = IPTOS_LOWDELAY;
@@ -349,7 +357,7 @@ int bbsnet_connect(int n)
 	if (epoll_ctl(epollfd, EPOLL_CTL_MOD, sock, &ev) == -1)
 	{
 		log_error("epoll_ctl(socket) error (%d)\n", errno);
-		return -1;
+		goto cleanup;
 	}
 
 	ev.events = EPOLLOUT;
@@ -357,14 +365,8 @@ int bbsnet_connect(int n)
 	if (epoll_ctl(epollfd, EPOLL_CTL_ADD, STDOUT_FILENO, &ev) == -1)
 	{
 		log_error("epoll_ctl(STDOUT_FILENO) error (%d)\n", errno);
-		return -1;
+		goto cleanup;
 	}
-
-	// Set STDIN/STDOUT as non-blocking
-	flags_stdin = fcntl(STDIN_FILENO, F_GETFL, 0);
-	flags_stdout = fcntl(STDOUT_FILENO, F_GETFL, 0);
-	fcntl(STDIN_FILENO, F_SETFL, flags_stdin | O_NONBLOCK);
-	fcntl(STDOUT_FILENO, F_SETFL, flags_stdout | O_NONBLOCK);
 
 	BBS_last_access_tm = t_used = time(0);
 	loop = 1;
@@ -564,6 +566,12 @@ int bbsnet_connect(int n)
 		}
 	}
 
+cleanup:
+	if (close(epollfd) < 0)
+	{
+		log_error("close(epoll) error (%d)\n");
+	}
+
 	// Restore STDIN/STDOUT flags
 	fcntl(STDIN_FILENO, F_SETFL, flags_stdin);
 	fcntl(STDOUT_FILENO, F_SETFL, flags_stdout);
@@ -650,7 +658,7 @@ int bbs_net()
 
 	while (!SYS_server_exit)
 	{
-		ch = igetch(0);
+		ch = igetch(100);
 		switch (ch)
 		{
 		case KEY_NULL:	// broken pipe
