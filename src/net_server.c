@@ -35,6 +35,7 @@
 #include <sys/wait.h>
 #include <sys/epoll.h>
 #include <arpa/inet.h>
+#include <systemd/sd-daemon.h>
 
 int net_server(const char *hostaddr, in_port_t port)
 {
@@ -45,6 +46,7 @@ int net_server(const char *hostaddr, in_port_t port)
 	struct epoll_event ev, events[MAX_EVENTS];
 	int nfds, epollfd;
 	siginfo_t siginfo;
+	int sd_notify_stopping = 0;
 
 	socket_server = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 
@@ -112,8 +114,19 @@ int net_server(const char *hostaddr, in_port_t port)
 	flags = fcntl(socket_server, F_GETFL, 0);
 	fcntl(socket_server, F_SETFL, flags | O_NONBLOCK);
 
+	// Startup complete
+	sd_notifyf(0, "READY=1\n"
+				  "STATUS=Accepting incoming connections...\n"
+				  "MAINPID=%d",
+			   getpid());
+
 	while (!SYS_server_exit || SYS_child_process_count > 0)
 	{
+		if (SYS_server_exit && !sd_notify_stopping)
+		{
+			sd_notify(0, "STOPPING=1");
+			sd_notify_stopping = 1;
+		}
 		while ((SYS_child_exit || SYS_server_exit) && SYS_child_process_count > 0)
 		{
 			SYS_child_exit = 0;
@@ -145,6 +158,8 @@ int net_server(const char *hostaddr, in_port_t port)
 			{
 				log_error("Send SIGTERM signal failed (%d)\n", errno);
 			}
+
+			sd_notifyf(0, "STATUS=Waiting for %d child process to exit", SYS_child_process_count);
 		}
 
 		if (SYS_menu_reload && !SYS_server_exit)
