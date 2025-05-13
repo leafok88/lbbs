@@ -32,6 +32,7 @@
 #include <sys/select.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
+#include <sys/epoll.h>
 #include <netinet/in.h>
 #include <netinet/ip.h>
 #include <arpa/inet.h>
@@ -151,6 +152,7 @@ static void process_bar(int n, int len)
 int bbsnet_connect(int n)
 {
 	int sock, ret, loop, error;
+	int sock_connected = 0;
 	int flags_sock;
 	int flags_stdin;
 	int flags_stdout;
@@ -162,12 +164,14 @@ int bbsnet_connect(int n)
 	int output_buf_len = 0;
 	int input_buf_offset = 0;
 	int output_buf_offset = 0;
-	fd_set read_fds;
-	fd_set write_fds;
-	struct timeval timeout;
+	struct epoll_event ev, events[MAX_EVENTS];
+	int nfds, epollfd;
+	int stdin_read_wait = 0;
+	int stdout_write_wait = 0;
+	int sock_read_wait = 0;
+	int sock_write_wait = 0;
 	struct hostent *p_host = NULL;
 	int tos;
-	int i;
 	char remote_addr[IP_ADDR_LEN];
 	int remote_port;
 	time_t t_used;
@@ -222,65 +226,108 @@ int bbsnet_connect(int n)
 	prints("\033[1;32m穿梭进度条提示您当前已使用的时间，按\033[1;33mCtrl+C\033[1;32m中断。\033[m\r\n");
 	process_bar(0, MAX_PROCESS_BAR_LEN);
 
+	epollfd = epoll_create1(0);
+	if (epollfd < 0)
+	{
+		log_error("epoll_create1() error (%d)\n", errno);
+		return -1;
+	}
+
+	ev.events = EPOLLOUT;
+	ev.data.fd = sock;
+	if (epoll_ctl(epollfd, EPOLL_CTL_ADD, sock, &ev) == -1)
+	{
+		log_error("epoll_ctl(socket) error (%d)\n", errno);
+		return -1;
+	}
+
+	ev.events = EPOLLIN;
+	ev.data.fd = STDIN_FILENO;
+	if (epoll_ctl(epollfd, EPOLL_CTL_ADD, STDIN_FILENO, &ev) == -1)
+	{
+		log_error("epoll_ctl(STDIN_FILENO) error (%d)\n", errno);
+		return -1;
+	}
+
 	// Set socket as non-blocking
 	flags_sock = fcntl(sock, F_GETFL, 0);
 	fcntl(sock, F_SETFL, flags_sock | O_NONBLOCK);
 
-	if ((ret = connect(sock, (struct sockaddr *)&sin, sizeof(sin))) < 0)
+	while (!SYS_server_exit)
 	{
-		if (errno != EINPROGRESS)
+		if ((ret = connect(sock, (struct sockaddr *)&sin, sizeof(sin))) < 0)
 		{
-			prints("\033[1;31m连接失败！\033[m\r\n");
-			press_any_key();
-			return -1;
+			if (errno == EAGAIN || errno == EALREADY || errno == EINPROGRESS)
+			{
+				log_std("Debug: %d\n", errno);
+				// Use select / epoll to check writability of the socket,
+				// then use getsockopt to check the status of the socket.
+				// See man connect(2)
+				break;
+			}
+			else if (errno == EINTR)
+			{
+				continue;
+			}
+			else
+			{
+				log_error("connect(socket) error (%d)\n", errno);
+				prints("\033[1;31m连接失败！\033[m\r\n");
+				press_any_key();
+				return -1;
+			}
 		}
 	}
 
-	for (i = 0; i < MAX_PROCESS_BAR_LEN; i++)
+	for (int j = 0; j < MAX_PROCESS_BAR_LEN && !sock_connected && !SYS_server_exit; j++)
 	{
-		ch = igetch(0); // 0.1 second
-		if (ch == Ctrl('C') || SYS_server_exit)
-		{
-			return 0;
-		}
+		nfds = epoll_wait(epollfd, events, MAX_EVENTS, 500); // 0.5 second
 
-		FD_ZERO(&read_fds);
-		FD_SET(sock, &read_fds);
-
-		FD_ZERO(&write_fds);
-		FD_SET(sock, &write_fds);
-
-		timeout.tv_sec = 0;
-		timeout.tv_usec = 400 * 1000; // 0.4 second
-
-		ret = select(sock + 1, &read_fds, &write_fds, NULL, &timeout);
-
-		if (ret == 0) // Timeout
-		{
-			process_bar(i + 1, MAX_PROCESS_BAR_LEN);
-		}
-		else if (ret < 0)
+		if (nfds < 0)
 		{
 			if (errno != EINTR)
 			{
-				log_error("select() error (%d) !\n", errno);
+				log_error("epoll_wait() error (%d)\n", errno);
 				return -1;
 			}
 		}
-		// ret > 0
-		else if (FD_ISSET(sock, &read_fds) || FD_ISSET(sock, &write_fds))
+		else if (nfds == 0) // timeout
 		{
-			len = sizeof(error);
-			if (getsockopt(sock, SOL_SOCKET, SO_ERROR, &error, (socklen_t *)&len) < 0)
+			process_bar(j + 1, MAX_PROCESS_BAR_LEN);
+		}
+		else // ret > 0
+		{
+			for (int i = 0; i < nfds; i++)
 			{
-				log_error("getsockopt() error (%d) !\n", error);
-				return -1;
+				if (events[i].data.fd == sock)
+				{
+					len = sizeof(error);
+					if (getsockopt(sock, SOL_SOCKET, SO_ERROR, &error, (socklen_t *)&len) < 0)
+					{
+						log_error("getsockopt() error (%d) !\n", error);
+						return -1;
+					}
+					if (error == 0)
+					{
+						sock_connected = 1;
+					}
+				}
+				else if (events[i].data.fd == STDIN_FILENO)
+				{
+					ch = igetch(0);
+					if (ch == Ctrl('C'))
+					{
+						return 0;
+					}
+				}
 			}
-
-			break; // connected
 		}
 	}
-	if (i == MAX_PROCESS_BAR_LEN)
+	if (SYS_server_exit)
+	{
+		return 0;
+	}
+	if (!sock_connected)
 	{
 		prints("\033[1;31m连接超时！\033[m\r\n");
 		press_any_key();
@@ -297,6 +344,22 @@ int bbsnet_connect(int n)
 	iflush();
 	log_std("BBSNET connect to %s:%d\n", remote_addr, remote_port);
 
+	ev.events = EPOLLIN | EPOLLOUT | EPOLLET;
+	ev.data.fd = sock;
+	if (epoll_ctl(epollfd, EPOLL_CTL_MOD, sock, &ev) == -1)
+	{
+		log_error("epoll_ctl(socket) error (%d)\n", errno);
+		return -1;
+	}
+
+	ev.events = EPOLLOUT;
+	ev.data.fd = STDOUT_FILENO;
+	if (epoll_ctl(epollfd, EPOLL_CTL_ADD, STDOUT_FILENO, &ev) == -1)
+	{
+		log_error("epoll_ctl(STDOUT_FILENO) error (%d)\n", errno);
+		return -1;
+	}
+
 	// Set STDIN/STDOUT as non-blocking
 	flags_stdin = fcntl(STDIN_FILENO, F_GETFL, 0);
 	flags_stdout = fcntl(STDOUT_FILENO, F_GETFL, 0);
@@ -308,121 +371,194 @@ int bbsnet_connect(int n)
 
 	while (loop && !SYS_server_exit)
 	{
-		FD_ZERO(&read_fds);
-		FD_SET(STDIN_FILENO, &read_fds);
-		FD_SET(sock, &read_fds);
+		nfds = epoll_wait(epollfd, events, MAX_EVENTS, 100); // 0.1 second
 
-		FD_ZERO(&write_fds);
-		FD_SET(STDOUT_FILENO, &write_fds);
-		FD_SET(sock, &write_fds);
-
-		timeout.tv_sec = 0;
-		timeout.tv_usec = 100 * 1000; // 0.1 second
-
-		ret = select(sock + 1, &read_fds, &write_fds, NULL, &timeout);
-
-		if (ret == 0) // timeout
-		{
-			if (time(0) - BBS_last_access_tm >= MAX_DELAY_TIME)
-			{
-				loop = 0;
-			}
-		}
-		else if (ret < 0)
+		if (nfds < 0)
 		{
 			if (errno != EINTR)
 			{
-				log_error("select() error (%d) !\n", errno);
-				loop = 0;
+				log_error("epoll_wait() error (%d)\n", errno);
+				break;
 			}
+			continue;
 		}
-		else // if (ret > 0)
+		else if (nfds == 0) // timeout
 		{
-			if ((input_buf_offset >= input_buf_len) && FD_ISSET(STDIN_FILENO, &read_fds))
+			if (time(0) - BBS_last_access_tm >= MAX_DELAY_TIME)
 			{
-				ret = (int)read(STDIN_FILENO, input_buf, sizeof(input_buf));
-				if (ret < 0)
-				{
-					if (errno != EAGAIN && errno != EWOULDBLOCK && errno != EINTR)
-					{
-						log_error("read(STDIN) error (%d)\n", errno);
-						loop = 0;
-					}
-				}
-				else if (ret == 0) // broken pipe
-				{
-					loop = 0;
-				}
-				else
-				{
-					input_buf_len = ret;
-					input_buf_offset = 0;
+				break;
+			}
+			continue;
+		}
 
-					BBS_last_access_tm = time(0);
+		for (int i = 0; i < nfds; i++)
+		{
+			if (events[i].data.fd == STDIN_FILENO || stdin_read_wait)
+			{
+				stdin_read_wait = 1;
+				while (input_buf_len < sizeof(input_buf) && !SYS_server_exit)
+				{
+					ret = (int)read(STDIN_FILENO, input_buf + input_buf_len, sizeof(input_buf) - (size_t)input_buf_len);
+					if (ret < 0)
+					{
+						if (errno == EAGAIN || errno == EWOULDBLOCK)
+						{
+							stdin_read_wait = 0;
+							break;
+						}
+						else if (errno == EINTR)
+						{
+							continue;
+						}
+						else
+						{
+							log_error("read(STDIN) error (%d)\n", errno);
+							loop = 0;
+							break;
+						}
+					}
+					else if (ret == 0) // broken pipe
+					{
+						log_std("read(STDIN) EOF\n");
+						stdin_read_wait = 0;
+						loop = 0;
+						break;
+					}
+					else
+					{
+						input_buf_len += ret;
+						BBS_last_access_tm = time(0);
+						continue;
+					}
 				}
 			}
 
-			if ((input_buf_offset < input_buf_len) && FD_ISSET(sock, &write_fds))
+			if (events[i].data.fd == sock || sock_write_wait) // EPOLLOUT
 			{
-				ret = (int)write(sock, input_buf + input_buf_offset, (size_t)(input_buf_len - input_buf_offset));
-				if (ret < 0)
+				sock_write_wait = 1;
+				while (input_buf_offset < input_buf_len && !SYS_server_exit)
 				{
-					if (errno != EAGAIN && errno != EWOULDBLOCK && errno != EINTR)
+					ret = (int)write(sock, input_buf + input_buf_offset, (size_t)(input_buf_len - input_buf_offset));
+					if (ret < 0)
 					{
-						log_error("write(socket) error (%d)\n", errno);
-						loop = 0;
+						if (errno == EAGAIN || errno == EWOULDBLOCK)
+						{
+							sock_write_wait = 0;
+							break;
+						}
+						else if (errno == EINTR)
+						{
+							continue;
+						}
+						else
+						{
+							log_error("write(socket) error (%d)\n", errno);
+							loop = 0;
+							break;
+						}
 					}
-				}
-				else if (ret == 0) // broken pipe
-				{
-					loop = 0;
-				}
-				else
-				{
-					input_buf_offset += ret;
+					else if (ret == 0) // broken pipe
+					{
+						log_std("write(socket) EOF\n");
+						sock_write_wait = 0;
+						loop = 0;
+						break;
+					}
+					else
+					{
+						input_buf_offset += ret;
+						if (input_buf_offset >= input_buf_len) // Output buffer complete
+						{
+							input_buf_offset = 0;
+							input_buf_len = 0;
+							break;
+						}
+						continue;
+					}
 				}
 			}
 
-			if ((output_buf_offset >= output_buf_len) && FD_ISSET(sock, &read_fds))
+			if (events[i].data.fd == sock || sock_read_wait) // EPOLLIN
 			{
-				ret = (int)read(sock, output_buf, sizeof(output_buf));
-				if (ret < 0)
+				sock_read_wait = 1;
+				while (output_buf_len < sizeof(output_buf) && !SYS_server_exit)
 				{
-					if (errno != EAGAIN && errno != EWOULDBLOCK && errno != EINTR)
+					ret = (int)read(sock, output_buf + output_buf_len, sizeof(output_buf) - (size_t)output_buf_len);
+					if (ret < 0)
 					{
-						log_error("read(socket) error (%d)\n", errno);
-						loop = 0;
+						if (errno == EAGAIN || errno == EWOULDBLOCK)
+						{
+							sock_read_wait = 0;
+							break;
+						}
+						else if (errno == EINTR)
+						{
+							continue;
+						}
+						else
+						{
+							log_error("read(socket) error (%d)\n", errno);
+							loop = 0;
+							break;
+						}
 					}
-				}
-				else if (ret == 0) // broken pipe
-				{
-					loop = 0;
-				}
-				else
-				{
-					output_buf_len = ret;
-					output_buf_offset = 0;
+					else if (ret == 0) // broken pipe
+					{
+						log_std("read(socket) EOF\n");
+						sock_read_wait = 0;
+						loop = 0;
+						break;
+					}
+					else
+					{
+						output_buf_len += ret;
+						continue;
+					}
 				}
 			}
 
-			if ((output_buf_offset < output_buf_len) && FD_ISSET(STDOUT_FILENO, &write_fds))
+			if (events[i].data.fd == STDOUT_FILENO || stdout_write_wait)
 			{
-				ret = (int)write(STDOUT_FILENO, output_buf + output_buf_offset, (size_t)(output_buf_len - output_buf_offset));
-				if (ret < 0)
+				stdout_write_wait = 1;
+				while (output_buf_offset < output_buf_len && !SYS_server_exit)
 				{
-					if (errno != EAGAIN && errno != EWOULDBLOCK && errno != EINTR)
+					ret = (int)write(STDOUT_FILENO, output_buf + output_buf_offset, (size_t)(output_buf_len - output_buf_offset));
+					if (ret < 0)
 					{
-						log_error("write(STDOUT) error (%d)\n", errno);
-						loop = 0;
+						if (errno == EAGAIN || errno == EWOULDBLOCK)
+						{
+							stdout_write_wait = 0;
+							break;
+						}
+						else if (errno == EINTR)
+						{
+							continue;
+						}
+						else
+						{
+							log_error("write(STDOUT) error (%d)\n", errno);
+							loop = 0;
+							break;
+						}
 					}
-				}
-				else if (ret == 0) // broken pipe
-				{
-					loop = 0;
-				}
-				else
-				{
-					output_buf_offset += ret;
+					else if (ret == 0) // broken pipe
+					{
+						log_std("write(STDOUT) EOF\n");
+						stdout_write_wait = 0;
+						loop = 0;
+						break;
+					}
+					else
+					{
+						output_buf_offset += ret;
+						if (output_buf_offset >= output_buf_len) // Output buffer complete
+						{
+							output_buf_offset = 0;
+							output_buf_len = 0;
+							break;
+						}
+						continue;
+					}
 				}
 			}
 		}
