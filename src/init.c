@@ -34,9 +34,13 @@ int init_daemon(void)
 
 	pid = fork();
 
-	if (pid != 0) // Parent or error
+	if (pid > 0) // Parent process
 	{
-		return pid;
+		_exit(0);
+	}
+	else if (pid < 0) // error
+	{
+		_exit(pid);
 	}
 
 	// Child process
@@ -44,9 +48,13 @@ int init_daemon(void)
 
 	pid = fork();
 
-	if (pid != 0) // Parent or error
+	if (pid > 0) // Parent process
 	{
-		return pid;
+		_exit(0);
+	}
+	else if (pid < 0) // error
+	{
+		_exit(pid);
 	}
 
 	// Child process

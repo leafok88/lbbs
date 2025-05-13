@@ -52,7 +52,6 @@ int main(int argc, char *argv[])
 	int daemon = 1;
 	int std_log_redir = 0;
 	int error_log_redir = 0;
-	int ret;
 
 	// Parse args
 	for (int i = 1; i < argc; i++)
@@ -114,15 +113,7 @@ int main(int argc, char *argv[])
 	// Initialize daemon
 	if (daemon)
 	{
-		ret = init_daemon();
-		if (ret > 0) // Parent process
-		{
-			return 0;
-		}
-		else if (ret < 0) // error
-		{
-			return ret;
-		}
+		init_daemon();
 	}
 
 	// Change current dir
