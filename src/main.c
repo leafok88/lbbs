@@ -52,7 +52,7 @@ int main(int argc, char *argv[])
 	int daemon = 1;
 	int std_log_redir = 0;
 	int error_log_redir = 0;
-	int ret = 0;
+	int ret;
 
 	// Parse args
 	for (int i = 1; i < argc; i++)
@@ -71,13 +71,13 @@ int main(int argc, char *argv[])
 						break;
 					case 'h':
 						app_help();
-						exit(0);
+						return 0;
 					case 'v':
 						puts(app_version);
-						exit(0);
+						return 0;
 					default:
 						arg_error();
-						exit(1);
+						return 1;
 					}
 				}
 			}
@@ -91,12 +91,12 @@ int main(int argc, char *argv[])
 				if (strcmp(argv[i] + 2, "help") == 0)
 				{
 					app_help();
-					exit(0);
+					return 0;
 				}
 				if (strcmp(argv[i] + 2, "version") == 0)
 				{
 					puts(app_version);
-					exit(0);
+					return 0;
 				}
 				if (strcmp(argv[i] + 2, "display-log") == 0)
 				{
@@ -114,7 +114,15 @@ int main(int argc, char *argv[])
 	// Initialize daemon
 	if (daemon)
 	{
-		init_daemon();
+		ret = init_daemon();
+		if (ret > 0) // Parent process
+		{
+			return 0;
+		}
+		else if (ret < 0) // error
+		{
+			return ret;
+		}
 	}
 
 	// Change current dir
@@ -127,7 +135,7 @@ int main(int argc, char *argv[])
 	// Initialize log
 	if (log_begin(LOG_FILE_INFO, LOG_FILE_ERROR) < 0)
 	{
-		exit(-1);
+		return -1;
 	}
 
 	if ((!daemon) && std_log_redir)
@@ -142,14 +150,14 @@ int main(int argc, char *argv[])
 	// Load configuration
 	if (load_conf(CONF_BBSD) < 0)
 	{
-		exit(-2);
+		return -2;
 	}
 
 	// Load menus
 	if (load_menu(&bbs_menu, CONF_MENU) < 0)
 	{
 		unload_menu(&bbs_menu);
-		exit(-3);
+		return -3;
 	}
 
 	// Set signal handler
@@ -160,7 +168,7 @@ int main(int argc, char *argv[])
 	// Initialize socket server
 	if (net_server(BBS_address, BBS_port) < 0)
 	{
-		ret = -4;;
+		return -4;
 	}
 
 	// Cleanup
@@ -168,5 +176,5 @@ int main(int argc, char *argv[])
 
 	log_std("Main process exit normally\n");
 	
-	return ret;
+	return 0;
 }

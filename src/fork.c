@@ -68,6 +68,9 @@ int fork_server()
 
 	bbs_main();
 
+	// Child process exit
+	SYS_server_exit = 1;
+
 	if (close(socket_client) == -1)
 	{
 		log_error("Close client socket failed\n");
@@ -80,9 +83,6 @@ int fork_server()
 	log_std("Process exit normally\n");
 
 	log_end();
-
-	// Exit child process normally
-	exit(0);
 
 	return 0;
 }

@@ -17,7 +17,7 @@
 #ifndef _INIT_H_
 #define _INIT_H_
 
-extern void init_daemon(void);
+extern int init_daemon(void);
 
 extern int load_conf(const char *conf_file);
 

@@ -28,19 +28,15 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-void init_daemon(void)
+int init_daemon(void)
 {
 	int pid;
 
 	pid = fork();
 
-	if (pid > 0) // Parent process
+	if (pid != 0) // Parent or error
 	{
-		exit(0);
-	}
-	else if (pid < 0) // Error
-	{
-		exit(1);
+		return pid;
 	}
 
 	// Child process
@@ -48,19 +44,15 @@ void init_daemon(void)
 
 	pid = fork();
 
-	if (pid > 0) // Parent process
+	if (pid != 0) // Parent or error
 	{
-		exit(0);
-	}
-	else if (pid < 0) // Error
-	{
-		exit(1);
+		return pid;
 	}
 
 	// Child process
 	umask(022);
 
-	return;
+	return 0;
 }
 
 int load_conf(const char *conf_file)
