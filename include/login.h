@@ -21,7 +21,7 @@
 
 extern void login_fail();
 
-extern int bbs_login();
+extern int bbs_login(MYSQL *db);
 
 extern int check_user(MYSQL *db, char *username, char *password);
 

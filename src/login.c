@@ -34,7 +34,7 @@ void login_fail()
 	display_file(DATA_LOGIN_ERROR);
 }
 
-int bbs_login()
+int bbs_login(MYSQL *db)
 {
 	char username[BBS_username_max_len + 1];
 	char password[BBS_password_max_len + 1];
@@ -54,15 +54,7 @@ int bbs_login()
 
 		if (strcmp(username, "guest") == 0)
 		{
-			MYSQL *db = db_open();
-			if (db == NULL)
-			{
-				return -1;
-			}
-
 			load_guest_info(db);
-
-			mysql_close(db);
 
 			return 0;
 		}
@@ -89,15 +81,7 @@ int bbs_login()
 				continue;
 			}
 
-			MYSQL *db = db_open();
-			if (db == NULL)
-			{
-				return -1;
-			}
-
 			ok = (check_user(db, username, password) == 0);
-
-			mysql_close(db);
 		}
 	}
 
@@ -106,6 +90,9 @@ int bbs_login()
 		login_fail();
 		return -1;
 	}
+
+	log_std("User \"%s\"(%ld) login from %s:%d\n",
+		BBS_username, BBS_priv.uid, hostaddr_client, port_client);
 
 	return 0;
 }
