@@ -186,7 +186,7 @@ int net_server(const char *hostaddr, in_port_t port)
 		{
 			if (events[i].data.fd == socket_server)
 			{
-				while (1) // Accept all incoming connections until error
+				while (!SYS_server_exit) // Accept all incoming connections until error
 				{
 					socket_client = accept(socket_server, (struct sockaddr *)&sin, &namelen);
 					if (socket_client < 0)
