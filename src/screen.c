@@ -114,8 +114,10 @@ static int _str_input(char *buffer, int buf_size, int echo_mode)
 
 	igetch_reset();
 
-	while (!SYS_server_exit && (c = igetch_t(MIN(MAX_DELAY_TIME, 60))))
+	while (!SYS_server_exit)
 	{
+		c = igetch_t(MIN(MAX_DELAY_TIME, 60));
+
 		if (c == CR)
 		{
 			igetch_reset();
@@ -158,7 +160,7 @@ static int _str_input(char *buffer, int buf_size, int echo_mode)
 		{
 			if (!hz && offset + 2 > buf_size - 1) // No enough space for Chinese character
 			{
-				igetch_reset();
+				igetch(0); // Ignore 1 character
 				outc('\a');
 				iflush();
 				continue;
