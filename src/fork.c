@@ -21,6 +21,7 @@
 #include "fork.h"
 #include <stdio.h>
 #include <string.h>
+#include <signal.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -66,6 +67,13 @@ int fork_server()
 		return -4;
 	}
 
+	SYS_child_process_count = 0;
+
+	// Reset signal handler to default
+	signal(SIGHUP, SIG_DFL);
+	signal(SIGCHLD, SIG_DFL);
+	signal(SIGTERM, SIG_DFL);
+	
 	bbs_main();
 
 	// Child process exit
