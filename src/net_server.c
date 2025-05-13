@@ -116,9 +116,9 @@ int net_server(const char *hostaddr, in_port_t port)
 
 	// Startup complete
 	sd_notifyf(0, "READY=1\n"
-				  "STATUS=Accepting incoming connections...\n"
+				  "STATUS=Listening at %s:%d\n"
 				  "MAINPID=%d",
-			   getpid());
+			   hostaddr_server, port_server, getpid());
 
 	while (!SYS_server_exit || SYS_child_process_count > 0)
 	{
