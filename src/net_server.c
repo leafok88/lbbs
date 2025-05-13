@@ -44,8 +44,6 @@ int net_server(const char *hostaddr, in_port_t port)
 	struct sockaddr_in sin;
 	struct epoll_event ev, events[MAX_EVENTS];
 	int nfds, epollfd;
-	sigset_t nsigset;
-	sigset_t osigset;
 	siginfo_t siginfo;
 
 	socket_server = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
@@ -92,11 +90,6 @@ int net_server(const char *hostaddr, in_port_t port)
 
 	log_std("Listening at %s:%d\n", hostaddr_server, port_server);
 
-	sigemptyset(&nsigset);
-	sigaddset(&nsigset, SIGHUP);
-	sigaddset(&nsigset, SIGCHLD);
-	sigaddset(&nsigset, SIGTERM);
-
 	epollfd = epoll_create1(0);
 	if (epollfd < 0)
 	{
@@ -109,6 +102,10 @@ int net_server(const char *hostaddr, in_port_t port)
 	if (epoll_ctl(epollfd, EPOLL_CTL_ADD, socket_server, &ev) == -1)
 	{
 		log_error("epoll_ctl(socket_server) error (%d)\n", errno);
+		if (close(epollfd) < 0)
+		{
+			log_error("close(epoll) error (%d)\n");
+		}
 		return -1;
 	}
 
@@ -117,20 +114,21 @@ int net_server(const char *hostaddr, in_port_t port)
 
 	while (!SYS_server_exit || SYS_child_process_count > 0)
 	{
-		sigprocmask(SIG_BLOCK, &nsigset, &osigset);
-
 		while ((SYS_child_exit || SYS_server_exit) && SYS_child_process_count > 0)
 		{
+			SYS_child_exit = 0;
+
 			siginfo.si_pid = 0;
 			ret = waitid(P_ALL, 0, &siginfo, WEXITED | WNOHANG);
 			if (ret == 0 && siginfo.si_pid > 0)
 			{
+				SYS_child_exit = 1; // Retry waitid
+
 				SYS_child_process_count--;
 				log_std("Child process (%d) exited\n", siginfo.si_pid);
 			}
 			else if (ret == 0)
 			{
-				SYS_child_exit = 0;
 				break;
 			}
 			else if (ret < 0)
@@ -151,6 +149,8 @@ int net_server(const char *hostaddr, in_port_t port)
 
 		if (SYS_menu_reload && !SYS_server_exit)
 		{
+			SYS_menu_reload = 0;
+
 			if (reload_menu(&bbs_menu) < 0)
 			{
 				log_error("Reload menu failed\n");
@@ -159,10 +159,7 @@ int net_server(const char *hostaddr, in_port_t port)
 			{
 				log_std("Reload menu successfully\n");
 			}
-			SYS_menu_reload = 0;
 		}
-
-		sigprocmask(SIG_SETMASK, &osigset, NULL);
 
 		nfds = epoll_wait(epollfd, events, MAX_EVENTS, 100); // 0.1 second
 
@@ -225,6 +222,11 @@ int net_server(const char *hostaddr, in_port_t port)
 				}
 			}
 		}
+	}
+
+	if (close(epollfd) < 0)
+	{
+		log_error("close(epoll) error (%d)\n");
 	}
 
 	fcntl(socket_server, F_SETFL, flags);
