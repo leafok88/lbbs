@@ -98,6 +98,7 @@ void sig_hup_handler(int i)
 
 void sig_term_handler(int i)
 {
+	log_std("Debug: SIGTERM captured\n");
 	SYS_server_exit = 1;
 }
 
