@@ -19,4 +19,4 @@ LIBS = -L/usr/lib/mysql -L/usr/lib64/mysql -lmysqlclient -lz -ldl -lsystemd
 
 libdir = ${prefix}/lib
 
-CLEANFILES = @EXTRA_CLEAN@
+CLEANFILES = @EXTRA_CLEAN@ ${EXTRA_PROGRAMS}
