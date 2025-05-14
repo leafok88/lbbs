@@ -50,6 +50,7 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 	MENU_ITEM *p_item = NULL;
 
 	p_menu_set->menu_count = 0;
+	p_menu_set->p_menu_name_dict = trie_dict_create();
 
 	if ((fin = fopen(conf_file, "r")) == NULL)
 	{
@@ -126,6 +127,10 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 				}
 				strncpy(p_menu->name, p, sizeof(p_menu->name) - 1);
 				p_menu->name[sizeof(p_menu->name) - 1] = '\0';
+				if (trie_dict_set(p_menu_set->p_menu_name_dict, p_menu->name, (int64_t)p_menu) != 1)
+				{
+					log_error("Error set menu dict [%s]\n", p_menu->name);
+				}
 
 				// Check syntax
 				q = strtok_r(NULL, MENU_CONF_DELIM_WITH_SPACE, &saveptr);
@@ -555,14 +560,14 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 
 MENU *get_menu(MENU_SET *p_menu_set, const char *menu_name)
 {
-	int i;
+	int ret;
+	int64_t value = 0;
 
-	for (i = 0; i < p_menu_set->menu_count; i++)
+	ret = trie_dict_get(p_menu_set->p_menu_name_dict, menu_name, &value);
+
+	if (ret == 1) // found
 	{
-		if (strcmp(p_menu_set->p_menu[i]->name, menu_name) == 0)
-		{
-			return p_menu_set->p_menu[i];
-		}
+		return ((MENU *)value);
 	}
 
 	return NULL;
@@ -773,6 +778,12 @@ void unload_menu(MENU_SET *p_menu_set)
 {
 	MENU *p_menu;
 	int i, j;
+
+	if (p_menu_set->p_menu_name_dict != NULL)
+	{
+		trie_dict_destroy(p_menu_set->p_menu_name_dict);
+		p_menu_set->p_menu_name_dict = NULL;
+	}
 
 	for (i = 0; i < p_menu_set->menu_count; i++)
 	{

@@ -18,6 +18,7 @@
 #define _MENU_H_
 
 #include "common.h"
+#include "trie_dict.h"
 
 #define MAX_MENUITEM_LENGTH 50
 #define MAX_MENUITEMS 30
@@ -68,6 +69,7 @@ struct menu_set_t
 	MENU *p_menu[MAX_MENUS];
 	MENU *p_menu_select[MAX_MENU_DEPTH];
 	int menu_count;
+	TRIE_NODE *p_menu_name_dict;
 	int menu_select_depth;
 };
 typedef struct menu_set_t MENU_SET;

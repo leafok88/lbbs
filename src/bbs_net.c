@@ -67,11 +67,19 @@ int load_bbsnet_conf(const char *file_config)
 		return -1;
 	}
 
-	p_menu = bbsnet_menu.p_menu[0] = malloc(sizeof(MENU));
+	bbsnet_menu.p_menu_name_dict = trie_dict_create();
+
+	p_menu = malloc(sizeof(MENU));
+	bbsnet_menu.p_menu[0] = p_menu;
 	strncpy(p_menu->name, "BBSNET", sizeof(p_menu->name) - 1);
 	p_menu->name[sizeof(p_menu->name) - 1] = '\0';
 	p_menu->title.show = 0;
 	p_menu->screen.show = 0;
+
+	if (trie_dict_set(bbsnet_menu.p_menu_name_dict, p_menu->name, (int64_t)p_menu) != 1)
+	{
+		log_error("Error set BBSNET menu dict [%s]\n", p_menu->name);
+	}
 
 	while (fgets(t, 255, fp) && item_count < MAXSTATION)
 	{
@@ -121,7 +129,12 @@ int load_bbsnet_conf(const char *file_config)
 	return 0;
 }
 
-static void process_bar(int n, int len)
+void unload_bbsnet_conf(void)
+{
+	unload_menu(&bbsnet_menu);
+}
+
+void process_bar(int n, int len)
 {
 	char buf[LINE_BUFFER_LEN];
 	char buf2[LINE_BUFFER_LEN];
@@ -663,11 +676,11 @@ int bbs_net()
 		{
 		case KEY_NULL:	// broken pipe
 		case Ctrl('C'): // user cancel
-			return 0;
+			goto cleanup;
 		case KEY_TIMEOUT:
 			if (time(0) - BBS_last_access_tm >= MAX_DELAY_TIME)
 			{
-				return 0;
+				goto cleanup;
 			}
 			continue;
 		case CR:
@@ -711,6 +724,9 @@ int bbs_net()
 		}
 		BBS_last_access_tm = time(0);
 	}
+
+cleanup:
+	unload_bbsnet_conf();
 
 	return 0;
 }
