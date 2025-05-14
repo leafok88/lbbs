@@ -35,4 +35,5 @@ Makefile.in
 *.so.*
 *.lo
 *.Tpo
-bbsd
+/src/bbsd
+/src/test_trie_dict
