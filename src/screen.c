@@ -459,7 +459,7 @@ int show_top(char *status)
 {
 	int end_of_line;
 	int display_len;
-	unsigned int len;
+	int len;
 
 	char space1[LINE_BUFFER_LEN];
 	char space2[LINE_BUFFER_LEN];
@@ -517,7 +517,7 @@ int show_active_board()
 	char buffer[LINE_BUFFER_LEN];
 	FILE *fin;
 	static int line;
-	unsigned int len;
+	int len;
 	int end_of_line;
 	int display_len;
 

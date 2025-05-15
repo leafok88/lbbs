@@ -20,19 +20,13 @@
 #include <stdio.h>
 #include <string.h>
 
-unsigned int split_line(const char *buffer, int max_display_len, int *p_eol, int *p_display_len)
+int split_line(const char *buffer, int max_display_len, int *p_eol, int *p_display_len)
 {
-	size_t len = strnlen(buffer, LINE_BUFFER_LEN);
-	unsigned int i = 0;
+	int i;
 	*p_eol = 0;
 	*p_display_len = 0;
 
-	if (len == 0)
-	{
-		return 0;
-	}
-
-	for (; i < len; i++)
+	for (i = 0; buffer[i] != '\0'; i++)
 	{
 		char c = buffer[i];
 
@@ -51,7 +45,7 @@ unsigned int split_line(const char *buffer, int max_display_len, int *p_eol, int
 		if (c == '\033' && buffer[i + 1] == '[') // Skip control sequence
 		{
 			i += 2;
-			while (i < len && buffer[i] != 'm')
+			while (buffer[i] != '\0' && buffer[i] != 'm')
 			{
 				i++;
 			}
@@ -82,18 +76,18 @@ unsigned int split_line(const char *buffer, int max_display_len, int *p_eol, int
 	return i;
 }
 
-unsigned int split_file_lines(FILE *fin, int max_display_len, long *p_line_offsets, int max_line_cnt)
+int split_file_lines(FILE *fin, int max_display_len, long *p_line_offsets, int max_line_cnt)
 {
 	char buffer[LINE_BUFFER_LEN];
 	char *p_buf = buffer;
-	unsigned int line_cnt = 0;
-	unsigned int len = 0;
+	int line_cnt = 0;
+	int len = 0;
 	int end_of_line = 0;
 	int display_len = 0;
 
 	p_line_offsets[line_cnt] = 0L;
 
-	while (fgets(p_buf, (int)(sizeof(buffer) - len), fin))
+	while (fgets(p_buf, (int)sizeof(buffer) - len, fin))
 	{
 		p_buf = buffer;
 		while (1)
