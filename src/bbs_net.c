@@ -735,8 +735,14 @@ int bbs_net()
 			menu_control(&bbsnet_menu, KEY_DOWN);
 			bbsnet_selchange();
 			break;
+		case KEY_HOME:
 		case KEY_PGUP:
 			menu_control(&bbsnet_menu, KEY_PGUP);
+			bbsnet_selchange();
+			break;
+		case KEY_END:
+		case KEY_PGDN:
+			menu_control(&bbsnet_menu, KEY_PGDN);
 			bbsnet_selchange();
 			break;
 		default:

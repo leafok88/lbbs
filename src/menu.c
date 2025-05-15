@@ -959,6 +959,7 @@ int menu_control(MENU_SET *p_menu_set, int key)
 		p_menu_set->menu_item_pos[p_menu_set->choose_step] = menu_item_pos;
 		display_menu_cursor(p_menu_set, 1);
 		break;
+	case KEY_HOME:
 	case KEY_PGUP:
 		display_menu_cursor(p_menu_set, 0);
 		menu_item_pos = 0;
@@ -982,6 +983,7 @@ int menu_control(MENU_SET *p_menu_set, int key)
 		p_menu_set->menu_item_pos[p_menu_set->choose_step] = menu_item_pos;
 		display_menu_cursor(p_menu_set, 1);
 		break;
+	case KEY_END:
 	case KEY_PGDN:
 		display_menu_cursor(p_menu_set, 0);
 		menu_item_pos = p_menu->item_count - 1;
