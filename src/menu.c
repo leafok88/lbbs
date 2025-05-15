@@ -959,6 +959,52 @@ int menu_control(MENU_SET *p_menu_set, int key)
 		p_menu_set->menu_item_pos[p_menu_set->choose_step] = menu_item_pos;
 		display_menu_cursor(p_menu_set, 1);
 		break;
+	case KEY_PGUP:
+		display_menu_cursor(p_menu_set, 0);
+		menu_item_pos = 0;
+		while (menu_item_pos < p_menu->item_count - 1)
+		{
+			menu_item_id = p_menu->items[menu_item_pos];
+			p_menu_item = get_menu_item_by_id(p_menu_set, menu_item_id);
+			if (p_menu_item == NULL)
+			{
+				log_error("get_menu_item_by_id(%d) return NULL pointer\n", menu_item_id);
+				return -1;
+			}
+
+			if (p_menu_set->menu_item_display[menu_item_pos])
+			{
+				break;
+			}
+
+			menu_item_pos++;
+		}
+		p_menu_set->menu_item_pos[p_menu_set->choose_step] = menu_item_pos;
+		display_menu_cursor(p_menu_set, 1);
+		break;
+	case KEY_PGDN:
+		display_menu_cursor(p_menu_set, 0);
+		menu_item_pos = p_menu->item_count - 1;
+		while (menu_item_pos > 0)
+		{
+			menu_item_id = p_menu->items[menu_item_pos];
+			p_menu_item = get_menu_item_by_id(p_menu_set, menu_item_id);
+			if (p_menu_item == NULL)
+			{
+				log_error("get_menu_item_by_id(%d) return NULL pointer\n", menu_item_id);
+				return -1;
+			}
+
+			if (p_menu_set->menu_item_display[menu_item_pos])
+			{
+				break;
+			}
+
+			menu_item_pos--;
+		}
+		p_menu_set->menu_item_pos[p_menu_set->choose_step] = menu_item_pos;
+		display_menu_cursor(p_menu_set, 1);
+		break;
 	default:
 		if (isalnum(key))
 		{

@@ -654,20 +654,22 @@ bbsnet_refresh()
 	return 0;
 }
 
-int bbsnet_selchange(int new_pos)
+int bbsnet_selchange()
 {
+	int i = bbsnet_menu.menu_item_pos[0];
+
 	moveto(20, 0);
 	clrtoeol();
 	prints("|\x1b[1m单位:\x1b[1;33m%-18s\x1b[m  站名:\x1b[1;33m%s\x1b[m",
-		   bbsnet_conf[new_pos].host2, bbsnet_conf[new_pos].host1);
+		   bbsnet_conf[i].host2, bbsnet_conf[i].host1);
 	moveto(20, 79);
 	prints("|");
 	moveto(21, 0);
 	clrtoeol();
-	prints("|\x1b[1m连往:\x1b[1;33m%-20s", bbsnet_conf[new_pos].ip);
-	if (bbsnet_conf[new_pos].port != 23)
+	prints("|\x1b[1m连往:\x1b[1;33m%-20s", bbsnet_conf[i].ip);
+	if (bbsnet_conf[i].port != 23)
 	{
-		prints("  %d", bbsnet_conf[new_pos].port);
+		prints("  %d", bbsnet_conf[i].port);
 	}
 	prints("\x1b[m");
 	moveto(21, 79);
@@ -679,7 +681,7 @@ int bbsnet_selchange(int new_pos)
 
 int bbs_net()
 {
-	int ch, pos, i;
+	int ch, i;
 
 	load_bbsnet_conf(CONF_BBSNET);
 
@@ -687,9 +689,8 @@ int bbs_net()
 
 	clearscr();
 	bbsnet_refresh();
-	pos = bbsnet_menu.menu_item_pos[0];
 	display_menu(&bbsnet_menu);
-	bbsnet_selchange(pos);
+	bbsnet_selchange();
 
 	while (!SYS_server_exit)
 	{
@@ -707,42 +708,40 @@ int bbs_net()
 			continue;
 		case CR:
 			igetch_reset();
-			pos = bbsnet_menu.menu_item_pos[0];
-			bbsnet_connect(pos);
+			bbsnet_connect(bbsnet_menu.menu_item_pos[0]);
 			bbsnet_refresh();
 			display_menu(&bbsnet_menu);
-			bbsnet_selchange(pos);
+			bbsnet_selchange();
 			break;
 		case KEY_UP:
 			for (i = 0; i < STATION_PER_LINE; i++)
 			{
 				menu_control(&bbsnet_menu, KEY_UP);
 			}
-			pos = bbsnet_menu.menu_item_pos[0];
-			bbsnet_selchange(pos);
+			bbsnet_selchange();
 			break;
 		case KEY_DOWN:
 			for (i = 0; i < STATION_PER_LINE; i++)
 			{
 				menu_control(&bbsnet_menu, KEY_DOWN);
 			}
-			pos = bbsnet_menu.menu_item_pos[0];
-			bbsnet_selchange(pos);
+			bbsnet_selchange();
 			break;
 		case KEY_LEFT:
 			menu_control(&bbsnet_menu, KEY_UP);
-			pos = bbsnet_menu.menu_item_pos[0];
-			bbsnet_selchange(pos);
+			bbsnet_selchange();
 			break;
 		case KEY_RIGHT:
 			menu_control(&bbsnet_menu, KEY_DOWN);
-			pos = bbsnet_menu.menu_item_pos[0];
-			bbsnet_selchange(pos);
+			bbsnet_selchange();
+			break;
+		case KEY_PGUP:
+			menu_control(&bbsnet_menu, KEY_PGUP);
+			bbsnet_selchange();
 			break;
 		default:
 			menu_control(&bbsnet_menu, ch);
-			pos = bbsnet_menu.menu_item_pos[0];
-			bbsnet_selchange(pos);
+			bbsnet_selchange();
 			break;
 		}
 		BBS_last_access_tm = time(0);
