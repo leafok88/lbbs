@@ -275,7 +275,7 @@ int bbs_main()
 	clearscr();
 
 	// BBS Top 10
-	display_file_ex("./var/bbs_top.txt", 1, 1);
+	display_file_ex(VAR_BBS_TOP, 1, 1);
 
 	// Load menu in shared memory
 	if (load_menu_shm(p_bbs_menu) < 0)

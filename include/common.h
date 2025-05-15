@@ -44,6 +44,7 @@ extern char app_version[256];
 #define DATA_READ_HELP "data/read_help.txt"
 
 #define VAR_MAX_USER_ONLINE "var/max_user_online.dat"
+#define VAR_BBS_TOP "var/bbs_top.txt"
 
 // Network
 #define IP_ADDR_LEN 50
