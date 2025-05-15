@@ -124,7 +124,6 @@ int load_bbsnet_conf(const char *file_config)
 		p_menu_item->submenu = 0;
 		p_menu_item->priv = 0;
 		p_menu_item->level = 0;
-		p_menu_item->display = 0;
 		p_menu_item->name[0] =
 			(char)(menu_item_id < MAXSTATION / 2 ? 'A' + menu_item_id : 'a' + menu_item_id);
 		p_menu_item->name[1] = '\0';

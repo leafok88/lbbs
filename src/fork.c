@@ -89,11 +89,6 @@ int fork_server()
 	close(STDIN_FILENO);
 	close(STDOUT_FILENO);
 
-	// Unload menu
-	unload_menu_shm(p_bbs_menu);
-	free(p_bbs_menu);
-	p_bbs_menu = NULL;
-
 	log_std("Process exit normally\n");
 	log_end();
 

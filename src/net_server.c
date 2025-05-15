@@ -47,6 +47,7 @@ int net_server(const char *hostaddr, in_port_t port)
 	int nfds, epollfd;
 	siginfo_t siginfo;
 	int sd_notify_stopping = 0;
+	MENU_SET *p_bbs_menu_new;
 
 	socket_server = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 
@@ -166,15 +167,28 @@ int net_server(const char *hostaddr, in_port_t port)
 		{
 			SYS_menu_reload = 0;
 
-			unload_menu(p_bbs_menu);
-
-			if (load_menu(p_bbs_menu, CONF_MENU) < 0)
+			p_bbs_menu_new = calloc(1, sizeof(MENU_SET));
+			if (p_bbs_menu_new == NULL)
 			{
-				unload_menu(p_bbs_menu);
+				log_error("OOM: calloc(MENU_SET)\n");
+			}
+			else if (load_menu(p_bbs_menu_new, CONF_MENU) < 0)
+			{
+				unload_menu(p_bbs_menu_new);
+				free(p_bbs_menu_new);
+
 				log_error("Reload menu failed\n");
 			}
 			else
 			{
+				unload_menu_shm(p_bbs_menu_new);
+
+				unload_menu(p_bbs_menu);
+				free(p_bbs_menu);
+
+				p_bbs_menu = p_bbs_menu_new;
+				p_bbs_menu_new = NULL;
+
 				log_std("Reload menu successfully\n");
 			}
 		}

@@ -39,10 +39,10 @@ typedef uint64_t MENU_SCREEN_ID;
 
 struct menu_item_t
 {
-	int16_t row, col, r_row, r_col;
+	int16_t row, col;
 	char action[MAX_MENUACTION_LENGTH];
 	MENU_ID action_menu_id;
-	int8_t submenu, display;
+	int8_t submenu;
 	int priv, level;
 	char name[MAX_MENUNAME_LENGTH];
 	char text[MAX_MENUITEM_LENGTH];
@@ -94,6 +94,9 @@ struct menu_set_t
 	MENU_ID menu_id_path[MAX_MENU_DEPTH];
 	int16_t menu_item_pos[MAX_MENU_DEPTH];
 	int16_t choose_step;
+	int8_t menu_item_display[MAX_ITEMS_PER_MENU];
+	int16_t menu_item_r_row[MAX_ITEMS_PER_MENU];
+	int16_t menu_item_r_col[MAX_ITEMS_PER_MENU];
 };
 typedef struct menu_set_t MENU_SET;
 

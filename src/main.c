@@ -154,8 +154,10 @@ int main(int argc, char *argv[])
 	if (load_menu(p_bbs_menu, CONF_MENU) < 0)
 	{
 		unload_menu(p_bbs_menu);
+		free(p_bbs_menu);
 		return -3;
 	}
+	unload_menu_shm(p_bbs_menu);
 
 	// Set signal handler
 	signal(SIGHUP, sig_hup_handler);
@@ -163,10 +165,7 @@ int main(int argc, char *argv[])
 	signal(SIGTERM, sig_term_handler);
 
 	// Initialize socket server
-	if (net_server(BBS_address, BBS_port) < 0)
-	{
-		return -4;
-	}
+	net_server(BBS_address, BBS_port);
 
 	// Cleanup menu
 	unload_menu(p_bbs_menu);

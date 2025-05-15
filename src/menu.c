@@ -711,7 +711,7 @@ static int display_menu_cursor(MENU_SET *p_menu_set, int show)
 		return -1;
 	}
 
-	moveto(p_menu_item->r_row, p_menu_item->r_col - 2);
+	moveto(p_menu_set->menu_item_r_row[menu_item_pos], p_menu_set->menu_item_r_col[menu_item_pos] - 2);
 	outc(show ? '>' : ' ');
 	iflush();
 
@@ -773,9 +773,9 @@ int display_menu(MENU_SET *p_menu_set)
 		iflush();
 	}
 
-	for (int16_t i = 0; i < p_menu->item_count; i++)
+	for (menu_item_pos = 0; menu_item_pos < p_menu->item_count; menu_item_pos++)
 	{
-		menu_item_id = p_menu->items[i];
+		menu_item_id = p_menu->items[menu_item_pos];
 		p_menu_item = get_menu_item_by_id(p_menu_set, menu_item_id);
 
 		if (p_menu_item->row != 0)
@@ -789,22 +789,22 @@ int display_menu(MENU_SET *p_menu_set)
 
 		if (checkpriv(&BBS_priv, 0, p_menu_item->priv) == 0 || checklevel(&BBS_priv, p_menu_item->level) == 0)
 		{
-			p_menu_item->display = 0;
-			p_menu_item->r_row = 0;
-			p_menu_item->r_col = 0;
+			p_menu_set->menu_item_display[menu_item_pos] = 0;
+			p_menu_set->menu_item_r_row[menu_item_pos] = 0;
+			p_menu_set->menu_item_r_col[menu_item_pos] = 0;
 		}
 		else
 		{
-			p_menu_item->display = 1;
+			p_menu_set->menu_item_display[menu_item_pos] = 1;
 
 			if (!menu_selectable)
 			{
-				p_menu_set->menu_item_pos[p_menu_set->choose_step] = i;
+				p_menu_set->menu_item_pos[p_menu_set->choose_step] = menu_item_pos;
 				menu_selectable = 1;
 			}
 
-			p_menu_item->r_row = row;
-			p_menu_item->r_col = col;
+			p_menu_set->menu_item_r_row[menu_item_pos] = row;
+			p_menu_set->menu_item_r_col[menu_item_pos] = col;
 
 			moveto(row, col);
 			prints("%s", p_menu_item->text);
@@ -906,7 +906,7 @@ int menu_control(MENU_SET *p_menu_set, int key)
 					return -1;
 				}
 
-				if (!p_menu_item->display || p_menu_item->priv != 0 || p_menu_item->level != 0)
+				if (!p_menu_set->menu_item_display[menu_item_pos] || p_menu_item->priv != 0 || p_menu_item->level != 0)
 				{
 					menu_item_pos--;
 				}
@@ -935,7 +935,7 @@ int menu_control(MENU_SET *p_menu_set, int key)
 				log_error("get_menu_item_by_id(%d) return NULL pointer\n", menu_item_id);
 				return -1;
 			}
-		} while (!p_menu_item->display);
+		} while (!p_menu_set->menu_item_display[menu_item_pos]);
 		p_menu_set->menu_item_pos[p_menu_set->choose_step] = menu_item_pos;
 		display_menu_cursor(p_menu_set, 1);
 		break;
@@ -955,16 +955,16 @@ int menu_control(MENU_SET *p_menu_set, int key)
 				log_error("get_menu_item_by_id(%d) return NULL pointer\n", menu_item_id);
 				return -1;
 			}
-		} while (!p_menu_item->display);
+		} while (!p_menu_set->menu_item_display[menu_item_pos]);
 		p_menu_set->menu_item_pos[p_menu_set->choose_step] = menu_item_pos;
 		display_menu_cursor(p_menu_set, 1);
 		break;
 	default:
 		if (isalnum(key))
 		{
-			for (int16_t i = 0; i < p_menu->item_count; i++)
+			for (menu_item_pos = 0; menu_item_pos < p_menu->item_count; menu_item_pos++)
 			{
-				menu_item_id = p_menu->items[i];
+				menu_item_id = p_menu->items[menu_item_pos];
 				p_menu_item = get_menu_item_by_id(p_menu_set, menu_item_id);
 				if (p_menu_item == NULL)
 				{
@@ -972,10 +972,10 @@ int menu_control(MENU_SET *p_menu_set, int key)
 					return -1;
 				}
 
-				if (toupper(key) == toupper(p_menu_item->name[0]) && p_menu_item->display)
+				if (toupper(key) == toupper(p_menu_item->name[0]) && p_menu_set->menu_item_display[menu_item_pos])
 				{
 					display_menu_cursor(p_menu_set, 0);
-					p_menu_set->menu_item_pos[p_menu_set->choose_step] = i;
+					p_menu_set->menu_item_pos[p_menu_set->choose_step] = menu_item_pos;
 					display_menu_cursor(p_menu_set, 1);
 					return 0;
 				}
@@ -1015,11 +1015,17 @@ int unload_menu(MENU_SET *p_menu_set)
 int load_menu_shm(MENU_SET *p_menu_set)
 {
 	// Mount shared memory
+	if (p_menu_set->p_reserved != NULL)
+	{
+		log_error("Menu is already loaded\n");
+		return -1;
+	}
+
 	p_menu_set->p_reserved = shmat(p_menu_set->shmid, NULL, SHM_RDONLY);
 	if (p_menu_set->p_reserved == (void *)-1)
 	{
 		log_error("shmat() error (%d)\n", errno);
-		return -3;
+		return -2;
 	}
 	p_menu_set->p_menu_pool = p_menu_set->p_reserved + MENU_SET_RESERVED_LENGTH;
 	p_menu_set->p_menu_item_pool = p_menu_set->p_menu_pool + sizeof(MENU) * MAX_MENUS;
@@ -1054,12 +1060,11 @@ int unload_menu_shm(MENU_SET *p_menu_set)
 	p_menu_set->p_menu_screen_buf = NULL;
 	p_menu_set->p_menu_screen_buf_free = NULL;
 
-	if (shmdt(p_menu_set->p_reserved) == -1)
+	if (p_menu_set->p_reserved != NULL && shmdt(p_menu_set->p_reserved) == -1)
 	{
 		log_error("shmdt() error (%d)\n", errno);
 		return -1;
 	}
-
 	p_menu_set->p_reserved = NULL;
 
 	return 0;

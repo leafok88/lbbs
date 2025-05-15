@@ -283,8 +283,19 @@ int bbs_main()
 		prints("无法加载本站十大\n");
 	}
 
+	// Load menu in shared memory
+	if (load_menu_shm(p_bbs_menu) < 0)
+	{
+		return -5;
+	}
+
 	// Main
 	bbs_center();
+
+	// Unload menu in shared memory
+	unload_menu_shm(p_bbs_menu);
+	free(p_bbs_menu);
+	p_bbs_menu = NULL;
 
 	// Logout
 	bbs_logout(db);
