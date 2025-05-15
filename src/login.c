@@ -15,7 +15,6 @@
  ***************************************************************************/
 
 #include "login.h"
-#include "register.h"
 #include "bbs.h"
 #include "user_priv.h"
 #include "common.h"
@@ -28,11 +27,6 @@
 #include <mysql.h>
 #include <regex.h>
 #include <unistd.h>
-
-void login_fail()
-{
-	display_file_ex(DATA_LOGIN_ERROR, 1, 0);
-}
 
 int bbs_login(MYSQL *db)
 {
@@ -61,14 +55,9 @@ int bbs_login(MYSQL *db)
 
 		if (strcmp(username, "new") == 0)
 		{
-			if (user_register() == 0)
-			{
-				return 0;
-			}
-			else
-			{
-				return -2;
-			}
+			display_file_ex(DATA_REGISTER, 1, 1);
+
+			return 0;
 		}
 
 		if (username[0] != '\0')
@@ -87,12 +76,12 @@ int bbs_login(MYSQL *db)
 
 	if (!ok)
 	{
-		login_fail();
+		display_file_ex(DATA_LOGIN_ERROR, 1, 0);
 		return -1;
 	}
 
 	log_std("User \"%s\"(%ld) login from %s:%d\n",
-		BBS_username, BBS_priv.uid, hostaddr_client, port_client);
+			BBS_username, BBS_priv.uid, hostaddr_client, port_client);
 
 	return 0;
 }

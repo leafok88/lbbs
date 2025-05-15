@@ -172,10 +172,7 @@ int bbs_logout(MYSQL *db)
 		return -1;
 	}
 
-	if (display_file_ex(DATA_GOODBYE, 1, 0) < 0)
-	{
-		return -2;
-	}
+	display_file_ex(DATA_GOODBYE, 1, 0);
 
 	log_std("User logout\n");
 
@@ -278,10 +275,7 @@ int bbs_main()
 	clearscr();
 
 	// BBS Top 10
-	if (display_file_ex("./var/bbs_top.txt", 1, 1) < 0)
-	{
-		prints("无法加载本站十大\n");
-	}
+	display_file_ex("./var/bbs_top.txt", 1, 1);
 
 	// Load menu in shared memory
 	if (load_menu_shm(p_bbs_menu) < 0)
