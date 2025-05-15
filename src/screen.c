@@ -324,6 +324,18 @@ int display_file_ex(const char *filename, int begin_line, int wait)
 				case KEY_NULL:
 				case KEY_TIMEOUT:
 					goto cleanup;
+				case KEY_HOME:
+					c_line_current = 0;
+					line = begin_line;
+					max_lines = screen_rows - 1;
+					clrline(begin_line, screen_rows);
+					break;
+				case KEY_END:
+					c_line_current = c_line_total - (screen_rows - 2);
+					line = begin_line;
+					max_lines = screen_rows - 1;
+					clrline(begin_line, screen_rows);
+					break;
 				case KEY_UP:
 					if (c_line_current - line < 0) // Reach top
 					{
@@ -406,6 +418,7 @@ int display_file_ex(const char *filename, int begin_line, int wait)
 					clrline(begin_line, screen_rows);
 					break;
 				default:
+					log_std("Input: %d\n", ch);
 					input_ok = 0;
 					break;
 				}
