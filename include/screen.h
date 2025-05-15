@@ -38,8 +38,6 @@ extern int str_input(char *buffer, int buffer_length, int echo_mode);
 
 extern int get_data(int row, int col, char *prompt, char *buffer, int buffer_length, int echo_mode);
 
-extern int display_file(const char *filename);
-
 extern int display_file_ex(const char *filename, int begin_line, int wait);
 
 extern int show_top(char *status);

@@ -150,10 +150,10 @@ int bbs_welcome(MYSQL *db)
 	u_anonymous++;
 
 	// Display logo
-	display_file(DATA_WELCOME);
+	display_file_ex(DATA_WELCOME, 1, 0);
 
 	// Display welcome message
-	prints("\033[1;35m欢迎光临\033[33m 【 %s 】 \033[35mBBS\r\n"
+	prints("\r\033[1;35m欢迎光临\033[33m 【 %s 】 \033[35mBBS\r\n"
 		   "\033[32m目前上站人数 [\033[36m%d/%d\033[32m] "
 		   "匿名游客[\033[36m%d\033[32m] "
 		   "注册用户数[\033[36m%d/%d\033[32m]\r\n"

@@ -20,13 +20,16 @@
 #include "log.h"
 #include "io.h"
 #include "screen.h"
+#include <fcntl.h>
 #include <string.h>
 #include <ctype.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <errno.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/param.h>
+#include <sys/mman.h>
 
 #define ACTIVE_BOARD_HEIGHT 8
 
@@ -224,57 +227,50 @@ int get_data(int row, int col, char *prompt, char *buffer, int buf_size, int ech
 	return len;
 }
 
-int display_file(const char *filename)
-{
-	char buffer[LINE_BUFFER_LEN];
-	FILE *fin;
-	size_t i;
-
-	if ((fin = fopen(filename, "r")) == NULL)
-	{
-		return -1;
-	}
-
-	while (fgets(buffer, sizeof(buffer) - 1, fin))
-	{
-		i = strnlen(buffer, sizeof(buffer) - 1);
-		if (buffer[i - 1] == '\n' && buffer[i - 2] != '\r')
-		{
-			buffer[i - 1] = '\r';
-			buffer[i] = '\n';
-			buffer[i + 1] = '\0';
-		}
-		prints(buffer);
-		iflush();
-	}
-	fclose(fin);
-
-	return 0;
-}
-
 int display_file_ex(const char *filename, int begin_line, int wait)
 {
 	static int show_help = 1;
 	char buffer[LINE_BUFFER_LEN];
+	void *p_data;
 	int ch = 0;
 	int input_ok, line, max_lines;
 	long int c_line_current = 0;
 	long int c_line_total = 0;
-	FILE *fin;
+	int fd;
+	struct stat sb;
 	long *p_line_offsets;
 	long int len;
 	long int percentile;
 	int loop = 1;
 
-	if ((fin = fopen(filename, "r")) == NULL)
+	if ((fd = open(filename, O_RDONLY)) < 0)
 	{
-		log_error("Unable to open file %s\n", filename);
+		log_error("open(%s) error (%d)\n", filename, errno);
+		return -1;
+	}
+
+	if (fstat(fd, &sb) < 0)
+	{
+		log_error("fstat(fd) error (%d)\n", errno);
+		return -1;
+	}
+
+	p_data = mmap(NULL, (size_t)sb.st_size, PROT_READ, MAP_PRIVATE, fd, 0L);
+	if (p_data == MAP_FAILED)
+	{
+		log_error("mmap() error (%d)\n", errno);
+		return -2;
+	}
+
+	if (close(fd) < 0)
+	{
+		log_error("close(fd) error (%d)\n", errno);
 		return -1;
 	}
 
 	p_line_offsets = (long *)malloc(sizeof(long) * MAX_FILE_LINES);
 
-	c_line_total = split_file_lines(fin, screen_cols, p_line_offsets, MAX_FILE_LINES);
+	c_line_total = split_data_lines(p_data, screen_cols, p_line_offsets, MAX_FILE_LINES);
 
 	clrline(begin_line, screen_rows);
 	line = begin_line;
@@ -429,18 +425,16 @@ int display_file_ex(const char *filename, int begin_line, int wait)
 			continue;
 		}
 
-		fseek(fin, p_line_offsets[c_line_current], SEEK_SET);
 		len = p_line_offsets[c_line_current + 1] - p_line_offsets[c_line_current];
 		if (len >= LINE_BUFFER_LEN)
 		{
 			log_error("Error length exceeds buffer size: %d\n", len);
 			len = LINE_BUFFER_LEN - 1;
 		}
-		if (fgets(buffer, (int)len + 1, fin) == NULL)
-		{
-			log_error("Reach EOF\n");
-			break;
-		}
+
+		memcpy(buffer, (const char *)p_data + p_line_offsets[c_line_current], (size_t)len);
+		buffer[len] = '\0';
+
 		moveto(line, 0);
 		clrtoeol();
 		prints("%s", buffer);
@@ -449,8 +443,12 @@ int display_file_ex(const char *filename, int begin_line, int wait)
 	}
 
 cleanup:
+	if (munmap(p_data, (size_t)sb.st_size) < 0)
+	{
+		log_error("munmap() error (%d)\n", errno);
+	}
+
 	free(p_line_offsets);
-	fclose(fin);
 
 	return ch;
 }
