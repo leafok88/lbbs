@@ -98,32 +98,17 @@ int copyright(const char *s)
 
 int reloadbbsmenu(const char *s)
 {
-	MENU_SET new_menu;
-
 	clearscr();
 
-	if (load_menu(&new_menu, CONF_MENU) < 0)
+	if (kill(getppid(), SIGHUP) < 0)
 	{
-		log_error("Reload menu failed\n");
+		log_error("Send SIGHUP signal failed (%d)\n", errno);
 
-		unload_menu(&new_menu);
-
-		prints("菜单配置校验失败\r\n");
+		prints("发送指令失败\r\n");
 	}
 	else
 	{
-		unload_menu(&new_menu);
-
-		if (kill(getppid(), SIGHUP) < 0)
-		{
-			log_error("Send SIGHUP signal failed (%d)\n", errno);
-	
-			prints("发送指令失败\r\n");
-		}
-		else
-		{
-			prints("已发送指令\r\n");
-		}
+		prints("已发送指令\r\n");
 	}
 
 	press_any_key();
