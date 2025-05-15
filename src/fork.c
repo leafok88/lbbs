@@ -19,6 +19,7 @@
 #include "log.h"
 #include "io.h"
 #include "fork.h"
+#include "menu.h"
 #include <stdio.h>
 #include <string.h>
 #include <signal.h>
@@ -88,9 +89,15 @@ int fork_server()
 	close(STDIN_FILENO);
 	close(STDOUT_FILENO);
 
-	log_std("Process exit normally\n");
+	// Unload menu
+	unload_menu_shm(p_bbs_menu);
+	free(p_bbs_menu);
+	p_bbs_menu = NULL;
 
+	log_std("Process exit normally\n");
 	log_end();
 
+	_exit(0);
+	
 	return 0;
 }

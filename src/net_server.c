@@ -166,8 +166,11 @@ int net_server(const char *hostaddr, in_port_t port)
 		{
 			SYS_menu_reload = 0;
 
-			if (reload_menu(&bbs_menu) < 0)
+			unload_menu(p_bbs_menu);
+
+			if (load_menu(p_bbs_menu, CONF_MENU) < 0)
 			{
+				unload_menu(p_bbs_menu);
 				log_error("Reload menu failed\n");
 			}
 			else

@@ -194,7 +194,7 @@ int bbs_center()
 	show_top("");
 	show_active_board();
 	show_bottom("");
-	display_menu(get_menu(&bbs_menu, "TOPMENU"));
+	display_menu(p_bbs_menu);
 
 	while (!SYS_server_exit)
 	{
@@ -220,7 +220,7 @@ int bbs_center()
 		case CR:
 			igetch_reset();
 		default:
-			switch (menu_control(&bbs_menu, ch))
+			switch (menu_control(p_bbs_menu, ch))
 			{
 			case EXITBBS:
 				return 0;
@@ -229,7 +229,7 @@ int bbs_center()
 				show_top("");
 				show_active_board();
 				show_bottom("");
-				display_current_menu(&bbs_menu);
+				display_menu(p_bbs_menu);
 				break;
 			case NOREDRAW:
 			case UNKNOWN_CMD:

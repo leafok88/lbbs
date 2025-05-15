@@ -145,9 +145,15 @@ int main(int argc, char *argv[])
 	}
 
 	// Load menus
-	if (load_menu(&bbs_menu, CONF_MENU) < 0)
+	p_bbs_menu = calloc(1, sizeof(MENU_SET));
+	if (p_bbs_menu == NULL)
 	{
-		unload_menu(&bbs_menu);
+		log_error("OOM: calloc(MENU_SET)\n");
+		return -3;
+	}
+	if (load_menu(p_bbs_menu, CONF_MENU) < 0)
+	{
+		unload_menu(p_bbs_menu);
 		return -3;
 	}
 
@@ -162,8 +168,10 @@ int main(int argc, char *argv[])
 		return -4;
 	}
 
-	// Cleanup
-	unload_menu(&bbs_menu);
+	// Cleanup menu
+	unload_menu(p_bbs_menu);
+	free(p_bbs_menu);
+	p_bbs_menu = NULL;
 
 	log_std("Main process exit normally\n");
 	

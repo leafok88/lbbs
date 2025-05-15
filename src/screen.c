@@ -335,8 +335,9 @@ int display_file_ex(const char *filename, int begin_line, int wait)
 					// prints("\033[T"); // Scroll down 1 line
 					max_lines = screen_rows - 1; // Legacy Fterm only works with this line
 					break;
-				case KEY_DOWN:
 				case CR:
+					igetch_reset();
+				case KEY_DOWN:
 					if (c_line_current + ((screen_rows - 2) - (line - 1)) >= c_line_total) // Reach bottom
 					{
 						break;

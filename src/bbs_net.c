@@ -57,9 +57,9 @@ int load_bbsnet_conf(const char *file_config)
 {
 	FILE *fp;
 	MENU *p_menu;
-	MENU_ITEM *p_menuitem;
+	MENU_ITEM *p_menu_item;
+	MENU_ITEM_ID menu_item_id;
 	char t[256], *t1, *t2, *t3, *t4, *saveptr;
-	int item_count = 0;
 
 	fp = fopen(file_config, "r");
 	if (fp == NULL)
@@ -67,21 +67,31 @@ int load_bbsnet_conf(const char *file_config)
 		return -1;
 	}
 
-	bbsnet_menu.p_menu_name_dict = trie_dict_create();
+	bbsnet_menu.p_menu_pool = calloc(1, sizeof(MENU));
+	if (bbsnet_menu.p_menu_pool == NULL)
+	{
+		log_error("calloc(p_menu_pool) error\n");
+		return -3;
+	}
+	bbsnet_menu.menu_count = 1;
 
-	p_menu = malloc(sizeof(MENU));
-	bbsnet_menu.p_menu[0] = p_menu;
+	bbsnet_menu.p_menu_item_pool = calloc(MAXSTATION, sizeof(MENU_ITEM));
+	if (bbsnet_menu.p_menu_item_pool == NULL)
+	{
+		log_error("calloc(p_menu_item_pool) error\n");
+		return -3;
+	}
+	bbsnet_menu.menu_item_count = MAXSTATION;
+
+	p_menu = (MENU *)get_menu_by_id(&bbsnet_menu, 0);
+
 	strncpy(p_menu->name, "BBSNET", sizeof(p_menu->name) - 1);
 	p_menu->name[sizeof(p_menu->name) - 1] = '\0';
 	p_menu->title.show = 0;
-	p_menu->screen.show = 0;
+	p_menu->screen_show = 0;
 
-	if (trie_dict_set(bbsnet_menu.p_menu_name_dict, p_menu->name, (int64_t)p_menu) != 1)
-	{
-		log_error("Error set BBSNET menu dict [%s]\n", p_menu->name);
-	}
-
-	while (fgets(t, 255, fp) && item_count < MAXSTATION)
+	menu_item_id = 0;
+	while (fgets(t, 255, fp) && menu_item_id < MAXSTATION)
 	{
 		t1 = strtok_r(t, MENU_CONF_DELIM, &saveptr);
 		t2 = strtok_r(NULL, MENU_CONF_DELIM, &saveptr);
@@ -93,45 +103,58 @@ int load_bbsnet_conf(const char *file_config)
 			continue;
 		}
 
-		strncpy(bbsnet_conf[item_count].host1, t2, sizeof(bbsnet_conf[item_count].host1) - 1);
-		bbsnet_conf[item_count].host1[sizeof(bbsnet_conf[item_count].host1) - 1] = '\0';
-		strncpy(bbsnet_conf[item_count].host2, t1, sizeof(bbsnet_conf[item_count].host2) - 1);
-		bbsnet_conf[item_count].host2[sizeof(bbsnet_conf[item_count].host2) - 1] = '\0';
-		strncpy(bbsnet_conf[item_count].ip, t3, sizeof(bbsnet_conf[item_count].ip) - 1);
-		bbsnet_conf[item_count].ip[sizeof(bbsnet_conf[item_count].ip) - 1] = '\0';
-		bbsnet_conf[item_count].port = (in_port_t)(t4 ? atoi(t4) : 23);
+		strncpy(bbsnet_conf[menu_item_id].host1, t2, sizeof(bbsnet_conf[menu_item_id].host1) - 1);
+		bbsnet_conf[menu_item_id].host1[sizeof(bbsnet_conf[menu_item_id].host1) - 1] = '\0';
+		strncpy(bbsnet_conf[menu_item_id].host2, t1, sizeof(bbsnet_conf[menu_item_id].host2) - 1);
+		bbsnet_conf[menu_item_id].host2[sizeof(bbsnet_conf[menu_item_id].host2) - 1] = '\0';
+		strncpy(bbsnet_conf[menu_item_id].ip, t3, sizeof(bbsnet_conf[menu_item_id].ip) - 1);
+		bbsnet_conf[menu_item_id].ip[sizeof(bbsnet_conf[menu_item_id].ip) - 1] = '\0';
+		bbsnet_conf[menu_item_id].port = (in_port_t)(t4 ? atoi(t4) : 23);
 
-		p_menuitem = p_menu->items[item_count] = malloc(sizeof(MENU_ITEM));
-		p_menuitem->row = 2 + item_count / STATION_PER_LINE;
-		p_menuitem->col = 5 + item_count % STATION_PER_LINE * 20;
-		snprintf(p_menuitem->action, sizeof(p_menuitem->action), "%d", item_count);
-		p_menuitem->submenu = 0;
-		p_menuitem->priv = 0;
-		p_menuitem->level = 0;
-		p_menuitem->display = 0;
-		p_menuitem->name[0] =
-			(char)(item_count < MAXSTATION / 2 ? 'A' + item_count : 'a' + item_count);
-		p_menuitem->name[1] = '\0';
-		snprintf(p_menuitem->text, sizeof(p_menuitem->text), "[1;36m%c.[m %s",
-				 p_menuitem->name[0], bbsnet_conf[item_count].host1);
+		p_menu_item = get_menu_item_by_id(&bbsnet_menu, menu_item_id);
+		if (p_menu_item == NULL)
+		{
+			log_error("get_menu_item_by_id(%d) return NULL pointer\n", menu_item_id);
+			return -1;
+		}
 
-		item_count++;
+		p_menu_item->row = (int16_t)(2 + menu_item_id / STATION_PER_LINE);
+		p_menu_item->col = (int16_t)(5 + menu_item_id % STATION_PER_LINE * 20);
+		snprintf(p_menu_item->action, sizeof(p_menu_item->action), "%d", (int16_t)menu_item_id);
+		p_menu_item->submenu = 0;
+		p_menu_item->priv = 0;
+		p_menu_item->level = 0;
+		p_menu_item->display = 0;
+		p_menu_item->name[0] =
+			(char)(menu_item_id < MAXSTATION / 2 ? 'A' + menu_item_id : 'a' + menu_item_id);
+		p_menu_item->name[1] = '\0';
+		snprintf(p_menu_item->text, sizeof(p_menu_item->text), "[1;36m%c.[m %s",
+				 p_menu_item->name[0], bbsnet_conf[menu_item_id].host1);
+
+		p_menu->items[p_menu->item_count] = menu_item_id;
+		p_menu->item_count++;
+		menu_item_id++;
 	}
+
+	bbsnet_menu.menu_item_count = (int16_t)menu_item_id;
+	bbsnet_menu.menu_id_path[0] = 0;
+	bbsnet_menu.menu_item_pos[0] = 0;
+	bbsnet_menu.choose_step = 0;
+
 	fclose(fp);
-
-	p_menu->item_count = item_count;
-	p_menu->item_cur_pos = 0;
-
-	bbsnet_menu.menu_count = 1;
-	bbsnet_menu.menu_select_depth = 0;
-	bbsnet_menu.p_menu_select[0] = bbsnet_menu.p_menu[0];
 
 	return 0;
 }
 
 void unload_bbsnet_conf(void)
 {
-	unload_menu(&bbsnet_menu);
+	bbsnet_menu.menu_count = 0;
+	bbsnet_menu.menu_item_count = 0;
+
+	free(bbsnet_menu.p_menu_pool);
+	bbsnet_menu.p_menu_pool = NULL;
+	free(bbsnet_menu.p_menu_item_pool);
+	bbsnet_menu.p_menu_item_pool = NULL;
 }
 
 void process_bar(int n, int len)
@@ -665,8 +688,8 @@ int bbs_net()
 
 	clearscr();
 	bbsnet_refresh();
-	pos = bbsnet_menu.p_menu[0]->item_cur_pos;
-	display_menu(get_menu(&bbsnet_menu, "BBSNET"));
+	pos = bbsnet_menu.menu_item_pos[0];
+	display_menu(&bbsnet_menu);
 	bbsnet_selchange(pos);
 
 	while (!SYS_server_exit)
@@ -684,10 +707,11 @@ int bbs_net()
 			}
 			continue;
 		case CR:
-			pos = bbsnet_menu.p_menu[0]->item_cur_pos;
+			igetch_reset();
+			pos = bbsnet_menu.menu_item_pos[0];
 			bbsnet_connect(pos);
 			bbsnet_refresh();
-			display_current_menu(&bbsnet_menu);
+			display_menu(&bbsnet_menu);
 			bbsnet_selchange(pos);
 			break;
 		case KEY_UP:
@@ -695,7 +719,7 @@ int bbs_net()
 			{
 				menu_control(&bbsnet_menu, KEY_UP);
 			}
-			pos = bbsnet_menu.p_menu[0]->item_cur_pos;
+			pos = bbsnet_menu.menu_item_pos[0];
 			bbsnet_selchange(pos);
 			break;
 		case KEY_DOWN:
@@ -703,22 +727,22 @@ int bbs_net()
 			{
 				menu_control(&bbsnet_menu, KEY_DOWN);
 			}
-			pos = bbsnet_menu.p_menu[0]->item_cur_pos;
+			pos = bbsnet_menu.menu_item_pos[0];
 			bbsnet_selchange(pos);
 			break;
 		case KEY_LEFT:
 			menu_control(&bbsnet_menu, KEY_UP);
-			pos = bbsnet_menu.p_menu[0]->item_cur_pos;
+			pos = bbsnet_menu.menu_item_pos[0];
 			bbsnet_selchange(pos);
 			break;
 		case KEY_RIGHT:
 			menu_control(&bbsnet_menu, KEY_DOWN);
-			pos = bbsnet_menu.p_menu[0]->item_cur_pos;
+			pos = bbsnet_menu.menu_item_pos[0];
 			bbsnet_selchange(pos);
 			break;
 		default:
 			menu_control(&bbsnet_menu, ch);
-			pos = bbsnet_menu.p_menu[0]->item_cur_pos;
+			pos = bbsnet_menu.menu_item_pos[0];
 			bbsnet_selchange(pos);
 			break;
 		}

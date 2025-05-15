@@ -25,7 +25,7 @@ AC_CHECK_LIB([z], [unzip])
 AC_HEADER_SYS_WAIT
 AC_CHECK_HEADERS([arpa/inet.h dflcn.h fcntl.h memory.h netdb.h netinet/in.h signal.h stdint.h stdlib.h \
 					string.h strings.h sys/epoll.h sys/ioctl.h sys/param.h sys/socket.h sys/time.h \
-					sys/syscall.h sys/wait.h systemd/sd-daemon.h unistd.h mysql.h])
+					sys/shm.h sys/ipc.h sys/syscall.h sys/wait.h systemd/sd-daemon.h unistd.h mysql.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
