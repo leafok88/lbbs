@@ -33,9 +33,6 @@
 
 #define ACTIVE_BOARD_HEIGHT 8
 
-int screen_rows = 24;
-int screen_cols = 80;
-
 void moveto(int row, int col)
 {
 	if (row >= 0)
@@ -79,7 +76,7 @@ void clearscr()
 
 int press_any_key()
 {
-	moveto(screen_rows, 0);
+	moveto(SCREEN_ROWS, 0);
 	clrtoeol();
 
 	prints("                           \033[1;33m按任意键继续...\033[0;37m");
@@ -270,15 +267,15 @@ int display_file_ex(const char *filename, int begin_line, int wait)
 
 	p_line_offsets = (long *)malloc(sizeof(long) * MAX_FILE_LINES);
 
-	c_line_total = split_data_lines(p_data, screen_cols, p_line_offsets, MAX_FILE_LINES);
+	c_line_total = split_data_lines(p_data, SCREEN_COLS, p_line_offsets, MAX_FILE_LINES);
 
-	clrline(begin_line, screen_rows);
+	clrline(begin_line, SCREEN_ROWS);
 	line = begin_line;
-	max_lines = screen_rows - 1;
+	max_lines = SCREEN_ROWS - 1;
 
 	while (!SYS_server_exit && loop)
 	{
-		if (c_line_current >= c_line_total && c_line_total <= screen_rows - 2)
+		if (c_line_current >= c_line_total && c_line_total <= SCREEN_ROWS - 2)
 		{
 			if (wait)
 			{
@@ -295,16 +292,16 @@ int display_file_ex(const char *filename, int begin_line, int wait)
 
 		if (c_line_current >= c_line_total || line >= max_lines)
 		{
-			if (c_line_current - (line - 1) + (screen_rows - 2) < c_line_total)
+			if (c_line_current - (line - 1) + (SCREEN_ROWS - 2) < c_line_total)
 			{
-				percentile = (c_line_current - (line - 1) + (screen_rows - 2)) * 100 / c_line_total;
+				percentile = (c_line_current - (line - 1) + (SCREEN_ROWS - 2)) * 100 / c_line_total;
 			}
 			else
 			{
 				percentile = 100;
 			}
 
-			moveto(screen_rows, 0);
+			moveto(SCREEN_ROWS, 0);
 			prints("\033[1;44;32m%s (%d%%)%s\033[33m          │ 结束 ← <q> │ ↑/↓/PgUp/PgDn 移动 │ ? 辅助说明 │     \033[m",
 				   (percentile < 100 ? "下面还有喔" : "没有更多了"), percentile,
 				   (percentile < 10 ? "  " : (percentile < 100 ? " " : "")));
@@ -323,14 +320,14 @@ int display_file_ex(const char *filename, int begin_line, int wait)
 				case KEY_HOME:
 					c_line_current = 0;
 					line = begin_line;
-					max_lines = screen_rows - 1;
-					clrline(begin_line, screen_rows);
+					max_lines = SCREEN_ROWS - 1;
+					clrline(begin_line, SCREEN_ROWS);
 					break;
 				case KEY_END:
-					c_line_current = c_line_total - (screen_rows - 2);
+					c_line_current = c_line_total - (SCREEN_ROWS - 2);
 					line = begin_line;
-					max_lines = screen_rows - 1;
-					clrline(begin_line, screen_rows);
+					max_lines = SCREEN_ROWS - 1;
+					clrline(begin_line, SCREEN_ROWS);
 					break;
 				case KEY_UP:
 					if (c_line_current - line < 0) // Reach top
@@ -341,19 +338,19 @@ int display_file_ex(const char *filename, int begin_line, int wait)
 					line = begin_line;
 					// max_lines = begin_line + 1;
 					// prints("\033[T"); // Scroll down 1 line
-					max_lines = screen_rows - 1; // Legacy Fterm only works with this line
+					max_lines = SCREEN_ROWS - 1; // Legacy Fterm only works with this line
 					break;
 				case CR:
 					igetch_reset();
 				case KEY_DOWN:
-					if (c_line_current + ((screen_rows - 2) - (line - 1)) >= c_line_total) // Reach bottom
+					if (c_line_current + ((SCREEN_ROWS - 2) - (line - 1)) >= c_line_total) // Reach bottom
 					{
 						break;
 					}
-					c_line_current += ((screen_rows - 2) - (line - 1));
-					line = screen_rows - 2;
-					max_lines = screen_rows - 1;
-					moveto(screen_rows, 0);
+					c_line_current += ((SCREEN_ROWS - 2) - (line - 1));
+					line = SCREEN_ROWS - 2;
+					max_lines = SCREEN_ROWS - 1;
+					moveto(SCREEN_ROWS, 0);
 					clrtoeol();
 					prints("\033[S"); // Scroll up 1 line
 					break;
@@ -363,31 +360,31 @@ int display_file_ex(const char *filename, int begin_line, int wait)
 					{
 						break;
 					}
-					c_line_current -= ((screen_rows - 3) + (line - 1));
+					c_line_current -= ((SCREEN_ROWS - 3) + (line - 1));
 					if (c_line_current < 0)
 					{
 						c_line_current = 0;
 					}
 					line = begin_line;
-					max_lines = screen_rows - 1;
-					clrline(begin_line, screen_rows);
+					max_lines = SCREEN_ROWS - 1;
+					clrline(begin_line, SCREEN_ROWS);
 					break;
 				case KEY_RIGHT:
 				case KEY_PGDN:
 				case Ctrl('F'):
 				case KEY_SPACE:
-					if (c_line_current + (screen_rows - 2) - (line - 1) >= c_line_total) // Reach bottom
+					if (c_line_current + (SCREEN_ROWS - 2) - (line - 1) >= c_line_total) // Reach bottom
 					{
 						break;
 					}
-					c_line_current += (screen_rows - 3) - (line - 1);
-					if (c_line_current + screen_rows - 2 > c_line_total) // No enough lines to display
+					c_line_current += (SCREEN_ROWS - 3) - (line - 1);
+					if (c_line_current + SCREEN_ROWS - 2 > c_line_total) // No enough lines to display
 					{
-						c_line_current = c_line_total - (screen_rows - 2);
+						c_line_current = c_line_total - (SCREEN_ROWS - 2);
 					}
 					line = begin_line;
-					max_lines = screen_rows - 1;
-					clrline(begin_line, screen_rows);
+					max_lines = SCREEN_ROWS - 1;
+					clrline(begin_line, SCREEN_ROWS);
 					break;
 				case KEY_LEFT:
 				case 'q':
@@ -410,8 +407,8 @@ int display_file_ex(const char *filename, int begin_line, int wait)
 					// Refresh after display help information
 					c_line_current -= (line - 1);
 					line = begin_line;
-					max_lines = screen_rows - 1;
-					clrline(begin_line, screen_rows);
+					max_lines = SCREEN_ROWS - 1;
+					clrline(begin_line, SCREEN_ROWS);
 					break;
 				default:
 					log_std("Input: %d\n", ch);
@@ -498,7 +495,7 @@ int show_bottom(char *msg)
 	time_online = time(0) - BBS_login_tm;
 	tm_online = gmtime(&time_online);
 
-	moveto(screen_rows, 0);
+	moveto(SCREEN_ROWS, 0);
 	clrtoeol();
 	prints("\033[1;44;33m[\033[36m%s\033[33m]%s帐号[\033[36m%s\033[33m]"
 		   "[\033[36m%1d\033[33m:\033[36m%2d\033[33m:\033[36m%2d\033[33m]\033[m",
@@ -545,7 +542,7 @@ int show_active_board()
 			break;
 		}
 		line++;
-		len = split_line(buffer, screen_cols, &end_of_line, &display_len);
+		len = split_line(buffer, SCREEN_COLS, &end_of_line, &display_len);
 		buffer[len] = '\0'; // Truncate over-length line
 		moveto(3 + i, 0);
 		prints("%s", buffer);

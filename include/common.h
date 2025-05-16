@@ -46,6 +46,10 @@ extern char app_version[256];
 #define VAR_MAX_USER_ONLINE "var/max_user_online.dat"
 #define VAR_BBS_TOP "var/bbs_top.txt"
 
+// Screen
+#define SCREEN_ROWS 24
+#define SCREEN_COLS 80
+
 // Network
 #define IP_ADDR_LEN 50
 #define MAX_EVENTS 10

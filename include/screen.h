@@ -17,9 +17,6 @@
 #ifndef _SCREEN_H_
 #define _SCREEN_H_
 
-extern int screen_rows;
-extern int screen_cols;
-
 extern void moveto(int row, int col);
 
 extern void clrtoeol();
