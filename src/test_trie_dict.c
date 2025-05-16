@@ -29,6 +29,11 @@ const char *keys[] = {
 
 int keys_cnt = 6;
 
+void test_traverse_cb(const char * key, int64_t value)
+{
+	printf("Traverse key: %s\n", key);
+}
+
 int main(int argc, char *argv[])
 {
 	TRIE_NODE *p_dict;
@@ -76,6 +81,8 @@ int main(int argc, char *argv[])
 			printf("Value of [%s] is incorrect (%ld != %ld)\n", keys[i], value, TEST_VAL >> i);
 		}
 	}
+
+	trie_dict_traverse(p_dict, test_traverse_cb);
 
 	for (int i = 0; i < keys_cnt; i++)
 	{
@@ -140,6 +147,8 @@ int main(int argc, char *argv[])
 			}
 		}
 	}
+
+	trie_dict_traverse(p_dict, test_traverse_cb);
 
 	for (int i = 0; i < keys_cnt; i++)
 	{

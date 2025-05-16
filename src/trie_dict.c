@@ -39,6 +39,32 @@ int char_to_offset(char c)
 	return -1;
 }
 
+char offset_to_char(int i)
+{
+	if (i < 0)
+	{
+		return '\0';
+	}
+	else if (i < 26)
+	{
+		return (char)('A' + i);
+	}
+	else if (i < 52)
+	{
+		return (char)('a' + (i - 26));
+	}
+	else if (i < 62)
+	{
+		return (char)('0' + (i - 52));
+	}
+	else if (i == 62)
+	{
+		return '_';
+	}
+
+	return '\0';
+}
+
 TRIE_NODE *trie_dict_create(void)
 {
 	TRIE_NODE *p_dict;
@@ -169,4 +195,35 @@ int trie_dict_del(TRIE_NODE *p_dict, const char *key)
 	}
 
 	return -1; // NULL key
+}
+
+static void _trie_dict_traverse(TRIE_NODE *p_dict, trie_dict_traverse_cb cb, char *key, int depth)
+{
+	if (p_dict == NULL || depth >= TRIE_MAX_KEY_LEN)
+	{
+		return;
+	}
+
+	for (int i = 0; i < TRIE_CHILDREN; i++)
+	{
+		key[depth] = offset_to_char(i);
+		key[depth + 1] = '\0';
+
+		if (p_dict->flags[i] != 0)
+		{
+			(*cb)(key, p_dict->values[i]);
+		}
+
+		if (p_dict->p_nodes[i] != NULL && depth + 1 < TRIE_MAX_KEY_LEN)
+		{
+			_trie_dict_traverse(p_dict->p_nodes[i], cb, key, depth + 1);
+		}
+	}	
+}
+
+void trie_dict_traverse(TRIE_NODE *p_dict, trie_dict_traverse_cb cb)
+{
+	char key[TRIE_MAX_KEY_LEN + 1];
+
+	_trie_dict_traverse(p_dict, cb, key, 0);
 }

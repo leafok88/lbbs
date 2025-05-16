@@ -20,6 +20,7 @@
 #include <stdint.h>
 
 #define TRIE_CHILDREN 63 // A-Za-z0-9_
+#define TRIE_MAX_KEY_LEN 1023
 
 struct trie_node_t
 {
@@ -29,11 +30,15 @@ struct trie_node_t
 };
 typedef struct trie_node_t TRIE_NODE;
 
+typedef void (*trie_dict_traverse_cb)(const char *, int64_t);
+
 extern TRIE_NODE *trie_dict_create(void);
 extern void trie_dict_destroy(TRIE_NODE *p_dict);
 
 extern int trie_dict_set(TRIE_NODE *p_dict, const char *key, int64_t value);
 extern int trie_dict_get(TRIE_NODE *p_dict, const char *key, int64_t *p_value);
 extern int trie_dict_del(TRIE_NODE *p_dict, const char *key);
+
+extern void trie_dict_traverse(TRIE_NODE *p_dict, trie_dict_traverse_cb cb);
 
 #endif //_TRIE_DICT_H_
