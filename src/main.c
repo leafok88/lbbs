@@ -21,6 +21,7 @@
 #include "log.h"
 #include "io.h"
 #include "menu.h"
+#include "file_loader.h"
 #include <stdlib.h>
 #include <signal.h>
 #include <string.h>
@@ -159,6 +160,20 @@ int main(int argc, char *argv[])
 	}
 	unload_menu_shm(p_bbs_menu);
 
+	// Load data files
+	if (file_loader_init(FILE_MMAP_COUNT_LIMIT) < 0)
+	{
+		log_error("file_loader_init() error\n");
+		return -4;
+	}
+	for (int i = 0; i < data_files_load_startup_count; i++)
+	{
+		if (load_file_mmap(data_files_load_startup[i]) < 0)
+		{
+			log_error("load_file_mmap(%s) error\n", data_files_load_startup[i]);
+		}
+	}
+
 	// Set signal handler
 	signal(SIGHUP, sig_hup_handler);
 	signal(SIGCHLD, sig_chld_handler);
@@ -167,6 +182,9 @@ int main(int argc, char *argv[])
 	// Initialize socket server
 	net_server(BBS_address, BBS_port);
 
+	// Cleanup loaded data files
+	file_loader_cleanup();
+	
 	// Cleanup menu
 	unload_menu(p_bbs_menu);
 	free(p_bbs_menu);

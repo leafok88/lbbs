@@ -25,8 +25,6 @@
 #include <sys/mman.h>
 #include <sys/stat.h>
 
-#define FILE_MMAP_COUNT_LIMIT 256
-
 static FILE_MMAP *p_file_mmap_pool = NULL;
 static int file_mmap_count = 0;
 static int file_mmap_free_index = -1;
@@ -118,7 +116,7 @@ int load_file_mmap(const char *filename)
 
 	size = (size_t)sb.st_size;
 
-	p_data = mmap(NULL, size, PROT_READ, MAP_PRIVATE, fd, 0L);
+	p_data = mmap(NULL, size, PROT_READ, MAP_SHARED, fd, 0L);
 	if (p_data == MAP_FAILED)
 	{
 		log_error("mmap() error (%d)\n", errno);

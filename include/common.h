@@ -46,6 +46,12 @@ extern char app_version[256];
 #define VAR_MAX_USER_ONLINE "var/max_user_online.dat"
 #define VAR_BBS_TOP "var/bbs_top.txt"
 
+// File loader
+extern const char *data_files_load_startup[];
+extern int data_files_load_startup_count;
+extern const char *data_files_load_on_timeval[];
+extern int data_files_load_timeval_count;
+
 // Screen
 #define SCREEN_ROWS 24
 #define SCREEN_COLS 80
@@ -74,8 +80,9 @@ extern volatile int SYS_server_exit;
 extern volatile int SYS_child_process_count;
 extern volatile int SYS_child_exit;
 extern volatile int SYS_menu_reload;
+extern volatile int SYS_data_file_reload;
 
 // Network
-extern const char * ip_mask(char * s, int level, char mask);
+extern const char *ip_mask(char *s, int level, char mask);
 
 #endif //_COMMON_H_

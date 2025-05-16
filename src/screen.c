@@ -14,12 +14,13 @@
  *                                                                         *
  ***************************************************************************/
 
+#include "screen.h"
 #include "bbs.h"
 #include "common.h"
 #include "str_process.h"
 #include "log.h"
 #include "io.h"
-#include "screen.h"
+#include "file_loader.h"
 #include <fcntl.h>
 #include <string.h>
 #include <ctype.h>
@@ -228,54 +229,37 @@ int display_file_ex(const char *filename, int begin_line, int wait)
 {
 	static int show_help = 1;
 	char buffer[LINE_BUFFER_LEN];
-	void *p_data;
-	int ch = 0;
+	int ch = KEY_NULL;
 	int input_ok, line, max_lines;
-	long int c_line_current = 0;
-	long int c_line_total = 0;
-	int fd;
-	struct stat sb;
-	long *p_line_offsets;
+	long int line_current = 0;
+	const FILE_MMAP *p_file_mmap;
 	long int len;
 	long int percentile;
-	int loop = 1;
+	int loop;
 
-	if ((fd = open(filename, O_RDONLY)) < 0)
+	if ((p_file_mmap = get_file_mmap(filename)) == NULL)
 	{
-		log_error("open(%s) error (%d)\n", filename, errno);
-		return -1;
+		if (load_file_mmap(filename) < 0)
+		{
+			log_error("load_file_mmap(%s) error\n", filename);
+			return KEY_NULL;
+		}
+
+		if ((p_file_mmap = get_file_mmap(filename)) == NULL)
+		{
+			log_error("get_file_mmap(%s) error\n", filename);
+			return KEY_NULL;
+		}
 	}
-
-	if (fstat(fd, &sb) < 0)
-	{
-		log_error("fstat(fd) error (%d)\n", errno);
-		return -1;
-	}
-
-	p_data = mmap(NULL, (size_t)sb.st_size, PROT_READ, MAP_PRIVATE, fd, 0L);
-	if (p_data == MAP_FAILED)
-	{
-		log_error("mmap() error (%d)\n", errno);
-		return -2;
-	}
-
-	if (close(fd) < 0)
-	{
-		log_error("close(fd) error (%d)\n", errno);
-		return -1;
-	}
-
-	p_line_offsets = (long *)malloc(sizeof(long) * MAX_FILE_LINES);
-
-	c_line_total = split_data_lines(p_data, SCREEN_COLS, p_line_offsets, MAX_FILE_LINES);
 
 	clrline(begin_line, SCREEN_ROWS);
 	line = begin_line;
 	max_lines = SCREEN_ROWS - 1;
 
+	loop = 1;
 	while (!SYS_server_exit && loop)
 	{
-		if (c_line_current >= c_line_total && c_line_total <= SCREEN_ROWS - 2)
+		if (line_current >= p_file_mmap->line_total && p_file_mmap->line_total <= SCREEN_ROWS - 2)
 		{
 			if (wait)
 			{
@@ -290,11 +274,11 @@ int display_file_ex(const char *filename, int begin_line, int wait)
 			break;
 		}
 
-		if (c_line_current >= c_line_total || line >= max_lines)
+		if (line_current >= p_file_mmap->line_total || line >= max_lines)
 		{
-			if (c_line_current - (line - 1) + (SCREEN_ROWS - 2) < c_line_total)
+			if (line_current - (line - 1) + (SCREEN_ROWS - 2) < p_file_mmap->line_total)
 			{
-				percentile = (c_line_current - (line - 1) + (SCREEN_ROWS - 2)) * 100 / c_line_total;
+				percentile = (line_current - (line - 1) + (SCREEN_ROWS - 2)) * 100 / p_file_mmap->line_total;
 			}
 			else
 			{
@@ -318,23 +302,23 @@ int display_file_ex(const char *filename, int begin_line, int wait)
 				case KEY_TIMEOUT:
 					goto cleanup;
 				case KEY_HOME:
-					c_line_current = 0;
+					line_current = 0;
 					line = begin_line;
 					max_lines = SCREEN_ROWS - 1;
 					clrline(begin_line, SCREEN_ROWS);
 					break;
 				case KEY_END:
-					c_line_current = c_line_total - (SCREEN_ROWS - 2);
+					line_current = p_file_mmap->line_total - (SCREEN_ROWS - 2);
 					line = begin_line;
 					max_lines = SCREEN_ROWS - 1;
 					clrline(begin_line, SCREEN_ROWS);
 					break;
 				case KEY_UP:
-					if (c_line_current - line < 0) // Reach top
+					if (line_current - line < 0) // Reach top
 					{
 						break;
 					}
-					c_line_current -= line;
+					line_current -= line;
 					line = begin_line;
 					// max_lines = begin_line + 1;
 					// prints("\033[T"); // Scroll down 1 line
@@ -343,11 +327,11 @@ int display_file_ex(const char *filename, int begin_line, int wait)
 				case CR:
 					igetch_reset();
 				case KEY_DOWN:
-					if (c_line_current + ((SCREEN_ROWS - 2) - (line - 1)) >= c_line_total) // Reach bottom
+					if (line_current + ((SCREEN_ROWS - 2) - (line - 1)) >= p_file_mmap->line_total) // Reach bottom
 					{
 						break;
 					}
-					c_line_current += ((SCREEN_ROWS - 2) - (line - 1));
+					line_current += ((SCREEN_ROWS - 2) - (line - 1));
 					line = SCREEN_ROWS - 2;
 					max_lines = SCREEN_ROWS - 1;
 					moveto(SCREEN_ROWS, 0);
@@ -356,14 +340,14 @@ int display_file_ex(const char *filename, int begin_line, int wait)
 					break;
 				case KEY_PGUP:
 				case Ctrl('B'):
-					if (c_line_current - line < 0) // Reach top
+					if (line_current - line < 0) // Reach top
 					{
 						break;
 					}
-					c_line_current -= ((SCREEN_ROWS - 3) + (line - 1));
-					if (c_line_current < 0)
+					line_current -= ((SCREEN_ROWS - 3) + (line - 1));
+					if (line_current < 0)
 					{
-						c_line_current = 0;
+						line_current = 0;
 					}
 					line = begin_line;
 					max_lines = SCREEN_ROWS - 1;
@@ -373,14 +357,14 @@ int display_file_ex(const char *filename, int begin_line, int wait)
 				case KEY_PGDN:
 				case Ctrl('F'):
 				case KEY_SPACE:
-					if (c_line_current + (SCREEN_ROWS - 2) - (line - 1) >= c_line_total) // Reach bottom
+					if (line_current + (SCREEN_ROWS - 2) - (line - 1) >= p_file_mmap->line_total) // Reach bottom
 					{
 						break;
 					}
-					c_line_current += (SCREEN_ROWS - 3) - (line - 1);
-					if (c_line_current + SCREEN_ROWS - 2 > c_line_total) // No enough lines to display
+					line_current += (SCREEN_ROWS - 3) - (line - 1);
+					if (line_current + SCREEN_ROWS - 2 > p_file_mmap->line_total) // No enough lines to display
 					{
-						c_line_current = c_line_total - (SCREEN_ROWS - 2);
+						line_current = p_file_mmap->line_total - (SCREEN_ROWS - 2);
 					}
 					line = begin_line;
 					max_lines = SCREEN_ROWS - 1;
@@ -405,7 +389,7 @@ int display_file_ex(const char *filename, int begin_line, int wait)
 					show_help = 1;
 
 					// Refresh after display help information
-					c_line_current -= (line - 1);
+					line_current -= (line - 1);
 					line = begin_line;
 					max_lines = SCREEN_ROWS - 1;
 					clrline(begin_line, SCREEN_ROWS);
@@ -422,31 +406,24 @@ int display_file_ex(const char *filename, int begin_line, int wait)
 			continue;
 		}
 
-		len = p_line_offsets[c_line_current + 1] - p_line_offsets[c_line_current];
+		len = p_file_mmap->line_offsets[line_current + 1] - p_file_mmap->line_offsets[line_current];
 		if (len >= LINE_BUFFER_LEN)
 		{
 			log_error("Error length exceeds buffer size: %d\n", len);
 			len = LINE_BUFFER_LEN - 1;
 		}
 
-		memcpy(buffer, (const char *)p_data + p_line_offsets[c_line_current], (size_t)len);
+		memcpy(buffer, (const char *)p_file_mmap->p_data + p_file_mmap->line_offsets[line_current], (size_t)len);
 		buffer[len] = '\0';
 
 		moveto(line, 0);
 		clrtoeol();
 		prints("%s", buffer);
-		c_line_current++;
+		line_current++;
 		line++;
 	}
 
 cleanup:
-	if (munmap(p_data, (size_t)sb.st_size) < 0)
-	{
-		log_error("munmap() error (%d)\n", errno);
-	}
-
-	free(p_line_offsets);
-
 	return ch;
 }
 

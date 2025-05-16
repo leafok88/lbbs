@@ -20,6 +20,8 @@
 #include "common.h"
 #include <stddef.h>
 
+#define FILE_MMAP_COUNT_LIMIT 256
+
 struct file_mmap_t
 {
 	size_t size;
