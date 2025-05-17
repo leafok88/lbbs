@@ -129,6 +129,7 @@ int net_server(const char *hostaddr, in_port_t port)
 			sd_notify(0, "STOPPING=1");
 			sd_notify_stopping = 1;
 		}
+
 		while ((SYS_child_exit || SYS_server_exit) && SYS_child_process_count > 0)
 		{
 			SYS_child_exit = 0;
@@ -167,6 +168,7 @@ int net_server(const char *hostaddr, in_port_t port)
 		if (SYS_menu_reload && !SYS_server_exit)
 		{
 			SYS_menu_reload = 0;
+			sd_notify(0, "RELOADING=1");
 
 			p_bbs_menu_new = calloc(1, sizeof(MENU_SET));
 			if (p_bbs_menu_new == NULL)
@@ -192,11 +194,14 @@ int net_server(const char *hostaddr, in_port_t port)
 
 				log_std("Reload menu successfully\n");
 			}
+
+			sd_notify(0, "READY=1");
 		}
 
 		if (SYS_data_file_reload && !SYS_server_exit)
 		{
 			SYS_data_file_reload = 0;
+			sd_notify(0, "RELOADING=1");
 
 			for (int i = 0; i < data_files_load_startup_count; i++)
 			{
@@ -207,6 +212,7 @@ int net_server(const char *hostaddr, in_port_t port)
 			}
 
 			log_std("Reload data files successfully\n");
+			sd_notify(0, "READY=1");
 		}
 
 		nfds = epoll_wait(epollfd, events, MAX_EVENTS, 100); // 0.1 second
