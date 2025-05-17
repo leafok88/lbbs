@@ -53,7 +53,6 @@ int file_loader_init()
 
 static void trie_file_dict_cleanup_cb(const char *filename, int64_t shmid)
 {
-	log_std("Cleanup: %s %ld\n", filename, shmid);
 	if (shmctl((int)shmid, IPC_RMID, NULL) == -1)
 	{
 		log_error("shmctl(shmid=%d, IPC_RMID) error (%d)\n", (int)shmid, errno);
