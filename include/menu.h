@@ -19,6 +19,7 @@
 
 #include "common.h"
 #include "trie_dict.h"
+#include "bbs_cmd.h"
 #include <stdint.h>
 #include <sys/shm.h>
 
@@ -42,6 +43,7 @@ struct menu_item_t
 	int16_t row, col;
 	char action[MAX_MENUACTION_LENGTH];
 	MENU_ID action_menu_id;
+	bbs_cmd_handler action_cmd_handler;
 	int8_t submenu;
 	int priv, level;
 	char name[MAX_MENUNAME_LENGTH];

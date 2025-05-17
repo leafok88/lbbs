@@ -54,13 +54,13 @@ void trie_dict_destroy(TRIE_NODE *p_dict)
 		if (p_dict->p_nodes[i] != NULL)
 		{
 			trie_dict_destroy(p_dict->p_nodes[i]);
-			p_dict->p_nodes[i] = NULL;
 		}
 
 		p_dict->flags[i] = 0;
 	}
 
 	free(p_dict);
+	p_dict = NULL;
 }
 
 int trie_dict_set(TRIE_NODE *p_dict, const char *key, int64_t value)

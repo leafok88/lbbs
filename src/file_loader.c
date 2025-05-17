@@ -68,7 +68,6 @@ void file_loader_cleanup(void)
 
 	trie_dict_traverse(p_trie_file_dict, trie_file_dict_cleanup_cb);
 	trie_dict_destroy(p_trie_file_dict);
-	p_trie_file_dict = NULL;
 }
 
 int load_file_shm(const char *filename)

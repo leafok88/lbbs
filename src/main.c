@@ -145,6 +145,12 @@ int main(int argc, char *argv[])
 		return -2;
 	}
 
+	// Load BBS cmd
+	if (load_cmd() < 0)
+	{
+		return -3;
+	}
+
 	// Load menus
 	p_bbs_menu = calloc(1, sizeof(MENU_SET));
 	if (p_bbs_menu == NULL)

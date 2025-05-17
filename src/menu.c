@@ -663,11 +663,21 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 	}
 	fclose(fin);
 
-	// Set menu_item->action_menu_id of each menu item pointing to a submenu to the menu_id of the corresponding submenu
 	for (menu_item_id = 0; menu_item_id < p_menu_set->menu_item_count; menu_item_id++)
 	{
 		p_menu_item = get_menu_item_by_id(p_menu_set, menu_item_id);
-		if (p_menu_item->submenu == 1 && strcmp(p_menu_item->action, "..") != 0)
+
+		// Set menu_item->action_cmd_handler of each menu item pointing to bbs_cmd
+		if (p_menu_item->submenu == 0)
+		{
+			if ((p_menu_item->action_cmd_handler = get_cmd_handler(p_menu_item->action)) == NULL)
+			{
+				log_error("Undefined menu action cmd handler [%s]\n", p_menu_item->action);
+				return -1;
+			}
+		}
+		// Set menu_item->action_menu_id of each menu item pointing to a submenu to the menu_id of the corresponding submenu
+		else if (strcmp(p_menu_item->action, "..") != 0)
 		{
 			if (trie_dict_get(p_menu_set->p_menu_name_dict, p_menu_item->action, (int64_t *)&menu_id) != 1)
 			{
@@ -880,7 +890,7 @@ int menu_control(MENU_SET *p_menu_set, int key)
 		}
 		else
 		{
-			return (exec_cmd(p_menu_item->action, p_menu_item->name));
+			return ((*(p_menu_item->action_cmd_handler))((void *)(p_menu_item->name)));
 		}
 		break;
 	case KEY_LEFT:
@@ -1040,13 +1050,11 @@ int unload_menu(MENU_SET *p_menu_set)
 	if (p_menu_set->p_menu_name_dict != NULL)
 	{
 		trie_dict_destroy(p_menu_set->p_menu_name_dict);
-		p_menu_set->p_menu_name_dict = NULL;
 	}
 
 	if (p_menu_set->p_menu_screen_dict != NULL)
 	{
 		trie_dict_destroy(p_menu_set->p_menu_screen_dict);
-		p_menu_set->p_menu_screen_dict = NULL;
 	}
 
 	unload_menu_shm(p_menu_set);

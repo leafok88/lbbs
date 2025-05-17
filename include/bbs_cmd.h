@@ -17,7 +17,6 @@
 #define _BBS_CMD_H_
 
 #define MAX_CMD_LENGTH 20
-#define MAX_CMD_ID 100
 
 #define MENU_OK 0x0
 #define UNKNOWN_CMD 0xff
@@ -25,16 +24,18 @@
 #define REDRAW 0x1
 #define NOREDRAW 0x2
 
+typedef int (*bbs_cmd_handler)(void *p_param);
+
 struct _bbs_cmd
 {
-	char cmd[MAX_CMD_LENGTH];
-	int (*p_handle)(const char *p_param);
+	const char *cmd;
+	bbs_cmd_handler handler;
 };
 
 typedef struct _bbs_cmd BBS_CMD;
 
-extern BBS_CMD bbs_cmd_list[MAX_CMD_ID];
+extern int load_cmd();
 
-extern int exec_cmd(const char *cmd, const char *param);
+extern bbs_cmd_handler get_cmd_handler(const char *cmd);
 
 #endif //_BBS_CMD_H_

@@ -17,12 +17,12 @@
 #ifndef _MENU_PROC_H_
 #define _MENU_PROC_H_
 
-extern int exec_mbem(const char *);
-extern int exitbbs(const char *);
-extern int bbsnet(const char *);
-extern int license(const char *);
-extern int copyright(const char *);
-extern int reloadbbsmenu(const char *);
-extern int shutdownbbs(const char *);
+extern int exec_mbem(void *param);
+extern int exitbbs(void *param);
+extern int bbsnet(void *param);
+extern int license(void *param);
+extern int copyright(void *param);
+extern int reloadbbsmenu(void *param);
+extern int shutdownbbs(void *param);
 
 #endif //_MENU_PROC_H_

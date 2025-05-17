@@ -16,9 +16,10 @@
 
 #include "bbs_cmd.h"
 #include "menu_proc.h"
+#include "trie_dict.h"
 #include <string.h>
 
-BBS_CMD bbs_cmd_list[MAX_CMD_ID] = {
+static const BBS_CMD bbs_cmd_list[] = {
 	{"RunMBEM", exec_mbem},
 	{"EXITBBS", exitbbs},
 	{"LICENSE", license},
@@ -26,17 +27,53 @@ BBS_CMD bbs_cmd_list[MAX_CMD_ID] = {
 	{"RELOADMENU", reloadbbsmenu},
 	{"SHUTDOWN", shutdownbbs}};
 
-int exec_cmd(const char *cmd, const char *param)
-{
-	int i;
+static const int bbs_cmd_count = 6;
 
-	for (i = 0; i < MAX_CMD_ID && bbs_cmd_list[i].p_handle != 0; i++)
+static TRIE_NODE *p_bbs_cmd_dict;
+
+int load_cmd()
+{
+	if (p_bbs_cmd_dict != NULL)
 	{
-		if (strcmp(cmd, bbs_cmd_list[i].cmd) == 0)
+		return -1;
+	}
+
+	p_bbs_cmd_dict = trie_dict_create();
+
+	if (p_bbs_cmd_dict == NULL)
+	{
+		return -2;
+	}
+
+	for (int i = 0; i < bbs_cmd_count; i++)
+	{
+		if (trie_dict_set(p_bbs_cmd_dict, bbs_cmd_list[i].cmd, (int64_t)i) != 1)
 		{
-			return ((*(bbs_cmd_list[i].p_handle))(param));
+			return -3;
 		}
 	}
 
-	return UNKNOWN_CMD;
+	return 0;
+}
+
+void unload_cmd()
+{
+	trie_dict_destroy(p_bbs_cmd_dict);
+}
+
+bbs_cmd_handler get_cmd_handler(const char *cmd)
+{
+	int64_t i;
+
+	if (p_bbs_cmd_dict == NULL)
+	{
+		return NULL;
+	}
+
+	if (trie_dict_get(p_bbs_cmd_dict, cmd, &i) != 1)
+	{
+		return NULL;
+	}
+
+	return (bbs_cmd_list[i].handler);
 }

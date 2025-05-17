@@ -29,14 +29,14 @@
 #include <time.h>
 #include <unistd.h>
 
-int exec_mbem(const char *str)
+int exec_mbem(void *param)
 {
 	void *hdll;
 	int (*func)();
 	char *c, *s;
 	char buf[FILE_PATH_LEN];
 
-	strncpy(buf, str, sizeof(buf) - 1);
+	strncpy(buf, (const char *)param, sizeof(buf) - 1);
 	buf[sizeof(buf) - 1] = '\0';
 
 	s = strstr(buf, "@mod:");
@@ -77,26 +77,26 @@ int exec_mbem(const char *str)
 	return REDRAW;
 }
 
-int exitbbs(const char *s)
+int exitbbs(void *param)
 {
 	return EXITBBS;
 }
 
-int license(const char *s)
+int license(void *param)
 {
 	display_file_ex(DATA_LICENSE, 1, 1);
 
 	return REDRAW;
 }
 
-int copyright(const char *s)
+int copyright(void *param)
 {
 	display_file_ex(DATA_COPYRIGHT, 1, 1);
 
 	return REDRAW;
 }
 
-int reloadbbsmenu(const char *s)
+int reloadbbsmenu(void *param)
 {
 	clearscr();
 
@@ -116,7 +116,7 @@ int reloadbbsmenu(const char *s)
 	return REDRAW;
 }
 
-int shutdownbbs(const char *s)
+int shutdownbbs(void *param)
 {
 	log_std("Notify main process to exit\n");
 

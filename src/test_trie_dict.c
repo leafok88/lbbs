@@ -184,7 +184,6 @@ int main(int argc, char *argv[])
 	}
 
 	trie_dict_destroy(p_dict);
-	p_dict = NULL;
 
 	printf("Done\n");
 
