@@ -22,37 +22,22 @@
 #include <errno.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <string.h>
+#include <time.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
+#include <sys/shm.h>
+#include <sys/ipc.h>
 
-static FILE_MMAP *p_file_mmap_pool = NULL;
-static int file_mmap_count = 0;
-static int file_mmap_free_index = -1;
 static TRIE_NODE *p_trie_file_dict = NULL;
 
-int file_loader_init(int max_file_mmap_count)
+int file_loader_init()
 {
-	if (max_file_mmap_count > FILE_MMAP_COUNT_LIMIT)
-	{
-		log_error("file_loader_init(%d) argument error\n", max_file_mmap_count);
-		return -1;
-	}
-
-	if (p_file_mmap_pool != NULL || p_trie_file_dict != NULL)
+	if (p_trie_file_dict != NULL)
 	{
 		log_error("File loader already initialized\n");
 		return -1;
 	}
-
-	p_file_mmap_pool = (FILE_MMAP *)calloc((size_t)max_file_mmap_count, sizeof(FILE_MMAP));
-	if (p_file_mmap_pool == NULL)
-	{
-		log_error("calloc(%d p_file_mmap_pool) error\n", max_file_mmap_count);
-		return -2;
-	}
-
-	file_mmap_count = max_file_mmap_count;
-	file_mmap_free_index = 0;
 
 	p_trie_file_dict = trie_dict_create();
 	if (p_trie_file_dict == NULL)
@@ -64,43 +49,41 @@ int file_loader_init(int max_file_mmap_count)
 	return 0;
 }
 
-void file_loader_cleanup(void)
+static void trie_file_dict_cleanup_cb(const char *filename, int64_t shmid)
 {
-	if (p_trie_file_dict != NULL)
+	log_std("Cleanup: %s %ld\n", filename, shmid);
+	if (shmctl((int)shmid, IPC_RMID, NULL) == -1)
 	{
-		trie_dict_destroy(p_trie_file_dict);
-		p_trie_file_dict = NULL;
+		log_error("shmctl(shmid=%d, IPC_RMID) error (%d)\n", (int)shmid, errno);
 	}
-
-	if (p_file_mmap_pool != NULL)
-	{
-		for (int i = 0; i < file_mmap_count; i++)
-		{
-			if (p_file_mmap_pool[i].p_data == NULL)
-			{
-				continue;
-			}
-
-			if (munmap(p_file_mmap_pool[i].p_data, p_file_mmap_pool[i].size) < 0)
-			{
-				log_error("munmap() error (%d)\n", errno);
-			}
-		}
-		free(p_file_mmap_pool);
-		p_file_mmap_pool = NULL;
-	}
-
-	file_mmap_count = 0;
-	file_mmap_free_index = -1;
 }
 
-int load_file_mmap(const char *filename)
+void file_loader_cleanup(void)
+{
+	if (p_trie_file_dict == NULL)
+	{
+		return;
+	}
+
+	trie_dict_traverse(p_trie_file_dict, trie_file_dict_cleanup_cb);
+	trie_dict_destroy(p_trie_file_dict);
+	p_trie_file_dict = NULL;
+}
+
+int load_file_shm(const char *filename)
 {
 	int fd;
 	struct stat sb;
 	void *p_data;
+	size_t data_len;
+	int proj_id;
+	key_t key;
 	size_t size;
-	int file_mmap_index = 0;
+	int shmid;
+	int64_t shmid_old;
+	void *p_shm;
+	long line_total;
+	long *p_line_offsets;
 
 	if ((fd = open(filename, O_RDONLY)) < 0)
 	{
@@ -114,9 +97,8 @@ int load_file_mmap(const char *filename)
 		return -1;
 	}
 
-	size = (size_t)sb.st_size;
-
-	p_data = mmap(NULL, size, PROT_READ, MAP_SHARED, fd, 0L);
+	data_len = (size_t)sb.st_size;
+	p_data = mmap(NULL, data_len, PROT_READ, MAP_SHARED, fd, 0L);
 	if (p_data == MAP_FAILED)
 	{
 		log_error("mmap() error (%d)\n", errno);
@@ -129,81 +111,97 @@ int load_file_mmap(const char *filename)
 		return -1;
 	}
 
-	if (trie_dict_get(p_trie_file_dict, filename, (int64_t *)&file_mmap_index) == 0) // Not exist
+	// Get size of line_offsets[]
+	line_total = 1L; // Reserve for the last line which may not have '\n'
+	for (size_t i = 0; i < data_len; i++)
 	{
-		if (file_mmap_free_index == -1)
+		if (*((const char *)p_data + i) == '\n')
 		{
-			log_error("file_mmap_pool is depleted\n");
-			return -3;
+			line_total++;
 		}
+	}
 
-		file_mmap_index = file_mmap_free_index;
+	// Allocate shared memory
+	proj_id = (int)(time(NULL) % getpid());
+	key = ftok(filename, proj_id);
+	if (key == -1)
+	{
+		log_error("ftok(%s %d) error (%d)\n", filename, proj_id, errno);
+		return -2;
+	}
 
-		if (trie_dict_set(p_trie_file_dict, filename, (int64_t)file_mmap_index) != 1)
+	size = sizeof(data_len) + sizeof(line_total) + data_len + 1 + sizeof(long) * (size_t)line_total;
+	shmid = shmget(key, size, IPC_CREAT | IPC_EXCL | 0600);
+	if (shmid == -1)
+	{
+		log_error("shmget(size = %d) error (%d)\n", size, errno);
+		return -3;
+	}
+	p_shm = shmat(shmid, NULL, 0);
+	if (p_shm == (void *)-1)
+	{
+		log_error("shmat() error (%d)\n", errno);
+		return -3;
+	}
+
+	*((size_t *)p_shm) = data_len;
+	memcpy(p_shm + sizeof(data_len) + sizeof(line_total), p_data, data_len);
+
+	if (munmap(p_data, data_len) < 0)
+	{
+		log_error("munmap() error (%d)\n", errno);
+		return -2;
+	}
+
+	p_data = p_shm + sizeof(data_len) + sizeof(line_total);
+	p_line_offsets = p_data + data_len + 1;
+
+	line_total = split_data_lines(p_data, SCREEN_COLS, p_line_offsets, line_total);
+	*((long *)(p_shm + sizeof(data_len))) = line_total;
+
+	if (shmdt(p_shm) == -1)
+	{
+		log_error("shmdt() error (%d)\n", errno);
+		return -3;
+	}
+
+	if (trie_dict_get(p_trie_file_dict, filename, &shmid_old) == 1)
+	{
+		if (shmctl((int)shmid_old, IPC_RMID, NULL) == -1)
 		{
-			log_error("trie_dict_set(%s) error\n", filename);
-
-			if (munmap(p_data, size) < 0)
-			{
-				log_error("munmap() error (%d)\n", errno);
-			}
-
+			log_error("shmctl(shmid=%d, IPC_RMID) error (%d)\n", (int)shmid_old, errno);
 			return -2;
 		}
-
-		do
-		{
-			file_mmap_free_index++;
-			if (file_mmap_free_index >= file_mmap_count)
-			{
-				file_mmap_free_index = 0;
-			}
-			if (file_mmap_free_index == file_mmap_index) // loop
-			{
-				file_mmap_free_index = -1;
-				break;
-			}
-		} while (p_file_mmap_pool[file_mmap_free_index].p_data != NULL);
 	}
-	else
+
+	if (trie_dict_set(p_trie_file_dict, filename, (int64_t)shmid) != 1)
 	{
-		// Unload existing data
-		if (munmap(p_file_mmap_pool[file_mmap_index].p_data, p_file_mmap_pool[file_mmap_index].size) < 0)
+		log_error("trie_dict_set(%s) error\n", filename);
+
+		if (shmctl(shmid, IPC_RMID, NULL) == -1)
 		{
-			log_error("munmap() error (%d)\n", errno);
+			log_error("shmctl(shmid=%d, IPC_RMID) error (%d)\n", shmid, errno);
 		}
+
+		return -4;
 	}
-
-	p_file_mmap_pool[file_mmap_index].p_data = p_data;
-	p_file_mmap_pool[file_mmap_index].size = size;
-
-	p_file_mmap_pool[file_mmap_index].line_total =
-		split_data_lines(p_data, SCREEN_COLS, p_file_mmap_pool[file_mmap_index].line_offsets, MAX_FILE_LINES);
 
 	return 0;
 }
 
-int unload_file_mmap(const char *filename)
+int unload_file_shm(const char *filename)
 {
-	int file_mmap_index = 0;
+	int64_t shmid = 0;
 
-	if (trie_dict_get(p_trie_file_dict, filename, (int64_t *)&file_mmap_index) != 1)
+	if (trie_dict_get(p_trie_file_dict, filename, (int64_t *)&shmid) != 1)
 	{
 		log_error("trie_dict_get(%s) not found\n", filename);
 		return -1;
 	}
 
-	if (munmap(p_file_mmap_pool[file_mmap_index].p_data, p_file_mmap_pool[file_mmap_index].size) < 0)
+	if (shmctl((int)shmid, IPC_RMID, NULL) == -1)
 	{
-		log_error("munmap() error (%d)\n", errno);
-	}
-
-	p_file_mmap_pool[file_mmap_index].p_data = NULL;
-	p_file_mmap_pool[file_mmap_index].size = 0L;
-
-	if (file_mmap_free_index == -1)
-	{
-		file_mmap_free_index = file_mmap_index;
+		log_error("shmctl(shmid=%d, IPC_RMID) error (%d)\n", (int)shmid, errno);
 	}
 
 	if (trie_dict_del(p_trie_file_dict, filename) != 1)
@@ -215,21 +213,29 @@ int unload_file_mmap(const char *filename)
 	return 0;
 }
 
-const FILE_MMAP *get_file_mmap(const char *filename)
+const void *get_file_shm(const char *filename)
 {
-	int file_mmap_index = file_mmap_free_index;
+	int64_t shmid;
+	const void *p_shm;
 
-	if (p_file_mmap_pool == NULL || p_trie_file_dict == NULL)
+	if (p_trie_file_dict == NULL)
 	{
 		log_error("File loader not initialized\n");
 		return NULL;
 	}
 
-	if (trie_dict_get(p_trie_file_dict, filename, (int64_t *)&file_mmap_index) != 1) // Not exist
+	if (trie_dict_get(p_trie_file_dict, filename, &shmid) != 1) // Not exist
 	{
 		log_error("trie_dict_get(%s) not found\n", filename);
 		return NULL;
 	}
 
-	return (&(p_file_mmap_pool[file_mmap_index]));
+	p_shm = shmat((int)shmid, NULL, SHM_RDONLY);
+	if (p_shm == (void *)-1)
+	{
+		log_error("shmat() error (%d)\n", errno);
+		return NULL;
+	}
+
+	return p_shm;
 }

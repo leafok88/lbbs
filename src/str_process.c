@@ -76,7 +76,7 @@ int split_line(const char *buffer, int max_display_len, int *p_eol, int *p_displ
 	return i;
 }
 
-int split_data_lines(const char *p_buf, int max_display_len, long *p_line_offsets, int max_line_cnt)
+long split_data_lines(const char *p_buf, int max_display_len, long *p_line_offsets, long max_line_cnt)
 {
 	int line_cnt = 0;
 	int len = 0;

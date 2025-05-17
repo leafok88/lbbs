@@ -20,23 +20,12 @@
 #include "common.h"
 #include <stddef.h>
 
-#define FILE_MMAP_COUNT_LIMIT 256
-
-struct file_mmap_t
-{
-	size_t size;
-	void *p_data;
-	long line_offsets[MAX_FILE_LINES];
-	long line_total;
-};
-typedef struct file_mmap_t FILE_MMAP;
-
-extern int file_loader_init(int max_file_mmap_count);
+extern int file_loader_init(void);
 extern void file_loader_cleanup(void);
 
-extern int load_file_mmap(const char *filename);
-extern int unload_file_mmap(const char *filename);
+extern int load_file_shm(const char *filename);
+extern int unload_file_shm(const char *filename);
 
-extern const FILE_MMAP *get_file_mmap(const char *filename);
+extern const void *get_file_shm(const char *filename);
 
 #endif //_FILE_LOADER_H_

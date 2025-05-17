@@ -21,7 +21,6 @@
 
 #define LINE_BUFFER_LEN 1024
 #define FILE_PATH_LEN 4096
-#define MAX_FILE_LINES 65536
 
 // Version
 extern char app_version[256];

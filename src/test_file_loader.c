@@ -31,9 +31,8 @@ int files_cnt = 5;
 int main(int argc, char *argv[])
 {
 	int ret;
-	int file_loader_pool_size = 2;
 	int i;
-	const FILE_MMAP *p_file_mmap;
+	const void *p_file_shm;
 
 	if (log_begin("../log/bbsd.log", "../log/error.log") < 0)
 	{
@@ -44,14 +43,14 @@ int main(int argc, char *argv[])
 	log_std_redirect(STDOUT_FILENO);
 	log_err_redirect(STDERR_FILENO);
 
-	ret = file_loader_init(file_loader_pool_size);
+	ret = file_loader_init();
 	if (ret < 0)
 	{
 		printf("file_loader_init() error (%d)\n", ret);
 		return ret;
 	}
 
-	ret = file_loader_init(file_loader_pool_size);
+	ret = file_loader_init();
 	if (ret == 0)
 	{
 		printf("Rerun file_loader_init() error\n");
@@ -59,32 +58,23 @@ int main(int argc, char *argv[])
 
 	printf("Testing #1\n");
 
-	for (i = 0; i < file_loader_pool_size; i++)
+	for (i = 0; i < files_cnt; i++)
 	{
-		if (load_file_mmap(files[i]) < 0)
+		if (load_file_shm(files[i]) < 0)
 		{
 			printf("Load file %s error\n", files[i]);
 		}
 	}
 
-	for (i = 0; i < file_loader_pool_size; i++)
+	for (i = 0; i < files_cnt; i++)
 	{
-		if ((p_file_mmap = get_file_mmap(files[i])) == NULL)
+		if ((p_file_shm = get_file_shm(files[i])) == NULL)
 		{
-			printf("Get file mmap %s error\n", files[i]);
+			printf("Get file shm %s error\n", files[i]);
 		}
 		else
 		{
-			printf("File: %s size: ", files[i]);
-			printf("size: %ld lines: %ld\n", p_file_mmap->size, p_file_mmap->line_total);
-		}
-	}
-
-	for (i = 0; i < file_loader_pool_size; i++)
-	{
-		if (unload_file_mmap(files[i]) < 0)
-		{
-			printf("Unload file %s error\n", files[i]);
+			printf("File: %s size: %ld lines: %ld\n", files[i], *((size_t *)p_file_shm), *((size_t *)(p_file_shm + sizeof(size_t))));
 		}
 	}
 
@@ -92,15 +82,15 @@ int main(int argc, char *argv[])
 
 	for (i = 0; i < files_cnt; i++)
 	{
-		if (i >= file_loader_pool_size)
+		if (unload_file_shm(files[i]) < 0)
 		{
-			if (unload_file_mmap(files[i - file_loader_pool_size]) < 0)
-			{
-				printf("Unload file %s error\n", files[i]);
-			}
+			printf("Unload file %s error\n", files[i]);
 		}
+	}
 
-		if (load_file_mmap(files[i]) < 0)
+	for (i = 0; i < files_cnt; i++)
+	{
+		if (load_file_shm(files[i]) < 0)
 		{
 			printf("Load file %s error\n", files[i]);
 		}
@@ -110,14 +100,27 @@ int main(int argc, char *argv[])
 
 	for (i = 0; i < files_cnt; i++)
 	{
-		if ((p_file_mmap = get_file_mmap(files[i])) == NULL)
+		if (i % 2 == 0)
 		{
-			printf("Get file mmap %s error\n", files[i]);
+			if (unload_file_shm(files[i]) < 0)
+			{
+				printf("Unload file %s error\n", files[i]);
+			}
 		}
-		else
+	}
+
+	for (i = 0; i < files_cnt; i++)
+	{
+		if (i % 2 != 0)
 		{
-			printf("File: %s size: ", files[i]);
-			printf("size: %ld lines: %ld\n", p_file_mmap->size, p_file_mmap->line_total);
+			if ((p_file_shm = get_file_shm(files[i])) == NULL)
+			{
+				printf("Get file shm %s error\n", files[i]);
+			}
+			else
+			{
+				printf("File: %s size: %ld lines: %ld\n", files[i], *((size_t *)p_file_shm), *((size_t *)(p_file_shm + sizeof(size_t))));
+			}
 		}
 	}
 

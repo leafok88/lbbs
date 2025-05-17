@@ -37,3 +37,5 @@ Makefile.in
 *.Tpo
 /src/bbsd
 /src/test_trie_dict
+/src/test_file_loader
+
