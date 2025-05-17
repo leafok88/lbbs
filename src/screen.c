@@ -438,23 +438,28 @@ int show_top(char *status)
 	int status_len;
 	int section_name_len;
 	int len;
+	char status_f[21];
 
-	len = split_line(status, 20, &truncate, &status_len);
+	strncpy(status_f, status, sizeof(status_f) - 1);
+	status_f[sizeof(status_f) - 1] = '\0';
+
+	len = split_line(status_f, 20, &truncate, &status_len);
 	if (truncate)
 	{
-		status[len] = '\0';
+		log_error("Status string is truncated\n");
+		status_f[len] = '\0';
 	}
 
 	len = split_line(BBS_current_section_name, 20, &truncate, &section_name_len);
 	if (truncate)
 	{
-		status[len] = '\0';
+		log_error("Section name is truncated\n");
 	}
 
 	moveto(1, 0);
 	clrtoeol();
 	prints("\033[1;44;33m%s \033[37m%*s%*s\033[33m ÌÖÂÛÇø [%s]\033[m",
-		   status, (39 - status_len), BBS_name, (30 - section_name_len), "", BBS_current_section_name);
+		   status_f, (39 - status_len), BBS_name, (30 - section_name_len), "", BBS_current_section_name);
 	iflush();
 
 	return 0;
