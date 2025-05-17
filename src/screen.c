@@ -547,7 +547,7 @@ int show_active_board()
 		prints("%s", buffer);
 
 		line_current++;
-		if (line_current + 1 >= line_total)
+		if (line_current >= line_total)
 		{
 			line_current = 0;
 			break;
