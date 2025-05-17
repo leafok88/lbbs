@@ -505,48 +505,55 @@ int show_bottom(const char *msg)
 
 int show_active_board()
 {
-	char filename[FILE_PATH_LEN];
+	static int line_current = 0;
+	static const void *p_file_shm = NULL;
+	static const void *p_data;
+	static size_t data_len;
+	static long line_total;
+	static const long *p_line_offsets;
+
 	char buffer[LINE_BUFFER_LEN];
-	FILE *fin;
-	static int line;
-	int len;
-	int end_of_line;
-	int display_len;
+	long int len;
+
+	if (p_file_shm == NULL)
+	{
+		if ((p_file_shm = get_file_shm(DATA_ACTIVE_BOARD)) == NULL)
+		{
+			log_error("get_file_shm(%s) error\n", DATA_ACTIVE_BOARD);
+			return KEY_NULL;
+		}
+
+		data_len = *((size_t *)p_file_shm);
+		line_total = *((long *)(p_file_shm + sizeof(size_t)));
+		p_data = p_file_shm + sizeof(data_len) + sizeof(line_total);
+		p_line_offsets = p_data + data_len + 1;
+	}
 
 	clrline(3, 2 + ACTIVE_BOARD_HEIGHT);
 
-	if ((fin = fopen(DATA_ACTIVE_BOARD, "r")) == NULL)
-	{
-		log_error("Unable to open file %s\n", filename);
-		return -1;
-	}
-
-	for (int i = 0; i < line; i++)
-	{
-		if (fgets(buffer, sizeof(buffer), fin) == NULL)
-		{
-			line = 0;
-			rewind(fin);
-			break;
-		}
-	}
-
 	for (int i = 0; i < ACTIVE_BOARD_HEIGHT; i++)
 	{
-		if (fgets(buffer, sizeof(buffer), fin) == NULL)
+		len = p_line_offsets[line_current + 1] - p_line_offsets[line_current];
+		if (len >= LINE_BUFFER_LEN)
 		{
-			line = 0;
-			break;
+			log_error("Error length exceeds buffer size: %d\n", len);
+			len = LINE_BUFFER_LEN - 1;
 		}
-		line++;
-		len = split_line(buffer, SCREEN_COLS, &end_of_line, &display_len);
-		buffer[len] = '\0'; // Truncate over-length line
+
+		memcpy(buffer, (const char *)p_data + p_line_offsets[line_current], (size_t)len);
+		buffer[len] = '\0';
+
 		moveto(3 + i, 0);
 		prints("%s", buffer);
+
+		line_current++;
+		if (line_current + 1 >= line_total)
+		{
+			line_current = 0;
+			break;
+		}
 	}
 	iflush();
-
-	fclose(fin);
 
 	return 0;
 }
