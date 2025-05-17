@@ -29,6 +29,8 @@
 #include <sys/shm.h>
 #include <sys/ipc.h>
 
+#define MAX_SPLIT_FILE_LINES 65536
+
 static TRIE_NODE *p_trie_file_dict = NULL;
 
 int file_loader_init()
@@ -83,6 +85,7 @@ int load_file_shm(const char *filename)
 	int64_t shmid_old;
 	void *p_shm;
 	long line_total;
+	long line_offsets[MAX_SPLIT_FILE_LINES];
 	long *p_line_offsets;
 
 	if ((fd = open(filename, O_RDONLY)) < 0)
@@ -111,14 +114,10 @@ int load_file_shm(const char *filename)
 		return -1;
 	}
 
-	// Get size of line_offsets[]
-	line_total = 1L; // Reserve for the last line which may not have '\n'
-	for (size_t i = 0; i < data_len; i++)
+	line_total = split_data_lines(p_data, SCREEN_COLS, line_offsets, MAX_SPLIT_FILE_LINES);
+	if (line_total >= MAX_SPLIT_FILE_LINES)
 	{
-		if (*((const char *)p_data + i) == '\n')
-		{
-			line_total++;
-		}
+		log_error("split_data_lines() truncated over limit lines\n");
 	}
 
 	// Allocate shared memory
@@ -130,7 +129,7 @@ int load_file_shm(const char *filename)
 		return -2;
 	}
 
-	size = sizeof(data_len) + sizeof(line_total) + data_len + 1 + sizeof(long) * (size_t)line_total;
+	size = sizeof(data_len) + sizeof(line_total) + data_len + 1 + sizeof(long) * (size_t)(line_total + 1);
 	shmid = shmget(key, size, IPC_CREAT | IPC_EXCL | 0600);
 	if (shmid == -1)
 	{
@@ -145,6 +144,7 @@ int load_file_shm(const char *filename)
 	}
 
 	*((size_t *)p_shm) = data_len;
+	*((long *)(p_shm + sizeof(data_len))) = line_total;
 	memcpy(p_shm + sizeof(data_len) + sizeof(line_total), p_data, data_len);
 
 	if (munmap(p_data, data_len) < 0)
@@ -155,9 +155,7 @@ int load_file_shm(const char *filename)
 
 	p_data = p_shm + sizeof(data_len) + sizeof(line_total);
 	p_line_offsets = p_data + data_len + 1;
-
-	line_total = split_data_lines(p_data, SCREEN_COLS, p_line_offsets, line_total);
-	*((long *)(p_shm + sizeof(data_len))) = line_total;
+	memcpy(p_line_offsets, line_offsets, sizeof(long) * (size_t)(line_total + 1));
 
 	if (shmdt(p_shm) == -1)
 	{

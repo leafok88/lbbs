@@ -21,6 +21,6 @@
 
 extern int split_line(const char *buffer, int max_display_len, int *p_eol, int *p_display_len);
 
-extern long split_data_lines(const char *p_buf, int max_display_len, long *p_line_offsets, long max_line_cnt);
+extern long split_data_lines(const char *p_buf, int max_display_len, long *p_line_offsets, long line_offsets_count);
 
 #endif //_STR_PROCESS_H_

@@ -56,7 +56,6 @@ int split_line(const char *buffer, int max_display_len, int *p_eol, int *p_displ
 		{
 			if (*p_display_len + 2 > max_display_len)
 			{
-				*p_eol = 1;
 				break;
 			}
 			i++;
@@ -66,7 +65,6 @@ int split_line(const char *buffer, int max_display_len, int *p_eol, int *p_displ
 		{
 			if (*p_display_len + 1 > max_display_len)
 			{
-				*p_eol = 1;
 				break;
 			}
 			(*p_display_len)++;
@@ -76,7 +74,7 @@ int split_line(const char *buffer, int max_display_len, int *p_eol, int *p_displ
 	return i;
 }
 
-long split_data_lines(const char *p_buf, int max_display_len, long *p_line_offsets, long max_line_cnt)
+long split_data_lines(const char *p_buf, int max_display_len, long *p_line_offsets, long line_offsets_count)
 {
 	int line_cnt = 0;
 	int len = 0;
@@ -89,27 +87,21 @@ long split_data_lines(const char *p_buf, int max_display_len, long *p_line_offse
 	{
 		len = split_line(p_buf, max_display_len, &end_of_line, &display_len);
 
-		if (len == 0 || !end_of_line) // !end_of_line == EOF
+		if (len == 0) // EOF
 		{
 			break;
 		}
 
 		// Exceed max_line_cnt
-		if (line_cnt + 1 >= max_line_cnt)
+		if (line_cnt + 1 >= line_offsets_count)
 		{
-			log_error("File line count %d reaches limit\n", line_cnt + 1);
+			log_error("Line count %d reaches limit %d\n", line_cnt + 1, line_offsets_count);
 			return line_cnt;
 		}
 
 		p_line_offsets[line_cnt + 1] = p_line_offsets[line_cnt] + len;
 		line_cnt++;
 		p_buf += len;
-	}
-
-	if (len > 0 && line_cnt + 1 < max_line_cnt)
-	{
-		p_line_offsets[line_cnt + 1] = p_line_offsets[line_cnt] + len;
-		line_cnt++;
 	}
 
 	return line_cnt;

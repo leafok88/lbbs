@@ -26,9 +26,10 @@ const char *files[] = {
 	"../data/copyright.txt",
 	"../data/register.txt",
 	"../data/license.txt",
-	"../data/login_error.txt"};
+	"../data/login_error.txt",
+	"../data/read_help.txt"};
 
-int files_cnt = 5;
+int files_cnt = 6;
 
 int main(int argc, char *argv[])
 {
