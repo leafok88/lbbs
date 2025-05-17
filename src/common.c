@@ -59,17 +59,6 @@ volatile int SYS_menu_reload = 0;
 volatile int SYS_data_file_reload = 0;
 
 // Common function
-const char *str_space(char *string, int length)
-{
-	int i;
-	for (i = 0; i < length; i++)
-	{
-		string[i] = ' ';
-	}
-	string[length] = '\0';
-	return string;
-}
-
 const char *get_time_str(char *s, size_t len)
 {
 	time_t curtime = time(NULL);

@@ -66,7 +66,6 @@ extern char hostaddr_client[IP_ADDR_LEN];
 extern int port_server;
 extern int port_client;
 
-extern const char *str_space(char *string, int length);
 extern const char *get_time_str(char *string, size_t length);
 
 // Signal handler
