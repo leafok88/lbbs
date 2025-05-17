@@ -298,7 +298,7 @@ int display_file_ex(const char *filename, int begin_line, int wait)
 				input_ok = 1;
 				switch (ch)
 				{
-				//case KEY_NULL:
+				// case KEY_NULL:
 				case KEY_TIMEOUT:
 					goto cleanup;
 				case KEY_HOME:
@@ -433,11 +433,11 @@ cleanup:
 
 int show_top(const char *status)
 {
+	char status_f[21];
 	int truncate;
 	int status_len;
 	int section_name_len;
 	int len;
-	char status_f[21];
 
 	strncpy(status_f, status, sizeof(status_f) - 1);
 	status_f[sizeof(status_f) - 1] = '\0';
@@ -457,8 +457,8 @@ int show_top(const char *status)
 
 	moveto(1, 0);
 	clrtoeol();
-	prints("\033[1;44;33m%s \033[37m%*s%*s\033[33m ÌÖÂÛÇø [%s]\033[m",
-		   status_f, (39 - status_len), BBS_name, (30 - section_name_len), "", BBS_current_section_name);
+	prints("\033[1;44;33m%s\033[37m%*s%*s\033[33m ÌÖÂÛÇø [%s]\033[m",
+		   status_f, 32, BBS_name, 26, "", BBS_current_section_name);
 	iflush();
 
 	return 0;
@@ -469,18 +469,34 @@ int show_bottom(const char *msg)
 	char str_time[LINE_BUFFER_LEN];
 	time_t time_online;
 	struct tm *tm_online;
-	int len_username = (int)strnlen(BBS_username, sizeof(BBS_username));
+	char msg_f[21];
+	int truncate;
+	int msg_len;
+	int len;
+	int len_username;
 
 	get_time_str(str_time, sizeof(str_time));
+
+	strncpy(msg_f, msg, sizeof(msg_f) - 1);
+	msg_f[sizeof(msg_f) - 1] = '\0';
+
+	len = split_line(msg_f, 20, &truncate, &msg_len);
+	if (truncate)
+	{
+		log_error("Status string is truncated\n");
+		msg_f[len] = '\0';
+	}
+
+	len_username = (int)strnlen(BBS_username, sizeof(BBS_username));
 
 	time_online = time(0) - BBS_login_tm;
 	tm_online = gmtime(&time_online);
 
 	moveto(SCREEN_ROWS, 0);
 	clrtoeol();
-	prints("\033[1;44;33m[\033[36m%s\033[33m]%*sÕÊºÅ[\033[36m%s\033[33m]"
+	prints("\033[1;44;33m[\033[36m%s\033[33m]%*s%*sÕÊºÅ[\033[36m%s\033[33m]"
 		   "[\033[36m%1d\033[33m:\033[36m%2d\033[33m:\033[36m%2d\033[33m]\033[m",
-		   str_time, 34 - len_username, "", BBS_username,
+		   str_time, 21, msg_f, 13 - len_username, "", BBS_username,
 		   tm_online->tm_mday - 1, tm_online->tm_hour, tm_online->tm_min);
 	iflush();
 

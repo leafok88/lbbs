@@ -33,7 +33,7 @@ const char *keys[] = {
 
 int keys_cnt = 9;
 
-void test_traverse_cb(const char * key, int64_t value)
+void test_traverse_cb(const char *key, int64_t value)
 {
 	printf("Traverse key: %s Len=%ld\n", key, strlen(key));
 }

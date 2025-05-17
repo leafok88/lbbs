@@ -34,13 +34,11 @@ const char *data_files_load_startup[] = {
 	DATA_LOGIN_ERROR,
 	DATA_ACTIVE_BOARD,
 	DATA_READ_HELP,
-	VAR_BBS_TOP
-};
+	VAR_BBS_TOP};
 int data_files_load_startup_count = 9; // Count of data_files_load_startup[]
 
 const char *data_files_load_timeval[] = {
-	VAR_BBS_TOP
-};
+	VAR_BBS_TOP};
 int data_files_load_timeval_count = 1; // Count of data_files_load_timeval[]
 
 // Global declaration for sockets
@@ -58,6 +56,9 @@ volatile int SYS_child_exit = 0;
 volatile int SYS_menu_reload = 0;
 volatile int SYS_data_file_reload = 0;
 
+static const char *weekday[] = {
+	"天", "一", "二", "三", "四", "五", "六"};
+
 // Common function
 const char *get_time_str(char *s, size_t len)
 {
@@ -65,37 +66,14 @@ const char *get_time_str(char *s, size_t len)
 	struct tm *loctime;
 	loctime = localtime(&curtime);
 
-	size_t j = strftime(s, len, "%Y年%m月%d日%H:%M:%S ", loctime);
+	size_t j = strftime(s, len, "%Y年%m月%d日%H:%M:%S 星期", loctime);
 
-	if (j == 0)
+	if (j == 0 || j + strlen(weekday[loctime->tm_wday]) + 1 > len)
 	{
 		return NULL;
 	}
 
-	switch (loctime->tm_wday)
-	{
-	case 0:
-		strncat(s, "星期天", len - j);
-		break;
-	case 1:
-		strncat(s, "星期一", len - j);
-		break;
-	case 2:
-		strncat(s, "星期二", len - j);
-		break;
-	case 3:
-		strncat(s, "星期三", len - j);
-		break;
-	case 4:
-		strncat(s, "星期四", len - j);
-		break;
-	case 5:
-		strncat(s, "星期五", len - j);
-		break;
-	case 6:
-		strncat(s, "星期六", len - j);
-		break;
-	}
+	strncat(s, weekday[loctime->tm_wday], len - 1 - j);
 
 	return s;
 }
