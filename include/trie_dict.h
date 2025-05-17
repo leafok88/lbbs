@@ -19,7 +19,7 @@
 
 #include <stdint.h>
 
-#define TRIE_CHILDREN 63 // A-Za-z0-9_
+#define TRIE_CHILDREN 256
 #define TRIE_MAX_KEY_LEN 1023
 
 struct trie_node_t

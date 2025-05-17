@@ -16,22 +16,26 @@
 
 #include "trie_dict.h"
 #include <stdio.h>
+#include <string.h>
 
 #define TEST_VAL ((int64_t)(0xcb429a63a017661f)) // int64_t
 
 const char *keys[] = {
 	"ABCDEFG",
 	"abcdefg",
+	"../$@^",
 	"1234567890",
+	"1234657890",
+	"HZ²âÊÔºº×ÖHZ", // GBK Chinese might not be displayed in UTF-8 env
 	"P3p4P3z4P_",
 	"_bbBBz_Z_",
 	""};
 
-int keys_cnt = 6;
+int keys_cnt = 9;
 
 void test_traverse_cb(const char * key, int64_t value)
 {
-	printf("Traverse key: %s\n", key);
+	printf("Traverse key: %s Len=%ld\n", key, strlen(key));
 }
 
 int main(int argc, char *argv[])
@@ -39,6 +43,11 @@ int main(int argc, char *argv[])
 	TRIE_NODE *p_dict;
 	int ret;
 	int64_t value;
+
+	for (int i = 0; i < keys_cnt; i++)
+	{
+		printf("Check key %d [%s] len=%ld\n", i, keys[i], strlen(keys[i]));
+	}
 
 	p_dict = trie_dict_create();
 
