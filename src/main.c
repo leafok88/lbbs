@@ -161,14 +161,14 @@ int main(int argc, char *argv[])
 	unload_menu_shm(p_bbs_menu);
 
 	// Load data files
-	if (file_loader_init(FILE_MMAP_COUNT_LIMIT) < 0)
+	if (file_loader_init() < 0)
 	{
 		log_error("file_loader_init() error\n");
 		return -4;
 	}
 	for (int i = 0; i < data_files_load_startup_count; i++)
 	{
-		if (load_file_mmap(data_files_load_startup[i]) < 0)
+		if (load_file_shm(data_files_load_startup[i]) < 0)
 		{
 			log_error("load_file_mmap(%s) error\n", data_files_load_startup[i]);
 		}

@@ -200,7 +200,7 @@ int net_server(const char *hostaddr, in_port_t port)
 
 			for (int i = 0; i < data_files_load_startup_count; i++)
 			{
-				if (load_file_mmap(data_files_load_startup[i]) < 0)
+				if (load_file_shm(data_files_load_startup[i]) < 0)
 				{
 					log_error("load_file_mmap(%s) error\n", data_files_load_startup[i]);
 				}

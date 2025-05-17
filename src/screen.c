@@ -30,7 +30,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/param.h>
-#include <sys/mman.h>
+#include <sys/shm.h>
 
 #define ACTIVE_BOARD_HEIGHT 8
 
@@ -232,25 +232,25 @@ int display_file_ex(const char *filename, int begin_line, int wait)
 	int ch = KEY_NULL;
 	int input_ok, line, max_lines;
 	long int line_current = 0;
-	const FILE_MMAP *p_file_mmap;
+	const void *p_file_shm;
+	const void *p_data;
+	size_t data_len;
+	long line_total;
+	const long *p_line_offsets;
 	long int len;
 	long int percentile;
 	int loop;
 
-	if ((p_file_mmap = get_file_mmap(filename)) == NULL)
+	if ((p_file_shm = get_file_shm(filename)) == NULL)
 	{
-		if (load_file_mmap(filename) < 0)
-		{
-			log_error("load_file_mmap(%s) error\n", filename);
-			return KEY_NULL;
-		}
-
-		if ((p_file_mmap = get_file_mmap(filename)) == NULL)
-		{
-			log_error("get_file_mmap(%s) error\n", filename);
-			return KEY_NULL;
-		}
+		log_error("get_file_shm(%s) error\n", filename);
+		return KEY_NULL;
 	}
+
+	data_len = *((size_t *)p_file_shm);
+	line_total = *((long *)(p_file_shm + sizeof(size_t)));
+	p_data = p_file_shm + sizeof(data_len) + sizeof(line_total);
+	p_line_offsets = p_data + data_len + 1;
 
 	clrline(begin_line, SCREEN_ROWS);
 	line = begin_line;
@@ -259,7 +259,7 @@ int display_file_ex(const char *filename, int begin_line, int wait)
 	loop = 1;
 	while (!SYS_server_exit && loop)
 	{
-		if (line_current >= p_file_mmap->line_total && p_file_mmap->line_total <= SCREEN_ROWS - 2)
+		if (line_current >= line_total && line_total <= SCREEN_ROWS - 2)
 		{
 			if (wait)
 			{
@@ -274,11 +274,11 @@ int display_file_ex(const char *filename, int begin_line, int wait)
 			break;
 		}
 
-		if (line_current >= p_file_mmap->line_total || line >= max_lines)
+		if (line_current >= line_total || line >= max_lines)
 		{
-			if (line_current - (line - 1) + (SCREEN_ROWS - 2) < p_file_mmap->line_total)
+			if (line_current - (line - 1) + (SCREEN_ROWS - 2) < line_total)
 			{
-				percentile = (line_current - (line - 1) + (SCREEN_ROWS - 2)) * 100 / p_file_mmap->line_total;
+				percentile = (line_current - (line - 1) + (SCREEN_ROWS - 2)) * 100 / line_total;
 			}
 			else
 			{
@@ -308,7 +308,7 @@ int display_file_ex(const char *filename, int begin_line, int wait)
 					clrline(begin_line, SCREEN_ROWS);
 					break;
 				case KEY_END:
-					line_current = p_file_mmap->line_total - (SCREEN_ROWS - 2);
+					line_current = line_total - (SCREEN_ROWS - 2);
 					line = begin_line;
 					max_lines = SCREEN_ROWS - 1;
 					clrline(begin_line, SCREEN_ROWS);
@@ -327,7 +327,7 @@ int display_file_ex(const char *filename, int begin_line, int wait)
 				case CR:
 					igetch_reset();
 				case KEY_DOWN:
-					if (line_current + ((SCREEN_ROWS - 2) - (line - 1)) >= p_file_mmap->line_total) // Reach bottom
+					if (line_current + ((SCREEN_ROWS - 2) - (line - 1)) >= line_total) // Reach bottom
 					{
 						break;
 					}
@@ -357,14 +357,14 @@ int display_file_ex(const char *filename, int begin_line, int wait)
 				case KEY_PGDN:
 				case Ctrl('F'):
 				case KEY_SPACE:
-					if (line_current + (SCREEN_ROWS - 2) - (line - 1) >= p_file_mmap->line_total) // Reach bottom
+					if (line_current + (SCREEN_ROWS - 2) - (line - 1) >= line_total) // Reach bottom
 					{
 						break;
 					}
 					line_current += (SCREEN_ROWS - 3) - (line - 1);
-					if (line_current + SCREEN_ROWS - 2 > p_file_mmap->line_total) // No enough lines to display
+					if (line_current + SCREEN_ROWS - 2 > line_total) // No enough lines to display
 					{
-						line_current = p_file_mmap->line_total - (SCREEN_ROWS - 2);
+						line_current = line_total - (SCREEN_ROWS - 2);
 					}
 					line = begin_line;
 					max_lines = SCREEN_ROWS - 1;
@@ -406,14 +406,14 @@ int display_file_ex(const char *filename, int begin_line, int wait)
 			continue;
 		}
 
-		len = p_file_mmap->line_offsets[line_current + 1] - p_file_mmap->line_offsets[line_current];
+		len = p_line_offsets[line_current + 1] - p_line_offsets[line_current];
 		if (len >= LINE_BUFFER_LEN)
 		{
 			log_error("Error length exceeds buffer size: %d\n", len);
 			len = LINE_BUFFER_LEN - 1;
 		}
 
-		memcpy(buffer, (const char *)p_file_mmap->p_data + p_file_mmap->line_offsets[line_current], (size_t)len);
+		memcpy(buffer, (const char *)p_data + p_line_offsets[line_current], (size_t)len);
 		buffer[len] = '\0';
 
 		moveto(line, 0);
@@ -424,36 +424,37 @@ int display_file_ex(const char *filename, int begin_line, int wait)
 	}
 
 cleanup:
+	if (shmdt(p_file_shm) == -1)
+	{
+		log_error("shmdt() error (%d)\n", errno);
+	}
+
 	return ch;
 }
 
 int show_top(char *status)
 {
-	int end_of_line;
-	int display_len;
+	int truncate;
+	int status_len;
+	int section_name_len;
 	int len;
 
-	char space1[LINE_BUFFER_LEN];
-	char space2[LINE_BUFFER_LEN];
-
-	len = split_line(status, 20, &end_of_line, &display_len);
-	if (end_of_line)
+	len = split_line(status, 20, &truncate, &status_len);
+	if (truncate)
 	{
 		status[len] = '\0';
 	}
-	str_space(space1, 31 - display_len);
 
-	len = split_line(BBS_current_section_name, 20, &end_of_line, &display_len);
-	if (end_of_line)
+	len = split_line(BBS_current_section_name, 20, &truncate, &section_name_len);
+	if (truncate)
 	{
 		status[len] = '\0';
 	}
-	str_space(space2, 30 - display_len);
 
 	moveto(1, 0);
 	clrtoeol();
-	prints("\033[1;44;33m%s \033[37m%s%s%s\033[33m 讨论区 [%s]\033[m",
-		   status, space1, BBS_name, space2, BBS_current_section_name);
+	prints("\033[1;44;33m%s \033[37m%*s%*s\033[33m 讨论区 [%s]\033[m",
+		   status, (39 - status_len), BBS_name, (30 - section_name_len), "", BBS_current_section_name);
 	iflush();
 
 	return 0;
