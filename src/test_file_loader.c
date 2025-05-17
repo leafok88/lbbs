@@ -18,6 +18,8 @@
 #include "log.h"
 #include <stdio.h>
 #include <unistd.h>
+#include <errno.h>
+#include <sys/shm.h>
 
 const char *files[] = {
 	"../data/welcome.txt",
@@ -75,6 +77,11 @@ int main(int argc, char *argv[])
 		else
 		{
 			printf("File: %s size: %ld lines: %ld\n", files[i], *((size_t *)p_file_shm), *((size_t *)(p_file_shm + sizeof(size_t))));
+
+			if (shmdt(p_file_shm) == -1)
+			{
+				log_error("shmdt() error (%d)\n", errno);
+			}
 		}
 	}
 
@@ -120,6 +127,11 @@ int main(int argc, char *argv[])
 			else
 			{
 				printf("File: %s size: %ld lines: %ld\n", files[i], *((size_t *)p_file_shm), *((size_t *)(p_file_shm + sizeof(size_t))));
+
+				if (shmdt(p_file_shm) == -1)
+				{
+					log_error("shmdt() error (%d)\n", errno);
+				}
 			}
 		}
 	}
