@@ -68,3 +68,15 @@ To install LBBS quickly, please do the following steps:
 
    sudo /usr/local/lbbs/bin/bbsd
 
+7) Set up systemd
+
+   Create your own /usr/lib/systemd/system/lbbs.service from sample at conf/lbbs.service.default, and make any change if necessary.
+
+   Please note that the startup argument "-f" with bbsd should be used in systemd notify mode.
+
+   Run the following bash command to startup the service:
+
+   systemctl daemon-reload
+
+   systemctl start lbbs
+

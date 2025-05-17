@@ -1,0 +1,14 @@
+[Unit]
+Description=LBBS Server
+After=network-online.target
+
+[Service]
+User=bbs
+Group=bbs
+
+Type=notify
+ExecStart=/usr/local/lbbs/bin/bbsd -f
+KillSignal=SIGTERM
+
+[Install]
+WantedBy=multi-user.target
