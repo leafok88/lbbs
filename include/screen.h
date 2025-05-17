@@ -37,9 +37,9 @@ extern int get_data(int row, int col, char *prompt, char *buffer, int buffer_len
 
 extern int display_file_ex(const char *filename, int begin_line, int wait);
 
-extern int show_top(char *status);
+extern int show_top(const char *status);
 
-extern int show_bottom(char *msg);
+extern int show_bottom(const char *msg);
 
 extern int show_active_board();
 

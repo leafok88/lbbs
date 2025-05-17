@@ -298,7 +298,7 @@ int display_file_ex(const char *filename, int begin_line, int wait)
 				input_ok = 1;
 				switch (ch)
 				{
-				case KEY_NULL:
+				//case KEY_NULL:
 				case KEY_TIMEOUT:
 					goto cleanup;
 				case KEY_HOME:
@@ -395,7 +395,6 @@ int display_file_ex(const char *filename, int begin_line, int wait)
 					clrline(begin_line, SCREEN_ROWS);
 					break;
 				default:
-					log_std("Input: %d\n", ch);
 					input_ok = 0;
 					break;
 				}
@@ -432,7 +431,7 @@ cleanup:
 	return ch;
 }
 
-int show_top(char *status)
+int show_top(const char *status)
 {
 	int truncate;
 	int status_len;
@@ -465,25 +464,24 @@ int show_top(char *status)
 	return 0;
 }
 
-int show_bottom(char *msg)
+int show_bottom(const char *msg)
 {
 	char str_time[LINE_BUFFER_LEN];
-	char space[LINE_BUFFER_LEN];
 	time_t time_online;
 	struct tm *tm_online;
+	int len_username = (int)strnlen(BBS_username, sizeof(BBS_username));
 
 	get_time_str(str_time, sizeof(str_time));
-	str_space(space, 34 - (int)strnlen(BBS_username, sizeof(BBS_username)));
 
 	time_online = time(0) - BBS_login_tm;
 	tm_online = gmtime(&time_online);
 
 	moveto(SCREEN_ROWS, 0);
 	clrtoeol();
-	prints("\033[1;44;33m[\033[36m%s\033[33m]%sÕÊºÅ[\033[36m%s\033[33m]"
+	prints("\033[1;44;33m[\033[36m%s\033[33m]%*sÕÊºÅ[\033[36m%s\033[33m]"
 		   "[\033[36m%1d\033[33m:\033[36m%2d\033[33m:\033[36m%2d\033[33m]\033[m",
-		   str_time, space, BBS_username, tm_online->tm_mday - 1,
-		   tm_online->tm_hour, tm_online->tm_min);
+		   str_time, 34 - len_username, "", BBS_username,
+		   tm_online->tm_mday - 1, tm_online->tm_hour, tm_online->tm_min);
 	iflush();
 
 	return 0;
