@@ -1050,11 +1050,13 @@ int unload_menu(MENU_SET *p_menu_set)
 	if (p_menu_set->p_menu_name_dict != NULL)
 	{
 		trie_dict_destroy(p_menu_set->p_menu_name_dict);
+		p_menu_set->p_menu_name_dict = NULL;
 	}
 
 	if (p_menu_set->p_menu_screen_dict != NULL)
 	{
 		trie_dict_destroy(p_menu_set->p_menu_screen_dict);
+		p_menu_set->p_menu_screen_dict = NULL;
 	}
 
 	unload_menu_shm(p_menu_set);

@@ -232,25 +232,20 @@ int display_file_ex(const char *filename, int begin_line, int wait)
 	int ch = KEY_NULL;
 	int input_ok, line, max_lines;
 	long int line_current = 0;
-	const void *p_file_shm;
-	const void *p_data;
+	const void *p_shm;
 	size_t data_len;
 	long line_total;
+	const void *p_data;
 	const long *p_line_offsets;
 	long int len;
 	long int percentile;
 	int loop;
 
-	if ((p_file_shm = get_file_shm(filename)) == NULL)
+	if ((p_shm = get_file_shm(filename, &data_len, &line_total, &p_data, &p_line_offsets)) == NULL)
 	{
 		log_error("get_file_shm(%s) error\n", filename);
 		return KEY_NULL;
 	}
-
-	data_len = *((size_t *)p_file_shm);
-	line_total = *((long *)(p_file_shm + sizeof(size_t)));
-	p_data = p_file_shm + sizeof(data_len) + sizeof(line_total);
-	p_line_offsets = p_data + data_len + 1;
 
 	clrline(begin_line, SCREEN_ROWS);
 	line = begin_line;
@@ -423,11 +418,6 @@ int display_file_ex(const char *filename, int begin_line, int wait)
 	}
 
 cleanup:
-	if (shmdt(p_file_shm) == -1)
-	{
-		log_error("shmdt() error (%d)\n", errno);
-	}
-
 	return ch;
 }
 
@@ -506,27 +496,22 @@ int show_bottom(const char *msg)
 int show_active_board()
 {
 	static int line_current = 0;
-	static const void *p_file_shm = NULL;
-	static const void *p_data;
+	static const void *p_shm = NULL;
 	static size_t data_len;
 	static long line_total;
+	static const void *p_data;
 	static const long *p_line_offsets;
 
 	char buffer[LINE_BUFFER_LEN];
 	long int len;
 
-	if (p_file_shm == NULL)
+	if (p_shm == NULL)
 	{
-		if ((p_file_shm = get_file_shm(DATA_ACTIVE_BOARD)) == NULL)
+		if ((p_shm = get_file_shm(DATA_ACTIVE_BOARD, &data_len, &line_total, &p_data, &p_line_offsets)) == NULL)
 		{
 			log_error("get_file_shm(%s) error\n", DATA_ACTIVE_BOARD);
 			return KEY_NULL;
 		}
-
-		data_len = *((size_t *)p_file_shm);
-		line_total = *((long *)(p_file_shm + sizeof(size_t)));
-		p_data = p_file_shm + sizeof(data_len) + sizeof(line_total);
-		p_line_offsets = p_data + data_len + 1;
 	}
 
 	clrline(3, 2 + ACTIVE_BOARD_HEIGHT);

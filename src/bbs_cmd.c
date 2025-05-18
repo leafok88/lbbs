@@ -59,6 +59,7 @@ int load_cmd()
 void unload_cmd()
 {
 	trie_dict_destroy(p_bbs_cmd_dict);
+	p_bbs_cmd_dict = NULL;
 }
 
 bbs_cmd_handler get_cmd_handler(const char *cmd)
