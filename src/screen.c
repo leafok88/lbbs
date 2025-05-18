@@ -403,7 +403,8 @@ int display_file_ex(const char *filename, int begin_line, int wait)
 		len = p_line_offsets[line_current + 1] - p_line_offsets[line_current];
 		if (len >= LINE_BUFFER_LEN)
 		{
-			log_error("Error length exceeds buffer size: %d\n", len);
+			log_error("buffer overflow: len=%ld(%ld - %ld) line=%ld \n",
+					  len, p_line_offsets[line_current + 1], p_line_offsets[line_current], line_current);
 			len = LINE_BUFFER_LEN - 1;
 		}
 
@@ -521,7 +522,8 @@ int show_active_board()
 		len = p_line_offsets[line_current + 1] - p_line_offsets[line_current];
 		if (len >= LINE_BUFFER_LEN)
 		{
-			log_error("Error length exceeds buffer size: %d\n", len);
+			log_error("buffer overflow: len=%ld(%ld - %ld) line=%ld \n",
+					  len, p_line_offsets[line_current + 1], p_line_offsets[line_current], line_current);
 			len = LINE_BUFFER_LEN - 1;
 		}
 

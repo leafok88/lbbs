@@ -163,7 +163,7 @@ int load_file_shm(const char *filename)
 		return -2;
 	}
 
-	p_data = p_shm + sizeof(data_len) + sizeof(line_total);
+	p_data = p_shm + sizeof(int) + sizeof(data_len) + sizeof(line_total);
 	p_line_offsets = p_data + data_len + 1;
 	memcpy(p_line_offsets, line_offsets, sizeof(long) * (size_t)(line_total + 1));
 
