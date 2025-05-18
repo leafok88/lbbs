@@ -31,6 +31,13 @@
 
 #define MAX_SPLIT_FILE_LINES 65536
 
+struct shm_header_t
+{
+	int shmid;
+	size_t data_len;
+	long line_total;
+};
+
 static TRIE_NODE *p_trie_file_dict = NULL;
 
 int file_loader_init()
@@ -138,7 +145,7 @@ int load_file_shm(const char *filename)
 		return -2;
 	}
 
-	size = sizeof(shmid) + sizeof(data_len) + sizeof(line_total) + data_len + 1 + sizeof(long) * (size_t)(line_total + 1);
+	size = sizeof(struct shm_header_t) + data_len + 1 + sizeof(long) * (size_t)(line_total + 1);
 	shmid = shmget(key, size, IPC_CREAT | IPC_EXCL | 0600);
 	if (shmid == -1)
 	{
@@ -152,10 +159,10 @@ int load_file_shm(const char *filename)
 		return -3;
 	}
 
-	*((int *)p_shm) = shmid;
-	*((size_t *)(p_shm + sizeof(shmid))) = data_len;
-	*((long *)(p_shm + sizeof(shmid) + sizeof(data_len))) = line_total;
-	memcpy(p_shm + sizeof(shmid) + sizeof(data_len) + sizeof(line_total), p_data, data_len);
+	((struct shm_header_t *)p_shm)->shmid = shmid;
+	((struct shm_header_t *)p_shm)->data_len = data_len;
+	((struct shm_header_t *)p_shm)->line_total = line_total;
+	memcpy(p_shm + sizeof(struct shm_header_t), p_data, data_len);
 
 	if (munmap(p_data, data_len) < 0)
 	{
@@ -163,7 +170,7 @@ int load_file_shm(const char *filename)
 		return -2;
 	}
 
-	p_data = p_shm + sizeof(int) + sizeof(data_len) + sizeof(line_total);
+	p_data = p_shm + sizeof(struct shm_header_t);
 	p_line_offsets = p_data + data_len + 1;
 	memcpy(p_line_offsets, line_offsets, sizeof(long) * (size_t)(line_total + 1));
 
@@ -247,9 +254,9 @@ const void *get_file_shm(const char *filename, size_t *p_data_len, long *p_line_
 		return NULL;
 	}
 
-	*p_data_len = *((size_t *)(p_shm + sizeof(int)));
-	*p_line_total = *((long *)(p_shm + sizeof(int) + sizeof(size_t)));
-	*pp_data = p_shm + sizeof(int) + sizeof(size_t) + sizeof(long);
+	*p_data_len = ((struct shm_header_t *)p_shm)->data_len;
+	*p_line_total = ((struct shm_header_t *)p_shm)->line_total;
+	*pp_data = p_shm + sizeof(struct shm_header_t);
 	*pp_line_offsets = *pp_data + *p_data_len + 1;
 
 	return p_shm;

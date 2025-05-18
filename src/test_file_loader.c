@@ -82,6 +82,11 @@ int main(int argc, char *argv[])
 		else
 		{
 			printf("File: %s size: %ld lines: %ld\n", files[i], data_len, line_total);
+
+			for (int j = 0; j < line_total; j++)
+			{
+				printf("Line %d: %ld ~ %ld\n", j, p_line_offsets[j], p_line_offsets[j + 1]);
+			}
 		}
 	}
 
