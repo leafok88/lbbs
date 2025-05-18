@@ -1071,18 +1071,16 @@ int unload_menu(MENU_SET *p_menu_set)
 int load_menu_shm(MENU_SET *p_menu_set)
 {
 	// Mount shared memory
-	if (p_menu_set->p_reserved != NULL)
+	if (p_menu_set->p_reserved == NULL)
 	{
-		log_error("Menu is already loaded\n");
-		return -1;
+		p_menu_set->p_reserved = shmat(p_menu_set->shmid, NULL, SHM_RDONLY);
+		if (p_menu_set->p_reserved == (void *)-1)
+		{
+			log_error("shmat() error (%d)\n", errno);
+			return -1;
+		}
 	}
 
-	p_menu_set->p_reserved = shmat(p_menu_set->shmid, NULL, SHM_RDONLY);
-	if (p_menu_set->p_reserved == (void *)-1)
-	{
-		log_error("shmat() error (%d)\n", errno);
-		return -2;
-	}
 	p_menu_set->p_menu_pool = p_menu_set->p_reserved + MENU_SET_RESERVED_LENGTH;
 	p_menu_set->p_menu_item_pool = p_menu_set->p_menu_pool + sizeof(MENU) * MAX_MENUS;
 	p_menu_set->p_menu_screen_pool = p_menu_set->p_menu_item_pool + sizeof(MENU_ITEM) * MAX_MENUITEMS;

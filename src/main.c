@@ -164,7 +164,7 @@ int main(int argc, char *argv[])
 		free(p_bbs_menu);
 		return -3;
 	}
-	unload_menu_shm(p_bbs_menu);
+	// unload_menu_shm(p_bbs_menu);
 
 	// Load data files
 	if (file_loader_init() < 0)
