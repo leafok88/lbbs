@@ -179,13 +179,12 @@ int net_server(const char *hostaddr, in_port_t port)
 			{
 				unload_menu(p_bbs_menu_new);
 				free(p_bbs_menu_new);
+				p_bbs_menu_new = NULL;
 
 				log_error("Reload menu failed\n");
 			}
 			else
 			{
-				unload_menu_shm(p_bbs_menu_new);
-
 				unload_menu(p_bbs_menu);
 				free(p_bbs_menu);
 
