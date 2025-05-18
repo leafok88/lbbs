@@ -35,7 +35,11 @@ int main(int argc, char *argv[])
 {
 	int ret;
 	int i;
-	const void *p_file_shm;
+	const void *p_shm;
+	size_t data_len;
+	long line_total;
+	const void *p_data;
+	const long *p_line_offsets;
 
 	if (log_begin("../log/bbsd.log", "../log/error.log") < 0)
 	{
@@ -71,18 +75,13 @@ int main(int argc, char *argv[])
 
 	for (i = 0; i < files_cnt; i++)
 	{
-		if ((p_file_shm = get_file_shm(files[i])) == NULL)
+		if ((p_shm = get_file_shm(files[i], &data_len, &line_total, &p_data, &p_line_offsets)) == NULL)
 		{
 			printf("Get file shm %s error\n", files[i]);
 		}
 		else
 		{
-			printf("File: %s size: %ld lines: %ld\n", files[i], *((size_t *)p_file_shm), *((size_t *)(p_file_shm + sizeof(size_t))));
-
-			if (shmdt(p_file_shm) == -1)
-			{
-				log_error("shmdt() error (%d)\n", errno);
-			}
+			printf("File: %s size: %ld lines: %ld\n", files[i], data_len, line_total);
 		}
 	}
 
@@ -121,18 +120,13 @@ int main(int argc, char *argv[])
 	{
 		if (i % 2 != 0)
 		{
-			if ((p_file_shm = get_file_shm(files[i])) == NULL)
+			if ((p_shm = get_file_shm(files[i], &data_len, &line_total, &p_data, &p_line_offsets)) == NULL)
 			{
 				printf("Get file shm %s error\n", files[i]);
 			}
 			else
 			{
-				printf("File: %s size: %ld lines: %ld\n", files[i], *((size_t *)p_file_shm), *((size_t *)(p_file_shm + sizeof(size_t))));
-
-				if (shmdt(p_file_shm) == -1)
-				{
-					log_error("shmdt() error (%d)\n", errno);
-				}
+				printf("File: %s size: %ld lines: %ld\n", files[i], data_len, line_total);
 			}
 		}
 	}
