@@ -18,21 +18,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-inline int char_to_offset(char c)
-{
-	return (unsigned char)c;
-}
-
-char offset_to_char(int i)
-{
-	if (i > 255)
-	{
-		return '\0';
-	}
-
-	return (char)(i % 256 - 256);
-}
-
 TRIE_NODE *trie_dict_create(void)
 {
 	TRIE_NODE *p_dict;
@@ -54,22 +39,27 @@ void trie_dict_destroy(TRIE_NODE *p_dict)
 		if (p_dict->p_nodes[i] != NULL)
 		{
 			trie_dict_destroy(p_dict->p_nodes[i]);
+			p_dict->p_nodes[i] = NULL;
 		}
 
 		p_dict->flags[i] = 0;
 	}
 
 	free(p_dict);
-	p_dict = NULL;
 }
 
 int trie_dict_set(TRIE_NODE *p_dict, const char *key, int64_t value)
 {
 	int offset;
 
+	if (p_dict == NULL)
+	{
+		return -1;
+	}
+
 	while (key != NULL && *key != '\0')
 	{
-		offset = char_to_offset(*key);
+		offset = *key;
 		if (offset < 0 || offset >= TRIE_CHILDREN) // incorrect key character
 		{
 			return -1;
@@ -106,9 +96,14 @@ int trie_dict_get(TRIE_NODE *p_dict, const char *key, int64_t *p_value)
 {
 	int offset;
 
+	if (p_dict == NULL)
+	{
+		return -1;
+	}
+
 	while (key != NULL && *key != '\0')
 	{
-		offset = char_to_offset(*key);
+		offset = *key;
 		if (offset < 0 || offset >= TRIE_CHILDREN) // incorrect key character
 		{
 			return -1;
@@ -144,9 +139,14 @@ int trie_dict_del(TRIE_NODE *p_dict, const char *key)
 {
 	int offset;
 
+	if (p_dict == NULL)
+	{
+		return -1;
+	}
+
 	while (key != NULL && *key != '\0')
 	{
-		offset = char_to_offset(*key);
+		offset = *key;
 		if (offset < 0 || offset >= TRIE_CHILDREN) // incorrect key character
 		{
 			return -1;
@@ -190,23 +190,27 @@ static void _trie_dict_traverse(TRIE_NODE *p_dict, trie_dict_traverse_cb cb, cha
 	{
 		if (p_dict->flags[i] != 0)
 		{
-			key[depth] = offset_to_char(i);
+			key[depth] = (char)i;
 			key[depth + 1] = '\0';
 			(*cb)(key, p_dict->values[i]);
 		}
 
 		if (p_dict->p_nodes[i] != NULL && depth + 1 < TRIE_MAX_KEY_LEN)
 		{
-			key[depth] = offset_to_char(i);
+			key[depth] = (char)i;
 			_trie_dict_traverse(p_dict->p_nodes[i], cb, key, depth + 1);
 		}
-	}	
+	}
 }
 
 void trie_dict_traverse(TRIE_NODE *p_dict, trie_dict_traverse_cb cb)
 {
 	char key[TRIE_MAX_KEY_LEN + 1];
-	key[0] = '\0';
+
+	if (p_dict == NULL)
+	{
+		return;
+	}
 
 	_trie_dict_traverse(p_dict, cb, key, 0);
 }
