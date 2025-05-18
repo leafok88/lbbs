@@ -17,6 +17,8 @@
 #ifndef _SCREEN_H_
 #define _SCREEN_H_
 
+#define CTRL_SEQ_CLR_LINE "\033[K"
+
 extern void moveto(int row, int col);
 
 extern void clrtoeol();

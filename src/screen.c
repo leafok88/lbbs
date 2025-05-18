@@ -48,7 +48,7 @@ void moveto(int row, int col)
 
 void clrtoeol()
 {
-	prints("\033[K");
+	prints(CTRL_SEQ_CLR_LINE);
 }
 
 void clrline(int line_begin, int line_end)
@@ -58,7 +58,7 @@ void clrline(int line_begin, int line_end)
 	for (i = line_begin; i <= line_end; i++)
 	{
 		moveto(i, 0);
-		prints("\033[K");
+		prints(CTRL_SEQ_CLR_LINE);
 	}
 }
 

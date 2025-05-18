@@ -546,12 +546,8 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 							log_error("Error menu screen name in menu config line %d\n", fin_line);
 							return -1;
 						}
-						if (trie_dict_get(p_menu_set->p_menu_screen_dict, p, (int64_t *)&screen_id) != 1)
-						{
-							log_error("Undefined menu screen [%s]\n", p);
-							return -1;
-						}
-						p_menu->screen_id = screen_id;
+						strncpy(p_menu->screen_name, p, sizeof(p_menu->screen_name) - 1);
+						p_menu->screen_name[sizeof(p_menu->screen_name) - 1] = '\0';
 
 						// Check syntax
 						q = strtok_r(NULL, MENU_CONF_DELIM_WITH_SPACE, &saveptr);
@@ -628,6 +624,14 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 						break;
 					}
 
+					// Clear line
+					if (p_menu_set->p_menu_screen_buf_free + strlen(CTRL_SEQ_CLR_LINE) > q)
+					{
+						log_error("Menu screen buffer depleted (%p + %d > %p)\n", p_menu_set->p_menu_screen_buf_free, q, strlen(CTRL_SEQ_CLR_LINE));
+						return -3;
+					}
+					p_menu_set->p_menu_screen_buf_free = stpcpy(p_menu_set->p_menu_screen_buf_free, CTRL_SEQ_CLR_LINE);
+
 					p = buffer;
 					while (*p != '\0')
 					{
@@ -662,6 +666,17 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 		}
 	}
 	fclose(fin);
+
+	for (menu_id = 0; menu_id < p_menu_set->menu_count; menu_id++)
+	{
+		p_menu = get_menu_by_id(p_menu_set, menu_id);
+
+		if (trie_dict_get(p_menu_set->p_menu_screen_dict, p_menu->screen_name, (int64_t *)(&(p_menu->screen_id))) != 1)
+		{
+			log_error("Undefined menu screen [%s]\n", p);
+			return -1;
+		}
+	}
 
 	for (menu_item_id = 0; menu_item_id < p_menu_set->menu_item_count; menu_item_id++)
 	{

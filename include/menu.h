@@ -71,6 +71,7 @@ struct menu_t
 {
 	char name[MAX_MENUNAME_LENGTH];
 	MENU_TITLE title;
+	char screen_name[MAX_MENU_SCR_NAME_LENGTH];
 	MENU_SCREEN_ID screen_id;
 	int8_t screen_show;
 	int16_t screen_row, screen_col;
