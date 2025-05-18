@@ -26,7 +26,6 @@ extern void file_loader_cleanup(void);
 extern int load_file_shm(const char *filename);
 extern int unload_file_shm(const char *filename);
 
-// Returned shared memory should be detached by shmdt()
-extern const void *get_file_shm(const char *filename);
+extern const void *get_file_shm(const char *filename, size_t *p_data_len, long *p_line_total, const void **pp_data, const long **pp_line_offsets);
 
 #endif //_FILE_LOADER_H_

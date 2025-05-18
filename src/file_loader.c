@@ -51,11 +51,19 @@ int file_loader_init()
 	return 0;
 }
 
-static void trie_file_dict_cleanup_cb(const char *filename, int64_t shmid)
+static void trie_file_dict_cleanup_cb(const char *filename, int64_t value)
 {
-	if (shmctl((int)shmid, IPC_RMID, NULL) == -1)
+	const void *p_shm = (const void *)value;
+	int shmid = *((int *)p_shm);
+
+	if (shmdt(p_shm) == -1)
 	{
-		log_error("shmctl(shmid=%d, IPC_RMID) error (%d)\n", (int)shmid, errno);
+		log_error("shmdt(shmid=%d) error (%d)\n", shmid, errno);
+	}
+
+	if (shmctl(shmid, IPC_RMID, NULL) == -1)
+	{
+		log_error("shmctl(shmid=%d, IPC_RMID) error (%d)\n", shmid, errno);
 	}
 }
 
@@ -67,7 +75,9 @@ void file_loader_cleanup(void)
 	}
 
 	trie_dict_traverse(p_trie_file_dict, trie_file_dict_cleanup_cb);
+
 	trie_dict_destroy(p_trie_file_dict);
+	p_trie_file_dict = NULL;
 }
 
 int load_file_shm(const char *filename)
@@ -80,11 +90,12 @@ int load_file_shm(const char *filename)
 	key_t key;
 	size_t size;
 	int shmid;
-	int64_t shmid_old;
 	void *p_shm;
 	long line_total;
 	long line_offsets[MAX_SPLIT_FILE_LINES];
 	long *p_line_offsets;
+	int64_t shmid_old;
+	void *p_shm_old;
 
 	if ((fd = open(filename, O_RDONLY)) < 0)
 	{
@@ -127,7 +138,7 @@ int load_file_shm(const char *filename)
 		return -2;
 	}
 
-	size = sizeof(data_len) + sizeof(line_total) + data_len + 1 + sizeof(long) * (size_t)(line_total + 1);
+	size = sizeof(shmid) + sizeof(data_len) + sizeof(line_total) + data_len + 1 + sizeof(long) * (size_t)(line_total + 1);
 	shmid = shmget(key, size, IPC_CREAT | IPC_EXCL | 0600);
 	if (shmid == -1)
 	{
@@ -137,13 +148,14 @@ int load_file_shm(const char *filename)
 	p_shm = shmat(shmid, NULL, 0);
 	if (p_shm == (void *)-1)
 	{
-		log_error("shmat() error (%d)\n", errno);
+		log_error("shmat(shmid=%d) error (%d)\n", shmid, errno);
 		return -3;
 	}
 
-	*((size_t *)p_shm) = data_len;
-	*((long *)(p_shm + sizeof(data_len))) = line_total;
-	memcpy(p_shm + sizeof(data_len) + sizeof(line_total), p_data, data_len);
+	*((int *)p_shm) = shmid;
+	*((size_t *)(p_shm + sizeof(shmid))) = data_len;
+	*((long *)(p_shm + sizeof(shmid) + sizeof(data_len))) = line_total;
+	memcpy(p_shm + sizeof(shmid) + sizeof(data_len) + sizeof(line_total), p_data, data_len);
 
 	if (munmap(p_data, data_len) < 0)
 	{
@@ -155,14 +167,16 @@ int load_file_shm(const char *filename)
 	p_line_offsets = p_data + data_len + 1;
 	memcpy(p_line_offsets, line_offsets, sizeof(long) * (size_t)(line_total + 1));
 
-	if (shmdt(p_shm) == -1)
+	if (trie_dict_get(p_trie_file_dict, filename, (int64_t *)&p_shm_old) == 1)
 	{
-		log_error("shmdt() error (%d)\n", errno);
-		return -3;
-	}
+		shmid_old = *((int *)p_shm_old);
 
-	if (trie_dict_get(p_trie_file_dict, filename, &shmid_old) == 1)
-	{
+		if (shmdt(p_shm_old) == -1)
+		{
+			log_error("shmdt(shmid=%d) error (%d)\n", shmid_old, errno);
+			return -3;
+		}
+
 		if (shmctl((int)shmid_old, IPC_RMID, NULL) == -1)
 		{
 			log_error("shmctl(shmid=%d, IPC_RMID) error (%d)\n", (int)shmid_old, errno);
@@ -170,7 +184,7 @@ int load_file_shm(const char *filename)
 		}
 	}
 
-	if (trie_dict_set(p_trie_file_dict, filename, (int64_t)shmid) != 1)
+	if (trie_dict_set(p_trie_file_dict, filename, (int64_t)p_shm) != 1)
 	{
 		log_error("trie_dict_set(%s) error\n", filename);
 
@@ -187,12 +201,20 @@ int load_file_shm(const char *filename)
 
 int unload_file_shm(const char *filename)
 {
-	int64_t shmid = 0;
+	const void *p_shm;
+	int shmid;
 
-	if (trie_dict_get(p_trie_file_dict, filename, (int64_t *)&shmid) != 1)
+	if (trie_dict_get(p_trie_file_dict, filename, (int64_t *)&p_shm) != 1)
 	{
 		log_error("trie_dict_get(%s) not found\n", filename);
 		return -1;
+	}
+
+	shmid = *((int *)p_shm);
+
+	if (shmdt(p_shm) == -1)
+	{
+		log_error("shmdt(shmid=%d) error (%d)\n", shmid, errno);
 	}
 
 	if (shmctl((int)shmid, IPC_RMID, NULL) == -1)
@@ -209,9 +231,8 @@ int unload_file_shm(const char *filename)
 	return 0;
 }
 
-const void *get_file_shm(const char *filename)
+const void *get_file_shm(const char *filename, size_t *p_data_len, long *p_line_total, const void **pp_data, const long **pp_line_offsets)
 {
-	int64_t shmid;
 	const void *p_shm;
 
 	if (p_trie_file_dict == NULL)
@@ -220,18 +241,16 @@ const void *get_file_shm(const char *filename)
 		return NULL;
 	}
 
-	if (trie_dict_get(p_trie_file_dict, filename, &shmid) != 1) // Not exist
+	if (trie_dict_get(p_trie_file_dict, filename, (int64_t *)&p_shm) != 1) // Not exist
 	{
 		log_error("trie_dict_get(%s) not found\n", filename);
 		return NULL;
 	}
 
-	p_shm = shmat((int)shmid, NULL, SHM_RDONLY);
-	if (p_shm == (void *)-1)
-	{
-		log_error("shmat() error (%d)\n", errno);
-		return NULL;
-	}
+	*p_data_len = *((size_t *)(p_shm + sizeof(int)));
+	*p_line_total = *((long *)(p_shm + sizeof(int) + sizeof(size_t)));
+	*pp_data = p_shm + sizeof(int) + sizeof(size_t) + sizeof(long);
+	*pp_line_offsets = *pp_data + *p_data_len + 1;
 
 	return p_shm;
 }
