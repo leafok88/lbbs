@@ -24,7 +24,7 @@
 #include <sys/shm.h>
 
 #define MAX_MENU_NAME_LENGTH 30
-#define MAX_ITEMS_PER_MENU 30
+#define MAX_ITEMS_PER_MENU 256
 #define MAX_MENUITEM_NAME_LENGTH 256
 #define MAX_MENUITEM_TEXT_LENGTH 100
 #define MAX_MENUITEM_ACTION_LENGTH 30
@@ -78,6 +78,8 @@ struct menu_t
 	int16_t screen_row, screen_col;
 	MENU_ITEM_ID items[MAX_ITEMS_PER_MENU];
 	int16_t item_count;
+	int16_t page_row, page_col;
+	int16_t page_item_limit;
 };
 typedef struct menu_t MENU;
 
@@ -101,6 +103,7 @@ struct menu_set_t
 	int8_t menu_item_display[MAX_ITEMS_PER_MENU];
 	int16_t menu_item_r_row[MAX_ITEMS_PER_MENU];
 	int16_t menu_item_r_col[MAX_ITEMS_PER_MENU];
+	int16_t menu_item_page_id[MAX_ITEMS_PER_MENU];
 };
 typedef struct menu_set_t MENU_SET;
 

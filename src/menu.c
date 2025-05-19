@@ -160,6 +160,7 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 				p_menu->item_count = 0;
 				p_menu->title.show = 0;
 				p_menu->screen_show = 0;
+				p_menu->page_item_limit = 0;
 
 				q = strtok_r(NULL, MENU_CONF_DELIM_WITH_SPACE, &saveptr);
 				if (q == NULL)
@@ -585,6 +586,73 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 							return -1;
 						}
 					}
+					else if (strcmp(p, "page") == 0)
+					{
+						// Menu page row
+						q = strtok_r(NULL, MENU_CONF_DELIM_WITH_SPACE, &saveptr);
+						if (q == NULL)
+						{
+							log_error("Error menu page row in menu config line %d\n", fin_line);
+							return -1;
+						}
+						p = q;
+						while (isdigit(*q))
+						{
+							q++;
+						}
+						if (*q != '\0')
+						{
+							log_error("Error menu page row in menu config line %d\n", fin_line);
+							return -1;
+						}
+						p_menu->page_row = (int16_t)atoi(p);
+
+						// Menu page col
+						q = strtok_r(NULL, MENU_CONF_DELIM_WITH_SPACE, &saveptr);
+						if (q == NULL)
+						{
+							log_error("Error menu page col in menu config line %d\n", fin_line);
+							return -1;
+						}
+						p = q;
+						while (isdigit(*q))
+						{
+							q++;
+						}
+						if (*q != '\0')
+						{
+							log_error("Error menu page col in menu config line %d\n", fin_line);
+							return -1;
+						}
+						p_menu->page_col = (int16_t)atoi(p);
+
+						// Menu page item limit
+						q = strtok_r(NULL, MENU_CONF_DELIM_WITH_SPACE, &saveptr);
+						if (q == NULL)
+						{
+							log_error("Error menu page item limit in menu config line %d\n", fin_line);
+							return -1;
+						}
+						p = q;
+						while (isdigit(*q))
+						{
+							q++;
+						}
+						if (*q != '\0')
+						{
+							log_error("Error menu page item limit in menu config line %d\n", fin_line);
+							return -1;
+						}
+						p_menu->page_item_limit = (int16_t)atoi(p);
+
+						// Check syntax
+						q = strtok_r(NULL, MENU_CONF_DELIM_WITH_SPACE, &saveptr);
+						if (q != NULL)
+						{
+							log_error("Unknown extra content in menu config line %d\n", fin_line);
+							return -1;
+						}
+					}
 				}
 			}
 			else // BEGIN of menu screen
@@ -770,17 +838,17 @@ static int display_menu_cursor(MENU_SET *p_menu_set, int show)
 	return 0;
 }
 
-int display_menu(MENU_SET *p_menu_set)
+static int display_menu_current_page(MENU_SET *p_menu_set)
 {
 	int16_t row = 0;
 	int16_t col = 0;
-	int menu_selectable = 0;
 	MENU_ID menu_id;
 	MENU_ITEM_ID menu_item_id;
 	MENU *p_menu;
 	MENU_ITEM *p_menu_item;
-	MENU_SCREEN *p_menu_screen;
 	int16_t menu_item_pos;
+	int16_t page_id = 0;
+	MENU_SCREEN *p_menu_screen;
 
 	menu_id = p_menu_set->menu_id_path[p_menu_set->choose_step];
 	p_menu = get_menu_by_id(p_menu_set, menu_id);
@@ -790,21 +858,7 @@ int display_menu(MENU_SET *p_menu_set)
 		return -1;
 	}
 
-	menu_item_pos = p_menu_set->menu_item_pos[p_menu_set->choose_step];
-	menu_item_id = p_menu->items[menu_item_pos];
-	p_menu_item = get_menu_item_by_id(p_menu_set, menu_item_id);
-	if (p_menu_item == NULL)
-	{
-		log_error("get_menu_item_by_id(%d) return NULL pointer\n", menu_item_id);
-		return -1;
-	}
-
-	if (menu_item_pos > 0 &&
-		checkpriv(&BBS_priv, 0, p_menu_item->priv) != 0 &&
-		checklevel2(&BBS_priv, p_menu_item->level))
-	{
-		menu_selectable = 1;
-	}
+	clrline(p_menu->page_row, p_menu->page_row + p_menu->page_item_limit - 1);
 
 	if (p_menu->title.show)
 	{
@@ -835,6 +889,87 @@ int display_menu(MENU_SET *p_menu_set)
 		prints("%s", p_menu_set->p_menu_screen_buf + p_menu_screen->buf_offset);
 	}
 
+	menu_item_pos = p_menu_set->menu_item_pos[p_menu_set->choose_step];
+	page_id = p_menu_set->menu_item_page_id[menu_item_pos];
+
+	while (menu_item_pos >= 0)
+	{
+		if (p_menu_set->menu_item_page_id[menu_item_pos] != page_id)
+		{
+			menu_item_pos++;
+			break;
+		}
+
+		if (menu_item_pos == 0)
+		{
+			break;
+		}
+
+		menu_item_pos--;
+	}
+
+	for (; menu_item_pos < p_menu->item_count; menu_item_pos++)
+	{
+		if (p_menu_set->menu_item_page_id[menu_item_pos] != page_id)
+		{
+			break;
+		}
+
+		menu_item_id = p_menu->items[menu_item_pos];
+		p_menu_item = get_menu_item_by_id(p_menu_set, menu_item_id);
+
+		if (p_menu_set->menu_item_display[menu_item_pos] == 0)
+		{
+			continue;
+		}
+
+		row = p_menu_set->menu_item_r_row[menu_item_pos];
+		col = p_menu_set->menu_item_r_col[menu_item_pos];
+
+		moveto(row, col);
+		prints("%s", p_menu_item->text);
+	}
+
+	return 0;
+}
+
+int display_menu(MENU_SET *p_menu_set)
+{
+	int16_t row = 0;
+	int16_t col = 0;
+	int menu_selectable = 0;
+	MENU_ID menu_id;
+	MENU_ITEM_ID menu_item_id;
+	MENU *p_menu;
+	MENU_ITEM *p_menu_item;
+	int16_t menu_item_pos;
+	int16_t page_id = 0;
+	int page_item_count = 0;
+
+	menu_id = p_menu_set->menu_id_path[p_menu_set->choose_step];
+	p_menu = get_menu_by_id(p_menu_set, menu_id);
+	if (p_menu == NULL)
+	{
+		log_error("get_menu_by_id(%d) return NULL pointer\n", menu_id);
+		return -1;
+	}
+
+	menu_item_pos = p_menu_set->menu_item_pos[p_menu_set->choose_step];
+	menu_item_id = p_menu->items[menu_item_pos];
+	p_menu_item = get_menu_item_by_id(p_menu_set, menu_item_id);
+	if (p_menu_item == NULL)
+	{
+		log_error("get_menu_item_by_id(%d) return NULL pointer\n", menu_item_id);
+		return -1;
+	}
+
+	if (menu_item_pos > 0 &&
+		checkpriv(&BBS_priv, 0, p_menu_item->priv) != 0 &&
+		checklevel2(&BBS_priv, p_menu_item->level))
+	{
+		menu_selectable = 1;
+	}
+
 	for (menu_item_pos = 0; menu_item_pos < p_menu->item_count; menu_item_pos++)
 	{
 		menu_item_id = p_menu->items[menu_item_pos];
@@ -848,6 +983,8 @@ int display_menu(MENU_SET *p_menu_set)
 		{
 			col = p_menu_item->col;
 		}
+
+		p_menu_set->menu_item_page_id[menu_item_pos] = page_id;
 
 		if (checkpriv(&BBS_priv, 0, p_menu_item->priv) == 0 || checklevel2(&BBS_priv, p_menu_item->level) == 0)
 		{
@@ -868,10 +1005,16 @@ int display_menu(MENU_SET *p_menu_set)
 			p_menu_set->menu_item_r_row[menu_item_pos] = row;
 			p_menu_set->menu_item_r_col[menu_item_pos] = col;
 
-			moveto(row, col);
-			prints("%s", p_menu_item->text);
-
 			row++;
+
+			page_item_count++;
+			if (p_menu->page_item_limit > 0 && page_item_count >= p_menu->page_item_limit)
+			{
+				page_id++;
+				page_item_count = 0;
+				row = p_menu->page_row;
+				col = p_menu->page_col;
+			}
 		}
 	}
 
@@ -879,6 +1022,8 @@ int display_menu(MENU_SET *p_menu_set)
 	{
 		return -1;
 	}
+
+	display_menu_current_page(p_menu_set);
 
 	display_menu_cursor(p_menu_set, 1);
 
@@ -892,6 +1037,8 @@ int menu_control(MENU_SET *p_menu_set, int key)
 	MENU *p_menu;
 	MENU_ITEM *p_menu_item;
 	int16_t menu_item_pos;
+	int16_t page_id;
+	int require_page_change = 0;
 
 	if (p_menu_set->menu_count == 0)
 	{
@@ -912,6 +1059,8 @@ int menu_control(MENU_SET *p_menu_set, int key)
 	}
 
 	menu_item_pos = p_menu_set->menu_item_pos[p_menu_set->choose_step];
+	page_id = p_menu_set->menu_item_page_id[menu_item_pos];
+
 	menu_item_id = p_menu->items[menu_item_pos];
 	p_menu_item = get_menu_item_by_id(p_menu_set, menu_item_id);
 	if (p_menu_item == NULL)
@@ -985,6 +1134,8 @@ int menu_control(MENU_SET *p_menu_set, int key)
 			display_menu_cursor(p_menu_set, 1);
 		}
 		break;
+	case KEY_PGUP:
+		require_page_change = 1;
 	case KEY_UP:
 		display_menu_cursor(p_menu_set, 0);
 		do
@@ -993,6 +1144,7 @@ int menu_control(MENU_SET *p_menu_set, int key)
 			if (menu_item_pos < 0)
 			{
 				menu_item_pos = p_menu->item_count - 1;
+				require_page_change = 0;
 			}
 			menu_item_id = p_menu->items[menu_item_pos];
 			p_menu_item = get_menu_item_by_id(p_menu_set, menu_item_id);
@@ -1001,10 +1153,20 @@ int menu_control(MENU_SET *p_menu_set, int key)
 				log_error("get_menu_item_by_id(%d) return NULL pointer\n", menu_item_id);
 				return -1;
 			}
-		} while (!p_menu_set->menu_item_display[menu_item_pos]);
+			if (require_page_change && p_menu_set->menu_item_page_id[menu_item_pos] != page_id)
+			{
+				require_page_change = 0;
+			}
+		} while (require_page_change || !p_menu_set->menu_item_display[menu_item_pos]);
 		p_menu_set->menu_item_pos[p_menu_set->choose_step] = menu_item_pos;
+		if (p_menu_set->menu_item_page_id[menu_item_pos] != page_id)
+		{
+			display_menu_current_page(p_menu_set);
+		}
 		display_menu_cursor(p_menu_set, 1);
 		break;
+	case KEY_PGDN:
+		require_page_change = 1;
 	case KEY_DOWN:
 		display_menu_cursor(p_menu_set, 0);
 		do
@@ -1013,6 +1175,7 @@ int menu_control(MENU_SET *p_menu_set, int key)
 			if (menu_item_pos >= p_menu->item_count)
 			{
 				menu_item_pos = 0;
+				require_page_change = 0;
 			}
 			menu_item_id = p_menu->items[menu_item_pos];
 			p_menu_item = get_menu_item_by_id(p_menu_set, menu_item_id);
@@ -1021,12 +1184,19 @@ int menu_control(MENU_SET *p_menu_set, int key)
 				log_error("get_menu_item_by_id(%d) return NULL pointer\n", menu_item_id);
 				return -1;
 			}
-		} while (!p_menu_set->menu_item_display[menu_item_pos]);
+			if (require_page_change && p_menu_set->menu_item_page_id[menu_item_pos] != page_id)
+			{
+				require_page_change = 0;
+			}
+		} while (require_page_change || !p_menu_set->menu_item_display[menu_item_pos]);
 		p_menu_set->menu_item_pos[p_menu_set->choose_step] = menu_item_pos;
+		if (p_menu_set->menu_item_page_id[menu_item_pos] != page_id)
+		{
+			display_menu_current_page(p_menu_set);
+		}
 		display_menu_cursor(p_menu_set, 1);
 		break;
 	case KEY_HOME:
-	case KEY_PGUP:
 		display_menu_cursor(p_menu_set, 0);
 		menu_item_pos = 0;
 		while (menu_item_pos < p_menu->item_count - 1)
@@ -1047,10 +1217,13 @@ int menu_control(MENU_SET *p_menu_set, int key)
 			menu_item_pos++;
 		}
 		p_menu_set->menu_item_pos[p_menu_set->choose_step] = menu_item_pos;
+		if (p_menu_set->menu_item_page_id[menu_item_pos] != page_id)
+		{
+			display_menu_current_page(p_menu_set);
+		}
 		display_menu_cursor(p_menu_set, 1);
 		break;
 	case KEY_END:
-	case KEY_PGDN:
 		display_menu_cursor(p_menu_set, 0);
 		menu_item_pos = p_menu->item_count - 1;
 		while (menu_item_pos > 0)
@@ -1071,6 +1244,10 @@ int menu_control(MENU_SET *p_menu_set, int key)
 			menu_item_pos--;
 		}
 		p_menu_set->menu_item_pos[p_menu_set->choose_step] = menu_item_pos;
+		if (p_menu_set->menu_item_page_id[menu_item_pos] != page_id)
+		{
+			display_menu_current_page(p_menu_set);
+		}
 		display_menu_cursor(p_menu_set, 1);
 		break;
 	default:
@@ -1090,8 +1267,12 @@ int menu_control(MENU_SET *p_menu_set, int key)
 				{
 					display_menu_cursor(p_menu_set, 0);
 					p_menu_set->menu_item_pos[p_menu_set->choose_step] = menu_item_pos;
+					if (p_menu_set->menu_item_page_id[menu_item_pos] != page_id)
+					{
+						display_menu_current_page(p_menu_set);
+					}
 					display_menu_cursor(p_menu_set, 1);
-					return 0;
+					break;
 				}
 			}
 		}
