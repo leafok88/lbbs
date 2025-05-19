@@ -849,7 +849,7 @@ int display_menu(MENU_SET *p_menu_set)
 			col = p_menu_item->col;
 		}
 
-		if (checkpriv(&BBS_priv, 0, p_menu_item->priv) == 0 || checklevel(&BBS_priv, p_menu_item->level) == 0)
+		if (checkpriv(&BBS_priv, 0, p_menu_item->priv) == 0 || checklevel2(&BBS_priv, p_menu_item->level) == 0)
 		{
 			p_menu_set->menu_item_display[menu_item_pos] = 0;
 			p_menu_set->menu_item_r_row[menu_item_pos] = 0;
