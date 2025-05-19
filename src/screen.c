@@ -485,8 +485,8 @@ int show_bottom(const char *msg)
 	moveto(SCREEN_ROWS, 0);
 	clrtoeol();
 	prints("\033[1;44;33m[\033[36m%s\033[33m]%*s%*sÕÊºÅ[\033[36m%s\033[33m]"
-		   "[\033[36m%1d\033[33m:\033[36m%2d\033[33m:\033[36m%2d\033[33m]\033[m",
-		   str_time, 21, msg_f, 13 - len_username, "", BBS_username,
+		   "[\033[36m%1d\033[33mÌì\033[36m%2d\033[33mÊ±\033[36m%2d\033[33m·Ö]\033[m",
+		   str_time, 21, msg_f, 9 - len_username, "", BBS_username,
 		   tm_online->tm_mday - 1, tm_online->tm_hour, tm_online->tm_min);
 
 	return 0;
