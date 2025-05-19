@@ -9,6 +9,7 @@ Group=bbs
 Type=notify
 ExecStart=/usr/local/lbbs/bin/bbsd -f
 KillSignal=SIGTERM
+ExecReload=/bin/kill -HUP $MAINPID
 
 [Install]
 WantedBy=multi-user.target
