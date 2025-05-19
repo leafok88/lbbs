@@ -192,16 +192,18 @@ int bbs_center()
 	show_active_board();
 	show_bottom("");
 	display_menu(p_bbs_menu);
+	iflush();
 
 	while (!SYS_server_exit)
 	{
 		ch = igetch(100);
 
-		if (time(0) - t_last_action >= 10)
+		if (p_bbs_menu->choose_step == 0 && time(0) - t_last_action >= 10)
 		{
 			t_last_action = time(0);
 			show_active_board();
 			show_bottom("");
+			iflush();
 		}
 
 		switch (ch)
@@ -233,7 +235,9 @@ int bbs_center()
 			default:
 				break;
 			}
+			iflush();
 		}
+
 		BBS_last_access_tm = time(0);
 	}
 

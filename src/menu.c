@@ -48,6 +48,7 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 	char temp[LINE_BUFFER_LEN];
 	char *p = NULL;
 	char *q = NULL;
+	char *r = NULL;
 	char *saveptr = NULL;
 	MENU *p_menu = NULL;
 	MENU_ITEM *p_menu_item = NULL;
@@ -167,7 +168,7 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 					return -1;
 				}
 				p = q;
-				while (isalnum(*q) || *q == '_')
+				while (isalnum(*q) || *q == '_' || *q == '-')
 				{
 					q++;
 				}
@@ -250,7 +251,7 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 						else
 						{
 							q = p;
-							while (isalnum(*q) || *q == '_')
+							while (isalnum(*q) || *q == '_' || *q == '-')
 							{
 								q++;
 							}
@@ -356,6 +357,15 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 						p = q;
 						while (*q != '\0' && *q != '\"')
 						{
+							if (*q == '\\')
+							{
+								r = q;
+								while (*r != '\0')
+								{
+									*r = *(r + 1);
+									r++;
+								}
+							}
 							q++;
 						}
 						if (*q != '\"' || *(q + 1) != '\0')
@@ -384,6 +394,15 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 						p = q;
 						while (*q != '\0' && *q != '\"')
 						{
+							if (*q == '\\')
+							{
+								r = q;
+								while (*r != '\0')
+								{
+									*r = *(r + 1);
+									r++;
+								}
+							}
 							q++;
 						}
 						if (*q != '\"')
@@ -462,6 +481,15 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 						p = q;
 						while (*q != '\0' && *q != '\"')
 						{
+							if (*q == '\\')
+							{
+								r = q;
+								while (*r != '\0')
+								{
+									*r = *(r + 1);
+									r++;
+								}
+							}
 							q++;
 						}
 						if (*q != '\"')
@@ -471,7 +499,7 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 						}
 						*q = '\0';
 
-						if (q - p > sizeof(p_menu_item->text) - 1)
+						if (q - p > sizeof(p_menu->title.text) - 1)
 						{
 							log_error("Too longer menu title text in menu config line %d\n", fin_line);
 							return -1;
@@ -537,7 +565,7 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 							return -1;
 						}
 						p = q;
-						while (isalnum(*q) || *q == '_')
+						while (isalnum(*q) || *q == '_' || *q == '-')
 						{
 							q++;
 						}
@@ -572,7 +600,7 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 				p_screen = get_menu_screen_by_id(p_menu_set, screen_id);
 
 				q = p;
-				while (isalnum(*q) || *q == '_')
+				while (isalnum(*q) || *q == '_' || *q == '-')
 				{
 					q++;
 				}
@@ -696,7 +724,7 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 		{
 			if (trie_dict_get(p_menu_set->p_menu_name_dict, p_menu_item->action, (int64_t *)&menu_id) != 1)
 			{
-				log_error("Undefined menu action [%s]\n", p_menu_item->action);
+				log_error("Undefined sub menu id [%s]\n", p_menu_item->action);
 				return -1;
 			}
 			p_menu_item->action_menu_id = menu_id;
@@ -738,7 +766,6 @@ static int display_menu_cursor(MENU_SET *p_menu_set, int show)
 
 	moveto(p_menu_set->menu_item_r_row[menu_item_pos], p_menu_set->menu_item_r_col[menu_item_pos] - 2);
 	outc(show ? '>' : ' ');
-	iflush();
 
 	return 0;
 }
@@ -781,7 +808,15 @@ int display_menu(MENU_SET *p_menu_set)
 
 	if (p_menu->title.show)
 	{
-		show_top(p_menu->title.text);
+		if (p_menu->title.row == 0 && p_menu->title.col == 0)
+		{
+			show_top(p_menu->title.text);
+		}
+		else
+		{
+			moveto(p_menu->title.row, p_menu->title.col);
+			prints("%s", p_menu->title.text);
+		}
 	}
 
 	if (p_menu->screen_show)
@@ -793,9 +828,11 @@ int display_menu(MENU_SET *p_menu_set)
 			return -1;
 		}
 
-		moveto(p_menu->screen_row, p_menu->screen_col);
+		row = p_menu->screen_row;
+		col = p_menu->screen_col;
+
+		moveto(row, col);
 		prints("%s", p_menu_set->p_menu_screen_buf + p_menu_screen->buf_offset);
-		iflush();
 	}
 
 	for (menu_item_pos = 0; menu_item_pos < p_menu->item_count; menu_item_pos++)
@@ -915,6 +952,10 @@ int menu_control(MENU_SET *p_menu_set, int key)
 			if (display_menu(p_menu_set) != 0)
 			{
 				return menu_control(p_menu_set, KEY_LEFT);
+			}
+			if (p_menu_set->choose_step == 0)
+			{
+				return REDRAW;
 			}
 		}
 		else
@@ -1057,7 +1098,7 @@ int menu_control(MENU_SET *p_menu_set, int key)
 		break;
 	}
 
-	return 0;
+	return NOREDRAW;
 }
 
 int unload_menu(MENU_SET *p_menu_set)

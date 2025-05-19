@@ -29,6 +29,11 @@
 #include <time.h>
 #include <unistd.h>
 
+int list_section(void *param)
+{
+	return 0;
+}
+
 int exec_mbem(void *param)
 {
 	void *hdll;

@@ -20,6 +20,7 @@
 #include <string.h>
 
 static const BBS_CMD bbs_cmd_list[] = {
+	{"LIST_SECTION", list_section},
 	{"RunMBEM", exec_mbem},
 	{"EXITBBS", exitbbs},
 	{"LICENSE", license},
@@ -27,7 +28,7 @@ static const BBS_CMD bbs_cmd_list[] = {
 	{"RELOADMENU", reloadbbsmenu},
 	{"SHUTDOWN", shutdownbbs}};
 
-static const int bbs_cmd_count = 6;
+static const int bbs_cmd_count = 7;
 
 static TRIE_NODE *p_bbs_cmd_dict;
 

@@ -23,11 +23,12 @@
 #include <stdint.h>
 #include <sys/shm.h>
 
-#define MAX_MENUITEM_LENGTH 50
+#define MAX_MENU_NAME_LENGTH 30
 #define MAX_ITEMS_PER_MENU 30
-#define MAX_MENUNAME_LENGTH 256
-#define MAX_MENUACTION_LENGTH 20
-#define MAX_MENUTITLE_LENGTH 50
+#define MAX_MENUITEM_NAME_LENGTH 256
+#define MAX_MENUITEM_TEXT_LENGTH 100
+#define MAX_MENUITEM_ACTION_LENGTH 30
+#define MAX_MENUTITLE_TEXT_LENGTH 50
 #define MAX_MENU_SCR_NAME_LENGTH 20
 #define MAX_MENU_SCR_BUF_LENGTH 2000
 #define MAX_MENUS 256
@@ -41,13 +42,13 @@ typedef uint64_t MENU_SCREEN_ID;
 struct menu_item_t
 {
 	int16_t row, col;
-	char action[MAX_MENUACTION_LENGTH];
+	char action[MAX_MENUITEM_ACTION_LENGTH];
 	MENU_ID action_menu_id;
 	bbs_cmd_handler action_cmd_handler;
 	int8_t submenu;
 	int priv, level;
-	char name[MAX_MENUNAME_LENGTH];
-	char text[MAX_MENUITEM_LENGTH];
+	char name[MAX_MENUITEM_NAME_LENGTH];
+	char text[MAX_MENUITEM_TEXT_LENGTH];
 };
 typedef struct menu_item_t MENU_ITEM;
 
@@ -55,7 +56,7 @@ struct menu_title_t
 {
 	int16_t row, col;
 	int8_t show;
-	char text[MAX_MENUTITLE_LENGTH];
+	char text[MAX_MENUTITLE_TEXT_LENGTH];
 };
 typedef struct menu_title_t MENU_TITLE;
 
@@ -69,7 +70,7 @@ typedef struct menu_screen_t MENU_SCREEN;
 
 struct menu_t
 {
-	char name[MAX_MENUNAME_LENGTH];
+	char name[MAX_MENU_NAME_LENGTH];
 	MENU_TITLE title;
 	char screen_name[MAX_MENU_SCR_NAME_LENGTH];
 	MENU_SCREEN_ID screen_id;

@@ -70,11 +70,6 @@ int fork_server()
 
 	SYS_child_process_count = 0;
 
-	// Reset signal handler to default
-	signal(SIGHUP, SIG_DFL);
-	signal(SIGCHLD, SIG_DFL);
-	signal(SIGTERM, SIG_DFL);
-	
 	bbs_main();
 
 	// Child process exit

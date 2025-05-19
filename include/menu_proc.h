@@ -17,6 +17,7 @@
 #ifndef _MENU_PROC_H_
 #define _MENU_PROC_H_
 
+extern int list_section(void *param);
 extern int exec_mbem(void *param);
 extern int exitbbs(void *param);
 extern int bbsnet(void *param);

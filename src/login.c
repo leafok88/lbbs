@@ -71,6 +71,7 @@ int bbs_login(MYSQL *db)
 			}
 
 			ok = (check_user(db, username, password) == 0);
+			iflush();
 		}
 	}
 
@@ -124,7 +125,6 @@ int check_user(MYSQL *db, char *username, char *password)
 	if (!ok)
 	{
 		prints("\033[1;31m用户名或密码格式错误...\033[m\r\n");
-		iflush();
 		return 1;
 	}
 
@@ -167,7 +167,6 @@ int check_user(MYSQL *db, char *username, char *password)
 			mysql_free_result(rs);
 
 			prints("\033[1;31m来源存在多次失败登陆尝试，请稍后再试\033[m\r\n");
-			iflush();
 
 			return 1;
 		}
@@ -196,7 +195,6 @@ int check_user(MYSQL *db, char *username, char *password)
 			mysql_free_result(rs);
 
 			prints("\033[1;31m账户存在多次失败登陆尝试，请使用Web方式登录\033[m\r\n");
-			iflush();
 
 			return 1;
 		}
@@ -249,7 +247,6 @@ int check_user(MYSQL *db, char *username, char *password)
 			mysql_free_result(rs);
 
 			prints("\033[1;31m您目前无权登陆...\033[m\r\n");
-			iflush();
 			return 1;
 		}
 	}
@@ -275,7 +272,6 @@ int check_user(MYSQL *db, char *username, char *password)
 		}
 
 		prints("\033[1;31m错误的用户名或密码...\033[m\r\n");
-		iflush();
 		return 1;
 	}
 
@@ -294,15 +290,12 @@ int check_user(MYSQL *db, char *username, char *password)
 		break;
 	case -1: // Load data error
 		prints("\033[1;31m读取用户数据错误...\033[m\r\n");
-		iflush();
 		return -1;
 	case -2: // Unused
 		prints("\033[1;31m请通过Web登录更新用户许可协议...\033[m\r\n");
-		iflush();
 		return 1;
 	case -3: // Dead
 		prints("\033[1;31m很遗憾，您已经永远离开了我们的世界！\033[m\r\n");
-		iflush();
 		return 1;
 	default:
 		return -2;

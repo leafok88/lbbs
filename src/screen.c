@@ -449,8 +449,7 @@ int show_top(const char *status)
 	moveto(1, 0);
 	clrtoeol();
 	prints("\033[1;44;33m%s\033[37m%*s%*s\033[33m ÌÖÂÛÇø [%s]\033[m",
-		   status_f, 32, BBS_name, 26, "", BBS_current_section_name);
-	iflush();
+		   status_f, 44 - status_len, BBS_name, 26 - section_name_len, "", BBS_current_section_name);
 
 	return 0;
 }
@@ -489,7 +488,6 @@ int show_bottom(const char *msg)
 		   "[\033[36m%1d\033[33m:\033[36m%2d\033[33m:\033[36m%2d\033[33m]\033[m",
 		   str_time, 21, msg_f, 13 - len_username, "", BBS_username,
 		   tm_online->tm_mday - 1, tm_online->tm_hour, tm_online->tm_min);
-	iflush();
 
 	return 0;
 }
@@ -515,7 +513,7 @@ int show_active_board()
 		}
 	}
 
-	clrline(3, 2 + ACTIVE_BOARD_HEIGHT);
+	clrline(2, 2 + ACTIVE_BOARD_HEIGHT);
 
 	for (int i = 0; i < ACTIVE_BOARD_HEIGHT; i++)
 	{
@@ -540,7 +538,6 @@ int show_active_board()
 			break;
 		}
 	}
-	iflush();
 
 	return 0;
 }
