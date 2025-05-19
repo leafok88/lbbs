@@ -1,5 +1,5 @@
 <?php
-function str_length(string $str) : string
+function str_length(string $str) : int
 {
 	$len = strlen($str);
 	$ret = 0;
