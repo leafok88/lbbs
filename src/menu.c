@@ -1098,13 +1098,13 @@ int menu_control(MENU_SET *p_menu_set, int key)
 		if (p_menu_set->choose_step > 0)
 		{
 			p_menu_set->choose_step--;
-			if (display_menu(p_menu_set) != 0)
-			{
-				return menu_control(p_menu_set, KEY_LEFT);
-			}
 			if (p_menu_set->choose_step == 0)
 			{
 				return REDRAW;
+			}
+			if (display_menu(p_menu_set) != 0)
+			{
+				return menu_control(p_menu_set, KEY_LEFT);
 			}
 		}
 		else

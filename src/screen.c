@@ -501,6 +501,9 @@ int show_active_board()
 	static const void *p_data;
 	static const long *p_line_offsets;
 
+	static time_t t_last_show = 0;
+	static int line_last = 0;
+
 	char buffer[LINE_BUFFER_LEN];
 	long int len;
 
@@ -511,6 +514,16 @@ int show_active_board()
 			log_error("get_file_shm(%s) error\n", DATA_ACTIVE_BOARD);
 			return KEY_NULL;
 		}
+	}
+
+	if (time(0) - t_last_show >= 10)
+	{
+		line_last = line_current;
+		t_last_show = time(0);
+	}
+	else
+	{
+		line_current = line_last;
 	}
 
 	clrline(2, 2 + ACTIVE_BOARD_HEIGHT);

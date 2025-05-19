@@ -201,6 +201,7 @@ int bbs_center()
 		if (p_bbs_menu->choose_step == 0 && time(0) - t_last_action >= 10)
 		{
 			t_last_action = time(0);
+
 			show_active_board();
 			show_bottom("");
 			iflush();
@@ -224,6 +225,7 @@ int bbs_center()
 			case EXITBBS:
 				return 0;
 			case REDRAW:
+				t_last_action = time(0);
 				clearscr();
 				show_top("");
 				show_active_board();
