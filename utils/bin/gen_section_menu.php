@@ -41,10 +41,11 @@
 		exit();
 	}
 
+	// Generate menu of section class
 	$buffer .= <<<MENU
 #---------------------------------------------------------------------
 %S_EGROUP
-  ·µ»Ø[[1;32m¡û[0;37m] ½øÈë[[1;32m¡ú[0;37m] Ñ¡Ôñ[[1;32m¡ü[0;37m,[1;32m¡ý[0;37m]
+    ·µ»Ø[[1;32m¡û[0;37m] ½øÈë[[1;32m¡ú[0;37m] Ñ¡Ôñ[[1;32m¡ü[0;37m,[1;32m¡ý[0;37m]
 [44;37m    [1;37mÏÂÊô°æ¿é  À¸Ä¿Ãû³Æ                    ÖÐ  ÎÄ  Ðð  Êö                        [m
 
 
@@ -97,10 +98,11 @@ MENU;
 
 	foreach ($section_hierachy as $c_index => $section_class)
 	{
+		// Generate menu of sections in section_class[$c_index]
 		$buffer .= <<<MENU
 #---------------------------------------------------------------------
 %S__{$section_class["name"]}
-  ·µ»Ø[[1;32m¡û[0;37m] ½øÈë[[1;32m¡ú[0;37m] Ñ¡Ôñ[[1;32m¡ü[0;37m,[1;32m¡ý[0;37m]
+    ·µ»Ø[[1;32m¡û[0;37m] ½øÈë[[1;32m¡ú[0;37m] Ñ¡Ôñ[[1;32m¡ü[0;37m,[1;32m¡ý[0;37m]
 [44;37m    [1;37mÖ÷ÌâÊýÁ¿  °æ¿éÃû³Æ                    ÖÐ  ÎÄ  Ðð  Êö                        [m
 
 
@@ -155,6 +157,70 @@ MENU;
 MENU;
 
 	}
+
+	// Generate menu of all sections
+	$buffer .= <<<MENU
+#---------------------------------------------------------------------
+%S_BOARD
+    ·µ»Ø[[1;32m¡û[0;37m] ½øÈë[[1;32m¡ú[0;37m] Ñ¡Ôñ[[1;32m¡ü[0;37m,[1;32m¡ý[0;37m]
+[44;37m    [1;37mÏÂÊô°æ¿é  À¸Ä¿Ãû³Æ                    ÖÐ  ÎÄ  Ðð  Êö                        [m
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+%
+#---------------------------------------------------------------------
+%menu M_BOARD
+title       0, 0, "[°æ¿éÁÐ±í]"
+screen      2, 0, S_BOARD
+page        4, 1, 20
+
+MENU;
+
+	$display_row = 4;
+
+	foreach ($section_hierachy as $c_index => $section_class)
+	{
+		$class_title_f = "[" . addslashes($section_class['title']) . "]" . str_repeat(" ", 14 - str_length($section_class['title']));
+
+		foreach ($section_class["sections"] as $s_index => $section)
+		{
+			$topic_count = 0; // TODO
+
+			$title_f = str_repeat(" ", 5 - intval(log10($topic_count))) . $topic_count . " £«  " .
+				$section['name'] . str_repeat(" ", 22 - strlen($section['name'])) .
+				$class_title_f .
+				addslashes($section['title']);
+
+			$buffer .= <<<MENU
+			@LIST_SECTION   {$display_row}, 4, 1, {$section['read_user_level']},   "{$section['name']}",    "{$title_f}"
+
+			MENU;
+
+			$display_row = 0;
+		}
+	}
+
+	$buffer .= <<<MENU
+%
+
+MENU;
 
 	unset($section_hierachy);
 
