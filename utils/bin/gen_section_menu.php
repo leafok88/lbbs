@@ -188,7 +188,7 @@ MENU;
 
 			$title_f = str_repeat(" ", 5 - intval(log10($article_count))) . $article_count . " гл  " .
 				$section['name'] . str_repeat(" ", 20 - strlen($section['name'])) .
-				$class_title_f . addslashes($section['title']) . str_repeat(" ", 22 - str_length($section_class['title'])) .
+				$class_title_f . addslashes($section['title']) . str_repeat(" ", 22 - str_length($section['title'])) .
 				$section['udf_values']['section_master'];
 
 			$buffer .= <<<MENU
@@ -251,7 +251,7 @@ MENU;
 
 			$title_f = str_repeat(" ", 5 - intval(log10($article_count))) . $article_count . " гл  " .
 				$section['name'] . str_repeat(" ", 20 - strlen($section['name'])) .
-				$class_title_f . addslashes($section['title']) . str_repeat(" ", 22 - str_length($section_class['title'])) .
+				$class_title_f . addslashes($section['title']) . str_repeat(" ", 22 - str_length($section['title'])) .
 				$section['udf_values']['section_master'];
 
 			$buffer .= <<<MENU
