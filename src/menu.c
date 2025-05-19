@@ -951,7 +951,12 @@ int display_menu(MENU_SET *p_menu_set)
 	if (p_menu == NULL)
 	{
 		log_error("get_menu_by_id(%d) return NULL pointer\n", menu_id);
-		return -1;
+		if (p_menu_set->choose_step > 0)
+		{
+			p_menu_set->choose_step--;
+			return REDRAW;
+		}
+		return EXITBBS;
 	}
 
 	menu_item_pos = p_menu_set->menu_item_pos[p_menu_set->choose_step];
@@ -960,7 +965,7 @@ int display_menu(MENU_SET *p_menu_set)
 	if (p_menu_item == NULL)
 	{
 		log_error("get_menu_item_by_id(%d) return NULL pointer\n", menu_item_id);
-		return -1;
+		menu_item_pos = 0;
 	}
 
 	if (menu_item_pos > 0 &&
@@ -1020,10 +1025,14 @@ int display_menu(MENU_SET *p_menu_set)
 
 	if (!menu_selectable)
 	{
+		log_error("No selectable menu item in current menu (%s)\n", p_menu->name);
 		return -1;
 	}
 
-	display_menu_current_page(p_menu_set);
+	if (display_menu_current_page(p_menu_set) != 0)
+	{
+		return -1;
+	}
 
 	display_menu_cursor(p_menu_set, 1);
 
@@ -1042,7 +1051,8 @@ int menu_control(MENU_SET *p_menu_set, int key)
 
 	if (p_menu_set->menu_count == 0)
 	{
-		return 0;
+		log_error("Empty menu set\n");
+		return EXITBBS;
 	}
 
 	menu_id = p_menu_set->menu_id_path[p_menu_set->choose_step];
@@ -1050,12 +1060,23 @@ int menu_control(MENU_SET *p_menu_set, int key)
 	if (p_menu == NULL)
 	{
 		log_error("get_menu_by_id(%d) return NULL pointer\n", menu_id);
-		return -1;
+		if (p_menu_set->choose_step > 0)
+		{
+			p_menu_set->choose_step--;
+			return REDRAW;
+		}
+		return EXITBBS;
 	}
 
 	if (p_menu->item_count == 0)
 	{
-		return 0;
+		log_error("Empty menu (%s)\n", p_menu->name);
+		if (p_menu_set->choose_step > 0)
+		{
+			p_menu_set->choose_step--;
+			return REDRAW;
+		}
+		return EXITBBS;
 	}
 
 	menu_item_pos = p_menu_set->menu_item_pos[p_menu_set->choose_step];
@@ -1066,7 +1087,8 @@ int menu_control(MENU_SET *p_menu_set, int key)
 	if (p_menu_item == NULL)
 	{
 		log_error("get_menu_item_by_id(%d) return NULL pointer\n", menu_item_id);
-		return -1;
+		p_menu_set->menu_item_pos[p_menu_set->choose_step] = 0;
+		return REDRAW;
 	}
 
 	switch (key)
