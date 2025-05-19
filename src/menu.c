@@ -801,7 +801,7 @@ int display_menu(MENU_SET *p_menu_set)
 
 	if (menu_item_pos > 0 &&
 		checkpriv(&BBS_priv, 0, p_menu_item->priv) != 0 &&
-		checklevel(&BBS_priv, p_menu_item->level) != 0)
+		checklevel2(&BBS_priv, p_menu_item->level))
 	{
 		menu_selectable = 1;
 	}

@@ -24,16 +24,6 @@
 
 BBS_user_priv BBS_priv;
 
-int checklevel(BBS_user_priv *p_priv, int level)
-{
-	if (level == P_GUEST)
-	{
-		return 1;
-	}
-
-	return ((p_priv->level & level) ? 1 : 0);
-}
-
 int setpriv(BBS_user_priv *p_priv, int sid, int priv)
 {
 	int i;
@@ -74,11 +64,6 @@ int getpriv(BBS_user_priv *p_priv, int sid)
 	}
 
 	return (sid >= 0 ? p_priv->g_priv : S_NONE);
-}
-
-int checkpriv(BBS_user_priv *p_priv, int sid, int priv)
-{
-	return (((getpriv(p_priv, sid) & priv)) == priv ? 1 : 0);
 }
 
 int load_priv(MYSQL *db, BBS_user_priv *p_priv, long int uid)

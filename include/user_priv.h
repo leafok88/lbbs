@@ -58,13 +58,31 @@ typedef struct user_priv BBS_user_priv;
 
 extern BBS_user_priv BBS_priv;
 
-extern int checklevel(BBS_user_priv *p_priv, int level);
+// Check whether user level matches any bit in the given param
+inline int checklevel(BBS_user_priv *p_priv, int level)
+{
+	if (level == P_GUEST)
+	{
+		return 1;
+	}
+
+	return ((p_priv->level & level) ? 1 : 0);
+}
+
+// Check whether user level is equal or greater than the given param
+inline int checklevel2(BBS_user_priv *p_priv, int level)
+{
+	return ((p_priv->level >= level) ? 1 : 0);
+}
 
 extern int setpriv(BBS_user_priv *p_priv, int sid, int priv);
 
 extern int getpriv(BBS_user_priv *p_priv, int sid);
 
-extern int checkpriv(BBS_user_priv *p_priv, int sid, int priv);
+inline int checkpriv(BBS_user_priv *p_priv, int sid, int priv)
+{
+	return (((getpriv(p_priv, sid) & priv)) == priv ? 1 : 0);
+}
 
 extern int load_priv(MYSQL *db, BBS_user_priv *p_priv, long int uid);
 
