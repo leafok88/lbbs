@@ -276,6 +276,7 @@ int igetch(int timeout)
 					{
 						if (errno == EAGAIN || errno == EWOULDBLOCK)
 						{
+							out = 0;
 							loop = 0;
 							break;
 						}
