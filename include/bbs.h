@@ -21,9 +21,12 @@
 #include <netinet/in.h>
 
 // BBS
-#define BBS_max_section 1024
+#define BBS_max_section 200
+#define BBS_section_name_max_len 20
+#define BBS_section_title_max_len 20
 #define BBS_username_max_len 12
 #define BBS_password_max_len 12
+#define BBS_nickname_max_len 20
 
 extern char BBS_id[20];
 extern char BBS_name[50];
@@ -43,7 +46,7 @@ extern char BBS_username[BBS_username_max_len + 1];
 extern time_t BBS_login_tm;
 extern time_t BBS_last_access_tm;
 
-extern char BBS_current_section_name[20];
+extern char BBS_current_section_name[BBS_section_name_max_len + 1];
 
 extern char *setuserfile(char *buf, size_t len, const char *filename);
 

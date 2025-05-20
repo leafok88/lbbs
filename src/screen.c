@@ -440,7 +440,7 @@ int show_top(const char *status)
 		status_f[len] = '\0';
 	}
 
-	len = split_line(BBS_current_section_name, 20, &truncate, &section_name_len);
+	len = split_line(BBS_current_section_name, BBS_section_name_max_len, &truncate, &section_name_len);
 	if (truncate)
 	{
 		log_error("Section name is truncated\n");

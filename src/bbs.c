@@ -35,7 +35,7 @@ char BBS_username[BBS_username_max_len + 1];
 time_t BBS_login_tm;
 time_t BBS_last_access_tm;
 
-char BBS_current_section_name[20];
+char BBS_current_section_name[BBS_section_name_max_len + 1];
 
 char *setuserfile(char *buf, size_t len, const char *filename)
 {
