@@ -1331,16 +1331,22 @@ int unload_menu(MENU_SET *p_menu_set)
 
 int load_menu_shm(MENU_SET *p_menu_set)
 {
+	void *p_shm;
+
 	// Mount shared memory
-	if (p_menu_set->p_reserved == NULL)
+	p_shm = shmat(p_menu_set->shmid, NULL, SHM_RDONLY);
+	if (p_shm == (void *)-1)
 	{
-		p_menu_set->p_reserved = shmat(p_menu_set->shmid, NULL, SHM_RDONLY);
-		if (p_menu_set->p_reserved == (void *)-1)
-		{
-			log_error("shmat() error (%d)\n", errno);
-			return -1;
-		}
+		log_error("shmat() error (%d)\n", errno);
+		return -1;
 	}
+
+	if (p_menu_set->p_reserved != NULL && shmdt(p_menu_set->p_reserved) == -1)
+	{
+		log_error("shmdt() error (%d)\n", errno);
+		return -2;
+	}
+	p_menu_set->p_reserved = p_shm;
 
 	p_menu_set->p_menu_pool = p_menu_set->p_reserved + MENU_SET_RESERVED_LENGTH;
 	p_menu_set->p_menu_item_pool = p_menu_set->p_menu_pool + sizeof(MENU) * MAX_MENUS;
