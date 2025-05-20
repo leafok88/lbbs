@@ -174,6 +174,20 @@ int load_file_shm(const char *filename)
 	p_line_offsets = p_data + data_len + 1;
 	memcpy(p_line_offsets, line_offsets, sizeof(long) * (size_t)(line_total + 1));
 
+	// Re-mount shm in read-only mode
+	if (shmdt(p_shm) == -1)
+	{
+		log_error("shmdt() error (%d)\n", errno);
+		return -3;
+	}
+
+	p_shm = shmat(shmid, NULL, SHM_RDONLY);
+	if (p_shm == (void *)-1)
+	{
+		log_error("shmat(shmid=%d) error (%d)\n", shmid, errno);
+		return -3;
+	}
+
 	if (trie_dict_get(p_trie_file_dict, filename, (int64_t *)&p_shm_old) == 1)
 	{
 		shmid_old = *((int *)p_shm_old);
