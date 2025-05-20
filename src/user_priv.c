@@ -75,6 +75,7 @@ int load_priv(MYSQL *db, BBS_user_priv *p_priv, long int uid)
 	p_priv->uid = uid;
 	p_priv->level = (uid == 0 ? P_GUEST : P_USER);
 	p_priv->g_priv = S_DEFAULT;
+	p_priv->s_count = 0;
 
 	if (db == NULL)
 		return 1;
