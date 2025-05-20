@@ -306,8 +306,10 @@ int igetch(int timeout)
 		}
 
 		// For debug
-		// for (j = 0; j < len; j++)
-		//   log_std ("<--[%u]\n", (buf[j] + 256) % 256);
+		// for (int j = pos; j < len; j++)
+		// {
+		// 	log_std("Debug: <--[%u]\n", (buf[j] + 256) % 256);
+		// }
 	}
 
 	fcntl(STDIN_FILENO, F_SETFL, flags);
@@ -360,30 +362,122 @@ int igetch(int timeout)
 		if (in_ascii)
 		{
 			tmp[i++] = c;
-			if (c == 'm')
+			if (i == 2 && (tmp[0] == 79 || tmp[0] == 91))
 			{
 				in_ascii = 0;
-				continue;
-			}
-			if (i == 2 && c >= 'A' && c <= 'D')
-			{
-				in_ascii = 0;
-				switch (c)
+				switch (tmp[1])
 				{
-				case 'A':
+				case 65:
 					out = KEY_UP;
 					break;
-				case 'B':
+				case 66:
 					out = KEY_DOWN;
 					break;
-				case 'C':
+				case 67:
 					out = KEY_RIGHT;
 					break;
-				case 'D':
+				case 68:
 					out = KEY_LEFT;
 					break;
+				default:
+					in_ascii = 1;
 				}
-				break;
+				if (!in_ascii)
+				{
+					break;
+				}
+			}
+			if (i == 2 && tmp[0] == 91) // Fterm
+			{
+				in_ascii = 0;
+				switch (tmp[1])
+				{
+				case 86:
+					out = KEY_SHIFT_F1;
+					break;
+				case 90:
+					out = KEY_SHIFT_F2;
+					break;
+				case 97:
+					out = KEY_SHIFT_F3;
+					break;
+				case 98:
+					out = KEY_SHIFT_F4;
+					break;
+				case 99:
+					out = KEY_SHIFT_F5;
+					break;
+				case 100:
+					out = KEY_SHIFT_F6;
+					break;
+				case 101:
+					out = KEY_SHIFT_F7;
+					break;
+				case 102:
+					out = KEY_SHIFT_F8;
+					break;
+				case 103:
+					out = KEY_SHIFT_F9;
+					break;
+				case 104:
+					out = KEY_SHIFT_F10;
+					break;
+				case 107:
+					out = KEY_CTRL_F1;
+					break;
+				case 108:
+					out = KEY_CTRL_F2;
+					break;
+				case 109:
+					out = KEY_CTRL_F3;
+					break;
+				case 112:
+					out = KEY_CTRL_F6;
+					break;
+				case 113:
+					out = KEY_CTRL_F7;
+					break;
+				case 114:
+					out = KEY_CTRL_F8;
+					break;
+				case 115:
+					out = KEY_CTRL_F9;
+					break;
+				case 116:
+					out = KEY_CTRL_F10;
+					break;
+				default:
+					in_ascii = 1;
+				}
+				if (!in_ascii)
+				{
+					break;
+				}
+			}
+			if (i == 2 && tmp[0] == 79) // Xterm
+			{
+				in_ascii = 0;
+				switch (tmp[1])
+				{
+				case 80:
+					out = KEY_F1;
+					break;
+				case 81:
+					out = KEY_F2;
+					break;
+				case 82:
+					out = KEY_F3;
+					break;
+				case 83:
+					out = KEY_F4;
+					break;
+				default:
+					in_ascii = 1;
+				}
+				if (!in_ascii)
+				{
+					break;
+				}
 			}
 			if (i == 3 && tmp[0] == 91 && tmp[2] == 126)
 			{
@@ -405,8 +499,230 @@ int igetch(int timeout)
 				case 54:
 					out = KEY_PGDN;
 					break;
+				default:
+					in_ascii = 1;
 				}
-				break;
+				if (!in_ascii)
+				{
+					break;
+				}
+			}
+			if (i == 4 && tmp[0] == 91 && tmp[1] == 49 && tmp[3] == 126)  // Fterm
+			{
+				in_ascii = 0;
+				switch (tmp[2])
+				{
+				case 49:
+					out = KEY_F1;
+					break;
+				case 50:
+					out = KEY_F2;
+					break;
+				case 51:
+					out = KEY_F3;
+					break;
+				case 52:
+					out = KEY_F4;
+					break;
+				case 53:
+					out = KEY_F5;
+					break;
+				case 55:
+					out = KEY_F6;
+					break;
+				case 56:
+					out = KEY_F7;
+					break;
+				case 57:
+					out = KEY_F8;
+					break;
+				default:
+					in_ascii = 1;
+				}
+				if (!in_ascii)
+				{
+					break;
+				}
+			}
+			if (i == 4 && tmp[0] == 91 && tmp[1] == 50 && tmp[3] == 126) // Fterm
+			{
+				in_ascii = 0;
+				switch (tmp[2])
+				{
+				case 48:
+					out = KEY_F9;
+					break;
+				case 49:
+					out = KEY_F10;
+					break;
+				case 50:
+					out = KEY_F11; // Fterm
+					break;
+				case 51:
+					out = KEY_F11; // Xterm
+					break;
+				case 52:
+					out = KEY_F12; // Xterm
+					break;
+				default:
+					in_ascii = 1;
+				}
+				if (!in_ascii)
+				{
+					break;
+				}
+			}
+			if (i == 5 && tmp[0] == 91 && tmp[1] == 49 && tmp[2] == 59 && tmp[3] == 53) // Xterm
+			{
+				in_ascii = 0;
+				switch (tmp[4])
+				{
+				case 80:
+					out = KEY_CTRL_F1;
+					break;
+				case 81:
+					out = KEY_CTRL_F2;
+					break;
+				case 82:
+					out = KEY_CTRL_F3;
+					break;
+				default:
+					in_ascii = 1;
+				}
+				if (!in_ascii)
+				{
+					break;
+				}
+			}
+			if (i == 6 && tmp[0] == 91 && tmp[1] == 49 && tmp[3] == 59 && tmp[4] == 53 && tmp[5] == 126) // Xterm
+			{
+				in_ascii = 0;
+				switch (tmp[2])
+				{
+				case 53:
+					out = KEY_CTRL_F5;
+					break;
+				case 55:
+					out = KEY_CTRL_F6;
+					break;
+				case 56:
+					out = KEY_CTRL_F7;
+					break;
+				case 57:
+					out = KEY_CTRL_F8;
+					break;
+				default:
+					in_ascii = 1;
+				}
+				if (!in_ascii)
+				{
+					break;
+				}
+			}
+			if (i == 6 && tmp[0] == 91 && tmp[1] == 50 && tmp[3] == 59 && tmp[4] == 53 && tmp[5] == 126) // Xterm
+			{
+				in_ascii = 0;
+				switch (tmp[2])
+				{
+				case 48:
+					out = KEY_CTRL_F9;
+					break;
+				case 49:
+					out = KEY_CTRL_F10;
+					break;
+				case 51:
+					out = KEY_CTRL_F11;
+					break;
+				case 52:
+					out = KEY_CTRL_F12;
+					break;
+				default:
+					in_ascii = 1;
+				}
+				if (!in_ascii)
+				{
+					break;
+				}
+			}
+			if (i == 5 && tmp[0] == 91 && tmp[1] == 49 && tmp[2] == 59 && tmp[3] == 50) // Xterm
+			{
+				in_ascii = 0;
+				switch (tmp[4])
+				{
+				case 80:
+					out = KEY_SHIFT_F1;
+					break;
+				case 81:
+					out = KEY_SHIFT_F2;
+					break;
+				case 82:
+					out = KEY_SHIFT_F3;
+					break;
+				case 83:
+					out = KEY_SHIFT_F4;
+					break;
+				default:
+					in_ascii = 1;
+				}
+				if (!in_ascii)
+				{
+					break;
+				}
+			}
+			if (i == 6 && tmp[0] == 91 && tmp[1] == 49 && tmp[3] == 59 && tmp[4] == 50 && tmp[5] == 126) // Xterm
+			{
+				in_ascii = 0;
+				switch (tmp[2])
+				{
+				case 53:
+					out = KEY_SHIFT_F5;
+					break;
+				case 55:
+					out = KEY_SHIFT_F6;
+					break;
+				case 56:
+					out = KEY_SHIFT_F7;
+					break;
+				case 57:
+					out = KEY_SHIFT_F8;
+					break;
+				default:
+					in_ascii = 1;
+				}
+				if (!in_ascii)
+				{
+					break;
+				}
+			}
+			if (i == 6 && tmp[0] == 91 && tmp[1] == 50 && tmp[3] == 59 && tmp[4] == 50 && tmp[5] == 126) // Xterm
+			{
+				in_ascii = 0;
+				switch (tmp[2])
+				{
+				case 48:
+					out = KEY_SHIFT_F9;
+					break;
+				case 49:
+					out = KEY_SHIFT_F10;
+					break;
+				case 51:
+					out = KEY_SHIFT_F11;
+					break;
+				case 52:
+					out = KEY_SHIFT_F12;
+					break;
+				default:
+					in_ascii = 1;
+				}
+				if (!in_ascii)
+				{
+					break;
+				}
+			}
+
+			if (c == 'm')
+			{
+				in_ascii = 0;
 			}
 			continue;
 		}
@@ -415,12 +731,15 @@ int igetch(int timeout)
 		break;
 	}
 
-	// for debug
-	// log_std ("-->[%u]\n", out);
-
 	if (close(epollfd) < 0)
 	{
 		log_error("close(epoll) error (%d)\n");
+	}
+
+	// for debug
+	if (out != KEY_TIMEOUT && out != KEY_NULL)
+	{
+		log_std ("Debug: -->[0x %x]\n", out);
 	}
 
 	return out;

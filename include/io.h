@@ -28,6 +28,7 @@
 
 #ifndef EXTEND_KEY
 #define EXTEND_KEY
+
 #define KEY_NULL 0xffff
 #define KEY_TIMEOUT 0xfffe
 #define KEY_CONTROL 0xff
@@ -43,6 +44,7 @@
 #define KEY_END 0x0204
 #define KEY_PGUP 0x0205
 #define KEY_PGDN 0x0206
+
 #define KEY_F1 0x0207
 #define KEY_F2 0x0208
 #define KEY_F3 0x0209
@@ -53,7 +55,36 @@
 #define KEY_F8 0x020e
 #define KEY_F9 0x020f
 #define KEY_F10 0x0210
-#endif
+#define KEY_F11 0x0211
+#define KEY_F12 0x0212
+
+#define KEY_SHIFT_F1 0x0213
+#define KEY_SHIFT_F2 0x0214
+#define KEY_SHIFT_F3 0x0215
+#define KEY_SHIFT_F4 0x0216
+#define KEY_SHIFT_F5 0x0217
+#define KEY_SHIFT_F6 0x0218
+#define KEY_SHIFT_F7 0x0219
+#define KEY_SHIFT_F8 0x021a
+#define KEY_SHIFT_F9 0x021b
+#define KEY_SHIFT_F10 0x021c
+#define KEY_SHIFT_F11 0x021d
+#define KEY_SHIFT_F12 0x021e
+
+#define KEY_CTRL_F1 0x021f
+#define KEY_CTRL_F2 0x0220
+#define KEY_CTRL_F3 0x0221
+#define KEY_CTRL_F4 0x0222
+#define KEY_CTRL_F5 0x0223
+#define KEY_CTRL_F6 0x0224
+#define KEY_CTRL_F7 0x0225
+#define KEY_CTRL_F8 0x0226
+#define KEY_CTRL_F9 0x0227
+#define KEY_CTRL_F10 0x0228
+#define KEY_CTRL_F11 0x0229
+#define KEY_CTRL_F12 0x022a
+
+#endif // EXPAND_KEY
 
 #define Ctrl(C) ((C) - 'A' + 1)
 
