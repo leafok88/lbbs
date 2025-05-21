@@ -27,8 +27,11 @@
 #include <sys/shm.h>
 #include <sys/ipc.h>
 
+// ARTICLE_BLOCK_PER_SHM * ARTICLE_BLOCK_SHM_COUNT_LIMIT should be
+// no less than BBS_article_block_limit_per_section * BBS_max_section,
+// in order to allocate enough memory for blocks
 #define ARTICLE_BLOCK_PER_SHM 50 // sizeof(ARTICLE_BLOCK) * ARTICLE_BLOCK_PER_SHM is the size of each shm segment to allocate
-#define ARTICLE_BLOCK_SHM_COUNT_LIMIT 256
+#define ARTICLE_BLOCK_SHM_COUNT_LIMIT 256 // limited by length (8-bit) of proj_id in ftok(path, proj_id)
 
 struct article_block_shm_t
 {

@@ -44,9 +44,11 @@ int main(int argc, char *argv[])
 	SECTION_DATA *p_section[BBS_max_section];
 	ARTICLE *p_article;
 	ARTICLE article;
+	int block_count;
 	int i, j;
 	int last_aid;
 	int group_count;
+	int article_count;
 
 	if (log_begin("../log/bbsd.log", "../log/error.log") < 0)
 	{
@@ -57,7 +59,9 @@ int main(int argc, char *argv[])
 	log_std_redirect(STDOUT_FILENO);
 	log_err_redirect(STDERR_FILENO);
 
-	if (section_data_pool_init("../conf/menu.conf", BBS_article_block_limit_per_section * BBS_max_section) < 0)
+	block_count = BBS_article_block_limit_per_section * BBS_max_section - 1;
+
+	if (section_data_pool_init("../conf/menu.conf", block_count) < 0)
 	{
 		log_error("section_data_pool_init() error\n");
 		return -2;
@@ -92,7 +96,11 @@ int main(int argc, char *argv[])
 			article.ontop = 0;
 			article.lock = 0;
 
-			section_data_append_article(p_section[i], &article);
+			if (section_data_append_article(p_section[i], &article) < 0)
+			{
+				printf("append article (aid = %d) error\n", article.aid);
+				break;
+			}
 		}
 
 		printf("Load %d articles into section %d\n", p_section[i]->article_count, i);
@@ -102,6 +110,11 @@ int main(int argc, char *argv[])
 
 	for (i = 0; i < section_count; i++)
 	{
+		if (p_section[i]->article_count == 0)
+		{
+			continue;
+		}
+
 		for (j = 0; j < p_section[i]->article_count; j++)
 		{
 			last_aid++;
@@ -144,7 +157,11 @@ int main(int argc, char *argv[])
 			article.ontop = 0;
 			article.lock = 0;
 
-			section_data_append_article(p_section[i], &article);
+			if (section_data_append_article(p_section[i], &article) < 0)
+			{
+				printf("append article (aid = %d) error\n", article.aid);
+				break;
+			}
 		}
 
 		printf("Load %d articles into section %d\n", p_section[i]->article_count, i);
@@ -152,6 +169,11 @@ int main(int argc, char *argv[])
 
 	for (i = 0; i < section_count; i++)
 	{
+		if (p_section[i]->article_count == 0)
+		{
+			continue;
+		}
+
 		for (j = 0; j < group_count; j++)
 		{
 			p_article = section_data_find_article_by_index(p_section[i], j);
@@ -165,6 +187,8 @@ int main(int argc, char *argv[])
 				printf("Inconsistent aid at index %d != %d\n", j, j + 1);
 				break;
 			}
+
+			article_count = 1;
 
 			do
 			{
@@ -190,7 +214,14 @@ int main(int argc, char *argv[])
 					printf("Inconsistent tid at aid %d != %d\n", last_aid, j + 1);
 					break;
 				}
+				article_count++;
 			} while (1);
+
+			if (article_count != p_section[i]->article_count / group_count)
+			{
+				printf("Count of articles in topic %d is less than expected %d < %d\n",
+					   j + 1, article_count, p_section[i]->article_count / group_count);
+			}
 		}
 
 		printf("Verify %d topics in section %d\n", group_count, i);
