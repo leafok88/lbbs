@@ -24,29 +24,29 @@
 const char *sname[] = {
 	"Test",
 	"ABCDEFG",
-	"_1234_"
-};
+	"_1234_"};
 
 const char *stitle[] = {
 	" Test Section ",
 	"字母组合ABC",
-	"_数字_123"
-};
+	"_数字_123"};
 
 const char *master_name[] = {
 	"sysadm",
 	"SYSOP",
-	""
-};
+	""};
 
-int section_count = 3;
+int section_conf_count = 3;
+int section_count = BBS_max_section;
 
 int main(int argc, char *argv[])
 {
 	SECTION_DATA *p_section[BBS_max_section];
+	ARTICLE *p_article;
 	ARTICLE article;
 	int i, j;
 	int last_aid;
+	int group_count;
 
 	if (log_begin("../log/bbsd.log", "../log/error.log") < 0)
 	{
@@ -63,11 +63,16 @@ int main(int argc, char *argv[])
 		return -2;
 	}
 
+	printf("Testing #1 ...\n");
+
 	last_aid = 0;
 
 	for (i = 0; i < section_count; i++)
 	{
-		if ((p_section[i] = section_data_create(sname[i], stitle[i], master_name[i])) == NULL)
+		p_section[i] = section_data_create(sname[i % section_conf_count],
+										   stitle[i % section_conf_count],
+										   master_name[i % section_conf_count]);
+		if (p_section[i] == NULL)
 		{
 			log_error("section_data_create(i=%d) error\n", i);
 			return -3;
@@ -89,7 +94,31 @@ int main(int argc, char *argv[])
 
 			section_data_append_article(p_section[i], &article);
 		}
+
+		printf("Load %d articles into section %d\n", p_section[i]->article_count, i);
 	}
+
+	last_aid = 0;
+
+	for (i = 0; i < section_count; i++)
+	{
+		for (j = 0; j < p_section[i]->article_count; j++)
+		{
+			last_aid++;
+
+			p_article = section_data_find_article_by_index(p_section[i], j);
+			if (p_article == NULL || p_article->aid != last_aid)
+			{
+				printf("Inconsistent aid at index %d != %d\n", j, last_aid);
+			}
+		}
+
+		printf("Verify %d articles in section %d\n", p_section[i]->article_count, i);
+	}
+
+	printf("Testing #2 ...\n");
+
+	group_count = 100;
 
 	for (i = 0; i < section_count; i++)
 	{
@@ -98,6 +127,73 @@ int main(int argc, char *argv[])
 			log_error("section_data_free_block(i=%d) error\n", i);
 			return -4;
 		}
+
+		last_aid = 0;
+
+		for (j = 0; j < BBS_article_limit_per_block * BBS_article_block_limit_per_section; j++)
+		{
+			last_aid++;
+
+			// Set article data
+			article.aid = last_aid;
+			article.cid = article.aid;
+			article.tid = (article.aid <= group_count ? 0 : (article.aid - 1) % group_count + 1); // Group articles into group_count topics
+			article.uid = 1;																	  // TODO: randomize
+			article.visible = 1;
+			article.excerption = 0;
+			article.ontop = 0;
+			article.lock = 0;
+
+			section_data_append_article(p_section[i], &article);
+		}
+
+		printf("Load %d articles into section %d\n", p_section[i]->article_count, i);
+	}
+
+	for (i = 0; i < section_count; i++)
+	{
+		for (j = 0; j < group_count; j++)
+		{
+			p_article = section_data_find_article_by_index(p_section[i], j);
+			if (p_article == NULL)
+			{
+				printf("NULL p_article at index %d\n", j);
+				break;
+			}
+			if (p_article->aid != j + 1)
+			{
+				printf("Inconsistent aid at index %d != %d\n", j, j + 1);
+				break;
+			}
+
+			do
+			{
+				if (p_article->next_aid <= p_article->aid && p_article->next_aid != p_article->tid)
+				{
+					printf("Non-ascending aid found %d >= %d\n", p_article->aid, p_article->next_aid);
+					break;
+				}
+
+				last_aid = p_article->next_aid;
+				p_article = section_data_find_article_by_aid(p_section[i], last_aid);
+				if (p_article == NULL)
+				{
+					printf("NULL p_article at aid %d\n", last_aid);
+					break;
+				}
+				if (p_article->tid == 0) // loop
+				{
+					break;
+				}
+				if (p_article->tid != j + 1)
+				{
+					printf("Inconsistent tid at aid %d != %d\n", last_aid, j + 1);
+					break;
+				}
+			} while (1);
+		}
+
+		printf("Verify %d topics in section %d\n", group_count, i);
 	}
 
 	section_data_pool_cleanup();

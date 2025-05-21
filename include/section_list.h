@@ -73,5 +73,6 @@ extern int section_data_free_block(SECTION_DATA *p_section);
 extern SECTION_DATA *section_data_find_by_name(const char *sname);
 
 extern int section_data_append_article(SECTION_DATA *p_section, const ARTICLE *p_article);
-extern ARTICLE *section_data_search_article(SECTION_DATA *p_section, int32_t aid);
+extern ARTICLE *section_data_find_article_by_aid(SECTION_DATA *p_section, int32_t aid);
+extern ARTICLE *section_data_find_article_by_index(SECTION_DATA *p_section, int index);
 extern int section_data_mark_del_article(SECTION_DATA *p_section, int32_t aid);
