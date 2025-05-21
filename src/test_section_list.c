@@ -191,12 +191,20 @@ int main(int argc, char *argv[])
 		}
 
 		article_count = 0;
+		last_aid = 0;
 
 		p_article = p_section[i]->p_article_head;
 
 		do
 		{
 			article_count++;
+
+			if (p_article->aid <= last_aid)
+			{
+				printf("Non-ascending aid found %d <= %d\n", p_article->aid, last_aid);
+			}
+			last_aid = p_article->aid;
+
 			p_article = p_article->p_next;
 		} while (p_article != p_section[i]->p_article_head);
 
@@ -231,10 +239,18 @@ int main(int argc, char *argv[])
 			}
 
 			article_count = 1;
+			last_aid = 0;
 
 			do
 			{
+				if (p_article->aid <= last_aid)
+				{
+					printf("Non-ascending aid found %d <= %d\n", p_article->aid, last_aid);
+				}
+				last_aid = p_article->aid;
+
 				p_article = p_article->p_topic_next;
+
 				if (p_article == NULL)
 				{
 					printf("NULL p_article found\n");
@@ -249,6 +265,7 @@ int main(int argc, char *argv[])
 					printf("Inconsistent tid  %d != %d\n", last_aid, j + 1);
 					break;
 				}
+
 				article_count++;
 			} while (1);
 
