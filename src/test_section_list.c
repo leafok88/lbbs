@@ -236,6 +236,9 @@ int main(int argc, char *argv[])
 		printf("Verify %d topics in section %d\n", group_count, i);
 	}
 
+	printf("Press ENTER to exit...");
+	getchar();
+	
 	section_data_pool_cleanup();
 
 	log_end();
