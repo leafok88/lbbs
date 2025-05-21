@@ -29,8 +29,10 @@ struct article_t
 	int32_t tid;
 	int32_t cid;
 	int32_t uid;
-	int32_t prior_aid;
-	int32_t next_aid;
+	struct article_t *p_prior; // prior article
+	struct article_t *p_next; // next article
+	struct article_t * p_topic_prior; // same topic
+	struct article_t * p_topic_next; // same topic
 	int8_t visible;
 	int8_t excerption;
 	int8_t ontop;
@@ -62,6 +64,8 @@ struct section_data_t
 	int32_t block_head_aid[BBS_article_block_limit_per_section];
 	int32_t article_count;
 	int32_t delete_count;
+	ARTICLE *p_article_head;
+	ARTICLE *p_article_tail;
 };
 typedef struct section_data_t SECTION_DATA;
 
@@ -72,7 +76,7 @@ extern SECTION_DATA *section_data_create(const char *sname, const char *stitle, 
 extern int section_data_free_block(SECTION_DATA *p_section);
 extern SECTION_DATA *section_data_find_section_by_name(const char *sname);
 
-extern int section_data_append_article(SECTION_DATA *p_section, const ARTICLE *p_article);
+extern int section_data_append_article(SECTION_DATA *p_section, const ARTICLE *p_article_src);
 extern ARTICLE *section_data_find_article_by_aid(SECTION_DATA *p_section, int32_t aid);
 extern ARTICLE *section_data_find_article_by_index(SECTION_DATA *p_section, int index);
 extern int section_data_mark_del_article(SECTION_DATA *p_section, int32_t aid);

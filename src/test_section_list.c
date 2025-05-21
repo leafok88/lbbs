@@ -84,8 +84,11 @@ int main(int argc, char *argv[])
 			log_error("section_data_create(i=%d) error\n", i);
 			return -3;
 		}
+	}
 
-		for (j = 0; j < BBS_article_limit_per_block * BBS_article_block_limit_per_section; j++)
+	for (j = 0; j < BBS_article_limit_per_block * BBS_article_block_limit_per_section; j++)
+	{
+		for (i = 0; i < section_count; i++)
 		{
 			last_aid++;
 
@@ -105,11 +108,12 @@ int main(int argc, char *argv[])
 				break;
 			}
 		}
-
-		printf("Load %d articles into section %d\n", p_section[i]->article_count, i);
 	}
 
-	last_aid = 0;
+	for (i = 0; i < section_count; i++)
+	{
+		printf("Load %d articles into section %d\n", p_section[i]->article_count, i);
+	}
 
 	for (i = 0; i < section_count; i++)
 	{
@@ -118,23 +122,26 @@ int main(int argc, char *argv[])
 			continue;
 		}
 
+		last_aid = i + 1;
+
 		for (j = 0; j < p_section[i]->article_count; j++)
 		{
-			last_aid++;
-
 			p_article = section_data_find_article_by_index(p_section[i], j);
 			if (p_article == NULL || p_article->aid != last_aid)
 			{
-				printf("Inconsistent aid at index %d != %d\n", j, last_aid);
+				printf("Inconsistent aid at section %d index %d != %d\n", i, j, last_aid);
 			}
 
 			if (section_data_mark_del_article(p_section[i], p_article->aid) != 1)
 			{
 				printf("section_data_mark_del_article(aid = %d) error\n", p_article->aid);
 			}
+
+			last_aid += section_count;
 		}
 
 		printf("Verify %d articles in section %d\n", p_section[i]->article_count, i);
+
 		printf("Delete %d articles in section %d\n", p_section[i]->delete_count, i);
 	}
 
@@ -183,6 +190,32 @@ int main(int argc, char *argv[])
 			continue;
 		}
 
+		article_count = 0;
+
+		p_article = p_section[i]->p_article_head;
+
+		do
+		{
+			article_count++;
+			p_article = p_article->p_next;
+		} while (p_article != p_section[i]->p_article_head);
+
+		if (article_count != p_section[i]->article_count)
+		{
+			printf("Count of articles in section %d is different from expected %d != %d\n",
+				   i, article_count, p_section[i]->article_count);
+		}
+
+		printf("Verify %d articles in section %d\n", group_count, i);
+	}
+
+	for (i = 0; i < section_count; i++)
+	{
+		if (p_section[i]->article_count == 0)
+		{
+			continue;
+		}
+
 		for (j = 0; j < group_count; j++)
 		{
 			p_article = section_data_find_article_by_index(p_section[i], j);
@@ -201,17 +234,10 @@ int main(int argc, char *argv[])
 
 			do
 			{
-				if (p_article->next_aid <= p_article->aid && p_article->next_aid != p_article->tid)
-				{
-					printf("Non-ascending aid found %d >= %d\n", p_article->aid, p_article->next_aid);
-					break;
-				}
-
-				last_aid = p_article->next_aid;
-				p_article = section_data_find_article_by_aid(p_section[i], last_aid);
+				p_article = p_article->p_topic_next;
 				if (p_article == NULL)
 				{
-					printf("NULL p_article at aid %d\n", last_aid);
+					printf("NULL p_article found\n");
 					break;
 				}
 				if (p_article->tid == 0) // loop
@@ -220,7 +246,7 @@ int main(int argc, char *argv[])
 				}
 				if (p_article->tid != j + 1)
 				{
-					printf("Inconsistent tid at aid %d != %d\n", last_aid, j + 1);
+					printf("Inconsistent tid  %d != %d\n", last_aid, j + 1);
 					break;
 				}
 				article_count++;
@@ -248,7 +274,7 @@ int main(int argc, char *argv[])
 
 	printf("Press ENTER to exit...");
 	getchar();
-	
+
 	section_data_pool_cleanup();
 
 	log_end();

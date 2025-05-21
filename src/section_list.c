@@ -251,6 +251,9 @@ SECTION_DATA *section_data_create(const char *sname, const char *stitle, const c
 	p_section->article_count = 0;
 	p_section->delete_count = 0;
 
+	p_section->p_article_head = NULL;
+	p_section->p_article_tail = NULL;
+
 	if (trie_dict_set(p_trie_dict_section_data, sname, index) != 1)
 	{
 		log_error("trie_dict_set(section_data, %s, %d) error\n", sname, index);
@@ -290,6 +293,9 @@ int section_data_free_block(SECTION_DATA *p_section)
 	p_section->article_count = 0;
 	p_section->delete_count = 0;
 
+	p_section->p_article_head = NULL;
+	p_section->p_article_tail = NULL;
+
 	return 0;
 }
 
@@ -312,14 +318,15 @@ SECTION_DATA *section_data_find_section_by_name(const char *sname)
 	return (p_section_data_pool + index);
 }
 
-int section_data_append_article(SECTION_DATA *p_section, const ARTICLE *p_article)
+int section_data_append_article(SECTION_DATA *p_section, const ARTICLE *p_article_src)
 {
 	ARTICLE_BLOCK *p_block;
 	int32_t last_aid = 0;
+	ARTICLE *p_article;
 	ARTICLE *p_topic_head;
 	ARTICLE *p_topic_tail;
 
-	if (p_section == NULL || p_article == NULL)
+	if (p_section == NULL || p_article_src == NULL)
 	{
 		log_error("section_data_append_article() NULL pointer error\n");
 		return -1;
@@ -356,7 +363,7 @@ int section_data_append_article(SECTION_DATA *p_section, const ARTICLE *p_articl
 		else
 		{
 			p_section->p_tail_block->p_next_block = p_block;
-			last_aid = p_section->p_tail_block->articles[BBS_article_limit_per_block - 1].aid;
+			last_aid = p_section->p_article_tail->aid;
 		}
 		p_section->p_tail_block = p_block;
 		p_section->p_block[p_section->block_count] = p_block;
@@ -365,34 +372,34 @@ int section_data_append_article(SECTION_DATA *p_section, const ARTICLE *p_articl
 	else
 	{
 		p_block = p_section->p_tail_block;
-		last_aid = p_block->articles[p_block->article_count - 1].aid;
+		last_aid = p_section->p_article_tail->aid;
 	}
 
 	// AID of articles should be strictly ascending
-	if (p_article->aid <= last_aid)
+	if (p_article_src->aid <= last_aid)
 	{
-		log_error("section_data_append_article(aid=%d) error: last_aid=%d\n", p_article->aid, last_aid);
+		log_error("section_data_append_article(aid=%d) error: last_aid=%d\n", p_article_src->aid, last_aid);
 		return -3;
 	}
 
 	if (p_block->article_count == 0)
 	{
-		p_section->block_head_aid[p_section->block_count - 1] = p_article->aid;
+		p_section->block_head_aid[p_section->block_count - 1] = p_article_src->aid;
 	}
 
-	if (p_article->tid != 0)
+	if (p_article_src->tid != 0)
 	{
-		p_topic_head = section_data_find_article_by_aid(p_section, p_article->tid);
+		p_topic_head = section_data_find_article_by_aid(p_section, p_article_src->tid);
 		if (p_topic_head == NULL)
 		{
-			log_error("search head of topic (aid=%d) error\n", p_article->tid);
+			log_error("search head of topic (aid=%d) error\n", p_article_src->tid);
 			return -4;
 		}
 
-		p_topic_tail = section_data_find_article_by_aid(p_section, p_topic_head->prior_aid);
+		p_topic_tail = p_topic_head->p_topic_prior;
 		if (p_topic_tail == NULL)
 		{
-			log_error("search tail of topic (aid=%d) error\n", p_topic_head->prior_aid);
+			log_error("tail of topic (aid=%d) is NULL\n", p_article_src->tid);
 			return -4;
 		}
 	}
@@ -402,14 +409,28 @@ int section_data_append_article(SECTION_DATA *p_section, const ARTICLE *p_articl
 		p_topic_tail = p_topic_head;
 	}
 
-	// Copy article data
-	p_block->articles[p_block->article_count] = *p_article;
+	p_article = &(p_block->articles[p_block->article_count]);
 
-	// Link appended article as tail node of topic bi-directional list;
-	p_block->articles[p_block->article_count].prior_aid = p_topic_tail->aid;
-	p_block->articles[p_block->article_count].next_aid = p_topic_head->aid;
-	p_topic_head->prior_aid = p_article->aid;
-	p_topic_tail->next_aid = p_article->aid;
+	// Copy article data
+	*p_article = *p_article_src;
+
+	// Link appended article as tail node of article bi-directional list
+	if (p_section->p_article_head == NULL)
+	{
+		p_section->p_article_head = p_article;
+		p_section->p_article_tail = p_article;
+	}
+	p_article->p_prior = p_section->p_article_tail;
+	p_article->p_next = p_section->p_article_head;
+	p_section->p_article_head->p_prior = p_article;
+	p_section->p_article_tail->p_next = p_article;
+	p_section->p_article_tail = p_article;
+
+	// Link appended article as tail node of topic bi-directional list
+	p_article->p_topic_prior = p_topic_tail;
+	p_article->p_topic_next = p_topic_head;
+	p_topic_head->p_topic_prior = p_article;
+	p_topic_tail->p_topic_next = p_article;
 
 	p_block->article_count++;
 	p_section->article_count++;
