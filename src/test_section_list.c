@@ -236,6 +236,16 @@ int main(int argc, char *argv[])
 		printf("Verify %d topics in section %d\n", group_count, i);
 	}
 
+	printf("Testing #3 ...\n");
+
+	for (i = 0; i < section_conf_count; i++)
+	{
+		if (section_data_find_section_by_name(sname[i]) == NULL)
+		{
+			printf("section_data_find_section_by_name(%s) error\n", sname[i]);
+		}
+	}
+
 	printf("Press ENTER to exit...");
 	getchar();
 	

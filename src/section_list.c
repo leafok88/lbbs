@@ -293,7 +293,7 @@ int section_data_free_block(SECTION_DATA *p_section)
 	return 0;
 }
 
-SECTION_DATA *section_data_find_by_name(const char *sname)
+SECTION_DATA *section_data_find_section_by_name(const char *sname)
 {
 	int64_t index;
 

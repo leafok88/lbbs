@@ -70,7 +70,7 @@ extern void section_data_pool_cleanup(void);
 
 extern SECTION_DATA *section_data_create(const char *sname, const char *stitle, const char *master_name);
 extern int section_data_free_block(SECTION_DATA *p_section);
-extern SECTION_DATA *section_data_find_by_name(const char *sname);
+extern SECTION_DATA *section_data_find_section_by_name(const char *sname);
 
 extern int section_data_append_article(SECTION_DATA *p_section, const ARTICLE *p_article);
 extern ARTICLE *section_data_find_article_by_aid(SECTION_DATA *p_section, int32_t aid);
