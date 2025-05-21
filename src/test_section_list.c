@@ -59,6 +59,9 @@ int main(int argc, char *argv[])
 	log_std_redirect(STDOUT_FILENO);
 	log_err_redirect(STDERR_FILENO);
 
+	// block_count = BBS_article_block_limit_per_section * BBS_max_section; // This statement is correct
+	// - 1 to make blocks allocated is less than required
+	// Some error will be triggered while invoking section_data_append_article()
 	block_count = BBS_article_block_limit_per_section * BBS_max_section - 1;
 
 	if (section_data_pool_init("../conf/menu.conf", block_count) < 0)
@@ -124,9 +127,15 @@ int main(int argc, char *argv[])
 			{
 				printf("Inconsistent aid at index %d != %d\n", j, last_aid);
 			}
+
+			if (section_data_mark_del_article(p_section[i], p_article->aid) != 1)
+			{
+				printf("section_data_mark_del_article(aid = %d) error\n", p_article->aid);
+			}
 		}
 
 		printf("Verify %d articles in section %d\n", p_section[i]->article_count, i);
+		printf("Delete %d articles in section %d\n", p_section[i]->delete_count, i);
 	}
 
 	printf("Testing #2 ...\n");
