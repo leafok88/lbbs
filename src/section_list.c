@@ -434,6 +434,12 @@ int section_list_append_article(SECTION_LIST *p_section, const ARTICLE *p_articl
 		return -1;
 	}
 
+	if (p_section->article_count >= BBS_article_limit_per_section)
+	{
+		log_error("section_list_append_article() error: article_count reach limit in section %d\n", p_section->sid);
+		return -2;
+	}
+
 	if (p_article_block_pool->block_count == 0 ||
 		p_article_block_pool->p_block[p_article_block_pool->block_count - 1]->article_count >= ARTICLE_PER_BLOCK)
 	{
@@ -530,7 +536,11 @@ int section_list_append_article(SECTION_LIST *p_section, const ARTICLE *p_articl
 		p_section->page_count++;
 		p_section->last_page_visible_article_count = 0;
 	}
-	p_section->last_page_visible_article_count++;
+
+	if (p_article->visible)
+	{
+		p_section->last_page_visible_article_count++;
+	}
 
 	return 0;
 }
@@ -689,13 +699,74 @@ ARTICLE *section_list_find_article_with_offset(SECTION_LIST *p_section, int32_t 
 
 int section_list_calculate_page(SECTION_LIST *p_section, int32_t start_aid)
 {
-	// ARTICLE *p_article;
+	ARTICLE *p_article;
+	int32_t page;
+	int32_t offset;
+	int visible_article_count;
+	int page_head_set;
 
 	if (p_section == NULL)
 	{
 		log_error("section_list_calculate_page() NULL pointer error\n");
 		return -1;
 	}
+
+	p_article = section_list_find_article_with_offset(p_section, start_aid, &page, &offset);
+	if (p_article == NULL)
+	{
+		if (page < 0)
+		{
+			return 0;
+		}
+
+		log_error("section_list_calculate_page() aid = %d not found in section sid = %d\n", start_aid, p_section->sid);
+	}
+
+	if (offset > 0)
+	{
+		p_article = p_section->p_page_first_article[page];
+	}
+
+	visible_article_count = 0;
+	page_head_set = 0;
+
+	do
+	{
+		if (!page_head_set && visible_article_count == 0)
+		{
+			p_section->p_page_first_article[page] = p_article;
+			page_head_set = 1;
+		}
+
+		if (p_article->visible)
+		{
+			visible_article_count++;
+		}
+
+		p_article = p_article->p_next;
+
+		// skip remaining invisible articles
+		while (p_article->visible == 0 && p_article != p_section->p_article_head)
+		{
+			p_article = p_article->p_next;
+		}
+
+		if (visible_article_count >= BBS_article_limit_per_page && p_article != p_section->p_article_head)
+		{
+			page++;
+			visible_article_count = 0;
+			page_head_set = 0;
+
+			if (page >= BBS_article_limit_per_section / BBS_article_limit_per_page && p_article != p_section->p_article_head)
+			{
+				log_error("Count of page exceed limit in section %d\n", p_section->sid);
+				break;
+			}
+		}
+	} while (p_article != p_section->p_article_head);
+
+	p_section->page_count = page + (visible_article_count > 0 ? 1 : 0);
+	p_section->last_page_visible_article_count = visible_article_count;
 
 	return 0;
 }

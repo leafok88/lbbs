@@ -346,7 +346,7 @@ int main(int argc, char *argv[])
 
 	printf("Testing #4 ...\n");
 
-	for (i = 0; i < BBS_max_section; i++)
+	for (i = 0; i < section_count; i++)
 	{
 		step = i % 10 + 1;
 		for (j = group_count; j < BBS_article_limit_per_section; j += step)
@@ -367,17 +367,32 @@ int main(int argc, char *argv[])
 				break;
 			}
 
-			if (page * BBS_article_limit_per_page + offset != j)
-			{
-				printf("Inconsistent article offset %d in section %d page %d offset %d\n", j, i, page, offset);
-				break;
-			}
-
 			if (section_list_set_article_visible(p_section[i], last_aid, 0) != 1)
 			{
 				printf("Error set article %d invisible in section %d offset %d\n", last_aid, i, j);
 				break;
 			}
+		}
+
+		last_aid = p_section[i]->p_article_head->aid;
+		if (section_list_calculate_page(p_section[i], last_aid) < 0)
+		{
+			printf("section_list_calculate_page(aid = %d) error in section %d offset %d\n", last_aid, i, j);
+			break;
+		}
+
+		if (p_section[i]->visible_article_count / BBS_article_limit_per_page +
+				(p_section[i]->visible_article_count % BBS_article_limit_per_page ? 1 : 0) !=
+			p_section[i]->page_count)
+		{
+			printf("Inconsistent page count in section %d offset %d, %d != %d, "
+				   "visible_article_count = %d, last_page_visible_count = %d\n",
+				   i, j,
+				   p_section[i]->visible_article_count / BBS_article_limit_per_page +
+					   (p_section[i]->visible_article_count % BBS_article_limit_per_page ? 1 : 0),
+				   p_section[i]->page_count, p_section[i]->visible_article_count,
+				   p_section[i]->last_page_visible_article_count);
+			break;
 		}
 
 		affected_count = (BBS_article_limit_per_section - group_count) / step + ((BBS_article_limit_per_section - group_count) % step ? 1 : 0);
