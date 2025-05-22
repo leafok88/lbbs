@@ -66,7 +66,7 @@ int main(int argc, char *argv[])
 	log_err_redirect(STDERR_FILENO);
 
 	// - 1 to make blocks allocated is less than required, to trigger error handling
-	block_count = BBS_article_limit_per_section * BBS_max_section / ARTICLE_PER_BLOCK - 1;
+	block_count = BBS_article_limit_per_section * BBS_max_section / ARTICLE_PER_BLOCK;
 
 	if (article_block_init("../conf/menu.conf", block_count) < 0)
 	{
@@ -448,6 +448,27 @@ int main(int argc, char *argv[])
 		if (p_section[i]->visible_article_count > 0)
 		{
 			printf("Inconsistent invisible count in section %d, %d > 0\n", i, p_section[i]->visible_article_count);
+			break;
+		}
+
+		last_aid = p_section[i]->p_article_head->aid;
+		if (section_list_calculate_page(p_section[i], last_aid) < 0)
+		{
+			printf("section_list_calculate_page(aid = %d) error in section %d offset %d\n", last_aid, i, j);
+			break;
+		}
+
+		if (p_section[i]->visible_article_count / BBS_article_limit_per_page +
+				(p_section[i]->visible_article_count % BBS_article_limit_per_page ? 1 : 0) !=
+			p_section[i]->page_count)
+		{
+			printf("Inconsistent page count in section %d offset %d, %d != %d, "
+				   "visible_article_count = %d, last_page_visible_count = %d\n",
+				   i, j,
+				   p_section[i]->visible_article_count / BBS_article_limit_per_page +
+					   (p_section[i]->visible_article_count % BBS_article_limit_per_page ? 1 : 0),
+				   p_section[i]->page_count, p_section[i]->visible_article_count,
+				   p_section[i]->last_page_visible_article_count);
 			break;
 		}
 	}
