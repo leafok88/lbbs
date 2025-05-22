@@ -23,14 +23,21 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <sys/param.h>
 #include <sys/shm.h>
 #include <sys/ipc.h>
 
-// ARTICLE_BLOCK_PER_SHM * ARTICLE_BLOCK_SHM_COUNT_LIMIT should be
-// no less than BBS_article_block_limit_per_section * BBS_max_section,
-// in order to allocate enough memory for blocks
-#define ARTICLE_BLOCK_PER_SHM 400 // sizeof(ARTICLE_BLOCK) * ARTICLE_BLOCK_PER_SHM is the size of each shm segment to allocate
+#define ARTICLE_BLOCK_PER_SHM 400		  // sizeof(ARTICLE_BLOCK) * ARTICLE_BLOCK_PER_SHM is the size of each shm segment to allocate
 #define ARTICLE_BLOCK_SHM_COUNT_LIMIT 256 // limited by length (8-bit) of proj_id in ftok(path, proj_id)
+#define ARTICLE_BLOCK_PER_POOL (ARTICLE_BLOCK_PER_SHM * ARTICLE_BLOCK_SHM_COUNT_LIMIT)
+
+struct article_block_t
+{
+	ARTICLE articles[ARTICLE_PER_BLOCK];
+	int32_t article_count;
+	struct article_block_t *p_next_block;
+};
+typedef struct article_block_t ARTICLE_BLOCK;
 
 struct article_block_shm_t
 {
@@ -39,15 +46,23 @@ struct article_block_shm_t
 };
 typedef struct article_block_shm_t ARTICLE_BLOCK_SHM;
 
-static ARTICLE_BLOCK_SHM *p_article_block_shm_pool;
-static int article_block_shm_count;
-static ARTICLE_BLOCK *p_article_block_free_list;
+struct article_block_pool_t
+{
+	ARTICLE_BLOCK_SHM shm_pool[ARTICLE_BLOCK_SHM_COUNT_LIMIT];
+	int shm_count;
+	ARTICLE_BLOCK *p_block_free_list;
+	ARTICLE_BLOCK *p_block[ARTICLE_BLOCK_PER_POOL];
+	int32_t block_count;
+};
+typedef struct article_block_pool_t ARTICLE_BLOCK_POOL;
 
-static SECTION_DATA *p_section_data_pool;
-static int section_data_count;
-static TRIE_NODE *p_trie_dict_section_data;
+static ARTICLE_BLOCK_POOL *p_article_block_pool = NULL;
 
-int section_data_pool_init(const char *filename, int article_block_count)
+static SECTION_LIST *p_section_list_pool = NULL;
+static int section_list_count = 0;
+static TRIE_NODE *p_trie_dict_section_list = NULL;
+
+int article_block_init(const char *filename, int block_count)
 {
 	int shmid;
 	int proj_id;
@@ -55,437 +70,186 @@ int section_data_pool_init(const char *filename, int article_block_count)
 	size_t size;
 	void *p_shm;
 	int i;
-	int article_block_count_in_shm;
-	ARTICLE_BLOCK *p_article_block_in_shm;
-	ARTICLE_BLOCK **pp_article_block_next;
+	int block_count_in_shm;
+	ARTICLE_BLOCK *p_block_in_shm;
+	ARTICLE_BLOCK **pp_block_next;
 
-	if (p_article_block_shm_pool != NULL ||
-		p_article_block_free_list != NULL ||
-		p_section_data_pool != NULL ||
-		p_trie_dict_section_data != NULL)
+	if (p_article_block_pool != NULL)
 	{
-		log_error("section_data_pool already initialized\n");
+		log_error("article_block_pool already initialized\n");
 		return -1;
 	}
 
-	if (article_block_count > ARTICLE_BLOCK_PER_SHM * ARTICLE_BLOCK_SHM_COUNT_LIMIT)
+	if (block_count > ARTICLE_BLOCK_PER_POOL)
 	{
-		log_error("article_block_count exceed limit %d\n", ARTICLE_BLOCK_PER_SHM * ARTICLE_BLOCK_SHM_COUNT_LIMIT);
+		log_error("article_block_count exceed limit %d\n", ARTICLE_BLOCK_PER_POOL);
 		return -2;
 	}
 
-	p_article_block_shm_pool = calloc((size_t)article_block_count / ARTICLE_BLOCK_PER_SHM + 1, sizeof(ARTICLE_BLOCK_SHM));
-	if (p_article_block_shm_pool == NULL)
+	p_article_block_pool = calloc(1, sizeof(ARTICLE_BLOCK_POOL));
+	if (p_article_block_pool == NULL)
 	{
-		log_error("calloc(%d ARTICLE_BLOCK_SHM) OOM\n", article_block_count / ARTICLE_BLOCK_PER_SHM + 1);
-		return -2;
-	}
-
-	p_section_data_pool = calloc(BBS_max_section, sizeof(SECTION_DATA));
-	if (p_section_data_pool == NULL)
-	{
-		log_error("calloc(%d SECTION_DATA) OOM\n", BBS_max_section);
-		return -2;
-	}
-	section_data_count = 0;
-
-	p_trie_dict_section_data = trie_dict_create();
-	if (p_trie_dict_section_data == NULL)
-	{
-		log_error("trie_dict_create() OOM\n", BBS_max_section);
+		log_error("calloc(ARTICLE_BLOCK_POOL) OOM\n");
 		return -2;
 	}
 
 	// Allocate shared memory
-	article_block_shm_count = 0;
-	pp_article_block_next = &p_article_block_free_list;
+	p_article_block_pool->shm_count = 0;
+	pp_block_next = &(p_article_block_pool->p_block_free_list);
 
-	while (article_block_count > 0)
+	while (block_count > 0)
 	{
-		article_block_count_in_shm =
-			(article_block_count < ARTICLE_BLOCK_PER_SHM ? article_block_count : ARTICLE_BLOCK_PER_SHM);
-		article_block_count -= article_block_count_in_shm;
+		block_count_in_shm = MIN(block_count, ARTICLE_BLOCK_PER_SHM);
+		block_count -= block_count_in_shm;
 
-		proj_id = getpid() + article_block_shm_count;
+		proj_id = getpid() + p_article_block_pool->shm_count;
 		key = ftok(filename, proj_id);
 		if (key == -1)
 		{
 			log_error("ftok(%s, %d) error (%d)\n", filename, proj_id, errno);
-			section_data_pool_cleanup();
+			article_block_cleanup();
 			return -3;
 		}
 
-		size = sizeof(shmid) + sizeof(ARTICLE_BLOCK) * (size_t)article_block_count_in_shm;
+		size = sizeof(shmid) + sizeof(ARTICLE_BLOCK) * (size_t)block_count_in_shm;
 		shmid = shmget(key, size, IPC_CREAT | IPC_EXCL | 0600);
 		if (shmid == -1)
 		{
-			log_error("shmget(shm_index = %d, size = %d) error (%d)\n", article_block_shm_count, size, errno);
-			section_data_pool_cleanup();
+			log_error("shmget(shm_index = %d, size = %d) error (%d)\n", p_article_block_pool->shm_count, size, errno);
+			article_block_cleanup();
 			return -3;
 		}
 		p_shm = shmat(shmid, NULL, 0);
 		if (p_shm == (void *)-1)
 		{
 			log_error("shmat(shmid = %d) error (%d)\n", shmid, errno);
-			section_data_pool_cleanup();
+			article_block_cleanup();
 			return -3;
 		}
 
-		(p_article_block_shm_pool + article_block_shm_count)->shmid = shmid;
-		(p_article_block_shm_pool + article_block_shm_count)->p_shm = p_shm;
-		article_block_shm_count++;
+		(p_article_block_pool->shm_pool + p_article_block_pool->shm_count)->shmid = shmid;
+		(p_article_block_pool->shm_pool + p_article_block_pool->shm_count)->p_shm = p_shm;
+		p_article_block_pool->shm_count++;
 
-		p_article_block_in_shm = p_shm;
-		*pp_article_block_next = p_article_block_in_shm;
+		p_block_in_shm = p_shm;
+		*pp_block_next = p_block_in_shm;
 
-		for (i = 0; i < article_block_count_in_shm; i++)
+		for (i = 0; i < block_count_in_shm; i++)
 		{
-			if (i < article_block_count_in_shm - 1)
+			if (i < block_count_in_shm - 1)
 			{
-				(p_article_block_in_shm + i)->p_next_block = (p_article_block_in_shm + i + 1);
+				(p_block_in_shm + i)->p_next_block = (p_block_in_shm + i + 1);
 			}
 			else
 			{
-				(p_article_block_in_shm + i)->p_next_block = NULL;
-				pp_article_block_next = &((p_article_block_in_shm + i)->p_next_block);
+				(p_block_in_shm + i)->p_next_block = NULL;
+				pp_block_next = &((p_block_in_shm + i)->p_next_block);
 			}
 		}
 	}
+
+	p_article_block_pool->block_count = 0;
 
 	return 0;
 }
 
-void section_data_pool_cleanup(void)
+void article_block_cleanup(void)
 {
-	int i;
-
-	if (p_trie_dict_section_data != NULL)
+	if (p_article_block_pool != NULL)
 	{
-		trie_dict_destroy(p_trie_dict_section_data);
-		p_trie_dict_section_data = NULL;
-		section_data_count = 0;
-	}
-
-	if (p_section_data_pool != NULL)
-	{
-		free(p_section_data_pool);
-		p_section_data_pool = NULL;
-	}
-
-	if (p_article_block_free_list != NULL)
-	{
-		p_article_block_free_list = NULL;
-	}
-
-	if (p_article_block_shm_pool != NULL)
-	{
-		for (i = 0; i < article_block_shm_count; i++)
+		for (int i = 0; i < p_article_block_pool->shm_count; i++)
 		{
-			if (shmdt((p_article_block_shm_pool + i)->p_shm) == -1)
+			if (shmdt((p_article_block_pool->shm_pool + i)->p_shm) == -1)
 			{
-				log_error("shmdt(shmid = %d) error (%d)\n", (p_article_block_shm_pool + i)->shmid, errno);
+				log_error("shmdt(shmid = %d) error (%d)\n", (p_article_block_pool->shm_pool + i)->shmid, errno);
 			}
 
-			if (shmctl((p_article_block_shm_pool + i)->shmid, IPC_RMID, NULL) == -1)
+			if (shmctl((p_article_block_pool->shm_pool + i)->shmid, IPC_RMID, NULL) == -1)
 			{
-				log_error("shmctl(shmid = %d, IPC_RMID) error (%d)\n", (p_article_block_shm_pool + i)->shmid, errno);
+				log_error("shmctl(shmid = %d, IPC_RMID) error (%d)\n", (p_article_block_pool->shm_pool + i)->shmid, errno);
 			}
 		}
 
-		p_article_block_shm_pool = NULL;
-		article_block_shm_count = 0;
+		free(p_article_block_pool);
+		p_article_block_pool = NULL;
 	}
 }
 
 inline static ARTICLE_BLOCK *pop_free_article_block(void)
 {
-	ARTICLE_BLOCK *p_article_block = NULL;
+	ARTICLE_BLOCK *p_block = NULL;
 
-	if (p_article_block_free_list != NULL)
+	if (p_article_block_pool->p_block_free_list != NULL)
 	{
-		p_article_block = p_article_block_free_list;
-		p_article_block_free_list = p_article_block_free_list->p_next_block;
+		p_block = p_article_block_pool->p_block_free_list;
+		p_article_block_pool->p_block_free_list = p_block->p_next_block;
+		p_block->p_next_block = NULL;
+		p_block->article_count = 0;
 	}
 
-	return p_article_block;
+	return p_block;
 }
 
-inline static void push_free_article_block(ARTICLE_BLOCK *p_article_block)
+inline static void push_free_article_block(ARTICLE_BLOCK *p_block)
 {
-	p_article_block->p_next_block = p_article_block_free_list;
-	p_article_block_free_list = p_article_block;
+	p_block->p_next_block = p_article_block_pool->p_block_free_list;
+	p_article_block_pool->p_block_free_list = p_block;
 }
 
-SECTION_DATA *section_data_create(const char *sname, const char *stitle, const char *master_name)
-{
-	SECTION_DATA *p_section;
-	int index;
-
-	if (p_section_data_pool == NULL || p_trie_dict_section_data == NULL)
-	{
-		log_error("section_data not initialized\n");
-		return NULL;
-	}
-
-	if (section_data_count >= BBS_max_section)
-	{
-		log_error("section_data_count exceed limit %d\n", BBS_max_section);
-		return NULL;
-	}
-
-	index = section_data_count;
-	p_section = p_section_data_pool + index;
-
-	strncpy(p_section->sname, sname, sizeof(p_section->sname - 1));
-	p_section->sname[sizeof(p_section->sname - 1)] = '\0';
-
-	strncpy(p_section->stitle, stitle, sizeof(p_section->stitle - 1));
-	p_section->stitle[sizeof(p_section->stitle - 1)] = '\0';
-
-	strncpy(p_section->master_name, master_name, sizeof(p_section->master_name - 1));
-	p_section->master_name[sizeof(p_section->master_name - 1)] = '\0';
-
-	p_section->p_head_block = NULL;
-	p_section->p_tail_block = NULL;
-	p_section->block_count = 0;
-	p_section->article_count = 0;
-
-	p_section->p_article_head = NULL;
-	p_section->p_article_tail = NULL;
-
-	p_section->page_count = 0;
-	p_section->last_page_article_count = 0;
-
-	if (trie_dict_set(p_trie_dict_section_data, sname, index) != 1)
-	{
-		log_error("trie_dict_set(section_data, %s, %d) error\n", sname, index);
-		return NULL;
-	}
-
-	section_data_count++;
-
-	return p_section;
-}
-
-int section_data_free_block(SECTION_DATA *p_section)
+int article_block_reset(void)
 {
 	ARTICLE_BLOCK *p_block;
 
-	if (p_section == NULL)
+	if (p_article_block_pool == NULL)
 	{
-		log_error("section_data_free_block() NULL pointer error\n");
+		log_error("article_block_pool not initialized\n");
 		return -1;
 	}
 
-	if (p_section_data_pool == NULL)
+	while (p_article_block_pool->block_count > 0)
 	{
-		log_error("section_data not initialized\n");
-		return -1;
-	}
-
-	while (p_section->p_head_block != NULL)
-	{
-		p_block = p_section->p_head_block;
-		p_section->p_head_block = p_block->p_next_block;
+		p_article_block_pool->block_count--;
+		p_block = p_article_block_pool->p_block[p_article_block_pool->block_count];
 		push_free_article_block(p_block);
 	}
 
-	p_section->p_tail_block = NULL;
-	p_section->block_count = 0;
-	p_section->article_count = 0;
-
-	p_section->p_article_head = NULL;
-	p_section->p_article_tail = NULL;
-
-	p_section->page_count = 0;
-	p_section->last_page_article_count = 0;
-
 	return 0;
 }
 
-SECTION_DATA *section_data_find_section_by_name(const char *sname)
+ARTICLE *article_block_find_by_aid(int32_t aid)
 {
-	int64_t index;
-
-	if (p_section_data_pool == NULL || p_trie_dict_section_data == NULL)
-	{
-		log_error("section_data not initialized\n");
-		return NULL;
-	}
-
-	if (trie_dict_get(p_trie_dict_section_data, sname, &index) != 1)
-	{
-		log_error("trie_dict_get(section_data, %s) error\n", sname);
-		return NULL;
-	}
-
-	return (p_section_data_pool + index);
-}
-
-int section_data_append_article(SECTION_DATA *p_section, const ARTICLE *p_article_src)
-{
-	ARTICLE_BLOCK *p_block;
-	int32_t last_aid = 0;
-	ARTICLE *p_article;
-	ARTICLE *p_topic_head;
-	ARTICLE *p_topic_tail;
-
-	if (p_section == NULL || p_article_src == NULL)
-	{
-		log_error("section_data_append_article() NULL pointer error\n");
-		return -1;
-	}
-
-	if (p_section_data_pool == NULL)
-	{
-		log_error("section_data not initialized\n");
-		return -1;
-	}
-
-	if (p_section->p_tail_block == NULL || p_section->p_tail_block->article_count >= BBS_article_limit_per_block)
-	{
-		if (p_section->block_count >= BBS_article_block_limit_per_section)
-		{
-			log_error("section block count %d reach limit\n", p_section->block_count);
-			return -2;
-		}
-
-		if ((p_block = pop_free_article_block()) == NULL)
-		{
-			log_error("pop_free_article_block() error\n");
-			return -2;
-		}
-
-		p_block->article_count = 0;
-		p_block->p_next_block = NULL;
-
-		if (p_section->p_tail_block == NULL)
-		{
-			p_section->p_head_block = p_block;
-			last_aid = 0;
-		}
-		else
-		{
-			p_section->p_tail_block->p_next_block = p_block;
-			last_aid = p_section->p_article_tail->aid;
-		}
-		p_section->p_tail_block = p_block;
-		p_section->p_block[p_section->block_count] = p_block;
-		p_section->block_count++;
-	}
-	else
-	{
-		p_block = p_section->p_tail_block;
-		last_aid = p_section->p_article_tail->aid;
-	}
-
-	// AID of articles should be strictly ascending
-	if (p_article_src->aid <= last_aid)
-	{
-		log_error("section_data_append_article(aid=%d) error: last_aid=%d\n", p_article_src->aid, last_aid);
-		return -3;
-	}
-
-	if (p_block->article_count == 0)
-	{
-		p_section->block_head_aid[p_section->block_count - 1] = p_article_src->aid;
-	}
-
-	if (p_article_src->tid != 0)
-	{
-		p_topic_head = section_data_find_article_by_aid(p_section, p_article_src->tid);
-		if (p_topic_head == NULL)
-		{
-			log_error("search head of topic (aid=%d) error\n", p_article_src->tid);
-			return -4;
-		}
-
-		p_topic_tail = p_topic_head->p_topic_prior;
-		if (p_topic_tail == NULL)
-		{
-			log_error("tail of topic (aid=%d) is NULL\n", p_article_src->tid);
-			return -4;
-		}
-	}
-	else
-	{
-		p_topic_head = &(p_block->articles[p_block->article_count]);
-		p_topic_tail = p_topic_head;
-	}
-
-	p_article = &(p_block->articles[p_block->article_count]);
-
-	// Copy article data
-	*p_article = *p_article_src;
-
-	// Link appended article as tail node of article bi-directional list
-	if (p_section->p_article_head == NULL)
-	{
-		p_section->p_article_head = p_article;
-		p_section->p_article_tail = p_article;
-	}
-	p_article->p_prior = p_section->p_article_tail;
-	p_article->p_next = p_section->p_article_head;
-	p_section->p_article_head->p_prior = p_article;
-	p_section->p_article_tail->p_next = p_article;
-	p_section->p_article_tail = p_article;
-
-	// Link appended article as tail node of topic bi-directional list
-	p_article->p_topic_prior = p_topic_tail;
-	p_article->p_topic_next = p_topic_head;
-	p_topic_head->p_topic_prior = p_article;
-	p_topic_tail->p_topic_next = p_article;
-
-	p_block->article_count++;
-	p_section->article_count++;
-
-	// Update page
-	if (p_section->last_page_article_count % BBS_article_limit_per_page == 0)
-	{
-		p_section->page_head_aid[p_section->page_count] = p_article_src->aid;
-		p_section->page_count++;
-		p_section->last_page_article_count = 0;
-	}
-	p_section->last_page_article_count++;
-
-	return 0;
-}
-
-ARTICLE *section_data_find_article_by_aid(SECTION_DATA *p_section, int32_t aid)
-{
-	ARTICLE *p_article;
 	ARTICLE_BLOCK *p_block;
 	int left;
 	int right;
 	int mid;
 
-	if (p_section == NULL)
+	if (p_article_block_pool == NULL)
 	{
-		log_error("section_data_find_article_by_aid() NULL pointer error\n");
+		log_error("article_block_pool not initialized\n");
 		return NULL;
 	}
 
-	if (p_section->block_count == 0) // empty section
+	if (p_article_block_pool->block_count == 0) // empty
 	{
 		return NULL;
 	}
 
 	left = 0;
-	right = p_section->block_count;
+	right = p_article_block_pool->block_count;
 
 	// aid in the range [ head aid of blocks[left], tail aid of blocks[right - 1] ]
 	while (left < right - 1)
 	{
 		// get block offset no less than mid value of left and right block offsets
 		mid = (left + right) / 2 + (right - left) % 2;
-		
-		if (mid >= BBS_article_block_limit_per_section)
+
+		if (mid >= p_article_block_pool->block_count)
 		{
-			log_error("block_m(%d) is out of boundary\n", mid);
+			log_error("block(mid = %d) is out of boundary\n", mid);
 			return NULL;
 		}
 
-		if (aid < p_section->block_head_aid[mid])
+		if (aid < p_article_block_pool->p_block[mid]->articles[0].aid)
 		{
 			right = mid;
 		}
@@ -495,7 +259,7 @@ ARTICLE *section_data_find_article_by_aid(SECTION_DATA *p_section, int32_t aid)
 		}
 	}
 
-	p_block = p_section->p_block[left];
+	p_block = p_article_block_pool->p_block[left];
 
 	left = 0;
 	right = p_block->article_count - 1;
@@ -515,56 +279,271 @@ ARTICLE *section_data_find_article_by_aid(SECTION_DATA *p_section, int32_t aid)
 		}
 	}
 
-	p_article = &(p_block->articles[left]);
-
-	return p_article;
+	return (p_block->articles + left);
 }
 
-ARTICLE *section_data_find_article_by_index(SECTION_DATA *p_section, int index)
+ARTICLE *article_block_find_by_index(int index)
 {
-	ARTICLE *p_article;
 	ARTICLE_BLOCK *p_block;
 
-	if (p_section == NULL)
+	if (p_article_block_pool == NULL)
 	{
-		log_error("section_data_find_article_by_index() NULL pointer error\n");
+		log_error("article_block_pool not initialized\n");
 		return NULL;
 	}
 
-	if (index < 0 || index >= p_section->article_count)
+	if (index < 0 || index / ARTICLE_PER_BLOCK >= p_article_block_pool->block_count)
 	{
-		log_error("section_data_find_article_by_index(%d) is out of boundary [0, %d)\n", index, p_section->article_count);
+		log_error("section_data_find_article_by_index(%d) is out of boundary of block [0, %d)\n", index, p_article_block_pool->block_count);
 		return NULL;
 	}
 
-	p_block = p_section->p_block[index / BBS_article_limit_per_block];
-	p_article = &(p_block->articles[index % BBS_article_limit_per_block]);
+	p_block = p_article_block_pool->p_block[index / ARTICLE_PER_BLOCK];
 
-	return p_article;
+	if (index % ARTICLE_PER_BLOCK >= p_block->article_count)
+	{
+		log_error("section_data_find_article_by_index(%d) is out of boundary of article [0, %d)\n", index, p_block->article_count);
+		return NULL;
+	}
+
+	return (p_block->articles + (index % ARTICLE_PER_BLOCK));
 }
 
-int section_data_mark_del_article(SECTION_DATA *p_section, int32_t aid)
+SECTION_LIST *section_list_create(const char *sname, const char *stitle, const char *master_name)
+{
+	SECTION_LIST *p_section;
+
+	if (p_section_list_pool == NULL)
+	{
+		p_section_list_pool = calloc(BBS_max_section, sizeof(SECTION_LIST));
+		if (p_section_list_pool == NULL)
+		{
+			log_error("calloc(%d SECTION_LIST) OOM\n", BBS_max_section);
+			return NULL;
+		}
+
+		section_list_count = 0;
+	}
+
+	if (p_trie_dict_section_list == NULL)
+	{
+		p_trie_dict_section_list = trie_dict_create();
+		if (p_trie_dict_section_list == NULL)
+		{
+			log_error("trie_dict_create() OOM\n", BBS_max_section);
+			return NULL;
+		}
+	}
+
+	if (section_list_count >= BBS_max_section)
+	{
+		log_error("section_list_count exceed limit %d\n", BBS_max_section);
+		return NULL;
+	}
+
+	p_section = p_section_list_pool + section_list_count;
+
+	strncpy(p_section->sname, sname, sizeof(p_section->sname - 1));
+	p_section->sname[sizeof(p_section->sname - 1)] = '\0';
+
+	strncpy(p_section->stitle, stitle, sizeof(p_section->stitle - 1));
+	p_section->stitle[sizeof(p_section->stitle - 1)] = '\0';
+
+	strncpy(p_section->master_name, master_name, sizeof(p_section->master_name - 1));
+	p_section->master_name[sizeof(p_section->master_name - 1)] = '\0';
+
+	if (trie_dict_set(p_trie_dict_section_list, sname, section_list_count) != 1)
+	{
+		log_error("trie_dict_set(section_data, %s, %d) error\n", sname, section_list_count);
+		return NULL;
+	}
+
+	section_list_reset_articles(p_section);
+
+	section_list_count++;
+
+	return p_section;
+}
+
+void section_list_reset_articles(SECTION_LIST *p_section)
+{
+	p_section->article_count = 0;
+	p_section->p_article_head = NULL;
+	p_section->p_article_tail = NULL;
+
+	p_section->page_count = 0;
+	p_section->last_page_article_count = 0;
+}
+
+void section_list_cleanup(void)
+{
+	if (p_trie_dict_section_list != NULL)
+	{
+		trie_dict_destroy(p_trie_dict_section_list);
+		p_trie_dict_section_list = NULL;
+	}
+
+	if (p_section_list_pool != NULL)
+	{
+		free(p_section_list_pool);
+		p_section_list_pool = NULL;
+	}
+
+	section_list_count = 0;
+}
+
+SECTION_LIST *section_list_find_by_name(const char *sname)
+{
+	int64_t index;
+
+	if (p_section_list_pool == NULL || p_trie_dict_section_list == NULL)
+	{
+		log_error("section_list not initialized\n");
+		return NULL;
+	}
+
+	if (trie_dict_get(p_trie_dict_section_list, sname, &index) != 1)
+	{
+		log_error("trie_dict_get(section_data, %s) error\n", sname);
+		return NULL;
+	}
+
+	return (p_section_list_pool + index);
+}
+
+int section_list_append_article(SECTION_LIST *p_section, const ARTICLE *p_article_src)
+{
+	ARTICLE_BLOCK *p_block;
+	int32_t last_aid = 0;
+	ARTICLE *p_article;
+	ARTICLE *p_topic_head;
+	ARTICLE *p_topic_tail;
+
+	if (p_section == NULL || p_article_src == NULL)
+	{
+		log_error("section_list_append_article() NULL pointer error\n");
+		return -1;
+	}
+
+	if (p_article_block_pool == NULL)
+	{
+		log_error("article_block_pool not initialized\n");
+		return -1;
+	}
+
+	if (p_article_block_pool->block_count == 0 ||
+		p_article_block_pool->p_block[p_article_block_pool->block_count - 1]->article_count >= ARTICLE_PER_BLOCK)
+	{
+		if ((p_block = pop_free_article_block()) == NULL)
+		{
+			log_error("pop_free_article_block() error\n");
+			return -2;
+		}
+
+		if (p_article_block_pool->block_count > 0)
+		{
+			last_aid = p_article_block_pool->p_block[p_article_block_pool->block_count - 1]->articles[ARTICLE_PER_BLOCK - 1].aid;
+		}
+
+		p_article_block_pool->p_block[p_article_block_pool->block_count] = p_block;
+		p_article_block_pool->block_count++;
+	}
+	else
+	{
+		p_block = p_article_block_pool->p_block[p_article_block_pool->block_count - 1];
+		last_aid = p_block->articles[p_block->article_count - 1].aid;
+	}
+
+	// AID of articles should be strictly ascending
+	if (p_article_src->aid <= last_aid)
+	{
+		log_error("section_data_append_article(aid=%d) error: last_aid=%d\n", p_article_src->aid, last_aid);
+		return -3;
+	}
+
+	p_article = (p_block->articles + p_block->article_count);
+	p_block->article_count++;
+	p_section->article_count++;
+
+	// Copy article data
+	*p_article = *p_article_src;
+
+	// Link appended article as tail node of topic bi-directional list
+	if (p_article->tid != 0)
+	{
+		p_topic_head = article_block_find_by_aid(p_article->tid);
+		if (p_topic_head == NULL)
+		{
+			log_error("search head of topic (aid=%d) error\n", p_article->tid);
+			return -4;
+		}
+
+		p_topic_tail = p_topic_head->p_topic_prior;
+		if (p_topic_tail == NULL)
+		{
+			log_error("tail of topic (aid=%d) is NULL\n", p_article->tid);
+			return -4;
+		}
+	}
+	else
+	{
+		p_topic_head = p_article;
+		p_topic_tail = p_article;
+	}
+
+	p_article->p_topic_prior = p_topic_tail;
+	p_article->p_topic_next = p_topic_head;
+	p_topic_head->p_topic_prior = p_article;
+	p_topic_tail->p_topic_next = p_article;
+
+	// Link appended article as tail node of article bi-directional list
+	if (p_section->p_article_head == NULL)
+	{
+		p_section->p_article_head = p_article;
+		p_section->p_article_tail = p_article;
+	}
+	p_article->p_prior = p_section->p_article_tail;
+	p_article->p_next = p_section->p_article_head;
+	p_section->p_article_head->p_prior = p_article;
+	p_section->p_article_tail->p_next = p_article;
+	p_section->p_article_tail = p_article;
+
+	// Update page
+	if (p_section->last_page_article_count % BBS_article_limit_per_page == 0)
+	{
+		p_section->p_page_first_article[p_section->page_count] = p_article;
+		p_section->page_count++;
+		p_section->last_page_article_count = 0;
+	}
+	p_section->last_page_article_count++;
+
+	return 0;
+}
+
+int section_list_set_article_visible(SECTION_LIST *p_section, int32_t aid, int8_t visible)
 {
 	ARTICLE *p_article;
 
 	if (p_section == NULL)
 	{
-		log_error("section_data_mark_del_article() NULL pointer error\n");
+		log_error("section_list_set_article_visible() NULL pointer error\n");
 		return -2;
 	}
 
-	p_article = section_data_find_article_by_aid(p_section, aid);
+	p_article = article_block_find_by_aid(aid);
 	if (p_article == NULL)
 	{
 		return -1; // Not found
 	}
 
-	if (p_article->visible == 0)
+	if (p_article->visible == visible)
 	{
-		return 0; // Already deleted
+		return 0; // Already set
 	}
 
-	p_article->visible = 0;
+	p_article->visible = visible;
+
+	// TODO:
 
 	return 1;
 }
