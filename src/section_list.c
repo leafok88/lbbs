@@ -249,10 +249,12 @@ SECTION_DATA *section_data_create(const char *sname, const char *stitle, const c
 	p_section->p_tail_block = NULL;
 	p_section->block_count = 0;
 	p_section->article_count = 0;
-	p_section->delete_count = 0;
 
 	p_section->p_article_head = NULL;
 	p_section->p_article_tail = NULL;
+
+	p_section->page_count = 0;
+	p_section->last_page_article_count = 0;
 
 	if (trie_dict_set(p_trie_dict_section_data, sname, index) != 1)
 	{
@@ -291,10 +293,12 @@ int section_data_free_block(SECTION_DATA *p_section)
 	p_section->p_tail_block = NULL;
 	p_section->block_count = 0;
 	p_section->article_count = 0;
-	p_section->delete_count = 0;
 
 	p_section->p_article_head = NULL;
 	p_section->p_article_tail = NULL;
+
+	p_section->page_count = 0;
+	p_section->last_page_article_count = 0;
 
 	return 0;
 }
@@ -435,6 +439,15 @@ int section_data_append_article(SECTION_DATA *p_section, const ARTICLE *p_articl
 	p_block->article_count++;
 	p_section->article_count++;
 
+	// Update page
+	if (p_section->last_page_article_count % BBS_article_limit_per_page == 0)
+	{
+		p_section->page_head_aid[p_section->page_count] = p_article_src->aid;
+		p_section->page_count++;
+		p_section->last_page_article_count = 0;
+	}
+	p_section->last_page_article_count++;
+
 	return 0;
 }
 
@@ -552,7 +565,6 @@ int section_data_mark_del_article(SECTION_DATA *p_section, int32_t aid)
 	}
 
 	p_article->visible = 0;
-	p_section->delete_count++;
 
 	return 1;
 }

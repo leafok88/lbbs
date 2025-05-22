@@ -141,8 +141,6 @@ int main(int argc, char *argv[])
 		}
 
 		printf("Verify %d articles in section %d\n", p_section[i]->article_count, i);
-
-		printf("Delete %d articles in section %d\n", p_section[i]->delete_count, i);
 	}
 
 	printf("Testing #2 ...\n");
@@ -201,7 +199,7 @@ int main(int argc, char *argv[])
 
 			if (p_article->aid <= last_aid)
 			{
-				printf("Non-ascending aid found %d <= %d\n", p_article->aid, last_aid);
+				printf("Non-ascending aid found %d <= %d at article\n", p_article->aid, last_aid);
 			}
 			last_aid = p_article->aid;
 

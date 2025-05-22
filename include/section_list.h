@@ -22,6 +22,7 @@
 // Limit of articles (including those marked as deleted) per section = BBS_article_limit_per_block * BBS_article_block_limit_per_section
 #define BBS_article_limit_per_block 1000
 #define BBS_article_block_limit_per_section 50
+#define BBS_article_limit_per_page 20
 
 struct article_t
 {
@@ -63,9 +64,12 @@ struct section_data_t
 	int32_t block_count;
 	int32_t block_head_aid[BBS_article_block_limit_per_section];
 	int32_t article_count;
-	int32_t delete_count;
 	ARTICLE *p_article_head;
 	ARTICLE *p_article_tail;
+	int32_t page_head_aid[BBS_article_limit_per_block * BBS_article_block_limit_per_section / BBS_article_limit_per_page];
+	ARTICLE *p_page_head_article[BBS_article_limit_per_block * BBS_article_block_limit_per_section / BBS_article_limit_per_page];
+	int32_t page_count;
+	int32_t last_page_article_count;
 };
 typedef struct section_data_t SECTION_DATA;
 
