@@ -50,11 +50,14 @@ struct section_list_t
 	char stitle[BBS_section_title_max_len + 1];
 	char master_name[BBS_username_max_len + 1];
 	int32_t article_count;
+	int32_t topic_count;
+	int32_t visible_article_count;
+	int32_t visible_topic_count;
 	ARTICLE *p_article_head;
 	ARTICLE *p_article_tail;
 	ARTICLE *p_page_first_article[BBS_article_limit_per_section / BBS_article_limit_per_page];
 	int32_t page_count;
-	int32_t last_page_article_count;
+	int32_t last_page_visible_article_count;
 };
 typedef struct section_list_t SECTION_LIST;
 
@@ -75,3 +78,5 @@ extern SECTION_LIST *section_list_find_by_name(const char *sname);
 
 extern int section_list_append_article(SECTION_LIST *p_section, const ARTICLE *p_article_src);
 extern int section_list_set_article_visible(SECTION_LIST *p_section, int32_t aid, int8_t visible);
+extern ARTICLE * section_list_find_article_with_offset(SECTION_LIST *p_section, int32_t aid, int32_t *p_page, int32_t *p_offset);
+extern int section_list_calculate_page(SECTION_LIST *p_section, int32_t start_aid);

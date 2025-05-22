@@ -368,11 +368,14 @@ SECTION_LIST *section_list_create(const char *sname, const char *stitle, const c
 void section_list_reset_articles(SECTION_LIST *p_section)
 {
 	p_section->article_count = 0;
+	p_section->topic_count = 0;
+	p_section->visible_article_count = 0;
+	p_section->visible_topic_count = 0;
 	p_section->p_article_head = NULL;
 	p_section->p_article_tail = NULL;
 
 	p_section->page_count = 0;
-	p_section->last_page_article_count = 0;
+	p_section->last_page_visible_article_count = 0;
 }
 
 void section_list_cleanup(void)
@@ -468,6 +471,11 @@ int section_list_append_article(SECTION_LIST *p_section, const ARTICLE *p_articl
 	// Copy article data
 	*p_article = *p_article_src;
 
+	if (p_article->visible)
+	{
+		p_section->visible_article_count++;
+	}
+
 	// Link appended article as tail node of topic bi-directional list
 	if (p_article->tid != 0)
 	{
@@ -487,6 +495,13 @@ int section_list_append_article(SECTION_LIST *p_section, const ARTICLE *p_articl
 	}
 	else
 	{
+		p_section->topic_count++;
+
+		if (p_article->visible)
+		{
+			p_section->visible_topic_count++;
+		}
+
 		p_topic_head = p_article;
 		p_topic_tail = p_article;
 	}
@@ -509,13 +524,13 @@ int section_list_append_article(SECTION_LIST *p_section, const ARTICLE *p_articl
 	p_section->p_article_tail = p_article;
 
 	// Update page
-	if (p_section->last_page_article_count % BBS_article_limit_per_page == 0)
+	if (p_article->visible && p_section->last_page_visible_article_count % BBS_article_limit_per_page == 0)
 	{
 		p_section->p_page_first_article[p_section->page_count] = p_article;
 		p_section->page_count++;
-		p_section->last_page_article_count = 0;
+		p_section->last_page_visible_article_count = 0;
 	}
-	p_section->last_page_article_count++;
+	p_section->last_page_visible_article_count++;
 
 	return 0;
 }
@@ -523,6 +538,8 @@ int section_list_append_article(SECTION_LIST *p_section, const ARTICLE *p_articl
 int section_list_set_article_visible(SECTION_LIST *p_section, int32_t aid, int8_t visible)
 {
 	ARTICLE *p_article;
+	ARTICLE *p_reply;
+	int affected_count = 0;
 
 	if (p_section == NULL)
 	{
@@ -541,9 +558,144 @@ int section_list_set_article_visible(SECTION_LIST *p_section, int32_t aid, int8_
 		return 0; // Already set
 	}
 
+	if (visible == 0) // 1 -> 0
+	{
+		p_section->visible_article_count--;
+
+		if (p_article->tid == 0)
+		{
+			p_section->visible_topic_count--;
+
+			// Set related visible replies to invisible
+			for (p_reply = p_article->p_topic_next; p_reply->tid != 0; p_reply = p_reply->p_topic_next)
+			{
+				if (p_reply->tid != aid)
+				{
+					log_error("Inconsistent tid = %d found in reply %d of topic %d\n", p_reply->tid, p_reply->aid, aid);
+					continue;
+				}
+
+				if (p_reply->visible == 1)
+				{
+					p_reply->visible = 0;
+					p_section->visible_article_count--;
+					affected_count++;
+				}
+			}
+		}
+	}
+	else // 0 -> 1
+	{
+		p_section->visible_article_count++;
+
+		if (p_article->tid == 0)
+		{
+			p_section->visible_topic_count++;
+		}
+	}
+
 	p_article->visible = visible;
+	affected_count++;
 
-	// TODO:
+	return affected_count;
+}
 
-	return 1;
+ARTICLE *section_list_find_article_with_offset(SECTION_LIST *p_section, int32_t aid, int32_t *p_page, int32_t *p_offset)
+{
+	ARTICLE *p_article;
+	int left;
+	int right;
+	int mid;
+
+	*p_page = -1;
+	*p_offset = -1;
+
+	if (p_section == NULL)
+	{
+		log_error("section_list_find_article_with_offset() NULL pointer error\n");
+		return NULL;
+	}
+
+	if (p_section->article_count == 0) // empty
+	{
+		*p_page = 0;
+		*p_offset = 0;
+		return NULL;
+	}
+
+	left = 0;
+	right = p_section->page_count;
+
+	// aid in the range [ head aid of pages[left], tail aid of pages[right - 1] ]
+	while (left < right - 1)
+	{
+		// get page id no less than mid value of left page id and right page id
+		mid = (left + right) / 2 + (right - left) % 2;
+
+		if (mid >= p_section->page_count)
+		{
+			log_error("page id (mid = %d) is out of boundary\n", mid);
+			return NULL;
+		}
+
+		if (aid < p_section->p_page_first_article[mid]->aid)
+		{
+			right = mid;
+		}
+		else
+		{
+			left = mid;
+		}
+	}
+
+	*p_page = left;
+
+	p_article = p_section->p_page_first_article[*p_page];
+
+	// p_section->p_page_first_article[*p_page]->aid <= aid < p_section->p_page_first_article[*p_page + 1]->aid
+	right = (*p_page == p_section->page_count - 1 ? INT32_MAX : p_section->p_page_first_article[*p_page + 1]->aid);
+
+	// left will be the offset of article found or offset to insert
+	left = 0;
+
+	while (1)
+	{
+		if (aid == p_article->aid) // found
+		{
+			break;
+		}
+		else if (aid < p_article->aid) // not exist
+		{
+			p_article = NULL;
+			break;
+		}
+
+		// aid > p_article->aid
+		p_article = p_article->p_next;
+		left++;
+
+		// over last article in the page
+		if (p_article == p_section->p_article_head || p_article->aid >= right)
+		{
+			p_article = NULL;
+			break;
+		}
+	}
+
+	*p_offset = left;
+
+	return p_article;
+}
+
+int section_list_calculate_page(SECTION_LIST *p_section, int32_t start_aid)
+{
+	// ARTICLE *p_article;
+
+	if (p_section == NULL)
+	{
+		log_error("section_list_calculate_page() NULL pointer error\n");
+		return -1;
+	}
+
+	return 0;
 }
