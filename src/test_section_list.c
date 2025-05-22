@@ -51,6 +51,7 @@ int main(int argc, char *argv[])
 	int section_first_aid;
 	int group_count;
 	int article_count;
+	int step;
 
 	if (log_begin("../log/bbsd.log", "../log/error.log") < 0)
 	{
@@ -82,6 +83,15 @@ int main(int argc, char *argv[])
 		if (p_section[i] == NULL)
 		{
 			log_error("section_data_create(i=%d) error\n", i);
+			return -3;
+		}
+	}
+
+	for (i = 0; i < section_conf_count; i++)
+	{
+		if (section_list_find_by_name(sname[i]) == NULL)
+		{
+			printf("section_data_find_section_by_name(%s) error\n", sname[i]);
 			return -3;
 		}
 	}
@@ -297,11 +307,33 @@ int main(int argc, char *argv[])
 
 	printf("Testing #3 ...\n");
 
-	for (i = 0; i < section_conf_count; i++)
+	for (i = 0; i < section_count; i++)
 	{
-		if (section_list_find_by_name(sname[i]) == NULL)
+		last_aid = 0;
+
+		for (j = 0; j < p_section[i]->page_count; j++)
 		{
-			printf("section_data_find_section_by_name(%s) error\n", sname[i]);
+			if (p_section[i]->p_page_first_article[j]->aid <= last_aid)
+			{
+				printf("Non-ascending aid found at section %d page %d, %d <= %d\n", i, j, p_section[i]->p_page_first_article[j]->aid, last_aid);
+			}
+
+			if (j > 0)
+			{
+				step = 0;
+
+				for (p_article = p_section[i]->p_page_first_article[j];
+					 p_article != p_section[i]->p_page_first_article[j - 1];
+					 p_article = p_article->p_prior)
+				{
+					step++;
+				}
+
+				if (step != BBS_article_limit_per_page)
+				{
+					printf("Incorrect page size %d at section %d page %d\n", step, i, j - 1);
+				}
+			}
 		}
 	}
 
