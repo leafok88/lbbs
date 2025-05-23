@@ -43,6 +43,7 @@ int main(int argc, char *argv[])
 {
 	SECTION_LIST *p_section[BBS_max_section];
 	ARTICLE *p_article;
+	ARTICLE *p_next;
 	ARTICLE article;
 	int block_count;
 	int i, j;
@@ -80,7 +81,8 @@ int main(int argc, char *argv[])
 
 	for (i = 0; i < section_count; i++)
 	{
-		p_section[i] = section_list_create(sname[i % section_conf_count],
+		p_section[i] = section_list_create(i + 1,
+										   sname[i % section_conf_count],
 										   stitle[i % section_conf_count],
 										   master_name[i % section_conf_count]);
 		if (p_section[i] == NULL)
@@ -353,7 +355,7 @@ int main(int argc, char *argv[])
 		{
 			last_aid = i * BBS_article_limit_per_section + j + 1;
 
-			p_article = section_list_find_article_with_offset(p_section[i], last_aid, &page, &offset);
+			p_article = section_list_find_article_with_offset(p_section[i], last_aid, &page, &offset, &p_next);
 
 			if (p_article == NULL)
 			{
@@ -410,7 +412,7 @@ int main(int argc, char *argv[])
 		{
 			last_aid = i * BBS_article_limit_per_section + j + 1;
 
-			p_article = section_list_find_article_with_offset(p_section[i], last_aid, &page, &offset);
+			p_article = section_list_find_article_with_offset(p_section[i], last_aid, &page, &offset, &p_next);
 
 			if (p_article == NULL)
 			{
@@ -532,6 +534,114 @@ int main(int argc, char *argv[])
 					   (p_section[i]->visible_article_count % BBS_article_limit_per_page ? 1 : 0),
 				   p_section[i]->page_count, p_section[i]->visible_article_count,
 				   p_section[i]->last_page_visible_article_count);
+			break;
+		}
+	}
+
+	printf("Testing #5 ...\n");
+
+	if (article_block_reset() != 0)
+	{
+		log_error("section_data_free_block(i=%d) error\n", i);
+		return -4;
+	}
+
+	for (i = 0; i < section_count; i++)
+	{
+		section_list_reset_articles(p_section[i]);
+	}
+
+	last_aid = 0;
+
+	for (i = 0; i < section_count / 2; i++)
+	{
+		section_first_aid = last_aid + 1;
+
+		for (j = 0; j < BBS_article_limit_per_section; j++)
+		{
+			last_aid++;
+
+			// Set article data
+			article.aid = last_aid;
+			article.cid = article.aid;
+			// Group articles into group_count topics
+			article.tid = ((article.aid < section_first_aid + group_count) ? 0 : (section_first_aid + j % group_count));
+			article.uid = 1; // TODO: randomize
+			article.visible = 1;
+			article.excerption = 0;
+			article.ontop = 0;
+			article.lock = 0;
+
+			if (section_list_append_article(p_section[i], &article) < 0)
+			{
+				printf("append article (aid = %d) error at section %d index %d\n", article.aid, i, j);
+				break;
+			}
+		}
+
+		// printf("Loaded %d articles into section %d\n", p_section[i]->article_count, i);
+	}
+
+	for (i = 0; i < section_count / 2; i++)
+	{
+		section_first_aid = p_section[i]->p_article_head->aid;
+
+		for (j = 0; j < group_count; j++)
+		{
+			p_article = section_list_find_article_with_offset(p_section[i], section_first_aid + j, &page, &offset, &p_next);
+			if (p_article == NULL)
+			{
+				printf("section_list_find_article_with_offset(aid = %d) not found in section %d\n",
+					   section_first_aid + j, i);
+				break;
+			}
+		}
+	}
+
+	for (i = 0; i < section_count / 2; i++)
+	{
+		section_first_aid = p_section[i]->p_article_head->aid;
+
+		for (j = 0; j < group_count; j++)
+		{
+			affected_count = section_list_move_topic(p_section[i], p_section[section_count / 2 + i], section_first_aid + j);
+
+			if (affected_count < 0)
+			{
+				printf("move topic (aid = %d) error from section %d to section %d\n", section_first_aid + j, i, section_count / 2 + i);
+				break;
+			}
+
+			if (affected_count != BBS_article_limit_per_section / group_count)
+			{
+				printf("move topic (aid = %d) affected article count %d != %d\n",
+					   section_first_aid + j, affected_count,
+					   BBS_article_limit_per_section / group_count);
+				break;
+			}
+		}
+	}
+
+	for (i = 0; i < section_count; i++)
+	{
+		if (p_section[i]->topic_count != (i < section_count / 2 ? 0 : group_count))
+		{
+			printf("Topic count error in section %d, %d != %d\n", i,
+				   p_section[i]->topic_count, (i < section_count / 2 ? 0 : group_count));
+			break;
+		}
+
+		if (p_section[i]->article_count != (i < section_count / 2 ? 0 : BBS_article_limit_per_section))
+		{
+			printf("Article count error in section %d, %d != %d\n", i,
+				   p_section[i]->article_count, (i < section_count / 2 ? 0 : BBS_article_limit_per_section));
+			break;
+		}
+
+		if (p_section[i]->page_count != (i < section_count / 2 ? 0 : BBS_article_limit_per_section / BBS_article_limit_per_page))
+		{
+			printf("Page count error in section %d, %d != %d\n", i,
+				   p_section[i]->page_count, (i < section_count / 2 ? 0 : BBS_article_limit_per_section / BBS_article_limit_per_page));
 			break;
 		}
 	}

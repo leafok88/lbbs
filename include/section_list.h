@@ -71,12 +71,19 @@ extern int article_block_reset(void);
 extern ARTICLE *article_block_find_by_aid(int32_t aid);
 extern ARTICLE *article_block_find_by_index(int index);
 
-extern SECTION_LIST *section_list_create(const char *sname, const char *stitle, const char *master_name);
+extern SECTION_LIST *section_list_create(int32_t sid, const char *sname, const char *stitle, const char *master_name);
 extern void section_list_reset_articles(SECTION_LIST *p_section);
 extern void section_list_cleanup(void);
 extern SECTION_LIST *section_list_find_by_name(const char *sname);
 
 extern int section_list_append_article(SECTION_LIST *p_section, const ARTICLE *p_article_src);
 extern int section_list_set_article_visible(SECTION_LIST *p_section, int32_t aid, int8_t visible);
-extern ARTICLE * section_list_find_article_with_offset(SECTION_LIST *p_section, int32_t aid, int32_t *p_page, int32_t *p_offset);
+
+// *p_page, *p_offset will be set as page / offset of the article with aid in *p_section (including both visible and invisible articles)
+// *pp_next will be set as pointer to the next article of the article with aid
+// *pp_next will be set as head article of the section if the article with aid locates at the tail of the section
+extern ARTICLE * section_list_find_article_with_offset(SECTION_LIST *p_section, int32_t aid, int32_t *p_page, int32_t *p_offset, ARTICLE **pp_next);
+
 extern int section_list_calculate_page(SECTION_LIST *p_section, int32_t start_aid);
+extern int section_list_count_of_topic_articles(int32_t aid);
+extern int section_list_move_topic(SECTION_LIST *p_section_src, SECTION_LIST *p_section_dest, int32_t aid);

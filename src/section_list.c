@@ -309,7 +309,7 @@ ARTICLE *article_block_find_by_index(int index)
 	return (p_block->articles + (index % ARTICLE_PER_BLOCK));
 }
 
-SECTION_LIST *section_list_create(const char *sname, const char *stitle, const char *master_name)
+SECTION_LIST *section_list_create(int32_t sid, const char *sname, const char *stitle, const char *master_name)
 {
 	SECTION_LIST *p_section;
 
@@ -342,6 +342,8 @@ SECTION_LIST *section_list_create(const char *sname, const char *stitle, const c
 	}
 
 	p_section = p_section_list_pool + section_list_count;
+
+	p_section->sid = sid;
 
 	strncpy(p_section->sname, sname, sizeof(p_section->sname - 1));
 	p_section->sname[sizeof(p_section->sname - 1)] = '\0';
@@ -530,7 +532,8 @@ int section_list_append_article(SECTION_LIST *p_section, const ARTICLE *p_articl
 	p_section->p_article_tail = p_article;
 
 	// Update page
-	if (p_article->visible && p_section->last_page_visible_article_count % BBS_article_limit_per_page == 0)
+	if ((p_article->visible && p_section->last_page_visible_article_count % BBS_article_limit_per_page == 0) ||
+		p_section->article_count == 1)
 	{
 		p_section->p_page_first_article[p_section->page_count] = p_article;
 		p_section->page_count++;
@@ -610,7 +613,7 @@ int section_list_set_article_visible(SECTION_LIST *p_section, int32_t aid, int8_
 	return affected_count;
 }
 
-ARTICLE *section_list_find_article_with_offset(SECTION_LIST *p_section, int32_t aid, int32_t *p_page, int32_t *p_offset)
+ARTICLE *section_list_find_article_with_offset(SECTION_LIST *p_section, int32_t aid, int32_t *p_page, int32_t *p_offset, ARTICLE **pp_next)
 {
 	ARTICLE *p_article;
 	int left;
@@ -619,6 +622,7 @@ ARTICLE *section_list_find_article_with_offset(SECTION_LIST *p_section, int32_t 
 
 	*p_page = -1;
 	*p_offset = -1;
+	*pp_next = NULL;
 
 	if (p_section == NULL)
 	{
@@ -663,27 +667,39 @@ ARTICLE *section_list_find_article_with_offset(SECTION_LIST *p_section, int32_t 
 	p_article = p_section->p_page_first_article[*p_page];
 
 	// p_section->p_page_first_article[*p_page]->aid <= aid < p_section->p_page_first_article[*p_page + 1]->aid
-	right = (*p_page == MAX(1, p_section->page_count) - 1 ? INT32_MAX : p_section->p_page_first_article[*p_page + 1]->aid);
+	right = (*p_page == MAX(0, p_section->page_count - 1) ? INT32_MAX : p_section->p_page_first_article[*p_page + 1]->aid);
 
 	// left will be the offset of article found or offset to insert
 	left = 0;
 
 	while (aid > p_article->aid)
 	{
-		// aid > p_article->aid
 		p_article = p_article->p_next;
 		left++;
+
+		if (aid == p_article->aid)
+		{
+			*pp_next = p_article->p_next;
+			break;
+		}
 
 		// over last article in the page
 		if (p_article == p_section->p_article_head || p_article->aid >= right)
 		{
-			break;
+			*pp_next = (p_article == p_section->p_article_head ? p_section->p_article_head : p_section->p_page_first_article[*p_page + 1]);
+			*p_offset = left;
+			return NULL; // not found
 		}
 	}
 
-	if (aid != p_article->aid) // not exist
+	if (aid < p_article->aid)
 	{
-		p_article = NULL;
+		*pp_next = p_article;
+		p_article = NULL; // not found
+	}
+	else // aid == p_article->aid
+	{
+		*pp_next = p_article->p_next;
 	}
 
 	*p_offset = left;
@@ -694,6 +710,7 @@ ARTICLE *section_list_find_article_with_offset(SECTION_LIST *p_section, int32_t 
 int section_list_calculate_page(SECTION_LIST *p_section, int32_t start_aid)
 {
 	ARTICLE *p_article;
+	ARTICLE *p_next;
 	int32_t page;
 	int32_t offset;
 	int visible_article_count;
@@ -705,20 +722,38 @@ int section_list_calculate_page(SECTION_LIST *p_section, int32_t start_aid)
 		return -1;
 	}
 
-	p_article = section_list_find_article_with_offset(p_section, start_aid, &page, &offset);
-	if (p_article == NULL)
+	if (p_section->article_count == 0) // empty
 	{
-		if (page < 0)
-		{
-			return 0;
-		}
+		p_section->page_count = 0;
+		p_section->last_page_visible_article_count = 0;
 
-		log_error("section_list_calculate_page() aid = %d not found in section sid = %d\n", start_aid, p_section->sid);
+		return 0;
 	}
 
-	if (offset > 0)
+	if (start_aid > 0)
 	{
-		p_article = p_section->p_page_first_article[page];
+		p_article = section_list_find_article_with_offset(p_section, start_aid, &page, &offset, &p_next);
+		if (p_article == NULL)
+		{
+			if (page < 0)
+			{
+				return -1;
+			}
+			log_error("section_list_calculate_page() aid = %d not found in section sid = %d\n",
+					  start_aid, p_section->sid);
+			return -2;
+		}
+
+		if (offset > 0)
+		{
+			p_article = p_section->p_page_first_article[page];
+		}
+	}
+	else
+	{
+		p_article = p_section->p_article_head;
+		page = 0;
+		offset = 0;
 	}
 
 	visible_article_count = 0;
@@ -763,4 +798,177 @@ int section_list_calculate_page(SECTION_LIST *p_section, int32_t start_aid)
 	p_section->last_page_visible_article_count = visible_article_count;
 
 	return 0;
+}
+
+int section_list_count_of_topic_articles(int32_t aid)
+{
+	ARTICLE *p_article;
+	int article_count;
+
+	p_article = article_block_find_by_aid(aid);
+	if (p_article == NULL)
+	{
+		return 0; // Not found
+	}
+
+	article_count = 0;
+
+	do
+	{
+		article_count++;
+		p_article = p_article->p_topic_next;
+	} while (p_article->aid != aid);
+
+	return article_count;
+}
+
+int section_list_move_topic(SECTION_LIST *p_section_src, SECTION_LIST *p_section_dest, int32_t aid)
+{
+	ARTICLE *p_article;
+	ARTICLE *p_next;
+	int32_t page;
+	int32_t offset;
+	int32_t move_article_count;
+	int32_t dest_article_count_old;
+	int32_t last_unaffected_aid_src;
+
+	if (p_section_dest == NULL)
+	{
+		log_error("section_list_move_topic() NULL pointer error\n");
+		return -1;
+	}
+
+	if ((p_article = section_list_find_article_with_offset(p_section_src, aid, &page, &offset, &p_next)) == NULL)
+	{
+		log_error("section_list_move_topic() error: article %d not found in section %d\n", aid, p_section_src->sid);
+		return -2;
+	}
+
+	if (p_article->tid != 0)
+	{
+		log_error("section_list_move_topic(aid = %d) error: article is not head of topic, tid = %d\n", aid, p_article->tid);
+		return -2;
+	}
+
+	last_unaffected_aid_src = (p_article == p_section_src->p_article_head ? 0 : p_article->p_prior->aid);
+
+	move_article_count = section_list_count_of_topic_articles(aid);
+	if (move_article_count <= 0)
+	{
+		log_error("section_list_count_of_topic_articles(aid = %d) <= 0\n", aid);
+		return -2;
+	}
+
+	if (p_section_dest->article_count + move_article_count > BBS_article_limit_per_section)
+	{
+		log_error("section_list_move_topic() error: article_count %d reach limit in section %d\n",
+				  p_section_dest->article_count + move_article_count, p_section_dest->sid);
+		return -3;
+	}
+
+	dest_article_count_old = p_section_dest->article_count;
+
+	do
+	{
+		if (section_list_find_article_with_offset(p_section_dest, p_article->aid, &page, &offset, &p_next) != NULL)
+		{
+			log_error("section_list_move_topic() error: article %d already in section %d\n", p_article->aid, p_section_dest->sid);
+			return -4;
+		}
+
+		// Remove from bi-directional article list of src section
+		if (p_section_src->p_article_head == p_article)
+		{
+			p_section_src->p_article_head = p_article->p_next;
+		}
+		if (p_section_src->p_article_tail == p_article)
+		{
+			p_section_src->p_article_tail = p_article->p_prior;
+		}
+		if (p_section_src->p_article_head == p_article) // || p_section_src->p_article_tail == p_article
+		{
+			p_section_src->p_article_head = NULL;
+			p_section_src->p_article_tail = NULL;
+		}
+
+		p_article->p_prior->p_next = p_article->p_next;
+		p_article->p_next->p_prior = p_article->p_prior;
+
+		// Insert into bi-directional article list of dest section
+		if (p_next == NULL) // empty section
+		{
+			p_section_dest->p_article_head = p_article;
+			p_section_dest->p_article_tail = p_article;
+			p_article->p_prior = p_article;
+			p_article->p_next = p_article;
+		}
+		else
+		{
+			if (p_section_dest->p_article_head == p_next)
+			{
+				if (p_article->aid < p_next->aid)
+				{
+					p_section_dest->p_article_head = p_article;
+				}
+				else // p_article->aid > p_next->aid
+				{
+					p_section_dest->p_article_tail = p_article;
+				}
+			}
+
+			p_article->p_prior = p_next->p_prior;
+			p_article->p_next = p_next;
+			p_next->p_prior->p_next = p_article;
+			p_next->p_prior = p_article;
+		}
+
+		// Update article / topic counter of src / desc section
+		p_section_src->article_count--;
+		p_section_dest->article_count++;
+		if (p_article->tid == 0)
+		{
+			p_section_src->topic_count--;
+			p_section_dest->topic_count++;
+		}
+
+		// Update visible article / topic counter of src / desc section
+		if (p_article->visible)
+		{
+			p_section_src->visible_article_count--;
+			p_section_dest->visible_article_count++;
+			if (p_article->tid == 0)
+			{
+				p_section_src->visible_topic_count--;
+				p_section_dest->visible_topic_count++;
+			}
+		}
+
+		// Update page for empty dest section
+		if (p_section_dest->article_count == 1)
+		{
+			p_section_dest->p_page_first_article[0] = p_article;
+			p_section_dest->page_count = 1;
+			p_section_dest->last_page_visible_article_count = (p_article->visible ? 1 : 0);
+		}
+
+		p_article = p_article->p_topic_next;
+	} while (p_article->aid != aid);
+
+	if (p_section_dest->article_count - dest_article_count_old != move_article_count)
+	{
+		log_error("section_list_move_topic() error: count of moved articles %d != %d\n",
+				  p_section_dest->article_count - dest_article_count_old, move_article_count);
+	}
+
+	// Re-calculate pages of both src and desc sections
+	if (section_list_calculate_page(p_section_src, last_unaffected_aid_src) < 0)
+	{
+		log_error("section_list_calculate_page(section = %d, aid = %d) error at aid = %d\n", p_section_src->sid, last_unaffected_aid_src, aid);
+	}
+	if (section_list_calculate_page(p_section_dest, aid) < 0)
+	{
+		log_error("section_list_calculate_page(section = %d, aid = %d) error\n", p_section_dest->sid, aid);
+	}
+
+	return move_article_count;
 }
