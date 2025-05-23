@@ -586,7 +586,7 @@ int main(int argc, char *argv[])
 	{
 		section_first_aid = p_section[i]->p_article_head->aid;
 
-		for (j = 0; j < group_count; j++)
+		for (j = 0; j < group_count; j += 2)
 		{
 			p_article = section_list_find_article_with_offset(p_section[i], section_first_aid + j, &page, &offset, &p_next);
 			if (p_article == NULL)
@@ -594,6 +594,11 @@ int main(int argc, char *argv[])
 				printf("section_list_find_article_with_offset(aid = %d) not found in section %d\n",
 					   section_first_aid + j, i);
 				break;
+			}
+
+			if (section_list_set_article_visible(p_section[i], p_article->aid, 0) != BBS_article_limit_per_section / group_count)
+			{
+				printf("section_list_set_article_visible(aid = %d) error\n", p_article->aid);
 			}
 		}
 	}
@@ -631,6 +636,13 @@ int main(int argc, char *argv[])
 			break;
 		}
 
+		if (p_section[i]->visible_topic_count != (i < section_count / 2 ? 0 : group_count / 2))
+		{
+			printf("Visible topic count error in section %d, %d != %d\n", i,
+				   p_section[i]->visible_topic_count, (i < section_count / 2 ? 0 : group_count / 2));
+			break;
+		}
+
 		if (p_section[i]->article_count != (i < section_count / 2 ? 0 : BBS_article_limit_per_section))
 		{
 			printf("Article count error in section %d, %d != %d\n", i,
@@ -638,10 +650,17 @@ int main(int argc, char *argv[])
 			break;
 		}
 
-		if (p_section[i]->page_count != (i < section_count / 2 ? 0 : BBS_article_limit_per_section / BBS_article_limit_per_page))
+		if (p_section[i]->visible_article_count != (i < section_count / 2 ? 0 : BBS_article_limit_per_section / 2))
+		{
+			printf("Visible article count error in section %d, %d != %d\n", i,
+				   p_section[i]->visible_article_count, (i < section_count / 2 ? 0 : BBS_article_limit_per_section / 2));
+			break;
+		}
+
+		if (p_section[i]->page_count != (i < section_count / 2 ? 0 : BBS_article_limit_per_section / 2 / BBS_article_limit_per_page))
 		{
 			printf("Page count error in section %d, %d != %d\n", i,
-				   p_section[i]->page_count, (i < section_count / 2 ? 0 : BBS_article_limit_per_section / BBS_article_limit_per_page));
+				   p_section[i]->page_count, (i < section_count / 2 ? 0 : BBS_article_limit_per_section / 2 / BBS_article_limit_per_page));
 			break;
 		}
 	}
