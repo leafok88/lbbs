@@ -663,23 +663,13 @@ ARTICLE *section_list_find_article_with_offset(SECTION_LIST *p_section, int32_t 
 	p_article = p_section->p_page_first_article[*p_page];
 
 	// p_section->p_page_first_article[*p_page]->aid <= aid < p_section->p_page_first_article[*p_page + 1]->aid
-	right = (*p_page == p_section->page_count - 1 ? INT32_MAX : p_section->p_page_first_article[*p_page + 1]->aid);
+	right = (*p_page == MAX(1, p_section->page_count) - 1 ? INT32_MAX : p_section->p_page_first_article[*p_page + 1]->aid);
 
 	// left will be the offset of article found or offset to insert
 	left = 0;
 
-	while (1)
+	while (aid > p_article->aid)
 	{
-		if (aid == p_article->aid) // found
-		{
-			break;
-		}
-		else if (aid < p_article->aid) // not exist
-		{
-			p_article = NULL;
-			break;
-		}
-
 		// aid > p_article->aid
 		p_article = p_article->p_next;
 		left++;
@@ -687,9 +677,13 @@ ARTICLE *section_list_find_article_with_offset(SECTION_LIST *p_section, int32_t 
 		// over last article in the page
 		if (p_article == p_section->p_article_head || p_article->aid >= right)
 		{
-			p_article = NULL;
 			break;
 		}
+	}
+
+	if (aid != p_article->aid) // not exist
+	{
+		p_article = NULL;
 	}
 
 	*p_offset = left;

@@ -447,7 +447,70 @@ int main(int argc, char *argv[])
 
 		if (p_section[i]->visible_article_count > 0)
 		{
-			printf("Inconsistent invisible count in section %d, %d > 0\n", i, p_section[i]->visible_article_count);
+			printf("Inconsistent invisible article count in section %d, %d > 0\n", i, p_section[i]->visible_article_count);
+			break;
+		}
+
+		if (p_section[i]->visible_topic_count > 0)
+		{
+			printf("Inconsistent invisible topic count in section %d, %d > 0\n", i, p_section[i]->visible_topic_count);
+			break;
+		}
+
+		last_aid = p_section[i]->p_article_head->aid;
+		if (section_list_calculate_page(p_section[i], last_aid) < 0)
+		{
+			printf("section_list_calculate_page(aid = %d) error in section %d offset %d\n", last_aid, i, j);
+			break;
+		}
+
+		if (p_section[i]->visible_article_count / BBS_article_limit_per_page +
+				(p_section[i]->visible_article_count % BBS_article_limit_per_page ? 1 : 0) !=
+			p_section[i]->page_count)
+		{
+			printf("Inconsistent page count in section %d offset %d, %d != %d, "
+				   "visible_article_count = %d, last_page_visible_count = %d\n",
+				   i, j,
+				   p_section[i]->visible_article_count / BBS_article_limit_per_page +
+					   (p_section[i]->visible_article_count % BBS_article_limit_per_page ? 1 : 0),
+				   p_section[i]->page_count, p_section[i]->visible_article_count,
+				   p_section[i]->last_page_visible_article_count);
+			break;
+		}
+	}
+
+	for (i = 0; i < BBS_max_section; i++)
+	{
+		affected_count = 0;
+
+		for (j = 0; j < BBS_article_limit_per_section; j += 1)
+		{
+			last_aid = i * BBS_article_limit_per_section + j + 1;
+
+			if (section_list_set_article_visible(p_section[i], last_aid, 1) <= 0)
+			{
+				printf("Error set article %d visible in section %d offset %d\n", last_aid, i, j);
+				break;
+			}
+
+			affected_count++;
+		}
+
+		if (affected_count != p_section[i]->article_count)
+		{
+			printf("Inconsistent total set visible article count in section %d, %d != %d\n", i, affected_count, p_section[i]->article_count);
+			break;
+		}
+
+		if (p_section[i]->visible_article_count != p_section[i]->article_count)
+		{
+			printf("Inconsistent visible article count in section %d, %d != %d\n", i, p_section[i]->visible_article_count, p_section[i]->article_count);
+			break;
+		}
+
+		if (p_section[i]->visible_topic_count != group_count)
+		{
+			printf("Inconsistent visible topic count in section %d, %d != %d\n", i, p_section[i]->visible_topic_count, group_count);
 			break;
 		}
 
