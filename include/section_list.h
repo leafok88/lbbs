@@ -71,9 +71,11 @@ extern int article_block_reset(void);
 extern ARTICLE *article_block_find_by_aid(int32_t aid);
 extern ARTICLE *article_block_find_by_index(int index);
 
+extern int section_list_pool_init(const char *filename);
+extern void section_list_pool_cleanup(void);
+
 extern SECTION_LIST *section_list_create(int32_t sid, const char *sname, const char *stitle, const char *master_name);
 extern void section_list_reset_articles(SECTION_LIST *p_section);
-extern void section_list_cleanup(void);
 extern SECTION_LIST *section_list_find_by_name(const char *sname);
 
 extern int section_list_append_article(SECTION_LIST *p_section, const ARTICLE *p_article_src);

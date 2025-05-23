@@ -21,6 +21,9 @@
 #include <unistd.h>
 #include <errno.h>
 
+#define ARTICLE_BLOCK_SHM_FILE "~article_block_shm.dat"
+#define SECTION_LIST_SHM_FILE "~section_list_shm.dat"
+
 const char *sname[] = {
 	"Test",
 	"ABCDEFG",
@@ -56,6 +59,7 @@ int main(int argc, char *argv[])
 	int32_t page;
 	int32_t offset;
 	int affected_count;
+	FILE *fp;
 
 	if (log_begin("../log/bbsd.log", "../log/error.log") < 0)
 	{
@@ -69,9 +73,29 @@ int main(int argc, char *argv[])
 	// - 1 to make blocks allocated is less than required, to trigger error handling
 	block_count = BBS_article_limit_per_section * BBS_max_section / ARTICLE_PER_BLOCK;
 
-	if (article_block_init("../conf/menu.conf", block_count) < 0)
+	if ((fp = fopen(ARTICLE_BLOCK_SHM_FILE, "w")) == NULL)
 	{
-		log_error("section_data_pool_init() error\n");
+		log_error("fopen(%s) error\n", ARTICLE_BLOCK_SHM_FILE);
+		return -1;
+	}
+	fclose(fp);
+
+	if ((fp = fopen(SECTION_LIST_SHM_FILE, "w")) == NULL)
+	{
+		log_error("fopen(%s) error\n", SECTION_LIST_SHM_FILE);
+		return -1;
+	}
+	fclose(fp);
+
+	if (article_block_init(ARTICLE_BLOCK_SHM_FILE, block_count) < 0)
+	{
+		log_error("section_data_pool_init(%s, %d) error\n", ARTICLE_BLOCK_SHM_FILE, block_count);
+		return -2;
+	}
+
+	if (section_list_pool_init(SECTION_LIST_SHM_FILE) < 0)
+	{
+		log_error("section_list_pool_init(%s) error\n", SECTION_LIST_SHM_FILE);
 		return -2;
 	}
 
@@ -669,6 +693,19 @@ int main(int argc, char *argv[])
 	getchar();
 
 	article_block_cleanup();
+	section_list_pool_cleanup();
+
+	if (unlink(ARTICLE_BLOCK_SHM_FILE) < 0)
+	{
+		log_error("unlink(%s) error\n", ARTICLE_BLOCK_SHM_FILE);
+		return -1;
+	}
+
+	if (unlink(SECTION_LIST_SHM_FILE) < 0)
+	{
+		log_error("unlink(%s) error\n", SECTION_LIST_SHM_FILE);
+		return -1;
+	}
 
 	log_end();
 

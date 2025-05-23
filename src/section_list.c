@@ -60,6 +60,7 @@ typedef struct article_block_pool_t ARTICLE_BLOCK_POOL;
 
 static ARTICLE_BLOCK_POOL *p_article_block_pool = NULL;
 
+static int section_list_pool_shmid;
 static SECTION_LIST *p_section_list_pool = NULL;
 static int section_list_count = 0;
 static TRIE_NODE *p_trie_dict_section_list = NULL;
@@ -311,35 +312,75 @@ ARTICLE *article_block_find_by_index(int index)
 	return (p_block->articles + (index % ARTICLE_PER_BLOCK));
 }
 
+extern int section_list_pool_init(const char *filename)
+{
+	int shmid;
+	int proj_id;
+	key_t key;
+	size_t size;
+	void *p_shm;
+
+	if (p_section_list_pool == NULL || p_trie_dict_section_list == NULL)
+	{
+		section_list_pool_cleanup();
+	}
+
+	p_section_list_pool = calloc(BBS_max_section, sizeof(SECTION_LIST));
+	if (p_section_list_pool == NULL)
+	{
+		log_error("calloc(%d SECTION_LIST) OOM\n", BBS_max_section);
+		return -1;
+	}
+
+	proj_id = (int)(time(NULL) % getpid());
+	key = ftok(filename, proj_id);
+	if (key == -1)
+	{
+		log_error("ftok(%s, %d) error (%d)\n", filename, proj_id, errno);
+		return -3;
+	}
+
+	size = sizeof(shmid) + sizeof(SECTION_LIST) * BBS_max_section;
+	shmid = shmget(key, size, IPC_CREAT | IPC_EXCL | 0600);
+	if (shmid == -1)
+	{
+		log_error("shmget(section_list_pool, size = %d) error (%d)\n", size, errno);
+		return -3;
+	}
+	p_shm = shmat(shmid, NULL, 0);
+	if (p_shm == (void *)-1)
+	{
+		log_error("shmat(shmid = %d) error (%d)\n", shmid, errno);
+		return -3;
+	}
+
+	section_list_pool_shmid = shmid;
+	p_section_list_pool = p_shm;
+	section_list_count = 0;
+
+	p_trie_dict_section_list = trie_dict_create();
+	if (p_trie_dict_section_list == NULL)
+	{
+		log_error("trie_dict_create() OOM\n", BBS_max_section);
+		return -2;
+	}
+
+	return 0;
+}
+
 SECTION_LIST *section_list_create(int32_t sid, const char *sname, const char *stitle, const char *master_name)
 {
 	SECTION_LIST *p_section;
 
-	if (p_section_list_pool == NULL)
+	if (p_section_list_pool == NULL || p_trie_dict_section_list == NULL)
 	{
-		p_section_list_pool = calloc(BBS_max_section, sizeof(SECTION_LIST));
-		if (p_section_list_pool == NULL)
-		{
-			log_error("calloc(%d SECTION_LIST) OOM\n", BBS_max_section);
-			return NULL;
-		}
-
-		section_list_count = 0;
-	}
-
-	if (p_trie_dict_section_list == NULL)
-	{
-		p_trie_dict_section_list = trie_dict_create();
-		if (p_trie_dict_section_list == NULL)
-		{
-			log_error("trie_dict_create() OOM\n", BBS_max_section);
-			return NULL;
-		}
+		log_error("session_list_pool not initialized\n");
+		return NULL;
 	}
 
 	if (section_list_count >= BBS_max_section)
 	{
-		log_error("section_list_count exceed limit %d\n", BBS_max_section);
+		log_error("section_list_count exceed limit %d >= %d\n", section_list_count, BBS_max_section);
 		return NULL;
 	}
 
@@ -382,7 +423,7 @@ void section_list_reset_articles(SECTION_LIST *p_section)
 	p_section->last_page_visible_article_count = 0;
 }
 
-void section_list_cleanup(void)
+void section_list_pool_cleanup(void)
 {
 	if (p_trie_dict_section_list != NULL)
 	{
@@ -392,8 +433,16 @@ void section_list_cleanup(void)
 
 	if (p_section_list_pool != NULL)
 	{
-		free(p_section_list_pool);
+		if (shmdt(p_section_list_pool) == -1)
+		{
+			log_error("shmdt(shmid = %d) error (%d)\n", section_list_pool_shmid, errno);
+		}
 		p_section_list_pool = NULL;
+
+		if (shmctl(section_list_pool_shmid, IPC_RMID, NULL) == -1)
+		{
+			log_error("shmctl(shmid = %d, IPC_RMID) error (%d)\n", section_list_pool_shmid, errno);
+		}
 	}
 
 	section_list_count = 0;
