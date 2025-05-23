@@ -1333,37 +1333,15 @@ int load_menu_shm(MENU_SET *p_menu_set)
 {
 	void *p_shm;
 
-	// Mount shared memory
-	p_shm = shmat(p_menu_set->shmid, NULL, SHM_RDONLY);
+	// Remap shared memory in read-only mode
+	p_shm = shmat(p_menu_set->shmid, p_menu_set->p_reserved, SHM_RDONLY | SHM_REMAP);
 	if (p_shm == (void *)-1)
 	{
 		log_error("shmat() error (%d)\n", errno);
 		return -1;
 	}
-
-	if (p_menu_set->p_reserved != NULL && shmdt(p_menu_set->p_reserved) == -1)
-	{
-		log_error("shmdt() error (%d)\n", errno);
-		return -2;
-	}
+	
 	p_menu_set->p_reserved = p_shm;
-
-	p_menu_set->p_menu_pool = p_menu_set->p_reserved + MENU_SET_RESERVED_LENGTH;
-	p_menu_set->p_menu_item_pool = p_menu_set->p_menu_pool + sizeof(MENU) * MAX_MENUS;
-	p_menu_set->p_menu_screen_pool = p_menu_set->p_menu_item_pool + sizeof(MENU_ITEM) * MAX_MENUITEMS;
-	p_menu_set->p_menu_screen_buf = p_menu_set->p_menu_screen_pool + sizeof(MENU_SCREEN) * MAX_MENUS;
-	p_menu_set->p_menu_screen_buf_free = p_menu_set->p_menu_screen_buf;
-
-	// Restore status varaibles into reserved memory area
-	p_menu_set->menu_count = *((int16_t *)p_menu_set->p_reserved);
-	p_menu_set->menu_item_count = *(((int16_t *)p_menu_set->p_reserved) + 1);
-	p_menu_set->menu_screen_count = *(((int16_t *)p_menu_set->p_reserved) + 2);
-
-	p_menu_set->choose_step = 0;
-	p_menu_set->menu_id_path[0] = 0;
-
-	p_menu_set->p_menu_name_dict = NULL;
-	p_menu_set->p_menu_screen_dict = NULL;
 
 	return 0;
 }
@@ -1387,6 +1365,18 @@ int unload_menu_shm(MENU_SET *p_menu_set)
 		return -1;
 	}
 	p_menu_set->p_reserved = NULL;
+
+	if (p_menu_set->p_menu_name_dict != NULL)
+	{
+		trie_dict_destroy(p_menu_set->p_menu_name_dict);
+		p_menu_set->p_menu_name_dict = NULL;
+	}
+
+	if (p_menu_set->p_menu_screen_dict != NULL)
+	{
+		trie_dict_destroy(p_menu_set->p_menu_screen_dict);
+		p_menu_set->p_menu_screen_dict = NULL;
+	}
 
 	return 0;
 }
