@@ -82,7 +82,7 @@ extern int section_list_set_article_visible(SECTION_LIST *p_section, int32_t aid
 // *p_page, *p_offset will be set as page / offset of the article with aid in *p_section (including both visible and invisible articles)
 // *pp_next will be set as pointer to the next article of the article with aid
 // *pp_next will be set as head article of the section if the article with aid locates at the tail of the section
-extern ARTICLE * section_list_find_article_with_offset(SECTION_LIST *p_section, int32_t aid, int32_t *p_page, int32_t *p_offset, ARTICLE **pp_next);
+extern ARTICLE *section_list_find_article_with_offset(SECTION_LIST *p_section, int32_t aid, int32_t *p_page, int32_t *p_offset, ARTICLE **pp_next);
 
 extern int section_list_calculate_page(SECTION_LIST *p_section, int32_t start_aid);
 extern int section_list_count_of_topic_articles(int32_t aid);
