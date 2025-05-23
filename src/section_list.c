@@ -31,6 +31,8 @@
 #define ARTICLE_BLOCK_SHM_COUNT_LIMIT 256 // limited by length (8-bit) of proj_id in ftok(path, proj_id)
 #define ARTICLE_BLOCK_PER_POOL (ARTICLE_BLOCK_PER_SHM * ARTICLE_BLOCK_SHM_COUNT_LIMIT)
 
+#define CALCULATE_PAGE_THRESHOLD 100 // Adjust to tune performance of move topic
+
 struct article_block_t
 {
 	ARTICLE articles[ARTICLE_PER_BLOCK];
@@ -831,6 +833,8 @@ int section_list_move_topic(SECTION_LIST *p_section_src, SECTION_LIST *p_section
 	int32_t move_article_count;
 	int32_t dest_article_count_old;
 	int32_t last_unaffected_aid_src;
+	int32_t first_inserted_aid_dest;
+	int move_counter;
 
 	if (p_section_dest == NULL)
 	{
@@ -867,6 +871,8 @@ int section_list_move_topic(SECTION_LIST *p_section_src, SECTION_LIST *p_section
 	}
 
 	dest_article_count_old = p_section_dest->article_count;
+	move_counter = 0;
+	first_inserted_aid_dest = p_article->aid;
 
 	do
 	{
@@ -952,6 +958,19 @@ int section_list_move_topic(SECTION_LIST *p_section_src, SECTION_LIST *p_section
 		}
 
 		p_article = p_article->p_topic_next;
+
+		move_counter++;
+		if (move_counter % CALCULATE_PAGE_THRESHOLD == 0)
+		{
+			// Re-calculate pages of desc section
+			if (section_list_calculate_page(p_section_dest, first_inserted_aid_dest) < 0)
+			{
+				log_error("section_list_calculate_page(section = %d, aid = %d) error\n",
+						  p_section_dest->sid, first_inserted_aid_dest);
+			}
+
+			first_inserted_aid_dest = p_article->aid;
+		}
 	} while (p_article->aid != aid);
 
 	if (p_section_dest->article_count - dest_article_count_old != move_article_count)
@@ -960,14 +979,21 @@ int section_list_move_topic(SECTION_LIST *p_section_src, SECTION_LIST *p_section
 				  p_section_dest->article_count - dest_article_count_old, move_article_count);
 	}
 
-	// Re-calculate pages of both src and desc sections
+	// Re-calculate pages of src section
 	if (section_list_calculate_page(p_section_src, last_unaffected_aid_src) < 0)
 	{
-		log_error("section_list_calculate_page(section = %d, aid = %d) error at aid = %d\n", p_section_src->sid, last_unaffected_aid_src, aid);
+		log_error("section_list_calculate_page(section = %d, aid = %d) error at aid = %d\n",
+				  p_section_src->sid, last_unaffected_aid_src, aid);
 	}
-	if (section_list_calculate_page(p_section_dest, aid) < 0)
+
+	if (move_counter % CALCULATE_PAGE_THRESHOLD != 0)
 	{
-		log_error("section_list_calculate_page(section = %d, aid = %d) error\n", p_section_dest->sid, aid);
+		// Re-calculate pages of desc section
+		if (section_list_calculate_page(p_section_dest, first_inserted_aid_dest) < 0)
+		{
+			log_error("section_list_calculate_page(section = %d, aid = %d) error\n",
+					  p_section_dest->sid, first_inserted_aid_dest);
+		}
 	}
 
 	return move_article_count;
