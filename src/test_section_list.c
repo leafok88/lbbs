@@ -307,7 +307,7 @@ int main(int argc, char *argv[])
 			{
 				printf("Count of articles in topic %d is different from expected %d != %d\n",
 					   j + 1, article_count, p_section[i]->article_count / group_count);
-				break;
+				// break;
 			}
 		}
 
@@ -617,7 +617,7 @@ int main(int argc, char *argv[])
 				printf("move topic (aid = %d) affected article count %d != %d\n",
 					   section_first_aid + j, affected_count,
 					   BBS_article_limit_per_section / group_count);
-				break;
+				// break;
 			}
 		}
 	}
