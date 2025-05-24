@@ -104,6 +104,11 @@ int main(int argc, char *argv[])
 
 	last_aid = 0;
 
+	if (section_list_try_rw_lock(NULL, 1) < 0)
+	{
+		printf("section_list_try_rw_lock(sid = %d) error\n", 0);
+	}
+
 	for (i = 0; i < section_count; i++)
 	{
 		sid = i * 3 + 1;
@@ -116,10 +121,7 @@ int main(int argc, char *argv[])
 			printf("section_list_create(i = %d) error\n", i);
 			return -3;
 		}
-	}
 
-	for (i = 0; i < section_count; i++)
-	{
 		if (get_section_index(p_section[i]) != i)
 		{
 			printf("get_section_index(i = %d) error\n", i);
@@ -146,6 +148,11 @@ int main(int argc, char *argv[])
 		}
 	}
 
+	if (section_list_rw_unlock(NULL) < 0)
+	{
+		printf("section_list_rw_unlock(sid = %d) error\n", 0);
+	}
+
 	for (j = 0; j < BBS_article_limit_per_section; j++)
 	{
 		for (i = 0; i < section_count; i++)
@@ -163,9 +170,21 @@ int main(int argc, char *argv[])
 			article.ontop = 0;
 			article.lock = 0;
 
+			if (section_list_try_rw_lock(p_section[i], 1) < 0)
+			{
+				printf("section_list_try_rw_lock(sid = %d) error\n", p_section[i]->sid);
+				break;
+			}
+
 			if (section_list_append_article(p_section[i], &article) < 0)
 			{
 				printf("append article (aid = %d) error at section %d index %d\n", article.aid, i, j);
+				break;
+			}
+
+			if (section_list_rw_unlock(p_section[i]) < 0)
+			{
+				printf("section_list_rw_unlock(sid = %d) error %d\n", p_section[i]->sid, errno);
 				break;
 			}
 		}
@@ -190,9 +209,21 @@ int main(int argc, char *argv[])
 				printf("article_block_find_by_aid() at section %d index %d, %d != %d\n", i, j, p_article->aid, last_aid);
 			}
 
+			if (section_list_try_rw_lock(p_section[i], 1) < 0)
+			{
+				printf("section_list_try_rw_lock(sid = %d) error\n", p_section[i]->sid);
+				break;
+			}
+
 			if (section_list_set_article_visible(p_section[i], p_article->aid, 0) != 1)
 			{
 				printf("section_list_set_article_visible(aid = %d) error\n", p_article->aid);
+			}
+
+			if (section_list_rw_unlock(p_section[i]) < 0)
+			{
+				printf("section_list_rw_unlock(sid = %d) error\n", p_section[i]->sid);
+				break;
 			}
 		}
 
@@ -200,6 +231,11 @@ int main(int argc, char *argv[])
 	}
 
 	printf("Testing #2 ...\n");
+
+	if (section_list_try_rw_lock(NULL, 1) < 0)
+	{
+		printf("section_list_try_rw_lock(sid = %d) error\n", 0);
+	}
 
 	if (article_block_reset() != 0)
 	{
@@ -212,11 +248,22 @@ int main(int argc, char *argv[])
 		section_list_reset_articles(p_section[i]);
 	}
 
+	if (section_list_rw_unlock(NULL) < 0)
+	{
+		printf("section_list_rw_unlock(sid = %d) error\n", 0);
+	}
+
 	last_aid = 0;
 
 	for (i = 0; i < section_count; i++)
 	{
 		section_first_aid = last_aid + 1;
+
+		if (section_list_try_rw_lock(p_section[i], 1) < 0)
+		{
+			printf("section_list_try_rw_lock(sid = %d) error\n", p_section[i]->sid);
+			break;
+		}
 
 		for (j = 0; j < BBS_article_limit_per_section; j++)
 		{
@@ -241,6 +288,12 @@ int main(int argc, char *argv[])
 			}
 		}
 
+		if (section_list_rw_unlock(p_section[i]) < 0)
+		{
+			printf("section_list_rw_unlock(sid = %d) error\n", p_section[i]->sid);
+			break;
+		}
+
 		// printf("Loaded %d articles into section %d\n", p_section[i]->article_count, i);
 	}
 
@@ -253,6 +306,12 @@ int main(int argc, char *argv[])
 
 		article_count = 0;
 		last_aid = 0;
+
+		if (section_list_try_rd_lock(p_section[i], 1) < 0)
+		{
+			printf("section_list_try_rd_lock(sid = %d) error\n", p_section[i]->sid);
+			break;
+		}
 
 		p_article = p_section[i]->p_article_head;
 
@@ -276,6 +335,12 @@ int main(int argc, char *argv[])
 			break;
 		}
 
+		if (section_list_rd_unlock(p_section[i]) < 0)
+		{
+			printf("section_list_rd_unlock(sid = %d) error\n", p_section[i]->sid);
+			break;
+		}
+
 		// printf("Verified %d articles in section %d\n", group_count, i);
 	}
 
@@ -284,6 +349,12 @@ int main(int argc, char *argv[])
 		if (p_section[i]->article_count == 0)
 		{
 			continue;
+		}
+
+		if (section_list_try_rd_lock(p_section[i], 1) < 0)
+		{
+			printf("section_list_try_rd_lock(sid = %d) error\n", p_section[i]->sid);
+			break;
 		}
 
 		if (p_section[i]->topic_count != group_count)
@@ -347,6 +418,12 @@ int main(int argc, char *argv[])
 			}
 		}
 
+		if (section_list_rd_unlock(p_section[i]) < 0)
+		{
+			printf("section_list_rd_unlock(sid = %d) error\n", p_section[i]->sid);
+			break;
+		}
+
 		// printf("Verified %d topics in section %d\n", group_count, i);
 	}
 
@@ -355,6 +432,12 @@ int main(int argc, char *argv[])
 	for (i = 0; i < section_count; i++)
 	{
 		last_aid = 0;
+
+		if (section_list_try_rd_lock(p_section[i], 1) < 0)
+		{
+			printf("section_list_try_rd_lock(sid = %d) error\n", p_section[i]->sid);
+			break;
+		}
 
 		for (j = 0; j < p_section[i]->page_count; j++)
 		{
@@ -380,12 +463,24 @@ int main(int argc, char *argv[])
 				}
 			}
 		}
+
+		if (section_list_rd_unlock(p_section[i]) < 0)
+		{
+			printf("section_list_rd_unlock(sid = %d) error\n", p_section[i]->sid);
+			break;
+		}
 	}
 
 	printf("Testing #4 ...\n");
 
 	for (i = 0; i < section_count; i++)
 	{
+		if (section_list_try_rw_lock(p_section[i], 1) < 0)
+		{
+			printf("section_list_try_rw_lock(sid = %d) error\n", p_section[i]->sid);
+			break;
+		}
+
 		step = i % 10 + 1;
 		for (j = group_count; j < BBS_article_limit_per_section; j += step)
 		{
@@ -515,10 +610,22 @@ int main(int argc, char *argv[])
 				   p_section[i]->last_page_visible_article_count);
 			break;
 		}
+
+		if (section_list_rw_unlock(p_section[i]) < 0)
+		{
+			printf("section_list_rw_unlock(sid = %d) error\n", p_section[i]->sid);
+			break;
+		}
 	}
 
 	for (i = 0; i < BBS_max_section; i++)
 	{
+		if (section_list_try_rw_lock(p_section[i], 1) < 0)
+		{
+			printf("section_list_try_rw_lock(sid = %d) error\n", p_section[i]->sid);
+			break;
+		}
+
 		affected_count = 0;
 
 		for (j = 0; j < BBS_article_limit_per_section; j += 1)
@@ -572,9 +679,20 @@ int main(int argc, char *argv[])
 				   p_section[i]->last_page_visible_article_count);
 			break;
 		}
+
+		if (section_list_rw_unlock(p_section[i]) < 0)
+		{
+			printf("section_list_rw_unlock(sid = %d) error\n", p_section[i]->sid);
+			break;
+		}
 	}
 
 	printf("Testing #5 ...\n");
+
+	if (section_list_try_rw_lock(NULL, 1) < 0)
+	{
+		printf("section_list_try_rw_lock(sid = %d) error\n", 0);
+	}
 
 	if (article_block_reset() != 0)
 	{
@@ -587,10 +705,21 @@ int main(int argc, char *argv[])
 		section_list_reset_articles(p_section[i]);
 	}
 
+	if (section_list_rw_unlock(NULL) < 0)
+	{
+		printf("section_list_rw_unlock(sid = %d) error\n", 0);
+	}
+
 	last_aid = 0;
 
 	for (i = 0; i < section_count / 2; i++)
 	{
+		if (section_list_try_rw_lock(p_section[i], 1) < 0)
+		{
+			printf("section_list_try_rw_lock(sid = %d) error\n", p_section[i]->sid);
+			break;
+		}
+
 		section_first_aid = last_aid + 1;
 
 		for (j = 0; j < BBS_article_limit_per_section; j++)
@@ -616,11 +745,23 @@ int main(int argc, char *argv[])
 			}
 		}
 
+		if (section_list_rw_unlock(p_section[i]) < 0)
+		{
+			printf("section_list_rw_unlock(sid = %d) error\n", p_section[i]->sid);
+			break;
+		}
+
 		// printf("Loaded %d articles into section %d\n", p_section[i]->article_count, i);
 	}
 
 	for (i = 0; i < section_count / 2; i++)
 	{
+		if (section_list_try_rw_lock(p_section[i], 1) < 0)
+		{
+			printf("section_list_try_rw_lock(sid = %d) error\n", p_section[i]->sid);
+			break;
+		}
+
 		section_first_aid = p_section[i]->p_article_head->aid;
 
 		for (j = 0; j < group_count; j += 2)
@@ -638,10 +779,33 @@ int main(int argc, char *argv[])
 				printf("section_list_set_article_visible(aid = %d) error\n", p_article->aid);
 			}
 		}
+
+		if (section_list_rw_unlock(p_section[i]) < 0)
+		{
+			printf("section_list_rw_unlock(sid = %d) error\n", p_section[i]->sid);
+			break;
+		}
 	}
 
 	for (i = 0; i < section_count / 2; i++)
 	{
+		if (section_list_try_rw_lock(p_section[i], 1) < 0)
+		{
+			printf("section_list_try_rw_lock(sid = %d) error\n", p_section[i]->sid);
+			break;
+		}
+
+		if (section_list_try_rw_lock(p_section[section_count / 2 + i], 1) < 0)
+		{
+			printf("section_list_try_rw_lock(sid = %d) error\n", p_section[section_count / 2 + i]->sid);
+
+			if (section_list_rw_unlock(p_section[i]) < 0)
+			{
+				printf("section_list_rw_unlock(sid = %d) error\n", p_section[i]->sid);
+			}
+			break;
+		}
+
 		section_first_aid = p_section[i]->p_article_head->aid;
 
 		for (j = 0; j < group_count; j++)
@@ -662,10 +826,33 @@ int main(int argc, char *argv[])
 				// break;
 			}
 		}
+
+		if (section_list_rw_unlock(p_section[i]) < 0)
+		{
+			printf("section_list_rw_unlock(sid = %d) error\n", p_section[i]->sid);
+			break;
+		}
+
+		if (section_list_rw_unlock(p_section[section_count / 2 + i]) < 0)
+		{
+			printf("section_list_rw_unlock(sid = %d) error\n", p_section[section_count / 2 + i]->sid);
+
+			if (section_list_rw_unlock(p_section[i]) < 0)
+			{
+				printf("section_list_rw_unlock(sid = %d) error\n", p_section[i]->sid);
+			}
+			break;
+		}
 	}
 
 	for (i = 0; i < section_count; i++)
 	{
+		if (section_list_try_rd_lock(p_section[i], 1) < 0)
+		{
+			printf("section_list_try_rd_lock(sid = %d) error\n", p_section[i]->sid);
+			break;
+		}
+
 		if (p_section[i]->topic_count != (i < section_count / 2 ? 0 : group_count))
 		{
 			printf("Topic count error in section %d, %d != %d\n", i,
@@ -698,6 +885,12 @@ int main(int argc, char *argv[])
 		{
 			printf("Page count error in section %d, %d != %d\n", i,
 				   p_section[i]->page_count, (i < section_count / 2 ? 0 : BBS_article_limit_per_section / 2 / BBS_article_limit_per_page));
+			break;
+		}
+
+		if (section_list_rd_unlock(p_section[i]) < 0)
+		{
+			printf("section_list_rd_unlock(sid = %d) error\n", p_section[i]->sid);
 			break;
 		}
 	}

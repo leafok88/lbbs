@@ -30,6 +30,17 @@
 #include <sys/shm.h>
 #include <sys/ipc.h>
 
+#ifdef _SEM_SEMUN_UNDEFINED
+union semun
+{
+	int val;			   /* Value for SETVAL */
+	struct semid_ds *buf;  /* Buffer for IPC_STAT, IPC_SET */
+	unsigned short *array; /* Array for GETALL, SETALL */
+	struct seminfo *__buf; /* Buffer for IPC_INFO
+							  (Linux-specific) */
+};
+#endif // #ifdef _SEM_SEMUN_UNDEFINED
+
 #define ARTICLE_BLOCK_PER_SHM 400		  // sizeof(ARTICLE_BLOCK) * ARTICLE_BLOCK_PER_SHM is the size of each shm segment to allocate
 #define ARTICLE_BLOCK_SHM_COUNT_LIMIT 256 // limited by length (8-bit) of proj_id in ftok(path, proj_id)
 #define ARTICLE_BLOCK_PER_POOL (ARTICLE_BLOCK_PER_SHM * ARTICLE_BLOCK_SHM_COUNT_LIMIT)
@@ -327,6 +338,8 @@ extern int section_list_pool_init(const char *filename)
 	key_t key;
 	size_t size;
 	void *p_shm;
+	union semun arg;
+	int i;
 
 	if (p_section_list_pool == NULL || p_trie_dict_section_by_name == NULL || p_trie_dict_section_by_sid == NULL)
 	{
@@ -352,8 +365,19 @@ extern int section_list_pool_init(const char *filename)
 	semid = semget(key, (int)size, IPC_CREAT | IPC_EXCL | 0600);
 	if (semid == -1)
 	{
-		log_error("semget(section_list_pool, size = %d) error (%d)\n", size, errno);
+		log_error("semget(section_list_pool_sem, size = %d) error (%d)\n", size, errno);
 		return -3;
+	}
+
+	// Initialize sem value to 0
+	arg.val = 0;
+	for (i = 0; i < size; i++)
+	{
+		if (semctl(semid, i, SETVAL, arg) == -1)
+		{
+			log_error("semctl(section_list_pool_sem, SETVAL) error (%d)\n", errno);
+			return -3;
+		}
 	}
 
 	section_list_pool_semid = semid;
@@ -362,7 +386,7 @@ extern int section_list_pool_init(const char *filename)
 	shmid = shmget(key, size, IPC_CREAT | IPC_EXCL | 0600);
 	if (shmid == -1)
 	{
-		log_error("shmget(section_list_pool, size = %d) error (%d)\n", size, errno);
+		log_error("shmget(section_list_pool_shm, size = %d) error (%d)\n", size, errno);
 		return -3;
 	}
 	p_shm = shmat(shmid, NULL, 0);
@@ -1217,26 +1241,26 @@ int section_list_try_rd_lock(SECTION_LIST *p_section, int wait_sec)
 		return -2;
 	}
 
-	sops[0].sem_num = (unsigned short)index + 1; // w_sem of section index
-	sops[0].sem_op = 0;							 // wait until unlocked
+	sops[0].sem_num = (unsigned short)(index * 2 + 1); // w_sem of section index
+	sops[0].sem_op = 0;								   // wait until unlocked
 	sops[0].sem_flg = 0;
 
-	sops[1].sem_num = (unsigned short)index; // r_sem of section index
-	sops[1].sem_op = 1;						 // lock
-	sops[1].sem_flg = SEM_UNDO;				 // undo on terminate
+	sops[1].sem_num = (unsigned short)(index * 2); // r_sem of section index
+	sops[1].sem_op = 1;							   // lock
+	sops[1].sem_flg = SEM_UNDO;					   // undo on terminate
 
 	// Read lock on any specific section will also acquire single read lock on "all section"
 	// so that write lock on all section only need to acquire single write on on "all section"
 	// rather than to acquire multiple write locks on all the available sections.
 	if (index == BBS_max_section)
 	{
-		sops[2].sem_num = BBS_max_section + 1; // w_sem of all section
-		sops[2].sem_op = 0;					   // wait until unlocked
+		sops[2].sem_num = BBS_max_section * 2 + 1; // w_sem of all section
+		sops[2].sem_op = 0;						   // wait until unlocked
 		sops[2].sem_flg = 0;
 
-		sops[3].sem_num = BBS_max_section; // r_sem of all section
-		sops[3].sem_op = 1;				   // lock
-		sops[3].sem_flg = SEM_UNDO;		   // undo on terminate
+		sops[3].sem_num = BBS_max_section * 2; // r_sem of all section
+		sops[3].sem_op = 1;					   // lock
+		sops[3].sem_flg = SEM_UNDO;			   // undo on terminate
 	}
 
 	timeout.tv_sec = wait_sec;
@@ -1245,7 +1269,7 @@ int section_list_try_rd_lock(SECTION_LIST *p_section, int wait_sec)
 	ret = semtimedop(section_list_pool_semid, sops, (index == BBS_max_section ? 4 : 2), &timeout);
 	if (ret == -1 && errno != EAGAIN && errno != EINTR)
 	{
-		log_error("section_list_try_rd_lock(index = %d) error %d\n", index, errno);
+		log_error("semtimedop(index = %d, lock read) error %d\n", index, errno);
 	}
 
 	return ret;
@@ -1264,17 +1288,17 @@ int section_list_try_rw_lock(SECTION_LIST *p_section, int wait_sec)
 		return -2;
 	}
 
-	sops[0].sem_num = (unsigned short)index + 1; // w_sem of section index
-	sops[0].sem_op = 0;							 // wait until unlocked
+	sops[0].sem_num = (unsigned short)(index * 2 + 1); // w_sem of section index
+	sops[0].sem_op = 0;								   // wait until unlocked
 	sops[0].sem_flg = 0;
 
-	sops[1].sem_num = (unsigned short)index + 1; // w_sem of section index
-	sops[1].sem_op = 1;							 // lock
-	sops[1].sem_flg = SEM_UNDO;					 // undo on terminate
+	sops[1].sem_num = (unsigned short)(index * 2 + 1); // w_sem of section index
+	sops[1].sem_op = 1;								   // lock
+	sops[1].sem_flg = SEM_UNDO;						   // undo on terminate
 
-	sops[2].sem_num = (unsigned short)index; // r_sem of section index
-	sops[1].sem_op = 0;						 // wait until unlocked
-	sops[1].sem_flg = 0;
+	sops[2].sem_num = (unsigned short)(index * 2); // r_sem of section index
+	sops[2].sem_op = 0;							   // wait until unlocked
+	sops[2].sem_flg = 0;
 
 	timeout.tv_sec = wait_sec;
 	timeout.tv_nsec = 0;
@@ -1282,7 +1306,7 @@ int section_list_try_rw_lock(SECTION_LIST *p_section, int wait_sec)
 	ret = semtimedop(section_list_pool_semid, sops, 3, &timeout);
 	if (ret == -1 && errno != EAGAIN && errno != EINTR)
 	{
-		log_error("section_list_try_rw_lock(index = %d) error %d\n", index, errno);
+		log_error("semtimedop(index = %d, lock write) error %d\n", index, errno);
 	}
 
 	return ret;
@@ -1300,22 +1324,22 @@ int section_list_rd_unlock(SECTION_LIST *p_section)
 		return -2;
 	}
 
-	sops[0].sem_num = (unsigned short)index; // r_sem of section index
-	sops[0].sem_op = -1;					 // unlock
-	sops[0].sem_flg = IPC_NOWAIT;			 // no wait
+	sops[0].sem_num = (unsigned short)(index * 2); // r_sem of section index
+	sops[0].sem_op = -1;						   // unlock
+	sops[0].sem_flg = IPC_NOWAIT | SEM_UNDO;	   // no wait
 
 	// The same reason as section_list_try_rd_lock()
 	if (index == BBS_max_section)
 	{
-		sops[1].sem_num = BBS_max_section; // r_sem of all section
-		sops[1].sem_op = -1;			   // unlock
-		sops[1].sem_flg = IPC_NOWAIT;	   // no wait
+		sops[1].sem_num = BBS_max_section * 2;	 // r_sem of all section
+		sops[1].sem_op = -1;					 // unlock
+		sops[1].sem_flg = IPC_NOWAIT | SEM_UNDO; // no wait
 	}
 
 	ret = semop(section_list_pool_semid, sops, (index == BBS_max_section ? 2 : 1));
 	if (ret == -1 && errno != EAGAIN && errno != EINTR)
 	{
-		log_error("section_list_rd_unlock(index = %d) error %d\n", index, errno);
+		log_error("semop(index = %d, unlock read) error %d\n", index, errno);
 	}
 
 	return ret;
@@ -1333,14 +1357,14 @@ int section_list_rw_unlock(SECTION_LIST *p_section)
 		return -2;
 	}
 
-	sops[0].sem_num = (unsigned short)index + 1; // w_sem of section index
-	sops[0].sem_op = -1;						 // unlock
-	sops[0].sem_flg = IPC_NOWAIT;				 // no wait
+	sops[0].sem_num = (unsigned short)(index * 2 + 1); // w_sem of section index
+	sops[0].sem_op = -1;							   // unlock
+	sops[0].sem_flg = IPC_NOWAIT | SEM_UNDO;		   // no wait
 
 	ret = semop(section_list_pool_semid, sops, 1);
 	if (ret == -1 && errno != EAGAIN && errno != EINTR)
 	{
-		log_error("section_list_rw_unlock(index = %d) error %d\n", index, errno);
+		log_error("semop(index = %d, unlock write) error %d\n", index, errno);
 	}
 
 	return ret;
