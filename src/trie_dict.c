@@ -59,7 +59,7 @@ int trie_dict_set(TRIE_NODE *p_dict, const char *key, int64_t value)
 
 	while (key != NULL && *key != '\0')
 	{
-		offset = *key;
+		offset = (256 + *key) % 256;
 		if (offset < 0 || offset >= TRIE_CHILDREN) // incorrect key character
 		{
 			return -1;
@@ -103,7 +103,7 @@ int trie_dict_get(TRIE_NODE *p_dict, const char *key, int64_t *p_value)
 
 	while (key != NULL && *key != '\0')
 	{
-		offset = *key;
+		offset = (256 + *key) % 256;
 		if (offset < 0 || offset >= TRIE_CHILDREN) // incorrect key character
 		{
 			return -1;
@@ -146,7 +146,7 @@ int trie_dict_del(TRIE_NODE *p_dict, const char *key)
 
 	while (key != NULL && *key != '\0')
 	{
-		offset = *key;
+		offset = (256 + *key) % 256;
 		if (offset < 0 || offset >= TRIE_CHILDREN) // incorrect key character
 		{
 			return -1;
