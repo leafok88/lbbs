@@ -42,7 +42,7 @@ union semun
 #endif // #ifdef _SEM_SEMUN_UNDEFINED
 
 #define ARTICLE_BLOCK_PER_SHM 400		  // sizeof(ARTICLE_BLOCK) * ARTICLE_BLOCK_PER_SHM is the size of each shm segment to allocate
-#define ARTICLE_BLOCK_SHM_COUNT_LIMIT 256 // limited by length (8-bit) of proj_id in ftok(path, proj_id)
+#define ARTICLE_BLOCK_SHM_COUNT_LIMIT 200 // limited by length (8-bit) of proj_id in ftok(path, proj_id)
 #define ARTICLE_BLOCK_PER_POOL (ARTICLE_BLOCK_PER_SHM * ARTICLE_BLOCK_SHM_COUNT_LIMIT)
 
 #define CALCULATE_PAGE_THRESHOLD 100 // Adjust to tune performance of move topic
@@ -74,11 +74,13 @@ struct article_block_pool_t
 };
 typedef struct article_block_pool_t ARTICLE_BLOCK_POOL;
 
+static int article_block_pool_shmid;
 static ARTICLE_BLOCK_POOL *p_article_block_pool = NULL;
 
-static int section_list_pool_shmid;
 static int section_list_pool_semid;
+static int section_list_pool_shmid;
 static SECTION_LIST *p_section_list_pool = NULL;
+
 static int section_list_count = 0;
 static TRIE_NODE *p_trie_dict_section_by_name = NULL;
 static TRIE_NODE *p_trie_dict_section_by_sid = NULL;
@@ -107,14 +109,32 @@ int article_block_init(const char *filename, int block_count)
 		return -2;
 	}
 
-	p_article_block_pool = calloc(1, sizeof(ARTICLE_BLOCK_POOL));
-	if (p_article_block_pool == NULL)
+	// Allocate shared memory
+	proj_id = ARTICLE_BLOCK_SHM_COUNT_LIMIT; // keep different from proj_id used to create block shm
+	key = ftok(filename, proj_id);
+	if (key == -1)
 	{
-		log_error("calloc(ARTICLE_BLOCK_POOL) OOM\n");
-		return -2;
+		log_error("ftok(%s, %d) error (%d)\n", filename, proj_id, errno);
+		return -3;
 	}
 
-	// Allocate shared memory
+	size = sizeof(ARTICLE_BLOCK_POOL);
+	shmid = shmget(key, size, IPC_CREAT | IPC_EXCL | 0600);
+	if (shmid == -1)
+	{
+		log_error("shmget(article_block_pool_shm, size = %d) error (%d)\n", size, errno);
+		return -3;
+	}
+	p_shm = shmat(shmid, NULL, 0);
+	if (p_shm == (void *)-1)
+	{
+		log_error("shmat(shmid = %d) error (%d)\n", shmid, errno);
+		return -3;
+	}
+
+	article_block_pool_shmid = shmid;
+	p_article_block_pool = p_shm;
+
 	p_article_block_pool->shm_count = 0;
 	pp_block_next = &(p_article_block_pool->p_block_free_list);
 
@@ -123,7 +143,7 @@ int article_block_init(const char *filename, int block_count)
 		block_count_in_shm = MIN(block_count, ARTICLE_BLOCK_PER_SHM);
 		block_count -= block_count_in_shm;
 
-		proj_id = getpid() + p_article_block_pool->shm_count;
+		proj_id = p_article_block_pool->shm_count;
 		key = ftok(filename, proj_id);
 		if (key == -1)
 		{
@@ -176,24 +196,35 @@ int article_block_init(const char *filename, int block_count)
 
 void article_block_cleanup(void)
 {
-	if (p_article_block_pool != NULL)
+	if (p_article_block_pool == NULL)
 	{
-		for (int i = 0; i < p_article_block_pool->shm_count; i++)
-		{
-			if (shmdt((p_article_block_pool->shm_pool + i)->p_shm) == -1)
-			{
-				log_error("shmdt(shmid = %d) error (%d)\n", (p_article_block_pool->shm_pool + i)->shmid, errno);
-			}
+		return;
+	}
 
-			if (shmctl((p_article_block_pool->shm_pool + i)->shmid, IPC_RMID, NULL) == -1)
-			{
-				log_error("shmctl(shmid = %d, IPC_RMID) error (%d)\n", (p_article_block_pool->shm_pool + i)->shmid, errno);
-			}
+	for (int i = 0; i < p_article_block_pool->shm_count; i++)
+	{
+		if (shmdt((p_article_block_pool->shm_pool + i)->p_shm) == -1)
+		{
+			log_error("shmdt(shmid = %d) error (%d)\n", (p_article_block_pool->shm_pool + i)->shmid, errno);
 		}
 
-		free(p_article_block_pool);
-		p_article_block_pool = NULL;
+		if (shmctl((p_article_block_pool->shm_pool + i)->shmid, IPC_RMID, NULL) == -1)
+		{
+			log_error("shmctl(shmid = %d, IPC_RMID) error (%d)\n", (p_article_block_pool->shm_pool + i)->shmid, errno);
+		}
 	}
+
+	if (shmdt(p_article_block_pool) == -1)
+	{
+		log_error("shmdt(shmid = %d) error (%d)\n", article_block_pool_shmid, errno);
+	}
+
+	if (shmctl(article_block_pool_shmid, IPC_RMID, NULL) == -1)
+	{
+		log_error("shmctl(shmid = %d, IPC_RMID) error (%d)\n", article_block_pool_shmid, errno);
+	}
+
+	p_article_block_pool = NULL;
 }
 
 inline static ARTICLE_BLOCK *pop_free_article_block(void)
@@ -346,13 +377,6 @@ extern int section_list_pool_init(const char *filename)
 		section_list_pool_cleanup();
 	}
 
-	p_section_list_pool = calloc(BBS_max_section, sizeof(SECTION_LIST));
-	if (p_section_list_pool == NULL)
-	{
-		log_error("calloc(%d SECTION_LIST) OOM\n", BBS_max_section);
-		return -1;
-	}
-
 	proj_id = (int)(time(NULL) % getpid());
 	key = ftok(filename, proj_id);
 	if (key == -1)
@@ -382,7 +406,7 @@ extern int section_list_pool_init(const char *filename)
 
 	section_list_pool_semid = semid;
 
-	size = sizeof(shmid) + sizeof(SECTION_LIST) * BBS_max_section;
+	size = sizeof(SECTION_LIST) * BBS_max_section;
 	shmid = shmget(key, size, IPC_CREAT | IPC_EXCL | 0600);
 	if (shmid == -1)
 	{
