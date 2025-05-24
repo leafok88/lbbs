@@ -952,6 +952,12 @@ int article_count_of_topic(int32_t aid)
 
 	do
 	{
+		if (p_article->tid != 0 && p_article->tid != aid)
+		{
+			log_error("article_count_of_topic(%d) error: article %d not linked to the topic\n", aid, p_article->aid);
+			break;
+		}
+
 		article_count++;
 		p_article = p_article->p_topic_next;
 	} while (p_article->aid != aid);
