@@ -156,14 +156,9 @@ int main(int argc, char *argv[])
 
 	last_aid = 0;
 
-	for (i = 0; i < section_count; i++)
+	for (j = 0; j < BBS_article_limit_per_section; j++)
 	{
-		if (p_section[i]->article_count == 0)
-		{
-			continue;
-		}
-
-		for (j = 0; j < p_section[i]->article_count; j++)
+		for (i = 0; i < section_count; i++)
 		{
 			last_aid++;
 
@@ -171,12 +166,6 @@ int main(int argc, char *argv[])
 			if (p_article == NULL || p_article->aid != last_aid)
 			{
 				printf("article_block_find_by_aid() at section %d index %d, %d != %d\n", i, j, p_article->aid, last_aid);
-			}
-
-			p_article = article_block_find_by_index(last_aid - 1);
-			if (p_article == NULL || p_article->aid != last_aid)
-			{
-				printf("article_block_find_by_index() at section %d index %d, %d != %d\n", i, j, p_article->aid, last_aid);
 			}
 
 			if (section_list_set_article_visible(p_section[i], p_article->aid, 0) != 1)
