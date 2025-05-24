@@ -71,6 +71,8 @@ extern int article_block_reset(void);
 extern ARTICLE *article_block_find_by_aid(int32_t aid);
 extern ARTICLE *article_block_find_by_index(int index);
 
+extern int article_count_of_topic(int32_t aid);
+
 extern int section_list_pool_init(const char *filename);
 extern void section_list_pool_cleanup(void);
 
@@ -87,5 +89,4 @@ extern int section_list_set_article_visible(SECTION_LIST *p_section, int32_t aid
 extern ARTICLE *section_list_find_article_with_offset(SECTION_LIST *p_section, int32_t aid, int32_t *p_page, int32_t *p_offset, ARTICLE **pp_next);
 
 extern int section_list_calculate_page(SECTION_LIST *p_section, int32_t start_aid);
-extern int section_list_count_of_topic_articles(int32_t aid);
 extern int section_list_move_topic(SECTION_LIST *p_section_src, SECTION_LIST *p_section_dest, int32_t aid);

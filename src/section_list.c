@@ -851,7 +851,7 @@ int section_list_calculate_page(SECTION_LIST *p_section, int32_t start_aid)
 	return 0;
 }
 
-int section_list_count_of_topic_articles(int32_t aid)
+int article_count_of_topic(int32_t aid)
 {
 	ARTICLE *p_article;
 	int article_count;
@@ -905,7 +905,7 @@ int section_list_move_topic(SECTION_LIST *p_section_src, SECTION_LIST *p_section
 
 	last_unaffected_aid_src = (p_article == p_section_src->p_article_head ? 0 : p_article->p_prior->aid);
 
-	move_article_count = section_list_count_of_topic_articles(aid);
+	move_article_count = article_count_of_topic(aid);
 	if (move_article_count <= 0)
 	{
 		log_error("section_list_count_of_topic_articles(aid = %d) <= 0\n", aid);
