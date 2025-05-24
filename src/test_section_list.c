@@ -113,7 +113,16 @@ int main(int argc, char *argv[])
 										   master_name[i % section_conf_count]);
 		if (p_section[i] == NULL)
 		{
-			log_error("section_list_create(i = %d) error\n", i);
+			printf("section_list_create(i = %d) error\n", i);
+			return -3;
+		}
+	}
+
+	for (i = 0; i < section_count; i++)
+	{
+		if (get_section_index(p_section[i]) != i)
+		{
+			printf("get_section_index(i = %d) error\n", i);
 			return -3;
 		}
 	}
@@ -130,7 +139,7 @@ int main(int argc, char *argv[])
 	for (i = 0; i < section_count; i++)
 	{
 		sid = i * 3 + 1;
-		if (section_list_find_by_sid(sid) == NULL)
+		if (section_list_find_by_sid(sid) == NULL || section_list_find_by_sid(sid)->sid != sid)
 		{
 			printf("section_list_find_by_sid(%d) error\n", sid);
 			return -3;

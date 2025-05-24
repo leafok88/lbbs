@@ -81,6 +81,7 @@ extern SECTION_LIST *section_list_create(int32_t sid, const char *sname, const c
 extern void section_list_reset_articles(SECTION_LIST *p_section);
 extern SECTION_LIST *section_list_find_by_name(const char *sname);
 extern SECTION_LIST *section_list_find_by_sid(int32_t sid);
+extern int get_section_index(SECTION_LIST *p_section);
 
 extern int section_list_append_article(SECTION_LIST *p_section, const ARTICLE *p_article_src);
 extern int section_list_set_article_visible(SECTION_LIST *p_section, int32_t aid, int8_t visible);
@@ -92,3 +93,8 @@ extern ARTICLE *section_list_find_article_with_offset(SECTION_LIST *p_section, i
 
 extern int section_list_calculate_page(SECTION_LIST *p_section, int32_t start_aid);
 extern int section_list_move_topic(SECTION_LIST *p_section_src, SECTION_LIST *p_section_dest, int32_t aid);
+
+extern int section_list_try_rd_lock(SECTION_LIST *p_section, int wait_sec);
+extern int section_list_try_rw_lock(SECTION_LIST *p_section, int wait_sec);
+extern int section_list_rd_unlock(SECTION_LIST *p_section);
+extern int section_list_rw_unlock(SECTION_LIST *p_section);
