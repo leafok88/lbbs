@@ -50,6 +50,7 @@ int main(int argc, char *argv[])
 	ARTICLE article;
 	int block_count;
 	int i, j;
+	int sid;
 	int last_aid;
 	int current_tid;
 	int section_first_aid;
@@ -89,7 +90,7 @@ int main(int argc, char *argv[])
 
 	if (article_block_init(ARTICLE_BLOCK_SHM_FILE, block_count) < 0)
 	{
-		log_error("section_data_pool_init(%s, %d) error\n", ARTICLE_BLOCK_SHM_FILE, block_count);
+		log_error("article_block_init(%s, %d) error\n", ARTICLE_BLOCK_SHM_FILE, block_count);
 		return -2;
 	}
 
@@ -105,13 +106,14 @@ int main(int argc, char *argv[])
 
 	for (i = 0; i < section_count; i++)
 	{
-		p_section[i] = section_list_create(i + 1,
+		sid = i * 3 + 1;
+		p_section[i] = section_list_create(sid,
 										   sname[i % section_conf_count],
 										   stitle[i % section_conf_count],
 										   master_name[i % section_conf_count]);
 		if (p_section[i] == NULL)
 		{
-			log_error("section_data_create(i=%d) error\n", i);
+			log_error("section_list_create(i = %d) error\n", i);
 			return -3;
 		}
 	}
@@ -120,7 +122,17 @@ int main(int argc, char *argv[])
 	{
 		if (section_list_find_by_name(sname[i]) == NULL)
 		{
-			printf("section_data_find_section_by_name(%s) error\n", sname[i]);
+			printf("section_list_find_by_name(%s) error\n", sname[i]);
+			return -3;
+		}
+	}
+
+	for (i = 0; i < section_count; i++)
+	{
+		sid = i * 3 + 1;
+		if (section_list_find_by_sid(sid) == NULL)
+		{
+			printf("section_list_find_by_sid(%d) error\n", sid);
 			return -3;
 		}
 	}
@@ -133,8 +145,9 @@ int main(int argc, char *argv[])
 
 			// Set article data
 			article.aid = last_aid;
-			article.cid = article.aid;
 			article.tid = 0;
+			article.sid = i * 3 + 1;
+			article.cid = article.aid;
 			article.uid = 1; // TODO: randomize
 			article.visible = 1;
 			article.excerption = 0;
@@ -181,7 +194,7 @@ int main(int argc, char *argv[])
 
 	if (article_block_reset() != 0)
 	{
-		log_error("section_data_free_block(i=%d) error\n", i);
+		log_error("article_block_reset() error\n");
 		return -4;
 	}
 
@@ -202,9 +215,10 @@ int main(int argc, char *argv[])
 
 			// Set article data
 			article.aid = last_aid;
-			article.cid = article.aid;
 			// Group articles into group_count topics
 			article.tid = ((article.aid < section_first_aid + group_count) ? 0 : (section_first_aid + j % group_count));
+			article.sid = i * 3 + 1;
+			article.cid = article.aid;
 			article.uid = 1; // TODO: randomize
 			article.visible = 1;
 			article.excerption = 0;
@@ -555,7 +569,7 @@ int main(int argc, char *argv[])
 
 	if (article_block_reset() != 0)
 	{
-		log_error("section_data_free_block(i=%d) error\n", i);
+		log_error("article_block_reset() error\n");
 		return -4;
 	}
 
@@ -576,9 +590,10 @@ int main(int argc, char *argv[])
 
 			// Set article data
 			article.aid = last_aid;
-			article.cid = article.aid;
 			// Group articles into group_count topics
 			article.tid = ((article.aid < section_first_aid + group_count) ? 0 : (section_first_aid + j % group_count));
+			article.sid = i * 3 + 1;
+			article.cid = article.aid;
 			article.uid = 1; // TODO: randomize
 			article.visible = 1;
 			article.excerption = 0;

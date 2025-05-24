@@ -33,6 +33,8 @@
 
 #define CALCULATE_PAGE_THRESHOLD 100 // Adjust to tune performance of move topic
 
+#define SID_STR_LEN 5 // 32-bit + NULL
+
 struct article_block_t
 {
 	ARTICLE articles[ARTICLE_PER_BLOCK];
@@ -63,7 +65,8 @@ static ARTICLE_BLOCK_POOL *p_article_block_pool = NULL;
 static int section_list_pool_shmid;
 static SECTION_LIST *p_section_list_pool = NULL;
 static int section_list_count = 0;
-static TRIE_NODE *p_trie_dict_section_list = NULL;
+static TRIE_NODE *p_trie_dict_section_by_name = NULL;
+static TRIE_NODE *p_trie_dict_section_by_sid = NULL;
 
 int article_block_init(const char *filename, int block_count)
 {
@@ -297,7 +300,7 @@ ARTICLE *article_block_find_by_index(int index)
 
 	if (index < 0 || index / ARTICLE_PER_BLOCK >= p_article_block_pool->block_count)
 	{
-		log_error("section_data_find_article_by_index(%d) is out of boundary of block [0, %d)\n", index, p_article_block_pool->block_count);
+		log_error("article_block_find_by_index(%d) is out of boundary of block [0, %d)\n", index, p_article_block_pool->block_count);
 		return NULL;
 	}
 
@@ -305,7 +308,7 @@ ARTICLE *article_block_find_by_index(int index)
 
 	if (index % ARTICLE_PER_BLOCK >= p_block->article_count)
 	{
-		log_error("section_data_find_article_by_index(%d) is out of boundary of article [0, %d)\n", index, p_block->article_count);
+		log_error("article_block_find_by_index(%d) is out of boundary of article [0, %d)\n", index, p_block->article_count);
 		return NULL;
 	}
 
@@ -320,7 +323,7 @@ extern int section_list_pool_init(const char *filename)
 	size_t size;
 	void *p_shm;
 
-	if (p_section_list_pool == NULL || p_trie_dict_section_list == NULL)
+	if (p_section_list_pool == NULL || p_trie_dict_section_by_name == NULL || p_trie_dict_section_by_sid == NULL)
 	{
 		section_list_pool_cleanup();
 	}
@@ -358,8 +361,15 @@ extern int section_list_pool_init(const char *filename)
 	p_section_list_pool = p_shm;
 	section_list_count = 0;
 
-	p_trie_dict_section_list = trie_dict_create();
-	if (p_trie_dict_section_list == NULL)
+	p_trie_dict_section_by_name = trie_dict_create();
+	if (p_trie_dict_section_by_name == NULL)
+	{
+		log_error("trie_dict_create() OOM\n", BBS_max_section);
+		return -2;
+	}
+
+	p_trie_dict_section_by_sid = trie_dict_create();
+	if (p_trie_dict_section_by_sid == NULL)
 	{
 		log_error("trie_dict_create() OOM\n", BBS_max_section);
 		return -2;
@@ -368,11 +378,26 @@ extern int section_list_pool_init(const char *filename)
 	return 0;
 }
 
+inline static void sid_to_str(int32_t sid, char *p_sid_str)
+{
+	uint32_t u_sid;
+	int i;
+
+	u_sid = (uint32_t)sid;
+	for (i = 0; i < SID_STR_LEN - 1; i++)
+	{
+		p_sid_str[i] = (char)(u_sid % 255 + 1);
+		u_sid /= 255;
+	}
+	p_sid_str[i] = '\0';
+}
+
 SECTION_LIST *section_list_create(int32_t sid, const char *sname, const char *stitle, const char *master_name)
 {
 	SECTION_LIST *p_section;
+	char sid_str[SID_STR_LEN];
 
-	if (p_section_list_pool == NULL || p_trie_dict_section_list == NULL)
+	if (p_section_list_pool == NULL || p_trie_dict_section_by_name == NULL || p_trie_dict_section_by_sid == NULL)
 	{
 		log_error("session_list_pool not initialized\n");
 		return NULL;
@@ -383,6 +408,8 @@ SECTION_LIST *section_list_create(int32_t sid, const char *sname, const char *st
 		log_error("section_list_count exceed limit %d >= %d\n", section_list_count, BBS_max_section);
 		return NULL;
 	}
+
+	sid_to_str(sid, sid_str);
 
 	p_section = p_section_list_pool + section_list_count;
 
@@ -397,9 +424,16 @@ SECTION_LIST *section_list_create(int32_t sid, const char *sname, const char *st
 	strncpy(p_section->master_name, master_name, sizeof(p_section->master_name - 1));
 	p_section->master_name[sizeof(p_section->master_name - 1)] = '\0';
 
-	if (trie_dict_set(p_trie_dict_section_list, sname, section_list_count) != 1)
+	if (trie_dict_set(p_trie_dict_section_by_name, sname, section_list_count) != 1)
 	{
-		log_error("trie_dict_set(section_data, %s, %d) error\n", sname, section_list_count);
+		log_error("trie_dict_set(section, %s, %d) error\n", sname, section_list_count);
+		return NULL;
+	}
+
+	if (trie_dict_set(p_trie_dict_section_by_sid, sid_str, section_list_count) != 1)
+	{
+		log_error("trie_dict_set(section, %d, %d) error\n", sid, section_list_count);
+		log_std("Debug %x %x %x %x\n", sid_str[0], sid_str[1], sid_str[2], sid_str[3]);
 		return NULL;
 	}
 
@@ -425,10 +459,16 @@ void section_list_reset_articles(SECTION_LIST *p_section)
 
 void section_list_pool_cleanup(void)
 {
-	if (p_trie_dict_section_list != NULL)
+	if (p_trie_dict_section_by_name != NULL)
 	{
-		trie_dict_destroy(p_trie_dict_section_list);
-		p_trie_dict_section_list = NULL;
+		trie_dict_destroy(p_trie_dict_section_by_name);
+		p_trie_dict_section_by_name = NULL;
+	}
+
+	if (p_trie_dict_section_by_sid != NULL)
+	{
+		trie_dict_destroy(p_trie_dict_section_by_sid);
+		p_trie_dict_section_by_sid = NULL;
 	}
 
 	if (p_section_list_pool != NULL)
@@ -452,15 +492,37 @@ SECTION_LIST *section_list_find_by_name(const char *sname)
 {
 	int64_t index;
 
-	if (p_section_list_pool == NULL || p_trie_dict_section_list == NULL)
+	if (p_section_list_pool == NULL || p_trie_dict_section_by_name == NULL)
 	{
 		log_error("section_list not initialized\n");
 		return NULL;
 	}
 
-	if (trie_dict_get(p_trie_dict_section_list, sname, &index) != 1)
+	if (trie_dict_get(p_trie_dict_section_by_name, sname, &index) != 1)
 	{
-		log_error("trie_dict_get(section_data, %s) error\n", sname);
+		log_error("trie_dict_get(section, %s) error\n", sname);
+		return NULL;
+	}
+
+	return (p_section_list_pool + index);
+}
+
+SECTION_LIST *section_list_find_by_sid(int32_t sid)
+{
+	int64_t index;
+	char sid_str[SID_STR_LEN];
+
+	if (p_section_list_pool == NULL || p_trie_dict_section_by_sid == NULL)
+	{
+		log_error("section_list not initialized\n");
+		return NULL;
+	}
+
+	sid_to_str(sid, sid_str);
+
+	if (trie_dict_get(p_trie_dict_section_by_sid, sid_str, &index) != 1)
+	{
+		log_error("trie_dict_get(section, %d) error\n", sid);
 		return NULL;
 	}
 
@@ -485,6 +547,12 @@ int section_list_append_article(SECTION_LIST *p_section, const ARTICLE *p_articl
 	{
 		log_error("article_block_pool not initialized\n");
 		return -1;
+	}
+
+	if (p_section->sid != p_article_src->sid)
+	{
+		log_error("section_list_append_article() error: section sid %d != article sid %d\n", p_section->sid, p_article_src->sid);
+		return -2;
 	}
 
 	if (p_section->article_count >= BBS_article_limit_per_section)
@@ -519,7 +587,7 @@ int section_list_append_article(SECTION_LIST *p_section, const ARTICLE *p_articl
 	// AID of articles should be strictly ascending
 	if (p_article_src->aid <= last_aid)
 	{
-		log_error("section_data_append_article(aid=%d) error: last_aid=%d\n", p_article_src->aid, last_aid);
+		log_error("section_list_append_article(aid=%d) error: last_aid=%d\n", p_article_src->aid, last_aid);
 		return -3;
 	}
 
@@ -615,6 +683,12 @@ int section_list_set_article_visible(SECTION_LIST *p_section, int32_t aid, int8_
 	if (p_article == NULL)
 	{
 		return -1; // Not found
+	}
+
+	if (p_section->sid != p_article->sid)
+	{
+		log_error("section_list_set_article_visible() error: section sid %d != article sid %d\n", p_section->sid, p_article->sid);
+		return -2;
 	}
 
 	if (p_article->visible == visible)
@@ -783,6 +857,18 @@ int section_list_calculate_page(SECTION_LIST *p_section, int32_t start_aid)
 
 	if (start_aid > 0)
 	{
+		p_article = article_block_find_by_aid(start_aid);
+		if (p_article == NULL)
+		{
+			return -1; // Not found
+		}
+
+		if (p_section->sid != p_article->sid)
+		{
+			log_error("section_list_calculate_page() error: section sid %d != start article sid %d\n", p_section->sid, p_article->sid);
+			return -2;
+		}
+
 		p_article = section_list_find_article_with_offset(p_section, start_aid, &page, &offset, &p_next);
 		if (p_article == NULL)
 		{
@@ -891,9 +977,16 @@ int section_list_move_topic(SECTION_LIST *p_section_src, SECTION_LIST *p_section
 		return -1;
 	}
 
-	if ((p_article = section_list_find_article_with_offset(p_section_src, aid, &page, &offset, &p_next)) == NULL)
+	if ((p_article = article_block_find_by_aid(aid)) == NULL)
 	{
-		log_error("section_list_move_topic() error: article %d not found in section %d\n", aid, p_section_src->sid);
+		log_error("section_list_move_topic() error: article %d not found in block\n", aid);
+		return -2;
+	}
+
+	if (p_section_src->sid != p_article->sid)
+	{
+		log_error("section_list_move_topic() error: src section sid %d != article %d sid %d\n",
+				  p_section_src->sid, p_article->aid, p_article->sid);
 		return -2;
 	}
 
@@ -925,10 +1018,11 @@ int section_list_move_topic(SECTION_LIST *p_section_src, SECTION_LIST *p_section
 
 	do
 	{
-		if (section_list_find_article_with_offset(p_section_dest, p_article->aid, &page, &offset, &p_next) != NULL)
+		if (p_section_src->sid != p_article->sid)
 		{
-			log_error("section_list_move_topic() error: article %d already in section %d\n", p_article->aid, p_section_dest->sid);
-			return -4;
+			log_error("section_list_move_topic() error: src section sid %d != article %d sid %d\n",
+					  p_section_src->sid, p_article->aid, p_article->sid);
+			return -2;
 		}
 
 		// Remove from bi-directional article list of src section
@@ -948,6 +1042,15 @@ int section_list_move_topic(SECTION_LIST *p_section_src, SECTION_LIST *p_section
 
 		p_article->p_prior->p_next = p_article->p_next;
 		p_article->p_next->p_prior = p_article->p_prior;
+
+		// Update sid of article
+		p_article->sid = p_section_dest->sid;
+
+		if (section_list_find_article_with_offset(p_section_dest, p_article->aid, &page, &offset, &p_next) != NULL)
+		{
+			log_error("section_list_move_topic() error: article %d already in section %d\n", p_article->aid, p_section_dest->sid);
+			return -4;
+		}
 
 		// Insert into bi-directional article list of dest section
 		if (p_next == NULL) // empty section
@@ -1014,7 +1117,7 @@ int section_list_move_topic(SECTION_LIST *p_section_src, SECTION_LIST *p_section
 			// Re-calculate pages of desc section
 			if (section_list_calculate_page(p_section_dest, first_inserted_aid_dest) < 0)
 			{
-				log_error("section_list_calculate_page(section = %d, aid = %d) error\n",
+				log_error("section_list_calculate_page(dest section = %d, aid = %d) error\n",
 						  p_section_dest->sid, first_inserted_aid_dest);
 			}
 
@@ -1031,7 +1134,7 @@ int section_list_move_topic(SECTION_LIST *p_section_src, SECTION_LIST *p_section
 	// Re-calculate pages of src section
 	if (section_list_calculate_page(p_section_src, last_unaffected_aid_src) < 0)
 	{
-		log_error("section_list_calculate_page(section = %d, aid = %d) error at aid = %d\n",
+		log_error("section_list_calculate_page(src section = %d, aid = %d) error at aid = %d\n",
 				  p_section_src->sid, last_unaffected_aid_src, aid);
 	}
 
@@ -1040,7 +1143,7 @@ int section_list_move_topic(SECTION_LIST *p_section_src, SECTION_LIST *p_section
 		// Re-calculate pages of desc section
 		if (section_list_calculate_page(p_section_dest, first_inserted_aid_dest) < 0)
 		{
-			log_error("section_list_calculate_page(section = %d, aid = %d) error\n",
+			log_error("section_list_calculate_page(dest section = %d, aid = %d) error\n",
 					  p_section_dest->sid, first_inserted_aid_dest);
 		}
 	}
