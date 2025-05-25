@@ -15,11 +15,14 @@
  ***************************************************************************/
 
 #include "file_loader.h"
+#include "trie_dict.h"
 #include "log.h"
 #include <stdio.h>
 #include <unistd.h>
 #include <errno.h>
 #include <sys/shm.h>
+
+#define TRIE_DICT_SHM_FILE "~trie_dict_shm.dat"
 
 const char *files[] = {
 	"../data/welcome.txt",
@@ -40,6 +43,7 @@ int main(int argc, char *argv[])
 	long line_total;
 	const void *p_data;
 	const long *p_line_offsets;
+	FILE *fp;
 
 	if (log_begin("../log/bbsd.log", "../log/error.log") < 0)
 	{
@@ -49,6 +53,19 @@ int main(int argc, char *argv[])
 
 	log_std_redirect(STDOUT_FILENO);
 	log_err_redirect(STDERR_FILENO);
+
+	if ((fp = fopen(TRIE_DICT_SHM_FILE, "w")) == NULL)
+	{
+		log_error("fopen(%s) error\n", TRIE_DICT_SHM_FILE);
+		return -1;
+	}
+	fclose(fp);
+
+	if (trie_dict_init(TRIE_DICT_SHM_FILE) < 0)
+	{
+		printf("trie_dict_init failed\n");
+		return -1;
+	}
 
 	ret = file_loader_init();
 	if (ret < 0)
@@ -67,7 +84,7 @@ int main(int argc, char *argv[])
 
 	for (i = 0; i < files_cnt; i++)
 	{
-		if (load_file_shm(files[i]) < 0)
+		if (load_file(files[i]) < 0)
 		{
 			printf("Load file %s error\n", files[i]);
 		}
@@ -75,7 +92,7 @@ int main(int argc, char *argv[])
 
 	for (i = 0; i < files_cnt; i++)
 	{
-		if ((p_shm = get_file_shm(files[i], &data_len, &line_total, &p_data, &p_line_offsets)) == NULL)
+		if ((p_shm = get_file_shm_readonly(files[i], &data_len, &line_total, &p_data, &p_line_offsets)) == NULL)
 		{
 			printf("Get file shm %s error\n", files[i]);
 		}
@@ -87,6 +104,11 @@ int main(int argc, char *argv[])
 			{
 				printf("Line %d: %ld ~ %ld\n", j, p_line_offsets[j], p_line_offsets[j + 1]);
 			}
+
+			if (detach_file_shm(p_shm) < 0)
+			{
+				log_error("detach_file_shm(%s) error\n", files[i]);
+			}
 		}
 	}
 
@@ -94,7 +116,7 @@ int main(int argc, char *argv[])
 
 	for (i = 0; i < files_cnt; i++)
 	{
-		if (unload_file_shm(files[i]) < 0)
+		if (unload_file(files[i]) < 0)
 		{
 			printf("Unload file %s error\n", files[i]);
 		}
@@ -102,7 +124,7 @@ int main(int argc, char *argv[])
 
 	for (i = 0; i < files_cnt; i++)
 	{
-		if (load_file_shm(files[i]) < 0)
+		if (load_file(files[i]) < 0)
 		{
 			printf("Load file %s error\n", files[i]);
 		}
@@ -114,7 +136,7 @@ int main(int argc, char *argv[])
 	{
 		if (i % 2 == 0)
 		{
-			if (unload_file_shm(files[i]) < 0)
+			if (unload_file(files[i]) < 0)
 			{
 				printf("Unload file %s error\n", files[i]);
 			}
@@ -125,19 +147,32 @@ int main(int argc, char *argv[])
 	{
 		if (i % 2 != 0)
 		{
-			if ((p_shm = get_file_shm(files[i], &data_len, &line_total, &p_data, &p_line_offsets)) == NULL)
+			if ((p_shm = get_file_shm_readonly(files[i], &data_len, &line_total, &p_data, &p_line_offsets)) == NULL)
 			{
 				printf("Get file shm %s error\n", files[i]);
 			}
 			else
 			{
 				printf("File: %s size: %ld lines: %ld\n", files[i], data_len, line_total);
+
+				if (detach_file_shm(p_shm) < 0)
+				{
+					log_error("detach_file_shm(%s) error\n", files[i]);
+				}
 			}
 		}
 	}
 
 	file_loader_cleanup();
 	file_loader_cleanup();
+
+	trie_dict_cleanup();
+
+	if (unlink(TRIE_DICT_SHM_FILE) < 0)
+	{
+		log_error("unlink(%s) error\n", TRIE_DICT_SHM_FILE);
+		return -1;
+	}
 
 	log_end();
 
