@@ -145,6 +145,13 @@ int main(int argc, char *argv[])
 		return -2;
 	}
 
+	// Initialize trie dict pool
+	if (trie_dict_init(CONF_BBSD) < 0)
+	{
+		printf("trie_dict_init failed\n");
+		return -3;
+	}
+
 	// Load BBS cmd
 	if (load_cmd() < 0)
 	{
@@ -173,7 +180,7 @@ int main(int argc, char *argv[])
 	}
 	for (int i = 0; i < data_files_load_startup_count; i++)
 	{
-		if (load_file_shm(data_files_load_startup[i]) < 0)
+		if (load_file(data_files_load_startup[i]) < 0)
 		{
 			log_error("load_file_mmap(%s) error\n", data_files_load_startup[i]);
 		}
@@ -194,6 +201,9 @@ int main(int argc, char *argv[])
 	unload_menu(p_bbs_menu);
 	free(p_bbs_menu);
 	p_bbs_menu = NULL;
+
+	// Cleanup trie dict pool
+	trie_dict_cleanup();
 
 	log_std("Main process exit normally\n");
 	

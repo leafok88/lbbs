@@ -7,7 +7,7 @@ bbsd_SOURCES = bbs.c bbs_cmd.c bbs_main.c common.c database.c file_loader.c fork
 
 bbsd_LDFLAGS=-export-dynamic
 
-test_trie_dict_SOURCES = test_trie_dict.c trie_dict.c
+test_trie_dict_SOURCES = log.c test_trie_dict.c trie_dict.c
 test_file_loader_SOURCES = file_loader.c log.c str_process.c test_file_loader.c trie_dict.c
 test_section_list_SOURCES = log.c section_list.c test_section_list.c trie_dict.c
 

@@ -241,7 +241,7 @@ int display_file_ex(const char *filename, int begin_line, int wait)
 	long int percentile;
 	int loop;
 
-	if ((p_shm = get_file_shm(filename, &data_len, &line_total, &p_data, &p_line_offsets)) == NULL)
+	if ((p_shm = get_file_shm_readonly(filename, &data_len, &line_total, &p_data, &p_line_offsets)) == NULL)
 	{
 		log_error("get_file_shm(%s) error\n", filename);
 		return KEY_NULL;
@@ -419,6 +419,11 @@ int display_file_ex(const char *filename, int begin_line, int wait)
 	}
 
 cleanup:
+	if (detach_file_shm(p_shm) < 0)
+	{
+		log_error("detach_file_shm(%s) error\n", filename);
+	}
+
 	return ch;
 }
 
@@ -509,7 +514,7 @@ int show_active_board()
 
 	if (p_shm == NULL)
 	{
-		if ((p_shm = get_file_shm(DATA_ACTIVE_BOARD, &data_len, &line_total, &p_data, &p_line_offsets)) == NULL)
+		if ((p_shm = get_file_shm_readonly(DATA_ACTIVE_BOARD, &data_len, &line_total, &p_data, &p_line_offsets)) == NULL)
 		{
 			log_error("get_file_shm(%s) error\n", DATA_ACTIVE_BOARD);
 			return KEY_NULL;
