@@ -52,38 +52,40 @@ union semun
 struct article_block_t
 {
 	ARTICLE articles[ARTICLE_PER_BLOCK];
-	int32_t article_count;
+	int article_count;
 	struct article_block_t *p_next_block;
 };
 typedef struct article_block_t ARTICLE_BLOCK;
 
-struct article_block_shm_t
-{
-	int shmid;
-	void *p_shm;
-};
-typedef struct article_block_shm_t ARTICLE_BLOCK_SHM;
-
 struct article_block_pool_t
 {
-	ARTICLE_BLOCK_SHM shm_pool[ARTICLE_BLOCK_SHM_COUNT_LIMIT];
+	int shmid;
+	struct
+	{
+		int shmid;
+		void *p_shm;
+	} shm_pool[ARTICLE_BLOCK_SHM_COUNT_LIMIT];
 	int shm_count;
 	ARTICLE_BLOCK *p_block_free_list;
 	ARTICLE_BLOCK *p_block[ARTICLE_BLOCK_PER_POOL];
-	int32_t block_count;
+	int block_count;
 };
 typedef struct article_block_pool_t ARTICLE_BLOCK_POOL;
 
-static int article_block_pool_shmid;
 static ARTICLE_BLOCK_POOL *p_article_block_pool = NULL;
 
-static int section_list_pool_semid;
-static int section_list_pool_shmid;
-static SECTION_LIST *p_section_list_pool = NULL;
+struct section_list_pool_t
+{
+	int shmid;
+	SECTION_LIST sections[BBS_max_section];
+	int section_count;
+	int semid;
+	TRIE_NODE *p_trie_dict_section_by_name;
+	TRIE_NODE *p_trie_dict_section_by_sid;
+};
+typedef struct section_list_pool_t SECTION_LIST_POOL;
 
-static int section_list_count = 0;
-static TRIE_NODE *p_trie_dict_section_by_name = NULL;
-static TRIE_NODE *p_trie_dict_section_by_sid = NULL;
+static SECTION_LIST_POOL *p_section_list_pool = NULL;
 
 int article_block_init(const char *filename, int block_count)
 {
@@ -132,8 +134,8 @@ int article_block_init(const char *filename, int block_count)
 		return -3;
 	}
 
-	article_block_pool_shmid = shmid;
 	p_article_block_pool = p_shm;
+	p_article_block_pool->shmid = shmid;
 
 	p_article_block_pool->shm_count = 0;
 	pp_block_next = &(p_article_block_pool->p_block_free_list);
@@ -196,6 +198,8 @@ int article_block_init(const char *filename, int block_count)
 
 void article_block_cleanup(void)
 {
+	int shmid;
+
 	if (p_article_block_pool == NULL)
 	{
 		return;
@@ -214,14 +218,16 @@ void article_block_cleanup(void)
 		}
 	}
 
+	shmid = p_article_block_pool->shmid;
+
 	if (shmdt(p_article_block_pool) == -1)
 	{
-		log_error("shmdt(shmid = %d) error (%d)\n", article_block_pool_shmid, errno);
+		log_error("shmdt(shmid = %d) error (%d)\n", shmid, errno);
 	}
 
-	if (shmctl(article_block_pool_shmid, IPC_RMID, NULL) == -1)
+	if (shmctl(shmid, IPC_RMID, NULL) == -1)
 	{
-		log_error("shmctl(shmid = %d, IPC_RMID) error (%d)\n", article_block_pool_shmid, errno);
+		log_error("shmctl(shmid = %d, IPC_RMID) error (%d)\n", shmid, errno);
 	}
 
 	p_article_block_pool = NULL;
@@ -372,7 +378,7 @@ extern int section_list_init(const char *filename)
 	union semun arg;
 	int i;
 
-	if (p_section_list_pool == NULL || p_trie_dict_section_by_name == NULL || p_trie_dict_section_by_sid == NULL)
+	if (p_section_list_pool != NULL)
 	{
 		section_list_cleanup();
 	}
@@ -385,6 +391,26 @@ extern int section_list_init(const char *filename)
 		return -3;
 	}
 
+	// Allocate shared memory
+	size = sizeof(SECTION_LIST_POOL);
+	shmid = shmget(key, size, IPC_CREAT | IPC_EXCL | 0600);
+	if (shmid == -1)
+	{
+		log_error("shmget(section_list_pool_shm, size = %d) error (%d)\n", size, errno);
+		return -3;
+	}
+	p_shm = shmat(shmid, NULL, 0);
+	if (p_shm == (void *)-1)
+	{
+		log_error("shmat(shmid = %d) error (%d)\n", shmid, errno);
+		return -3;
+	}
+
+	p_section_list_pool = p_shm;
+	p_section_list_pool->shmid = shmid;
+	p_section_list_pool->section_count = 0;
+
+	// Allocate semaphore as section locks
 	size = 2 * (BBS_max_section + 1); // r_sem and w_sem per section, the last pair for all sections
 	semid = semget(key, (int)size, IPC_CREAT | IPC_EXCL | 0600);
 	if (semid == -1)
@@ -404,35 +430,17 @@ extern int section_list_init(const char *filename)
 		}
 	}
 
-	section_list_pool_semid = semid;
+	p_section_list_pool->semid = semid;
 
-	size = sizeof(SECTION_LIST) * BBS_max_section;
-	shmid = shmget(key, size, IPC_CREAT | IPC_EXCL | 0600);
-	if (shmid == -1)
-	{
-		log_error("shmget(section_list_pool_shm, size = %d) error (%d)\n", size, errno);
-		return -3;
-	}
-	p_shm = shmat(shmid, NULL, 0);
-	if (p_shm == (void *)-1)
-	{
-		log_error("shmat(shmid = %d) error (%d)\n", shmid, errno);
-		return -3;
-	}
-
-	section_list_pool_shmid = shmid;
-	p_section_list_pool = p_shm;
-	section_list_count = 0;
-
-	p_trie_dict_section_by_name = trie_dict_create();
-	if (p_trie_dict_section_by_name == NULL)
+	p_section_list_pool->p_trie_dict_section_by_name = trie_dict_create();
+	if (p_section_list_pool->p_trie_dict_section_by_name == NULL)
 	{
 		log_error("trie_dict_create() OOM\n", BBS_max_section);
 		return -2;
 	}
 
-	p_trie_dict_section_by_sid = trie_dict_create();
-	if (p_trie_dict_section_by_sid == NULL)
+	p_section_list_pool->p_trie_dict_section_by_sid = trie_dict_create();
+	if (p_section_list_pool->p_trie_dict_section_by_sid == NULL)
 	{
 		log_error("trie_dict_create() OOM\n", BBS_max_section);
 		return -2;
@@ -460,21 +468,21 @@ SECTION_LIST *section_list_create(int32_t sid, const char *sname, const char *st
 	SECTION_LIST *p_section;
 	char sid_str[SID_STR_LEN];
 
-	if (p_section_list_pool == NULL || p_trie_dict_section_by_name == NULL || p_trie_dict_section_by_sid == NULL)
+	if (p_section_list_pool == NULL)
 	{
 		log_error("session_list_pool not initialized\n");
 		return NULL;
 	}
 
-	if (section_list_count >= BBS_max_section)
+	if (p_section_list_pool->section_count >= BBS_max_section)
 	{
-		log_error("section_list_count exceed limit %d >= %d\n", section_list_count, BBS_max_section);
+		log_error("section_count reach limit %d >= %d\n", p_section_list_pool->section_count, BBS_max_section);
 		return NULL;
 	}
 
 	sid_to_str(sid, sid_str);
 
-	p_section = p_section_list_pool + section_list_count;
+	p_section = p_section_list_pool->sections + p_section_list_pool->section_count;
 
 	p_section->sid = sid;
 
@@ -487,21 +495,21 @@ SECTION_LIST *section_list_create(int32_t sid, const char *sname, const char *st
 	strncpy(p_section->master_name, master_name, sizeof(p_section->master_name - 1));
 	p_section->master_name[sizeof(p_section->master_name - 1)] = '\0';
 
-	if (trie_dict_set(p_trie_dict_section_by_name, sname, section_list_count) != 1)
+	if (trie_dict_set(p_section_list_pool->p_trie_dict_section_by_name, sname, p_section_list_pool->section_count) != 1)
 	{
-		log_error("trie_dict_set(section, %s, %d) error\n", sname, section_list_count);
+		log_error("trie_dict_set(section, %s, %d) error\n", sname, p_section_list_pool->section_count);
 		return NULL;
 	}
 
-	if (trie_dict_set(p_trie_dict_section_by_sid, sid_str, section_list_count) != 1)
+	if (trie_dict_set(p_section_list_pool->p_trie_dict_section_by_sid, sid_str, p_section_list_pool->section_count) != 1)
 	{
-		log_error("trie_dict_set(section, %d, %d) error\n", sid, section_list_count);
+		log_error("trie_dict_set(section, %d, %d) error\n", sid, p_section_list_pool->section_count);
 		return NULL;
 	}
 
 	section_list_reset_articles(p_section);
 
-	section_list_count++;
+	p_section_list_pool->section_count++;
 
 	return p_section;
 }
@@ -521,57 +529,65 @@ void section_list_reset_articles(SECTION_LIST *p_section)
 
 void section_list_cleanup(void)
 {
-	if (p_trie_dict_section_by_name != NULL)
+	int shmid;
+
+	if (p_section_list_pool == NULL)
 	{
-		trie_dict_destroy(p_trie_dict_section_by_name);
-		p_trie_dict_section_by_name = NULL;
+		return;
 	}
 
-	if (p_trie_dict_section_by_sid != NULL)
+	if (p_section_list_pool->p_trie_dict_section_by_name != NULL)
 	{
-		trie_dict_destroy(p_trie_dict_section_by_sid);
-		p_trie_dict_section_by_sid = NULL;
+		trie_dict_destroy(p_section_list_pool->p_trie_dict_section_by_name);
+		p_section_list_pool->p_trie_dict_section_by_name = NULL;
+	}
+
+	if (p_section_list_pool->p_trie_dict_section_by_sid != NULL)
+	{
+		trie_dict_destroy(p_section_list_pool->p_trie_dict_section_by_sid);
+		p_section_list_pool->p_trie_dict_section_by_sid = NULL;
 	}
 
 	if (p_section_list_pool != NULL)
 	{
+		if (semctl(p_section_list_pool->semid, 0, IPC_RMID) == -1)
+		{
+			log_error("semctl(semid = %d, IPC_RMID) error (%d)\n", p_section_list_pool->semid, errno);
+		}
+
+		shmid = p_section_list_pool->shmid;
+
 		if (shmdt(p_section_list_pool) == -1)
 		{
-			log_error("shmdt(shmid = %d) error (%d)\n", section_list_pool_shmid, errno);
+			log_error("shmdt(shmid = %d) error (%d)\n", shmid, errno);
 		}
+
+		if (shmctl(shmid, IPC_RMID, NULL) == -1)
+		{
+			log_error("shmctl(shmid = %d, IPC_RMID) error (%d)\n", shmid, errno);
+		}
+
 		p_section_list_pool = NULL;
-
-		if (shmctl(section_list_pool_shmid, IPC_RMID, NULL) == -1)
-		{
-			log_error("shmctl(shmid = %d, IPC_RMID) error (%d)\n", section_list_pool_shmid, errno);
-		}
-
-		if (semctl(section_list_pool_semid, 0, IPC_RMID) == -1)
-		{
-			log_error("semctl(semid = %d, IPC_RMID) error (%d)\n", section_list_pool_semid, errno);
-		}
 	}
-
-	section_list_count = 0;
 }
 
 SECTION_LIST *section_list_find_by_name(const char *sname)
 {
 	int64_t index;
 
-	if (p_section_list_pool == NULL || p_trie_dict_section_by_name == NULL)
+	if (p_section_list_pool == NULL)
 	{
 		log_error("section_list not initialized\n");
 		return NULL;
 	}
 
-	if (trie_dict_get(p_trie_dict_section_by_name, sname, &index) != 1)
+	if (trie_dict_get(p_section_list_pool->p_trie_dict_section_by_name, sname, &index) != 1)
 	{
 		log_error("trie_dict_get(section, %s) error\n", sname);
 		return NULL;
 	}
 
-	return (p_section_list_pool + index);
+	return (p_section_list_pool->sections + index);
 }
 
 SECTION_LIST *section_list_find_by_sid(int32_t sid)
@@ -579,7 +595,7 @@ SECTION_LIST *section_list_find_by_sid(int32_t sid)
 	int64_t index;
 	char sid_str[SID_STR_LEN];
 
-	if (p_section_list_pool == NULL || p_trie_dict_section_by_sid == NULL)
+	if (p_section_list_pool == NULL)
 	{
 		log_error("section_list not initialized\n");
 		return NULL;
@@ -587,13 +603,13 @@ SECTION_LIST *section_list_find_by_sid(int32_t sid)
 
 	sid_to_str(sid, sid_str);
 
-	if (trie_dict_get(p_trie_dict_section_by_sid, sid_str, &index) != 1)
+	if (trie_dict_get(p_section_list_pool->p_trie_dict_section_by_sid, sid_str, &index) != 1)
 	{
 		log_error("trie_dict_get(section, %d) error\n", sid);
 		return NULL;
 	}
 
-	return (p_section_list_pool + index);
+	return (p_section_list_pool->sections + index);
 }
 
 int section_list_append_article(SECTION_LIST *p_section, const ARTICLE *p_article_src)
@@ -1074,7 +1090,7 @@ int section_list_move_topic(SECTION_LIST *p_section_src, SECTION_LIST *p_section
 	move_article_count = article_count_of_topic(aid);
 	if (move_article_count <= 0)
 	{
-		log_error("section_list_count_of_topic_articles(aid = %d) <= 0\n", aid);
+		log_error("article_count_of_topic(aid = %d) <= 0\n", aid);
 		return -2;
 	}
 
@@ -1240,7 +1256,7 @@ int get_section_index(SECTION_LIST *p_section)
 	}
 	else
 	{
-		index = (int)(p_section - p_section_list_pool);
+		index = (int)(p_section - p_section_list_pool->sections);
 		if (index < 0 || index >= BBS_max_section)
 		{
 			log_error("get_section_index(%d) error: index out of range\n", index);
@@ -1289,7 +1305,7 @@ int section_list_try_rd_lock(SECTION_LIST *p_section, int wait_sec)
 	timeout.tv_sec = wait_sec;
 	timeout.tv_nsec = 0;
 
-	ret = semtimedop(section_list_pool_semid, sops, (index == BBS_max_section ? 2 : 4), &timeout);
+	ret = semtimedop(p_section_list_pool->semid, sops, (index == BBS_max_section ? 2 : 4), &timeout);
 	if (ret == -1 && errno != EAGAIN && errno != EINTR)
 	{
 		log_error("semtimedop(index = %d, lock read) error %d\n", index, errno);
@@ -1326,7 +1342,7 @@ int section_list_try_rw_lock(SECTION_LIST *p_section, int wait_sec)
 	timeout.tv_sec = wait_sec;
 	timeout.tv_nsec = 0;
 
-	ret = semtimedop(section_list_pool_semid, sops, 3, &timeout);
+	ret = semtimedop(p_section_list_pool->semid, sops, 3, &timeout);
 	if (ret == -1 && errno != EAGAIN && errno != EINTR)
 	{
 		log_error("semtimedop(index = %d, lock write) error %d\n", index, errno);
@@ -1358,7 +1374,7 @@ int section_list_rd_unlock(SECTION_LIST *p_section)
 		sops[1].sem_flg = IPC_NOWAIT | SEM_UNDO; // no wait
 	}
 
-	ret = semop(section_list_pool_semid, sops, (index == BBS_max_section ? 1 : 2));
+	ret = semop(p_section_list_pool->semid, sops, (index == BBS_max_section ? 1 : 2));
 	if (ret == -1 && errno != EAGAIN && errno != EINTR)
 	{
 		log_error("semop(index = %d, unlock read) error %d\n", index, errno);
@@ -1383,7 +1399,7 @@ int section_list_rw_unlock(SECTION_LIST *p_section)
 	sops[0].sem_op = -1;							   // unlock
 	sops[0].sem_flg = IPC_NOWAIT | SEM_UNDO;		   // no wait
 
-	ret = semop(section_list_pool_semid, sops, 1);
+	ret = semop(p_section_list_pool->semid, sops, 1);
 	if (ret == -1 && errno != EAGAIN && errno != EINTR)
 	{
 		log_error("semop(index = %d, unlock write) error %d\n", index, errno);
