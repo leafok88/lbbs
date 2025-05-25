@@ -97,7 +97,7 @@ int main(int argc, char *argv[])
 	}
 	fclose(fp);
 
-	if (trie_dict_init(TRIE_DICT_SHM_FILE) < 0)
+	if (trie_dict_init(TRIE_DICT_SHM_FILE, TRIE_NODE_PER_POOL) < 0)
 	{
 		printf("trie_dict_init failed\n");
 		return -1;

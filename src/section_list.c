@@ -1275,7 +1275,7 @@ int section_list_try_rd_lock(SECTION_LIST *p_section, int wait_sec)
 	// Read lock on any specific section will also acquire single read lock on "all section"
 	// so that write lock on all section only need to acquire single write on on "all section"
 	// rather than to acquire multiple write locks on all the available sections.
-	if (index == BBS_max_section)
+	if (index != BBS_max_section)
 	{
 		sops[2].sem_num = BBS_max_section * 2 + 1; // w_sem of all section
 		sops[2].sem_op = 0;						   // wait until unlocked
@@ -1289,7 +1289,7 @@ int section_list_try_rd_lock(SECTION_LIST *p_section, int wait_sec)
 	timeout.tv_sec = wait_sec;
 	timeout.tv_nsec = 0;
 
-	ret = semtimedop(section_list_pool_semid, sops, (index == BBS_max_section ? 4 : 2), &timeout);
+	ret = semtimedop(section_list_pool_semid, sops, (index == BBS_max_section ? 2 : 4), &timeout);
 	if (ret == -1 && errno != EAGAIN && errno != EINTR)
 	{
 		log_error("semtimedop(index = %d, lock read) error %d\n", index, errno);
@@ -1351,15 +1351,14 @@ int section_list_rd_unlock(SECTION_LIST *p_section)
 	sops[0].sem_op = -1;						   // unlock
 	sops[0].sem_flg = IPC_NOWAIT | SEM_UNDO;	   // no wait
 
-	// The same reason as section_list_try_rd_lock()
-	if (index == BBS_max_section)
+	if (index != BBS_max_section)
 	{
 		sops[1].sem_num = BBS_max_section * 2;	 // r_sem of all section
 		sops[1].sem_op = -1;					 // unlock
 		sops[1].sem_flg = IPC_NOWAIT | SEM_UNDO; // no wait
 	}
 
-	ret = semop(section_list_pool_semid, sops, (index == BBS_max_section ? 2 : 1));
+	ret = semop(section_list_pool_semid, sops, (index == BBS_max_section ? 1 : 2));
 	if (ret == -1 && errno != EAGAIN && errno != EINTR)
 	{
 		log_error("semop(index = %d, unlock read) error %d\n", index, errno);
