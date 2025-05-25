@@ -496,7 +496,6 @@ SECTION_LIST *section_list_create(int32_t sid, const char *sname, const char *st
 	if (trie_dict_set(p_trie_dict_section_by_sid, sid_str, section_list_count) != 1)
 	{
 		log_error("trie_dict_set(section, %d, %d) error\n", sid, section_list_count);
-		log_std("Debug %x %x %x %x\n", sid_str[0], sid_str[1], sid_str[2], sid_str[3]);
 		return NULL;
 	}
 

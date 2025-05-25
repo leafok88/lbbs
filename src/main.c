@@ -186,8 +186,6 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	log_std("Debug: trie dict nodes used = %d, limit = %d\n", trie_dict_used_nodes(), TRIE_NODE_PER_POOL);
-
 	// Set signal handler
 	signal(SIGHUP, sig_hup_handler);
 	signal(SIGCHLD, sig_chld_handler);
