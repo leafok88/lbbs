@@ -1318,7 +1318,7 @@ int unload_menu(MENU_SET *p_menu_set)
 		p_menu_set->p_menu_screen_dict = NULL;
 	}
 
-	unload_menu_shm(p_menu_set);
+	detach_menu_shm(p_menu_set);
 
 	if (shmctl(p_menu_set->shmid, IPC_RMID, NULL) == -1)
 	{
@@ -1329,7 +1329,7 @@ int unload_menu(MENU_SET *p_menu_set)
 	return 0;
 }
 
-int load_menu_shm(MENU_SET *p_menu_set)
+int set_menu_shm_readonly(MENU_SET *p_menu_set)
 {
 	void *p_shm;
 
@@ -1346,7 +1346,7 @@ int load_menu_shm(MENU_SET *p_menu_set)
 	return 0;
 }
 
-int unload_menu_shm(MENU_SET *p_menu_set)
+int detach_menu_shm(MENU_SET *p_menu_set)
 {
 	p_menu_set->menu_count = 0;
 	p_menu_set->menu_item_count = 0;
@@ -1359,24 +1359,16 @@ int unload_menu_shm(MENU_SET *p_menu_set)
 	p_menu_set->p_menu_screen_buf = NULL;
 	p_menu_set->p_menu_screen_buf_free = NULL;
 
+	p_menu_set->p_menu_name_dict = NULL;
+	p_menu_set->p_menu_screen_dict = NULL;
+
 	if (p_menu_set->p_reserved != NULL && shmdt(p_menu_set->p_reserved) == -1)
 	{
 		log_error("shmdt() error (%d)\n", errno);
 		return -1;
 	}
+
 	p_menu_set->p_reserved = NULL;
-
-	if (p_menu_set->p_menu_name_dict != NULL)
-	{
-		trie_dict_destroy(p_menu_set->p_menu_name_dict);
-		p_menu_set->p_menu_name_dict = NULL;
-	}
-
-	if (p_menu_set->p_menu_screen_dict != NULL)
-	{
-		trie_dict_destroy(p_menu_set->p_menu_screen_dict);
-		p_menu_set->p_menu_screen_dict = NULL;
-	}
 
 	return 0;
 }

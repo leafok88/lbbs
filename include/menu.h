@@ -112,8 +112,8 @@ extern MENU_SET *p_bbs_menu;
 extern int load_menu(MENU_SET *p_menu_set, const char *conf_file);
 extern int unload_menu(MENU_SET *p_menu_set);
 
-extern int load_menu_shm(MENU_SET *p_menu_set);
-extern int unload_menu_shm(MENU_SET *p_menu_set);
+extern int set_menu_shm_readonly(MENU_SET *p_menu_set);
+extern int detach_menu_shm(MENU_SET *p_menu_set);
 
 extern int menu_control(MENU_SET *p_menu_set, int key);
 extern int display_menu(MENU_SET *p_menu_set);

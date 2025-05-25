@@ -284,7 +284,7 @@ int bbs_main()
 	display_file_ex(VAR_BBS_TOP, 1, 1);
 
 	// Load menu in shared memory
-	if (load_menu_shm(p_bbs_menu) < 0)
+	if (set_menu_shm_readonly(p_bbs_menu) < 0)
 	{
 		return -5;
 	}
@@ -293,12 +293,15 @@ int bbs_main()
 	bbs_center();
 
 	// Unload menu in shared memory
-	unload_menu_shm(p_bbs_menu);
+	detach_menu_shm(p_bbs_menu);
 	free(p_bbs_menu);
 	p_bbs_menu = NULL;
 
 	// Logout
 	bbs_logout(db);
+
+	// Unload file_loader and trie_dict
+	// Do nothing explictly - SHM detached automatically on process exit
 
 	mysql_close(db);
 
