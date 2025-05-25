@@ -185,6 +185,8 @@ int net_server(const char *hostaddr, in_port_t port)
 			}
 			else
 			{
+				log_std("Debug: trie dict nodes used = %d, limit = %d\n", trie_dict_used_nodes(), TRIE_NODE_PER_POOL);
+
 				unload_menu(p_bbs_menu);
 				free(p_bbs_menu);
 

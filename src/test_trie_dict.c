@@ -70,7 +70,7 @@ int main(int argc, char *argv[])
 		printf("Check key %d [%s] len=%ld\n", i, keys[i], strlen(keys[i]));
 	}
 
-	if (trie_dict_init(TRIE_DICT_SHM_FILE) < 0)
+	if (trie_dict_init(TRIE_DICT_SHM_FILE, TRIE_NODE_PER_POOL) < 0)
 	{
 		printf("trie_dict_init failed\n");
 		return -1;
@@ -212,8 +212,12 @@ int main(int argc, char *argv[])
 		}
 	}
 
+	printf("Total nodes used = %d\n", trie_dict_used_nodes());
+
 	trie_dict_destroy(p_dict);
 	p_dict = NULL;
+
+	printf("Total nodes used = %d\n", trie_dict_used_nodes());
 
 	printf("Testing #2 ...\n");
 
@@ -243,7 +247,11 @@ int main(int argc, char *argv[])
 	// 	printf("unload_trie_dict_shm() error\n");
 	// }
 
+	printf("Total nodes used = %d, after set_shm_readonly\n", trie_dict_used_nodes());
+
 	trie_dict_cleanup();
+
+	printf("Total nodes used = %d, after cleanup\n", trie_dict_used_nodes());
 
 	printf("Done\n");
 

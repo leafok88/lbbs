@@ -21,6 +21,7 @@
 
 #define TRIE_CHILDREN 256
 #define TRIE_MAX_KEY_LEN 1023
+#define TRIE_NODE_PER_POOL 2000
 
 struct trie_node_t
 {
@@ -32,7 +33,7 @@ typedef struct trie_node_t TRIE_NODE;
 
 typedef void (*trie_dict_traverse_cb)(const char *, int64_t);
 
-extern int trie_dict_init(const char *filename);
+extern int trie_dict_init(const char *filename, int node_count_limit);
 extern void trie_dict_cleanup(void);
 
 extern int set_trie_dict_shm_readonly(void);
@@ -46,5 +47,7 @@ extern int trie_dict_get(TRIE_NODE *p_dict, const char *key, int64_t *p_value);
 extern int trie_dict_del(TRIE_NODE *p_dict, const char *key);
 
 extern void trie_dict_traverse(TRIE_NODE *p_dict, trie_dict_traverse_cb cb);
+
+extern int trie_dict_used_nodes(void);
 
 #endif //_TRIE_DICT_H_

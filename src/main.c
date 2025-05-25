@@ -146,7 +146,7 @@ int main(int argc, char *argv[])
 	}
 
 	// Initialize trie dict pool
-	if (trie_dict_init(CONF_BBSD) < 0)
+	if (trie_dict_init(CONF_BBSD, TRIE_NODE_PER_POOL) < 0)
 	{
 		printf("trie_dict_init failed\n");
 		return -3;
@@ -185,6 +185,8 @@ int main(int argc, char *argv[])
 			log_error("load_file_mmap(%s) error\n", data_files_load_startup[i]);
 		}
 	}
+
+	log_std("Debug: trie dict nodes used = %d, limit = %d\n", trie_dict_used_nodes(), TRIE_NODE_PER_POOL);
 
 	// Set signal handler
 	signal(SIGHUP, sig_hup_handler);

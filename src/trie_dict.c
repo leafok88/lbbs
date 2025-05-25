@@ -25,31 +25,36 @@
 #include <sys/shm.h>
 #include <sys/ipc.h>
 
-#define TRIE_NODE_PER_POOL 10000
-
 struct trie_node_pool_t
 {
 	int shmid;
-	TRIE_NODE trie_nodes[TRIE_NODE_PER_POOL];
-	TRIE_NODE *p_node_free_list;
+	int node_count_limit;
 	int node_count;
+	TRIE_NODE *p_node_free_list;
 };
 typedef struct trie_node_pool_t TRIE_NODE_POOL;
 
 static TRIE_NODE_POOL *p_trie_node_pool;
 
-int trie_dict_init(const char *filename)
+int trie_dict_init(const char *filename, int node_count_limit)
 {
 	int shmid;
 	int proj_id;
 	key_t key;
 	size_t size;
 	void *p_shm;
+	TRIE_NODE *p_trie_nodes;
 	int i;
 
 	if (p_trie_node_pool != NULL)
 	{
 		log_error("trie_dict_pool already initialized\n");
+		return -1;
+	}
+
+	if (node_count_limit <= 0 || node_count_limit > TRIE_NODE_PER_POOL)
+	{
+		log_error("trie_dict_init(%d) error: invalid node_count_limit\n", node_count_limit);
 		return -1;
 	}
 
@@ -62,7 +67,7 @@ int trie_dict_init(const char *filename)
 		return -2;
 	}
 
-	size = sizeof(TRIE_NODE_POOL);
+	size = sizeof(TRIE_NODE_POOL) + sizeof(TRIE_NODE) * (size_t)node_count_limit;
 	shmid = shmget(key, size, IPC_CREAT | IPC_EXCL | 0600);
 	if (shmid == -1)
 	{
@@ -78,14 +83,16 @@ int trie_dict_init(const char *filename)
 
 	p_trie_node_pool = p_shm;
 	p_trie_node_pool->shmid = shmid;
+	p_trie_node_pool->node_count_limit = node_count_limit;
 	p_trie_node_pool->node_count = 0;
 
-	p_trie_node_pool->p_node_free_list = &(p_trie_node_pool->trie_nodes[0]);
-	for (i = 0; i < TRIE_NODE_PER_POOL - 1; i++)
+	p_trie_nodes = p_shm + sizeof(TRIE_NODE_POOL);
+	p_trie_node_pool->p_node_free_list = &(p_trie_nodes[0]);
+	for (i = 0; i < node_count_limit - 1; i++)
 	{
-		p_trie_node_pool->trie_nodes[i].p_nodes[0] = &(p_trie_node_pool->trie_nodes[i + 1]);
+		p_trie_nodes[i].p_nodes[0] = &(p_trie_nodes[i + 1]);
 	}
-	p_trie_node_pool->trie_nodes[TRIE_NODE_PER_POOL - 1].p_nodes[0] = NULL;
+	p_trie_nodes[node_count_limit - 1].p_nodes[0] = NULL;
 
 	return 0;
 }
@@ -107,8 +114,6 @@ void trie_dict_cleanup(void)
 	{
 		log_error("shmctl(shmid = %d, IPC_RMID) error (%d)\n", shmid, errno);
 	}
-
-	p_trie_node_pool = NULL;
 }
 
 int set_trie_dict_shm_readonly(void)
@@ -144,6 +149,7 @@ int detach_trie_dict_shm(void)
 		log_error("shmdt() error (%d)\n", errno);
 		return -1;
 	}
+
 	p_trie_node_pool = NULL;
 
 	return 0;
@@ -159,6 +165,12 @@ TRIE_NODE *trie_dict_create(void)
 		p_trie_node_pool->p_node_free_list = p_dict->p_nodes[0];
 
 		bzero(p_dict, sizeof(*p_dict));
+
+		p_trie_node_pool->node_count++;
+	}
+	else if (p_trie_node_pool != NULL)
+	{
+		log_error("trie_dict_create() error: node depleted %d >= %d\n", p_trie_node_pool->node_count, p_trie_node_pool->node_count_limit);
 	}
 
 	return p_dict;
@@ -183,6 +195,8 @@ void trie_dict_destroy(TRIE_NODE *p_dict)
 
 	p_dict->p_nodes[0] = p_trie_node_pool->p_node_free_list;
 	p_trie_node_pool->p_node_free_list = p_dict;
+
+	p_trie_node_pool->node_count--;
 }
 
 int trie_dict_set(TRIE_NODE *p_dict, const char *key, int64_t value)
@@ -350,4 +364,9 @@ void trie_dict_traverse(TRIE_NODE *p_dict, trie_dict_traverse_cb cb)
 	}
 
 	_trie_dict_traverse(p_dict, cb, key, 0);
+}
+
+int trie_dict_used_nodes(void)
+{
+	return (p_trie_node_pool == NULL ? -1 : p_trie_node_pool->node_count);
 }
