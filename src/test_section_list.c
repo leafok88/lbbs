@@ -15,6 +15,7 @@
  ***************************************************************************/
 
 #include "section_list.h"
+#include "trie_dict.h"
 #include "bbs.h"
 #include "log.h"
 #include <stdio.h>
@@ -23,6 +24,7 @@
 
 #define ARTICLE_BLOCK_SHM_FILE "~article_block_shm.dat"
 #define SECTION_LIST_SHM_FILE "~section_list_shm.dat"
+#define TRIE_DICT_SHM_FILE "~trie_dict_shm.dat"
 
 const char *sname[] = {
 	"Test",
@@ -88,13 +90,26 @@ int main(int argc, char *argv[])
 	}
 	fclose(fp);
 
+	if ((fp = fopen(TRIE_DICT_SHM_FILE, "w")) == NULL)
+	{
+		log_error("fopen(%s) error\n", TRIE_DICT_SHM_FILE);
+		return -1;
+	}
+	fclose(fp);
+
+	if (trie_dict_init(TRIE_DICT_SHM_FILE) < 0)
+	{
+		printf("trie_dict_init failed\n");
+		return -1;
+	}
+
 	if (article_block_init(ARTICLE_BLOCK_SHM_FILE, block_count) < 0)
 	{
 		log_error("article_block_init(%s, %d) error\n", ARTICLE_BLOCK_SHM_FILE, block_count);
 		return -2;
 	}
 
-	if (section_list_pool_init(SECTION_LIST_SHM_FILE) < 0)
+	if (section_list_init(SECTION_LIST_SHM_FILE) < 0)
 	{
 		log_error("section_list_pool_init(%s) error\n", SECTION_LIST_SHM_FILE);
 		return -2;
@@ -898,8 +913,15 @@ int main(int argc, char *argv[])
 	printf("Press ENTER to exit...");
 	getchar();
 
+	section_list_cleanup();
 	article_block_cleanup();
-	section_list_pool_cleanup();
+	trie_dict_cleanup();
+
+	if (unlink(TRIE_DICT_SHM_FILE) < 0)
+	{
+		log_error("unlink(%s) error\n", TRIE_DICT_SHM_FILE);
+		return -1;
+	}
 
 	if (unlink(ARTICLE_BLOCK_SHM_FILE) < 0)
 	{

@@ -152,7 +152,7 @@ int article_block_init(const char *filename, int block_count)
 			return -3;
 		}
 
-		size = sizeof(shmid) + sizeof(ARTICLE_BLOCK) * (size_t)block_count_in_shm;
+		size = sizeof(ARTICLE_BLOCK) * (size_t)block_count_in_shm;
 		shmid = shmget(key, size, IPC_CREAT | IPC_EXCL | 0600);
 		if (shmid == -1)
 		{
@@ -361,7 +361,7 @@ ARTICLE *article_block_find_by_index(int index)
 	return (p_block->articles + (index % ARTICLE_PER_BLOCK));
 }
 
-extern int section_list_pool_init(const char *filename)
+extern int section_list_init(const char *filename)
 {
 	int semid;
 	int shmid;
@@ -374,7 +374,7 @@ extern int section_list_pool_init(const char *filename)
 
 	if (p_section_list_pool == NULL || p_trie_dict_section_by_name == NULL || p_trie_dict_section_by_sid == NULL)
 	{
-		section_list_pool_cleanup();
+		section_list_cleanup();
 	}
 
 	proj_id = (int)(time(NULL) % getpid());
@@ -520,7 +520,7 @@ void section_list_reset_articles(SECTION_LIST *p_section)
 	p_section->last_page_visible_article_count = 0;
 }
 
-void section_list_pool_cleanup(void)
+void section_list_cleanup(void)
 {
 	if (p_trie_dict_section_by_name != NULL)
 	{
