@@ -32,6 +32,12 @@ typedef struct trie_node_t TRIE_NODE;
 
 typedef void (*trie_dict_traverse_cb)(const char *, int64_t);
 
+extern int trie_dict_init(const char *filename);
+extern void trie_dict_cleanup(void);
+
+extern int set_trie_dict_shm_readonly(void);
+extern int detach_trie_dict_shm(void);
+
 extern TRIE_NODE *trie_dict_create(void);
 extern void trie_dict_destroy(TRIE_NODE *p_dict);
 
