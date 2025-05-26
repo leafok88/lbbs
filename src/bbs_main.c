@@ -28,6 +28,7 @@
 #include <unistd.h>
 #include <time.h>
 #include <string.h>
+#include <stdlib.h>
 
 int bbs_info()
 {
@@ -57,7 +58,7 @@ int bbs_welcome(MYSQL *db)
 			 BBS_user_off_line);
 	if (mysql_query(db, sql) != 0)
 	{
-		log_error("Query user_online failed\n");
+		log_error("Query user_online error: %s\n", mysql_error(db));
 		return -2;
 	}
 	if ((rs = mysql_store_result(db)) == NULL)
@@ -78,7 +79,7 @@ int bbs_welcome(MYSQL *db)
 			 BBS_user_off_line);
 	if (mysql_query(db, sql) != 0)
 	{
-		log_error("Query user_online failed\n");
+		log_error("Query user_online error: %s\n", mysql_error(db));
 		return -2;
 	}
 	if ((rs = mysql_store_result(db)) == NULL)
@@ -95,7 +96,7 @@ int bbs_welcome(MYSQL *db)
 	snprintf(sql, sizeof(sql), "SELECT COUNT(UID) AS cc FROM user_list WHERE enable");
 	if (mysql_query(db, sql) != 0)
 	{
-		log_error("Query user_list failed\n");
+		log_error("Query user_list error: %s\n", mysql_error(db));
 		return -2;
 	}
 	if ((rs = mysql_store_result(db)) == NULL)
@@ -112,7 +113,7 @@ int bbs_welcome(MYSQL *db)
 	snprintf(sql, sizeof(sql), "SELECT ID FROM user_login_log ORDER BY ID LIMIT 1");
 	if (mysql_query(db, sql) != 0)
 	{
-		log_error("Query user_login_log failed\n");
+		log_error("Query user_login_log error: %s\n", mysql_error(db));
 		return -2;
 	}
 	if ((rs = mysql_store_result(db)) == NULL)

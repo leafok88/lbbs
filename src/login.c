@@ -26,6 +26,7 @@
 #include <string.h>
 #include <mysql.h>
 #include <regex.h>
+#include <stdlib.h>
 #include <unistd.h>
 
 int bbs_login(MYSQL *db)
@@ -131,13 +132,13 @@ int check_user(MYSQL *db, char *username, char *password)
 	// Begin transaction
 	if (mysql_query(db, "SET autocommit=0") != 0)
 	{
-		log_error("SET autocommit=0 failed\n");
+		log_error("SET autocommit=0 error: %s\n", mysql_error(db));
 		return -1;
 	}
 
 	if (mysql_query(db, "BEGIN") != 0)
 	{
-		log_error("Begin transaction failed\n");
+		log_error("Begin transaction error: %s\n", mysql_error(db));
 		return -1;
 	}
 
@@ -152,7 +153,7 @@ int check_user(MYSQL *db, char *username, char *password)
 			 ip_mask(client_addr, 1, '%'));
 	if (mysql_query(db, sql) != 0)
 	{
-		log_error("Query user_list failed\n");
+		log_error("Query user_list error: %s\n", mysql_error(db));
 		return -1;
 	}
 	if ((rs = mysql_store_result(db)) == NULL)
@@ -180,7 +181,7 @@ int check_user(MYSQL *db, char *username, char *password)
 			 username);
 	if (mysql_query(db, sql) != 0)
 	{
-		log_error("Query user_list failed\n");
+		log_error("Query user_list error: %s\n", mysql_error(db));
 		return -1;
 	}
 	if ((rs = mysql_store_result(db)) == NULL)
@@ -207,7 +208,7 @@ int check_user(MYSQL *db, char *username, char *password)
 			 username, password);
 	if (mysql_query(db, sql) != 0)
 	{
-		log_error("Query user_list failed\n");
+		log_error("Query user_list error: %s\n", mysql_error(db));
 		return -1;
 	}
 	if ((rs = mysql_store_result(db)) == NULL)
@@ -231,14 +232,14 @@ int check_user(MYSQL *db, char *username, char *password)
 				 BBS_uid, hostaddr_client);
 		if (mysql_query(db, sql) != 0)
 		{
-			log_error("Insert into user_login_log failed\n");
+			log_error("Insert into user_login_log error: %s\n", mysql_error(db));
 			return -1;
 		}
 
 		// Commit transaction
 		if (mysql_query(db, "COMMIT") != 0)
 		{
-			log_error("Commit transaction failed\n");
+			log_error("Commit transaction error: %s\n", mysql_error(db));
 			return -1;
 		}
 
@@ -260,14 +261,14 @@ int check_user(MYSQL *db, char *username, char *password)
 				 username, password, hostaddr_client);
 		if (mysql_query(db, sql) != 0)
 		{
-			log_error("Insert into user_err_login_log failed\n");
+			log_error("Insert into user_err_login_log error: %s\n", mysql_error(db));
 			return -1;
 		}
 
 		// Commit transaction
 		if (mysql_query(db, "COMMIT") != 0)
 		{
-			log_error("Commit transaction failed\n");
+			log_error("Commit transaction error: %s\n", mysql_error(db));
 			return -1;
 		}
 
@@ -278,7 +279,7 @@ int check_user(MYSQL *db, char *username, char *password)
 	// Set AUTOCOMMIT = 1
 	if (mysql_query(db, "SET autocommit=1") != 0)
 	{
-		log_error("SET autocommit=1 failed\n");
+		log_error("SET autocommit=1 error: %s\n", mysql_error(db));
 		return -1;
 	}
 
@@ -307,7 +308,7 @@ int check_user(MYSQL *db, char *username, char *password)
 			 BBS_uid);
 	if (mysql_query(db, sql) != 0)
 	{
-		log_error("Update user_pubinfo failed\n");
+		log_error("Update user_pubinfo error: %s\n", mysql_error(db));
 		return -1;
 	}
 
@@ -335,7 +336,7 @@ int load_user_info(MYSQL *db, long int BBS_uid)
 			 BBS_uid);
 	if (mysql_query(db, sql) != 0)
 	{
-		log_error("Query user_pubinfo failed\n");
+		log_error("Query user_pubinfo error: %s\n", mysql_error(db));
 		return -1;
 	}
 	if ((rs = mysql_store_result(db)) == NULL)
@@ -404,7 +405,7 @@ int user_online_add(MYSQL *db)
 			 getpid(), BBS_priv.uid, hostaddr_client);
 	if (mysql_query(db, sql) != 0)
 	{
-		log_error("Add user_online failed\n");
+		log_error("Add user_online error: %s\n", mysql_error(db));
 		return -1;
 	}
 
@@ -420,7 +421,7 @@ int user_online_del(MYSQL *db)
 			 getpid());
 	if (mysql_query(db, sql) != 0)
 	{
-		log_error("Delete user_online failed\n");
+		log_error("Delete user_online error: %s\n", mysql_error(db));
 		return -1;
 	}
 

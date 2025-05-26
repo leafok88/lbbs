@@ -21,6 +21,7 @@
 #include "log.h"
 #include <stdio.h>
 #include <mysql.h>
+#include <stdlib.h>
 
 BBS_user_priv BBS_priv;
 
@@ -85,7 +86,7 @@ int load_priv(MYSQL *db, BBS_user_priv *p_priv, long int uid)
 			uid);
 	if (mysql_query(db, sql) != 0)
 	{
-		log_error("Query user_list failed\n");
+		log_error("Query user_list error: %s\n", mysql_error(db));
 		return -1;
 	}
 	if ((rs = mysql_store_result(db)) == NULL)
@@ -106,7 +107,7 @@ int load_priv(MYSQL *db, BBS_user_priv *p_priv, long int uid)
 			uid);
 	if (mysql_query(db, sql) != 0)
 	{
-		log_error("Query admin_config failed\n");
+		log_error("Query admin_config error: %s\n", mysql_error(db));
 		return -1;
 	}
 	if ((rs = mysql_store_result(db)) == NULL)
@@ -129,7 +130,7 @@ int load_priv(MYSQL *db, BBS_user_priv *p_priv, long int uid)
 			uid);
 	if (mysql_query(db, sql) != 0)
 	{
-		log_error("Query section_master failed\n");
+		log_error("Query section_master error: %s\n", mysql_error(db));
 		return -1;
 	}
 	if ((rs = mysql_store_result(db)) == NULL)
@@ -151,7 +152,7 @@ int load_priv(MYSQL *db, BBS_user_priv *p_priv, long int uid)
 				 "ORDER BY SID");
 	if (mysql_query(db, sql) != 0)
 	{
-		log_error("Query section_config failed\n");
+		log_error("Query section_config error: %s\n", mysql_error(db));
 		return -1;
 	}
 	if ((rs = mysql_store_result(db)) == NULL)
@@ -184,7 +185,7 @@ int load_priv(MYSQL *db, BBS_user_priv *p_priv, long int uid)
 			uid);
 	if (mysql_query(db, sql) != 0)
 	{
-		log_error("Query ban_user_list failed\n");
+		log_error("Query ban_user_list error: %s\n", mysql_error(db));
 		return -1;
 	}
 	if ((rs = mysql_store_result(db)) == NULL)

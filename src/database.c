@@ -59,7 +59,7 @@ MYSQL *db_open()
 
 	if (mysql_query(db, sql) != 0)
 	{
-		log_error("Set timezone failed\n");
+		log_error("Set timezone error: %s\n", mysql_error(db));
 		return NULL;
 	}
 
