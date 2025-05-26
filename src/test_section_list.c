@@ -910,6 +910,51 @@ int main(int argc, char *argv[])
 		}
 	}
 
+	printf("Testing #6 ...\n");
+
+	for (i = 0; i < section_count; i++)
+	{
+		if (section_list_rd_lock(p_section[i]) < 0)
+		{
+			printf("section_list_rd_lock(sid = %d) error\n", p_section[i]->sid);
+			break;
+		}
+	}
+
+	printf("Try rw_lock for 5 sec...\n");
+	if (section_list_try_rw_lock(NULL, 5) == 0)
+	{
+		printf("section_list_try_rw_lock(sid = %d) error, expectation is timeout\n", p_section[i]->sid);
+	}
+
+	for (i = 0; i < section_count; i++)
+	{
+		if (section_list_rd_unlock(p_section[i]) < 0)
+		{
+			printf("section_list_rd_unlock(sid = %d) error\n", p_section[i]->sid);
+			break;
+		}
+	}
+
+	if (section_list_try_rw_lock(NULL, 5) < 0)
+	{
+		printf("section_list_rd_lock(sid = %d) error\n", p_section[i]->sid);
+	}
+
+	for (i = 0; i < section_count; i++)
+	{
+		if (section_list_try_rd_lock(p_section[i], 0) == 0)
+		{
+			printf("section_list_try_rd_lock(sid = %d) error, expectation is timeout\n", p_section[i]->sid);
+			break;
+		}
+	}
+
+	if (section_list_rw_unlock(NULL) < 0)
+	{
+		printf("section_list_rw_unlock(sid = %d) error\n", p_section[i]->sid);
+	}
+
 	printf("Press ENTER to exit...");
 	getchar();
 
