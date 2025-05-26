@@ -16,6 +16,7 @@
 
 #include "common.h"
 #include "bbs.h"
+#include <time.h>
 
 #define BBS_article_title_max_len 80
 #define BBS_article_limit_per_section 50000
@@ -41,6 +42,7 @@ struct article_t
 	char username[BBS_username_max_len + 1];
 	char nickname[BBS_nickname_max_len + 1];
 	char title[BBS_article_title_max_len + 1];
+	time_t sub_dt;
 };
 typedef struct article_t ARTICLE;
 
@@ -75,6 +77,8 @@ extern int article_block_reset(void);
 
 extern ARTICLE *article_block_find_by_aid(int32_t aid);
 extern ARTICLE *article_block_find_by_index(int index);
+
+extern int32_t article_block_last_aid(void);
 
 extern int article_count_of_topic(int32_t aid);
 

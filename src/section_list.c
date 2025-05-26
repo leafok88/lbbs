@@ -1035,6 +1035,14 @@ int section_list_calculate_page(SECTION_LIST *p_section, int32_t start_aid)
 	return 0;
 }
 
+int32_t article_block_last_aid(void)
+{
+	ARTICLE_BLOCK *p_block = p_article_block_pool->p_block[p_article_block_pool->block_count - 1];
+	int32_t last_aid = p_block->articles[p_block->article_count - 1].aid;
+
+	return last_aid;
+}
+
 int article_count_of_topic(int32_t aid)
 {
 	ARTICLE *p_article;
