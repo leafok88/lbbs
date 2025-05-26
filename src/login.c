@@ -14,6 +14,8 @@
  *                                                                         *
  ***************************************************************************/
 
+#define _POSIX_C_SOURCE 200112L
+
 #include "login.h"
 #include "bbs.h"
 #include "user_priv.h"
@@ -22,6 +24,7 @@
 #include "io.h"
 #include "screen.h"
 #include "database.h"
+#include <errno.h>
 #include <ctype.h>
 #include <string.h>
 #include <mysql.h>
@@ -98,6 +101,7 @@ int check_user(MYSQL *db, char *username, char *password)
 	char client_addr[IP_ADDR_LEN];
 	int i;
 	int ok = 1;
+	char user_tz_env[BBS_user_tz_max_len + 2];
 
 	// Verify format
 	for (i = 0; ok && username[i] != '\0'; i++)
@@ -319,6 +323,22 @@ int check_user(MYSQL *db, char *username, char *password)
 
 	BBS_last_access_tm = BBS_login_tm = time(0);
 
+	// Set user tz to process env
+	if (BBS_user_tz[0] != '\0')
+	{
+		user_tz_env[0] = ':';
+		strncpy(user_tz_env + 1, BBS_user_tz, sizeof(user_tz_env) - 2);
+		user_tz_env[sizeof(user_tz_env) - 1] = '\0';
+
+		if (setenv("TZ", user_tz_env, 1) == -1)
+		{
+			log_error("setenv(TZ = %s) error %d\n", user_tz_env, errno);
+			return -3;
+		}
+
+		tzset();
+	}
+
 	return 0;
 }
 
@@ -331,7 +351,7 @@ int load_user_info(MYSQL *db, long int BBS_uid)
 	time_t last_login_dt;
 
 	snprintf(sql, sizeof(sql),
-			 "SELECT life, UNIX_TIMESTAMP(last_login_dt) "
+			 "SELECT life, UNIX_TIMESTAMP(last_login_dt), user_timezone "
 			 "FROM user_pubinfo WHERE UID = %ld",
 			 BBS_uid);
 	if (mysql_query(db, sql) != 0)
@@ -348,6 +368,9 @@ int load_user_info(MYSQL *db, long int BBS_uid)
 	{
 		life = atoi(row[0]);
 		last_login_dt = (time_t)atol(row[1]);
+
+		strncpy(BBS_user_tz, row[2], sizeof(BBS_user_tz) - 1);
+		BBS_user_tz[sizeof(BBS_user_tz) - 1] = '\0';
 	}
 	else
 	{

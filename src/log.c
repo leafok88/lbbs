@@ -53,10 +53,12 @@ void log_end()
 int log_head(char *buf, size_t len)
 {
 	time_t t;
+	struct tm gm_tm;
 	char s_time[256];
-	t = time(0);
 
-	strftime(s_time, sizeof(s_time), "%Y-%m-%d %H:%M:%S", localtime(&t));
+	time(&t);
+	gmtime_r(&t, &gm_tm);
+	strftime(s_time, sizeof(s_time), "%Y-%m-%d %H:%M:%S", &gm_tm);
 	snprintf(buf, len, "[%s] [%d] ", s_time, getpid());
 
 	return 0;

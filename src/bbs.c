@@ -31,6 +31,7 @@ unsigned int BBS_max_user = 10000;
 char BBS_start_dt[50] = "2004Äê 1ÔÂ 1ÈÕ";
 
 char BBS_username[BBS_username_max_len + 1];
+char BBS_user_tz[BBS_user_tz_max_len + 1];
 
 time_t BBS_login_tm;
 time_t BBS_last_access_tm;

@@ -14,6 +14,8 @@
  *                                                                         *
  ***************************************************************************/
 
+#define _POSIX_C_SOURCE 200112L
+
 #include "common.h"
 #include "log.h"
 #include "menu.h"
@@ -62,18 +64,19 @@ static const char *weekday[] = {
 // Common function
 const char *get_time_str(char *s, size_t len)
 {
-	time_t curtime = time(NULL);
-	struct tm *loctime;
-	loctime = localtime(&curtime);
+	time_t curtime;
+	struct tm local_tm;
 
-	size_t j = strftime(s, len, "%Y年%m月%d日%H:%M:%S 星期", loctime);
+	time(&curtime);
+	localtime_r(&curtime, &local_tm);
+	size_t j = strftime(s, len, "%Y年%m月%d日%H:%M:%S 星期", &local_tm);
 
-	if (j == 0 || j + strlen(weekday[loctime->tm_wday]) + 1 > len)
+	if (j == 0 || j + strlen(weekday[local_tm.tm_wday]) + 1 > len)
 	{
 		return NULL;
 	}
 
-	strncat(s, weekday[loctime->tm_wday], len - 1 - j);
+	strncat(s, weekday[local_tm.tm_wday], len - 1 - j);
 
 	return s;
 }

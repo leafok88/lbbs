@@ -2,6 +2,8 @@
 
 /* Writed by Birdman From 140.116.102.125 ´´ÒâÍÛ¹þ¹þ*/
 
+#define _POSIX_C_SOURCE 200112L
+
 #include "bbs.h"
 #include "common.h"
 #include "io.h"
@@ -11,6 +13,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <time.h>
 #include <unistd.h>
 #include <sys/param.h>
 
@@ -72,12 +75,12 @@ static int load_chicken()
 {
 	FILE *fp;
 	time_t now;
-	struct tm *ptime;
+	struct tm ptime;
 
 	agetmp = 1;
 	//  modify_user_mode(CHICK);
 	time(&now);
-	ptime = localtime(&now);
+	localtime_r(&now, &ptime);
 
 	if ((fp = fopen(fname, "r+")) == NULL)
 	{
@@ -98,14 +101,14 @@ static int load_chicken()
 		fclose(fp);
 	}
 
-	if (day < (ptime->tm_mon + 1))
+	if (day < (ptime.tm_mon + 1))
 	{
-		age = ptime->tm_mday;
+		age = ptime.tm_mday;
 		age = age + 31 - mon;
 	}
 	else
 	{
-		age = ptime->tm_mday - mon;
+		age = ptime.tm_mday - mon;
 	}
 
 	return 0;
@@ -125,10 +128,10 @@ int save_chicken()
 static int create_a_egg()
 {
 	FILE *fp;
-	struct tm *ptime;
+	struct tm ptime;
 	time_t now;
 	time(&now);
-	ptime = localtime(&now);
+	localtime_r(&now, &ptime);
 	char name_tmp[CHICKEN_NAME_LEN + 1];
 
 	clrtobot(2);
@@ -152,7 +155,7 @@ static int create_a_egg()
 		log_error("Error!!cannot open file '%s'!\n", fname);
 		return -2;
 	}
-	fprintf(fp, "%d %d %d %d %d %d %d %d %d %d %d %d %d %d %s ", ptime->tm_hour * 2, ptime->tm_mday, ptime->tm_mon + 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10, 5, chicken_name);
+	fprintf(fp, "%d %d %d %d %d %d %d %d %d %d %d %d %d %d %s ", ptime.tm_hour * 2, ptime.tm_mday, ptime.tm_mon + 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10, 5, chicken_name);
 	fclose(fp);
 
 	if ((fp = fopen(LOG_FILE, "a")) == NULL)
@@ -161,8 +164,8 @@ static int create_a_egg()
 		return -2;
 	}
 	fprintf(fp, "[32m%s[m ÔÚ [34;43m[%d/%d  %d:%02d][m  ÑøÁËÒ»Ö»½Ð [33m%s[m µÄÐ¡¼¦\r\n",
-			BBS_username, ptime->tm_mon + 1, ptime->tm_mday,
-			ptime->tm_hour, ptime->tm_min, chicken_name);
+			BBS_username, ptime.tm_mon + 1, ptime.tm_mday,
+			ptime.tm_hour, ptime.tm_min, chicken_name);
 	fclose(fp);
 
 	return 0;
@@ -370,10 +373,10 @@ static int select_menu()
 {
 	int loop = 1;
 	char inbuf[2];
-	struct tm *ptime;
+	struct tm ptime;
 	time_t now;
 	time(&now);
-	ptime = localtime(&now);
+	localtime_r(&now, &ptime);
 	char name_tmp[CHICKEN_NAME_LEN + 1];
 
 	while (!SYS_server_exit && loop)
@@ -493,7 +496,7 @@ static int select_menu()
 			break;
 		case '4':
 			guess();
-			satis += (ptime->tm_sec % 2);
+			satis += (ptime.tm_sec % 2);
 			tiredstrong++;
 			break;
 		case '5':
@@ -604,11 +607,11 @@ static int select_menu()
 int death()
 {
 	FILE *fp;
-	struct tm *ptime;
+	struct tm ptime;
 	time_t now;
 
 	time(&now);
-	ptime = localtime(&now);
+	localtime_r(&now, &ptime);
 	clearscr();
 	clrtobot(5);
 	if ((fp = fopen(LOG_FILE, "a")) == NULL)
@@ -617,8 +620,8 @@ int death()
 		return -1;
 	}
 	fprintf(fp, "[32m%s[m ÔÚ [34;43m[%d/%d  %d:%02d][m  µÄÐ¡¼¦ [33m%s  [36m¹ÒÁË~~[m \r\n",
-			BBS_username, ptime->tm_mon + 1, ptime->tm_mday,
-			ptime->tm_hour, ptime->tm_min, chicken_name);
+			BBS_username, ptime.tm_mon + 1, ptime.tm_mday,
+			ptime.tm_hour, ptime.tm_min, chicken_name);
 	fclose(fp);
 	prints("ÎØ...Ð¡¼¦¹ÒÁË....");
 	prints("\r\n±¿Ê·ÁË...¸Ï³öÏµÍ³...");
@@ -766,18 +769,18 @@ int sell()
 {
 	int sel = 0;
 	char ans[2];
-	struct tm *ptime;
+	struct tm ptime;
 	FILE *fp;
 	time_t now;
 
 	time(&now);
-	ptime = localtime(&now);
+	localtime_r(&now, &ptime);
 
 	ans[0] = '\0';
 
 	sel += (happy * 10);
 	sel += (satis * 7);
-	sel += ((ptime->tm_sec % 9) * 10);
+	sel += ((ptime.tm_sec % 9) * 10);
 	sel += weight;
 	sel += age * 10;
 
@@ -807,8 +810,8 @@ int sell()
 		return -2;
 	}
 	fprintf(fp, "[32m%s[m ÔÚ [34;43m[%d/%d  %d:%02d][m  °ÑÐ¡¼¦ [33m%s  [31mÒÔ [37;44m%d[m [31mÌÇ¹ûÂôÁË[m\r\n",
-			BBS_username, ptime->tm_mon + 1, ptime->tm_mday,
-			ptime->tm_hour, ptime->tm_min, chicken_name, sel);
+			BBS_username, ptime.tm_mon + 1, ptime.tm_mday,
+			ptime.tm_hour, ptime.tm_min, chicken_name, sel);
 	fclose(fp);
 	clearscr();
 

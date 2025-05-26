@@ -27,6 +27,7 @@
 #define BBS_username_max_len 12
 #define BBS_password_max_len 12
 #define BBS_nickname_max_len 20
+#define BBS_user_tz_max_len 50
 
 extern char BBS_id[20];
 extern char BBS_name[50];
@@ -42,6 +43,7 @@ extern char BBS_start_dt[50];
 #define BBS_user_off_line 900 // 15 minutes
 
 extern char BBS_username[BBS_username_max_len + 1];
+extern char BBS_user_tz[BBS_user_tz_max_len + 1];
 
 extern time_t BBS_login_tm;
 extern time_t BBS_last_access_tm;
