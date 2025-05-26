@@ -22,6 +22,7 @@
 #include "io.h"
 #include "menu.h"
 #include "file_loader.h"
+#include "section_list_loader.h"
 #include <stdlib.h>
 #include <signal.h>
 #include <string.h>
@@ -53,6 +54,7 @@ int main(int argc, char *argv[])
 	int daemon = 1;
 	int std_log_redir = 0;
 	int error_log_redir = 0;
+	FILE *fp;
 
 	// Parse args
 	for (int i = 1; i < argc; i++)
@@ -145,10 +147,39 @@ int main(int argc, char *argv[])
 		return -2;
 	}
 
-	// Initialize trie dict pool
-	if (trie_dict_init(CONF_BBSD, TRIE_NODE_PER_POOL) < 0)
+	// Initialize data pools
+	if ((fp = fopen(VAR_TRIE_DICT_SHM, "w")) == NULL)
+	{
+		log_error("fopen(%s) error\n", VAR_TRIE_DICT_SHM);
+		return -1;
+	}
+	fclose(fp);
+	if ((fp = fopen(VAR_ARTICLE_BLOCK_SHM, "w")) == NULL)
+	{
+		log_error("fopen(%s) error\n", VAR_ARTICLE_BLOCK_SHM);
+		return -1;
+	}
+	fclose(fp);
+	if ((fp = fopen(VAR_SECTION_LIST_SHM, "w")) == NULL)
+	{
+		log_error("fopen(%s) error\n", VAR_SECTION_LIST_SHM);
+		return -1;
+	}
+	fclose(fp);
+
+	if (trie_dict_init(VAR_TRIE_DICT_SHM, TRIE_NODE_PER_POOL) < 0)
 	{
 		printf("trie_dict_init failed\n");
+		return -3;
+	}
+	if (article_block_init(VAR_ARTICLE_BLOCK_SHM, BBS_article_limit_per_section * BBS_max_section / ARTICLE_PER_BLOCK) < 0)
+	{
+		log_error("article_block_init(%s, %d) error\n", VAR_ARTICLE_BLOCK_SHM, BBS_article_limit_per_section * BBS_max_section / ARTICLE_PER_BLOCK);
+		return -3;
+	}
+	if (section_list_init(VAR_SECTION_LIST_SHM) < 0)
+	{
+		log_error("section_list_pool_init(%s) error\n", VAR_SECTION_LIST_SHM);
 		return -3;
 	}
 
@@ -186,6 +217,13 @@ int main(int argc, char *argv[])
 		}
 	}
 
+	// Load section config
+	if (load_section_config_from_db() < 0)
+	{
+		log_error("load_section_config_from_db() error\n");
+		return -5;
+	}
+
 	// Set signal handler
 	signal(SIGHUP, sig_hup_handler);
 	signal(SIGCHLD, sig_chld_handler);
@@ -196,16 +234,34 @@ int main(int argc, char *argv[])
 
 	// Cleanup loaded data files
 	file_loader_cleanup();
-	
+
 	// Cleanup menu
 	unload_menu(p_bbs_menu);
 	free(p_bbs_menu);
 	p_bbs_menu = NULL;
 
-	// Cleanup trie dict pool
+	// Cleanup data pools
+	section_list_cleanup();
+	article_block_cleanup();
 	trie_dict_cleanup();
 
+	if (unlink(VAR_TRIE_DICT_SHM) < 0)
+	{
+		log_error("unlink(%s) error\n", VAR_TRIE_DICT_SHM);
+		return -1;
+	}
+	if (unlink(VAR_ARTICLE_BLOCK_SHM) < 0)
+	{
+		log_error("unlink(%s) error\n", VAR_ARTICLE_BLOCK_SHM);
+		return -1;
+	}
+	if (unlink(VAR_SECTION_LIST_SHM) < 0)
+	{
+		log_error("unlink(%s) error\n", VAR_SECTION_LIST_SHM);
+		return -1;
+	}
+
 	log_std("Main process exit normally\n");
-	
+
 	return 0;
 }

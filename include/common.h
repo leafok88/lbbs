@@ -45,6 +45,10 @@ extern char app_version[256];
 #define VAR_MAX_USER_ONLINE "var/max_user_online.dat"
 #define VAR_BBS_TOP "var/bbs_top.txt"
 
+#define VAR_ARTICLE_BLOCK_SHM "var/article_block_shm.~"
+#define VAR_SECTION_LIST_SHM "var/section_list_shm.~"
+#define VAR_TRIE_DICT_SHM "var/trie_dict_shm.~"
+
 // File loader
 extern const char *data_files_load_startup[];
 extern int data_files_load_startup_count;
