@@ -577,6 +577,7 @@ void section_list_cleanup(void)
 SECTION_LIST *section_list_find_by_name(const char *sname)
 {
 	int64_t index;
+	int ret;
 
 	if (p_section_list_pool == NULL)
 	{
@@ -584,9 +585,14 @@ SECTION_LIST *section_list_find_by_name(const char *sname)
 		return NULL;
 	}
 
-	if (trie_dict_get(p_section_list_pool->p_trie_dict_section_by_name, sname, &index) != 1)
+	ret = trie_dict_get(p_section_list_pool->p_trie_dict_section_by_name, sname, &index);
+	if (ret < 0)
 	{
 		log_error("trie_dict_get(section, %s) error\n", sname);
+		return NULL;
+	}
+	else if (ret == 0)
+	{
 		return NULL;
 	}
 
@@ -596,6 +602,7 @@ SECTION_LIST *section_list_find_by_name(const char *sname)
 SECTION_LIST *section_list_find_by_sid(int32_t sid)
 {
 	int64_t index;
+	int ret;
 	char sid_str[SID_STR_LEN];
 
 	if (p_section_list_pool == NULL)
@@ -606,9 +613,14 @@ SECTION_LIST *section_list_find_by_sid(int32_t sid)
 
 	sid_to_str(sid, sid_str);
 
-	if (trie_dict_get(p_section_list_pool->p_trie_dict_section_by_sid, sid_str, &index) != 1)
+	ret = trie_dict_get(p_section_list_pool->p_trie_dict_section_by_sid, sid_str, &index);
+	if (ret < 0)
 	{
 		log_error("trie_dict_get(section, %d) error\n", sid);
+		return NULL;
+	}
+	else if (ret == 0)
+	{
 		return NULL;
 	}
 

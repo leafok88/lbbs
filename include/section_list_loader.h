@@ -17,7 +17,7 @@
 #include "section_list.h"
 #include <mysql.h>
 
-extern int load_section_config_from_db(MYSQL *db);
+extern int load_section_config_from_db(void);
 
 // Input global_lock = 0 : lock / unlock corresponding section per article
 //                     1 : lock / unlock all sections per invocation

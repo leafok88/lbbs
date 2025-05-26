@@ -22,8 +22,9 @@
 #include <errno.h>
 #include <stdlib.h>
 
-int load_section_config_from_db(MYSQL *db)
+int load_section_config_from_db(void)
 {
+	MYSQL *db;
 	MYSQL_RES *rs, *rs2;
 	MYSQL_ROW row, row2;
 	char sql[SQL_BUFFER_LEN];
@@ -32,22 +33,31 @@ int load_section_config_from_db(MYSQL *db)
 	SECTION_LIST *p_section;
 	int ret;
 
+	db = db_open();
+	if (db == NULL)
+	{
+		log_error("db_open() error: %s\n", mysql_error(db));
+		return -2;
+	}
+
 	snprintf(sql, sizeof(sql),
-			 "SELECT section_config.SID, sname, title, section_config.CID, read_user_level, write_user_level, "
-			 "section_config.enable * section_class.enable AS enable "
-			 "FROM section_config INNER JOIN section_class ON section_config.CID = sectioN_class.CID "
+			 "SELECT section_config.SID, sname, section_config.title, section_config.CID, "
+			 "read_user_level, write_user_level, section_config.enable * section_class.enable AS enable "
+			 "FROM section_config INNER JOIN section_class ON section_config.CID = section_class.CID "
 			 "ORDER BY section_config.SID");
 
 	if (mysql_query(db, sql) != 0)
 	{
 		log_error("Query section_list error: %s\n", mysql_error(db));
-		return -1;
+		return -3;
 	}
 	if ((rs = mysql_store_result(db)) == NULL)
 	{
 		log_error("Get section_list data failed\n");
-		return -1;
+		return -3;
 	}
+
+	ret = 0;
 	while ((row = mysql_fetch_row(rs)))
 	{
 		sid = atoi(row[0]);
@@ -63,12 +73,14 @@ int load_section_config_from_db(MYSQL *db)
 		if (mysql_query(db, sql) != 0)
 		{
 			log_error("Query section_master error: %s\n", mysql_error(db));
-			return -2;
+			ret = -3;
+			break;
 		}
 		if ((rs2 = mysql_store_result(db)) == NULL)
 		{
 			log_error("Get section_master data failed\n");
-			return -2;
+			ret = -3;
+			break;
 		}
 		if ((row2 = mysql_fetch_row(rs2)))
 		{
@@ -88,7 +100,8 @@ int load_section_config_from_db(MYSQL *db)
 			p_section = section_list_create(sid, row[1], row[2], "");
 			if (p_section == NULL)
 			{
-				log_error("load_section_config_from_db() error: load new section sid = %d sname = %s\n", sid, row[1]);
+				log_error("section_list_create() error: load new section sid = %d sname = %s\n", sid, row[1]);
+				ret = -4;
 				break;
 			}
 
@@ -130,5 +143,7 @@ int load_section_config_from_db(MYSQL *db)
 	}
 	mysql_free_result(rs);
 
-	return 0;
+	mysql_close(db);
+
+	return ret;
 }
