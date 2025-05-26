@@ -119,9 +119,9 @@ int main(int argc, char *argv[])
 
 	last_aid = 0;
 
-	if (section_list_try_rw_lock(NULL, 1) < 0)
+	if (section_list_rw_lock(NULL) < 0)
 	{
-		printf("section_list_try_rw_lock(sid = %d) error\n", 0);
+		printf("section_list_rw_lock(sid = %d) error\n", 0);
 	}
 
 	for (i = 0; i < section_count; i++)
@@ -185,9 +185,9 @@ int main(int argc, char *argv[])
 			article.ontop = 0;
 			article.lock = 0;
 
-			if (section_list_try_rw_lock(p_section[i], 1) < 0)
+			if (section_list_rw_lock(p_section[i]) < 0)
 			{
-				printf("section_list_try_rw_lock(sid = %d) error\n", p_section[i]->sid);
+				printf("section_list_rw_lock(sid = %d) error\n", p_section[i]->sid);
 				break;
 			}
 
@@ -224,9 +224,9 @@ int main(int argc, char *argv[])
 				printf("article_block_find_by_aid() at section %d index %d, %d != %d\n", i, j, p_article->aid, last_aid);
 			}
 
-			if (section_list_try_rw_lock(p_section[i], 1) < 0)
+			if (section_list_rw_lock(p_section[i]) < 0)
 			{
-				printf("section_list_try_rw_lock(sid = %d) error\n", p_section[i]->sid);
+				printf("section_list_rw_lock(sid = %d) error\n", p_section[i]->sid);
 				break;
 			}
 
@@ -247,9 +247,9 @@ int main(int argc, char *argv[])
 
 	printf("Testing #2 ...\n");
 
-	if (section_list_try_rw_lock(NULL, 1) < 0)
+	if (section_list_rw_lock(NULL) < 0)
 	{
-		printf("section_list_try_rw_lock(sid = %d) error\n", 0);
+		printf("section_list_rw_lock(sid = %d) error\n", 0);
 	}
 
 	if (article_block_reset() != 0)
@@ -274,9 +274,9 @@ int main(int argc, char *argv[])
 	{
 		section_first_aid = last_aid + 1;
 
-		if (section_list_try_rw_lock(p_section[i], 1) < 0)
+		if (section_list_rw_lock(p_section[i]) < 0)
 		{
-			printf("section_list_try_rw_lock(sid = %d) error\n", p_section[i]->sid);
+			printf("section_list_rw_lock(sid = %d) error\n", p_section[i]->sid);
 			break;
 		}
 
@@ -322,9 +322,9 @@ int main(int argc, char *argv[])
 		article_count = 0;
 		last_aid = 0;
 
-		if (section_list_try_rd_lock(p_section[i], 1) < 0)
+		if (section_list_rd_lock(p_section[i]) < 0)
 		{
-			printf("section_list_try_rd_lock(sid = %d) error\n", p_section[i]->sid);
+			printf("section_list_rd_lock(sid = %d) error\n", p_section[i]->sid);
 			break;
 		}
 
@@ -366,9 +366,9 @@ int main(int argc, char *argv[])
 			continue;
 		}
 
-		if (section_list_try_rd_lock(p_section[i], 1) < 0)
+		if (section_list_rd_lock(p_section[i]) < 0)
 		{
-			printf("section_list_try_rd_lock(sid = %d) error\n", p_section[i]->sid);
+			printf("section_list_rd_lock(sid = %d) error\n", p_section[i]->sid);
 			break;
 		}
 
@@ -448,9 +448,9 @@ int main(int argc, char *argv[])
 	{
 		last_aid = 0;
 
-		if (section_list_try_rd_lock(p_section[i], 1) < 0)
+		if (section_list_rd_lock(p_section[i]) < 0)
 		{
-			printf("section_list_try_rd_lock(sid = %d) error\n", p_section[i]->sid);
+			printf("section_list_rd_lock(sid = %d) error\n", p_section[i]->sid);
 			break;
 		}
 
@@ -490,9 +490,9 @@ int main(int argc, char *argv[])
 
 	for (i = 0; i < section_count; i++)
 	{
-		if (section_list_try_rw_lock(p_section[i], 1) < 0)
+		if (section_list_rw_lock(p_section[i]) < 0)
 		{
-			printf("section_list_try_rw_lock(sid = %d) error\n", p_section[i]->sid);
+			printf("section_list_rw_lock(sid = %d) error\n", p_section[i]->sid);
 			break;
 		}
 
@@ -635,9 +635,9 @@ int main(int argc, char *argv[])
 
 	for (i = 0; i < BBS_max_section; i++)
 	{
-		if (section_list_try_rw_lock(p_section[i], 1) < 0)
+		if (section_list_rw_lock(p_section[i]) < 0)
 		{
-			printf("section_list_try_rw_lock(sid = %d) error\n", p_section[i]->sid);
+			printf("section_list_rw_lock(sid = %d) error\n", p_section[i]->sid);
 			break;
 		}
 
@@ -704,9 +704,9 @@ int main(int argc, char *argv[])
 
 	printf("Testing #5 ...\n");
 
-	if (section_list_try_rw_lock(NULL, 1) < 0)
+	if (section_list_rw_lock(NULL) < 0)
 	{
-		printf("section_list_try_rw_lock(sid = %d) error\n", 0);
+		printf("section_list_rw_lock(sid = %d) error\n", 0);
 	}
 
 	if (article_block_reset() != 0)
@@ -729,9 +729,9 @@ int main(int argc, char *argv[])
 
 	for (i = 0; i < section_count / 2; i++)
 	{
-		if (section_list_try_rw_lock(p_section[i], 1) < 0)
+		if (section_list_rw_lock(p_section[i]) < 0)
 		{
-			printf("section_list_try_rw_lock(sid = %d) error\n", p_section[i]->sid);
+			printf("section_list_rw_lock(sid = %d) error\n", p_section[i]->sid);
 			break;
 		}
 
@@ -771,9 +771,9 @@ int main(int argc, char *argv[])
 
 	for (i = 0; i < section_count / 2; i++)
 	{
-		if (section_list_try_rw_lock(p_section[i], 1) < 0)
+		if (section_list_rw_lock(p_section[i]) < 0)
 		{
-			printf("section_list_try_rw_lock(sid = %d) error\n", p_section[i]->sid);
+			printf("section_list_rw_lock(sid = %d) error\n", p_section[i]->sid);
 			break;
 		}
 
@@ -804,15 +804,15 @@ int main(int argc, char *argv[])
 
 	for (i = 0; i < section_count / 2; i++)
 	{
-		if (section_list_try_rw_lock(p_section[i], 1) < 0)
+		if (section_list_rw_lock(p_section[i]) < 0)
 		{
-			printf("section_list_try_rw_lock(sid = %d) error\n", p_section[i]->sid);
+			printf("section_list_rw_lock(sid = %d) error\n", p_section[i]->sid);
 			break;
 		}
 
-		if (section_list_try_rw_lock(p_section[section_count / 2 + i], 1) < 0)
+		if (section_list_rw_lock(p_section[section_count / 2 + i]) < 0)
 		{
-			printf("section_list_try_rw_lock(sid = %d) error\n", p_section[section_count / 2 + i]->sid);
+			printf("section_list_rw_lock(sid = %d) error\n", p_section[section_count / 2 + i]->sid);
 
 			if (section_list_rw_unlock(p_section[i]) < 0)
 			{
@@ -862,9 +862,9 @@ int main(int argc, char *argv[])
 
 	for (i = 0; i < section_count; i++)
 	{
-		if (section_list_try_rd_lock(p_section[i], 1) < 0)
+		if (section_list_rd_lock(p_section[i]) < 0)
 		{
-			printf("section_list_try_rd_lock(sid = %d) error\n", p_section[i]->sid);
+			printf("section_list_rd_lock(sid = %d) error\n", p_section[i]->sid);
 			break;
 		}
 

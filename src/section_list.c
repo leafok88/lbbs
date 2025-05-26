@@ -41,6 +41,9 @@ union semun
 };
 #endif // #ifdef _SEM_SEMUN_UNDEFINED
 
+#define SECTION_TRY_LOCK_WAIT_TIME 1 // second
+#define SECTION_TRY_LOCK_TIMES 10
+
 #define ARTICLE_BLOCK_PER_SHM 400		  // sizeof(ARTICLE_BLOCK) * ARTICLE_BLOCK_PER_SHM is the size of each shm segment to allocate
 #define ARTICLE_BLOCK_SHM_COUNT_LIMIT 200 // limited by length (8-bit) of proj_id in ftok(path, proj_id)
 #define ARTICLE_BLOCK_PER_POOL (ARTICLE_BLOCK_PER_SHM * ARTICLE_BLOCK_SHM_COUNT_LIMIT)
@@ -1403,6 +1406,68 @@ int section_list_rw_unlock(SECTION_LIST *p_section)
 	if (ret == -1 && errno != EAGAIN && errno != EINTR)
 	{
 		log_error("semop(index = %d, unlock write) error %d\n", index, errno);
+	}
+
+	return ret;
+}
+
+int section_list_rd_lock(SECTION_LIST *p_section)
+{
+	int timer = 0;
+	int sid = (p_section == NULL ? 0 : p_section->sid);
+	int ret = -1;
+
+	while (!SYS_server_exit)
+	{
+		ret = section_list_try_rd_lock(p_section, SECTION_TRY_LOCK_WAIT_TIME);
+		if (ret == 0) // success
+		{
+			break;
+		}
+		else if (errno == EAGAIN || errno == EINTR) // retry
+		{
+			timer++;
+			if (timer % SECTION_TRY_LOCK_TIMES == 0)
+			{
+				log_error("section_list_rd_lock() tried %d times on section %d\n", sid, timer);
+			}
+		}
+		else // failed
+		{
+			log_error("section_list_rd_lock() failed on section %d\n", sid);
+			break;
+		}
+	}
+
+	return ret;
+}
+
+int section_list_rw_lock(SECTION_LIST *p_section)
+{
+	int timer = 0;
+	int sid = (p_section == NULL ? 0 : p_section->sid);
+	int ret = -1;
+
+	while (!SYS_server_exit)
+	{
+		ret = section_list_try_rw_lock(p_section, SECTION_TRY_LOCK_WAIT_TIME);
+		if (ret == 0) // success
+		{
+			break;
+		}
+		else if (errno == EAGAIN || errno == EINTR) // retry
+		{
+			timer++;
+			if (timer % SECTION_TRY_LOCK_TIMES == 0)
+			{
+				log_error("acquire_section_rw_lock() tried %d times on section %d\n", sid, timer);
+			}
+		}
+		else // failed
+		{
+			log_error("acquire_section_rw_lock() failed on section %d\n", sid);
+			break;
+		}
 	}
 
 	return ret;

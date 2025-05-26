@@ -102,3 +102,5 @@ extern int section_list_try_rd_lock(SECTION_LIST *p_section, int wait_sec);
 extern int section_list_try_rw_lock(SECTION_LIST *p_section, int wait_sec);
 extern int section_list_rd_unlock(SECTION_LIST *p_section);
 extern int section_list_rw_unlock(SECTION_LIST *p_section);
+extern int section_list_rd_lock(SECTION_LIST *p_section);
+extern int section_list_rw_lock(SECTION_LIST *p_section);
