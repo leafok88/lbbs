@@ -236,6 +236,65 @@ void article_block_cleanup(void)
 	p_article_block_pool = NULL;
 }
 
+int set_article_block_shm_readonly(void)
+{
+	int shmid;
+	void *p_shm;
+	int i;
+
+	if (p_article_block_pool == NULL)
+	{
+		log_error("article_block_pool not initialized\n");
+		return -1;
+	}
+
+	for (i = 0; i < p_article_block_pool->shm_count; i++)
+	{
+		shmid = (p_article_block_pool->shm_pool + i)->shmid;
+
+		// Remap shared memory in read-only mode
+		p_shm = shmat(shmid, (p_article_block_pool->shm_pool + i)->p_shm, SHM_RDONLY | SHM_REMAP);
+		if (p_shm == (void *)-1)
+		{
+			log_error("shmat(article_block_pool shmid = %d) error (%d)\n", shmid, errno);
+			return -2;
+		}
+	}
+
+	return 0;
+}
+
+int detach_article_block_shm(void)
+{
+	int shmid;
+
+	if (p_article_block_pool == NULL)
+	{
+		return -1;
+	}
+
+	for (int i = 0; i < p_article_block_pool->shm_count; i++)
+	{
+		if ((p_article_block_pool->shm_pool + i)->p_shm != NULL && shmdt((p_article_block_pool->shm_pool + i)->p_shm) == -1)
+		{
+			log_error("shmdt(shmid = %d) error (%d)\n", (p_article_block_pool->shm_pool + i)->shmid, errno);
+			return -2;
+		}
+	}
+
+	shmid = p_article_block_pool->shmid;
+
+	if (shmdt(p_article_block_pool) == -1)
+	{
+		log_error("shmdt(shmid = %d) error (%d)\n", shmid, errno);
+		return -3;
+	}
+
+	p_article_block_pool = NULL;
+
+	return 0;
+}
+
 inline static ARTICLE_BLOCK *pop_free_article_block(void)
 {
 	ARTICLE_BLOCK *p_block = NULL;
@@ -452,6 +511,86 @@ extern int section_list_init(const char *filename)
 	return 0;
 }
 
+void section_list_cleanup(void)
+{
+	int shmid;
+
+	if (p_section_list_pool == NULL)
+	{
+		return;
+	}
+
+	if (p_section_list_pool->p_trie_dict_section_by_name != NULL)
+	{
+		trie_dict_destroy(p_section_list_pool->p_trie_dict_section_by_name);
+		p_section_list_pool->p_trie_dict_section_by_name = NULL;
+	}
+
+	if (p_section_list_pool->p_trie_dict_section_by_sid != NULL)
+	{
+		trie_dict_destroy(p_section_list_pool->p_trie_dict_section_by_sid);
+		p_section_list_pool->p_trie_dict_section_by_sid = NULL;
+	}
+
+	shmid = p_section_list_pool->shmid;
+
+	if (semctl(p_section_list_pool->semid, 0, IPC_RMID) == -1)
+	{
+		log_error("semctl(semid = %d, IPC_RMID) error (%d)\n", p_section_list_pool->semid, errno);
+	}
+
+	if (shmdt(p_section_list_pool) == -1)
+	{
+		log_error("shmdt(shmid = %d) error (%d)\n", shmid, errno);
+	}
+
+	if (shmctl(shmid, IPC_RMID, NULL) == -1)
+	{
+		log_error("shmctl(shmid = %d, IPC_RMID) error (%d)\n", shmid, errno);
+	}
+
+	p_section_list_pool = NULL;
+}
+
+int set_section_list_shm_readonly(void)
+{
+	int shmid;
+	void *p_shm;
+
+	if (p_section_list_pool == NULL)
+	{
+		log_error("p_section_list_pool not initialized\n");
+		return -1;
+	}
+
+	shmid = p_section_list_pool->shmid;
+
+	// Remap shared memory in read-only mode
+	p_shm = shmat(shmid, p_section_list_pool, SHM_RDONLY | SHM_REMAP);
+	if (p_shm == (void *)-1)
+	{
+		log_error("shmat(section_list_pool shmid = %d) error (%d)\n", shmid, errno);
+		return -3;
+	}
+
+	p_section_list_pool = p_shm;
+
+	return 0;
+}
+
+int detach_section_list_shm(void)
+{
+	if (p_section_list_pool != NULL && shmdt(p_section_list_pool) == -1)
+	{
+		log_error("shmdt(section_list_pool) error (%d)\n", errno);
+		return -1;
+	}
+
+	p_section_list_pool = NULL;
+
+	return 0;
+}
+
 inline static void sid_to_str(int32_t sid, char *p_sid_str)
 {
 	uint32_t u_sid;
@@ -528,50 +667,6 @@ void section_list_reset_articles(SECTION_LIST *p_section)
 
 	p_section->page_count = 0;
 	p_section->last_page_visible_article_count = 0;
-}
-
-void section_list_cleanup(void)
-{
-	int shmid;
-
-	if (p_section_list_pool == NULL)
-	{
-		return;
-	}
-
-	if (p_section_list_pool->p_trie_dict_section_by_name != NULL)
-	{
-		trie_dict_destroy(p_section_list_pool->p_trie_dict_section_by_name);
-		p_section_list_pool->p_trie_dict_section_by_name = NULL;
-	}
-
-	if (p_section_list_pool->p_trie_dict_section_by_sid != NULL)
-	{
-		trie_dict_destroy(p_section_list_pool->p_trie_dict_section_by_sid);
-		p_section_list_pool->p_trie_dict_section_by_sid = NULL;
-	}
-
-	if (p_section_list_pool != NULL)
-	{
-		if (semctl(p_section_list_pool->semid, 0, IPC_RMID) == -1)
-		{
-			log_error("semctl(semid = %d, IPC_RMID) error (%d)\n", p_section_list_pool->semid, errno);
-		}
-
-		shmid = p_section_list_pool->shmid;
-
-		if (shmdt(p_section_list_pool) == -1)
-		{
-			log_error("shmdt(shmid = %d) error (%d)\n", shmid, errno);
-		}
-
-		if (shmctl(shmid, IPC_RMID, NULL) == -1)
-		{
-			log_error("shmctl(shmid = %d, IPC_RMID) error (%d)\n", shmid, errno);
-		}
-
-		p_section_list_pool = NULL;
-	}
 }
 
 SECTION_LIST *section_list_find_by_name(const char *sname)

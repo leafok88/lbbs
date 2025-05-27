@@ -151,42 +151,42 @@ int main(int argc, char *argv[])
 	if ((fp = fopen(VAR_TRIE_DICT_SHM, "w")) == NULL)
 	{
 		log_error("fopen(%s) error\n", VAR_TRIE_DICT_SHM);
-		return -1;
+		goto cleanup;
 	}
 	fclose(fp);
 	if ((fp = fopen(VAR_ARTICLE_BLOCK_SHM, "w")) == NULL)
 	{
 		log_error("fopen(%s) error\n", VAR_ARTICLE_BLOCK_SHM);
-		return -1;
+		goto cleanup;
 	}
 	fclose(fp);
 	if ((fp = fopen(VAR_SECTION_LIST_SHM, "w")) == NULL)
 	{
 		log_error("fopen(%s) error\n", VAR_SECTION_LIST_SHM);
-		return -1;
+		goto cleanup;
 	}
 	fclose(fp);
 
 	if (trie_dict_init(VAR_TRIE_DICT_SHM, TRIE_NODE_PER_POOL) < 0)
 	{
 		printf("trie_dict_init failed\n");
-		return -3;
+		goto cleanup;
 	}
 	if (article_block_init(VAR_ARTICLE_BLOCK_SHM, BBS_article_limit_per_section * BBS_max_section / ARTICLE_PER_BLOCK) < 0)
 	{
 		log_error("article_block_init(%s, %d) error\n", VAR_ARTICLE_BLOCK_SHM, BBS_article_limit_per_section * BBS_max_section / ARTICLE_PER_BLOCK);
-		return -3;
+		goto cleanup;
 	}
 	if (section_list_init(VAR_SECTION_LIST_SHM) < 0)
 	{
 		log_error("section_list_pool_init(%s) error\n", VAR_SECTION_LIST_SHM);
-		return -3;
+		goto cleanup;
 	}
 
 	// Load BBS cmd
 	if (load_cmd() < 0)
 	{
-		return -3;
+		goto cleanup;
 	}
 
 	// Load menus
@@ -194,20 +194,18 @@ int main(int argc, char *argv[])
 	if (p_bbs_menu == NULL)
 	{
 		log_error("OOM: calloc(MENU_SET)\n");
-		return -3;
+		goto cleanup;
 	}
 	if (load_menu(p_bbs_menu, CONF_MENU) < 0)
 	{
-		unload_menu(p_bbs_menu);
-		free(p_bbs_menu);
-		return -3;
+		goto cleanup;
 	}
 
 	// Load data files
 	if (file_loader_init() < 0)
 	{
 		log_error("file_loader_init() error\n");
-		return -4;
+		goto cleanup;
 	}
 	for (int i = 0; i < data_files_load_startup_count; i++)
 	{
@@ -221,8 +219,17 @@ int main(int argc, char *argv[])
 	if (load_section_config_from_db() < 0)
 	{
 		log_error("load_section_config_from_db() error\n");
-		return -5;
+		goto cleanup;
 	}
+
+	// Load section config
+	if (append_articles_from_db(0, 1) < 0)
+	{
+		log_error("append_articles_from_db(0, 1) error\n");
+		goto cleanup;
+	}
+
+	log_std("Debug: last_aid = %d\n", article_block_last_aid());
 
 	// Set signal handler
 	signal(SIGHUP, sig_hup_handler);
@@ -232,6 +239,7 @@ int main(int argc, char *argv[])
 	// Initialize socket server
 	net_server(BBS_address, BBS_port);
 
+cleanup:
 	// Cleanup loaded data files
 	file_loader_cleanup();
 
@@ -248,17 +256,14 @@ int main(int argc, char *argv[])
 	if (unlink(VAR_TRIE_DICT_SHM) < 0)
 	{
 		log_error("unlink(%s) error\n", VAR_TRIE_DICT_SHM);
-		return -1;
 	}
 	if (unlink(VAR_ARTICLE_BLOCK_SHM) < 0)
 	{
 		log_error("unlink(%s) error\n", VAR_ARTICLE_BLOCK_SHM);
-		return -1;
 	}
 	if (unlink(VAR_SECTION_LIST_SHM) < 0)
 	{
 		log_error("unlink(%s) error\n", VAR_SECTION_LIST_SHM);
-		return -1;
 	}
 
 	log_std("Main process exit normally\n");

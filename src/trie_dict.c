@@ -133,7 +133,7 @@ int set_trie_dict_shm_readonly(void)
 	p_shm = shmat(shmid, p_trie_node_pool, SHM_RDONLY | SHM_REMAP);
 	if (p_shm == (void *)-1)
 	{
-		log_error("shmat() error (%d)\n", errno);
+		log_error("shmat(trie_node_pool shmid=%d) error (%d)\n", shmid, errno);
 		return -1;
 	}
 
@@ -146,7 +146,7 @@ int detach_trie_dict_shm(void)
 {
 	if (p_trie_node_pool != NULL && shmdt(p_trie_node_pool) == -1)
 	{
-		log_error("shmdt() error (%d)\n", errno);
+		log_error("shmdt(trie_node_pool) error (%d)\n", errno);
 		return -1;
 	}
 

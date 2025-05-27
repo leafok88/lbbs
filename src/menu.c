@@ -1306,6 +1306,8 @@ int menu_control(MENU_SET *p_menu_set, int key)
 
 int unload_menu(MENU_SET *p_menu_set)
 {
+	int shmid;
+
 	if (p_menu_set->p_menu_name_dict != NULL)
 	{
 		trie_dict_destroy(p_menu_set->p_menu_name_dict);
@@ -1318,11 +1320,13 @@ int unload_menu(MENU_SET *p_menu_set)
 		p_menu_set->p_menu_screen_dict = NULL;
 	}
 
+	shmid = p_menu_set->shmid;
+
 	detach_menu_shm(p_menu_set);
 
-	if (shmctl(p_menu_set->shmid, IPC_RMID, NULL) == -1)
+	if (shmctl(shmid, IPC_RMID, NULL) == -1)
 	{
-		log_error("shmctl(shmid=%d, IPC_RMID) error (%d)\n", p_menu_set->shmid, errno);
+		log_error("shmctl(shmid=%d, IPC_RMID) error (%d)\n", shmid, errno);
 		return -1;
 	}
 
@@ -1337,7 +1341,7 @@ int set_menu_shm_readonly(MENU_SET *p_menu_set)
 	p_shm = shmat(p_menu_set->shmid, p_menu_set->p_reserved, SHM_RDONLY | SHM_REMAP);
 	if (p_shm == (void *)-1)
 	{
-		log_error("shmat() error (%d)\n", errno);
+		log_error("shmat(menu_shm shmid = %d) error (%d)\n", p_menu_set->shmid, errno);
 		return -1;
 	}
 	

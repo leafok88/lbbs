@@ -25,6 +25,8 @@
 #include "screen.h"
 #include "menu.h"
 #include "bbs_cmd.h"
+#include "section_list.h"
+#include "trie_dict.h"
 #include <unistd.h>
 #include <time.h>
 #include <string.h>
@@ -249,62 +251,82 @@ int bbs_center()
 
 int bbs_main()
 {
-	MYSQL *db;
+	MYSQL *db = NULL;
+
+	// Set data pools in shared memory readonly
+	if (set_trie_dict_shm_readonly() < 0)
+	{
+		goto cleanup;
+	}
+	if (set_article_block_shm_readonly() < 0)
+	{
+		goto cleanup;
+	}
+	if (set_section_list_shm_readonly() < 0)
+	{
+		goto cleanup;
+	}
+
+	// Load menu in shared memory
+	if (set_menu_shm_readonly(p_bbs_menu) < 0)
+	{
+		goto cleanup;
+	}
 
 	set_input_echo(0);
 
 	// System info
 	if (bbs_info() < 0)
 	{
-		return -1;
+		goto cleanup;
 	}
 
 	db = db_open();
 	if (db == NULL)
 	{
 		prints("无法连接数据库\n");
-		return -2;
+		goto cleanup;
 	}
 
 	// Welcome
 	if (bbs_welcome(db) < 0)
 	{
 		mysql_close(db);
-		return -3;
+		goto cleanup;
 	}
 
 	// User login
 	if (bbs_login(db) < 0)
 	{
 		mysql_close(db);
-		return -4;
+		goto cleanup;
 	}
 	clearscr();
 
 	// BBS Top 10
 	display_file_ex(VAR_BBS_TOP, 1, 1);
 
-	// Load menu in shared memory
-	if (set_menu_shm_readonly(p_bbs_menu) < 0)
-	{
-		return -5;
-	}
-
 	// Main
 	bbs_center();
-
-	// Unload menu in shared memory
-	detach_menu_shm(p_bbs_menu);
-	free(p_bbs_menu);
-	p_bbs_menu = NULL;
 
 	// Logout
 	bbs_logout(db);
 
-	// Unload file_loader and trie_dict
-	// Do nothing explictly - SHM detached automatically on process exit
+cleanup:
+	if (db != NULL)
+	{
+		mysql_close(db);
+	}
 
-	mysql_close(db);
+	// Detach menu in shared memory
+	detach_menu_shm(p_bbs_menu);
+	free(p_bbs_menu);
+	p_bbs_menu = NULL;
+
+	// Detach data pools shm
+	detach_section_list_shm();
+	detach_article_block_shm();
+	detach_trie_dict_shm();
 
 	return 0;
 }

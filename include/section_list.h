@@ -73,6 +73,10 @@ typedef struct section_list_t SECTION_LIST;
 // in order to allocate enough memory for blocks
 extern int article_block_init(const char *filename, int block_count);
 extern void article_block_cleanup(void);
+
+extern int set_article_block_shm_readonly(void);
+extern int detach_article_block_shm(void);
+
 extern int article_block_reset(void);
 
 extern ARTICLE *article_block_find_by_aid(int32_t aid);
@@ -84,6 +88,9 @@ extern int article_count_of_topic(int32_t aid);
 
 extern int section_list_init(const char *filename);
 extern void section_list_cleanup(void);
+
+extern int set_section_list_shm_readonly(void);
+extern int detach_section_list_shm(void);
 
 extern SECTION_LIST *section_list_create(int32_t sid, const char *sname, const char *stitle, const char *master_name);
 extern void section_list_reset_articles(SECTION_LIST *p_section);
