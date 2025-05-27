@@ -229,7 +229,7 @@ int main(int argc, char *argv[])
 		goto cleanup;
 	}
 
-	log_std("Debug: last_aid = %d\n", article_block_last_aid());
+	log_std("Debug: loaded %d articles, last_aid = %d\n", article_block_article_count(), article_block_last_aid());
 
 	// Set signal handler
 	signal(SIGHUP, sig_hup_handler);
