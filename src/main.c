@@ -222,6 +222,8 @@ int main(int argc, char *argv[])
 		goto cleanup;
 	}
 
+	set_last_article_op_log_from_db();
+	
 	// Load section articles
 	if (append_articles_from_db(0, 1) < 0)
 	{

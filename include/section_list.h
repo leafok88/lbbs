@@ -39,6 +39,7 @@ struct article_t
 	int8_t excerption;
 	int8_t ontop;
 	int8_t lock;
+	int8_t transship;
 	char username[BBS_username_max_len + 1];
 	char nickname[BBS_nickname_max_len + 1];
 	char title[BBS_article_title_max_len + 1];

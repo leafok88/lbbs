@@ -184,6 +184,7 @@ int main(int argc, char *argv[])
 			article.excerption = 0;
 			article.ontop = 0;
 			article.lock = 0;
+			article.transship = 0;
 
 			if (section_list_rw_lock(p_section[i]) < 0)
 			{
@@ -306,6 +307,7 @@ int main(int argc, char *argv[])
 			article.excerption = 0;
 			article.ontop = 0;
 			article.lock = 0;
+			article.transship = 0;
 
 			if (section_list_append_article(p_section[i], &article) < 0)
 			{
@@ -763,6 +765,7 @@ int main(int argc, char *argv[])
 			article.excerption = 0;
 			article.ontop = 0;
 			article.lock = 0;
+			article.transship = 0;
 
 			if (section_list_append_article(p_section[i], &article) < 0)
 			{

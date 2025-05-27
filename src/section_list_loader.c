@@ -28,7 +28,8 @@
 
 #define SECTION_LIST_LOAD_INTERVAL 10 // second
 
-static int section_list_loader_pid;
+int section_list_loader_pid;
+int last_article_op_log_mid;
 
 int load_section_config_from_db(void)
 {
@@ -163,6 +164,7 @@ int append_articles_from_db(int32_t start_aid, int global_lock)
 	MYSQL_ROW row;
 	char sql[SQL_BUFFER_LEN];
 	ARTICLE article;
+	ARTICLE *p_topic;
 	SECTION_LIST *p_section = NULL;
 	int32_t last_sid = 0;
 	int ret = 0;
@@ -176,8 +178,8 @@ int append_articles_from_db(int32_t start_aid, int global_lock)
 	}
 
 	snprintf(sql, sizeof(sql),
-			 "SELECT AID, TID, SID, CID, UID, visible, excerption, "
-			 "ontop, `lock`, username, nickname, title, UNIX_TIMESTAMP(sub_dt) AS sub_dt "
+			 "SELECT AID, TID, SID, CID, UID, visible, excerption, ontop, `lock`, "
+			 "transship, username, nickname, title, UNIX_TIMESTAMP(sub_dt) AS sub_dt "
 			 "FROM bbs WHERE AID >= %d ORDER BY AID",
 			 start_aid);
 
@@ -218,6 +220,7 @@ int append_articles_from_db(int32_t start_aid, int global_lock)
 		article.excerption = (int8_t)atoi(row[i++]);
 		article.ontop = (int8_t)atoi(row[i++]);
 		article.lock = (int8_t)atoi(row[i++]);
+		article.transship = (int8_t)atoi(row[i++]);
 
 		strncpy(article.username, row[i++], sizeof(article.username) - 1);
 		article.username[sizeof(article.username) - 1] = '\0';
@@ -243,6 +246,18 @@ int append_articles_from_db(int32_t start_aid, int global_lock)
 			log_error("section_list_find_by_sid(%d) error: unknown section, try reloading section config\n", article.sid);
 			ret = ERR_UNKNOWN_SECTION; // Unknown section found
 			break;
+		}
+
+		if (article.visible != 0 && article.tid != 0)
+		{
+			// Check if topic article is visible
+			p_topic = article_block_find_by_aid(article.tid);
+			if (p_topic == NULL || p_topic->visible == 0)
+			{
+				// log_error("Set article (aid = %d) as invisible due to invisible or non-existing topic head\n", article.aid);
+				article.tid = 0;
+				article.visible = 0;
+			}
 		}
 
 		// acquire lock of current section if different from last one
@@ -293,6 +308,238 @@ cleanup:
 	return ret;
 }
 
+int set_last_article_op_log_from_db(void)
+{
+	MYSQL *db;
+	MYSQL_RES *rs;
+	MYSQL_ROW row;
+	char sql[SQL_BUFFER_LEN];
+
+	db = db_open();
+	if (db == NULL)
+	{
+		log_error("db_open() error: %s\n", mysql_error(db));
+		return -1;
+	}
+
+	snprintf(sql, sizeof(sql),
+			 "SELECT MID FROM bbs_article_op ORDER BY MID DESC LIMIT 1");
+
+	if (mysql_query(db, sql) != 0)
+	{
+		log_error("Query article op error: %s\n", mysql_error(db));
+		return -2;
+	}
+	if ((rs = mysql_store_result(db)) == NULL)
+	{
+		log_error("Get article op data failed\n");
+		return -2;
+	}
+
+	if ((row = mysql_fetch_row(rs)))
+	{
+		last_article_op_log_mid = atoi(row[0]);
+	}
+
+	mysql_free_result(rs);
+
+	mysql_close(db);
+
+	return last_article_op_log_mid;
+}
+
+int apply_article_op_log_from_db(void)
+{
+	MYSQL *db;
+	MYSQL_RES *rs, *rs2;
+	MYSQL_ROW row, row2;
+	char sql[SQL_BUFFER_LEN];
+	ARTICLE *p_article;
+	SECTION_LIST *p_section = NULL;
+	SECTION_LIST *p_section_dest;
+	int32_t last_sid = 0;
+	int32_t sid_dest;
+	int ret = 0;
+
+	db = db_open();
+	if (db == NULL)
+	{
+		log_error("db_open() error: %s\n", mysql_error(db));
+		return -3;
+	}
+
+	snprintf(sql, sizeof(sql),
+			 "SELECT MID, AID, type FROM bbs_article_op "
+			 "WHERE MID > %d AND type NOT IN ('A', 'M') ORDER BY MID",
+			 last_article_op_log_mid);
+
+	if (mysql_query(db, sql) != 0)
+	{
+		log_error("Query article log error: %s\n", mysql_error(db));
+		return -3;
+	}
+	if ((rs = mysql_store_result(db)) == NULL)
+	{
+		log_error("Get article log data failed\n");
+		return -3;
+	}
+
+	while ((row = mysql_fetch_row(rs)))
+	{
+		p_article = article_block_find_by_aid(atoi(row[1]));
+		if (p_article == NULL) // related article has not been appended yet
+		{
+			ret = -2;
+			break;
+		}
+
+		// release lock of last section if different from current one
+		if (p_article->sid != last_sid && last_sid != 0)
+		{
+			if ((ret = section_list_rw_unlock(p_section)) < 0)
+			{
+				log_error("section_list_rw_unlock(sid = %d) error\n", p_section->sid);
+				break;
+			}
+		}
+
+		if ((p_section = section_list_find_by_sid(p_article->sid)) == NULL)
+		{
+			log_error("section_list_find_by_sid(%d) error: unknown section, try reloading section config\n", p_article->sid);
+			ret = ERR_UNKNOWN_SECTION; // Unknown section found
+			break;
+		}
+
+		// acquire lock of current section if different from last one
+		if (p_article->sid != last_sid)
+		{
+			if ((ret = section_list_rw_lock(p_section)) < 0)
+			{
+				log_error("section_list_rw_lock(sid = 0) error\n");
+				break;
+			}
+		}
+
+		last_sid = p_article->sid;
+
+		switch (row[2][0])
+		{
+		case 'A': // Add article
+			log_error("Operation type=A should not be found\n");
+			break;
+		case 'D': // Delete article
+		case 'X': // Delete article by Admin
+			p_article->visible = 0;
+			if (p_article->tid == 0)
+			{
+				// Set articles in the topic to be invisible
+				do
+				{
+					p_article = p_article->p_topic_next;
+					p_article->visible = 0;
+				} while (p_article->tid != 0);
+			}
+			break;
+		case 'S': // Restore article
+			p_article->visible = 1;
+			break;
+		case 'L': // Lock article
+			p_article->lock = 1;
+			break;
+		case 'U': // Unlock article
+			p_article->lock = 0;
+			break;
+		case 'M': // Modify article
+			log_error("Operation type=M should not be found\n");
+			break;
+		case 'T': // Move article
+			snprintf(sql, sizeof(sql),
+					 "SELECT SID FROM bbs WHERE AID = %d",
+					 p_article->aid);
+
+			if (mysql_query(db, sql) != 0)
+			{
+				log_error("Query article error: %s\n", mysql_error(db));
+				ret = -3;
+				break;
+			}
+			if ((rs2 = mysql_store_result(db)) == NULL)
+			{
+				log_error("Get article data failed\n");
+				ret = -3;
+				break;
+			}
+			if ((row2 = mysql_fetch_row(rs2)))
+			{
+				sid_dest = atoi(row2[0]);
+			}
+			else
+			{
+				sid_dest = 0;
+				ret = -4;
+			}
+			mysql_free_result(rs2);
+
+			if (sid_dest > 0 && sid_dest != p_article->sid)
+			{
+				p_section_dest = section_list_find_by_sid(sid_dest);
+				if (p_section_dest == NULL)
+				{
+					ret = ERR_UNKNOWN_SECTION;
+					break;
+				}
+				// Move topic
+				if ((ret = section_list_move_topic(p_section, p_section_dest, p_article->aid)) < 0)
+				{
+					break;
+				}
+			}
+			break;
+		case 'E': // Set article as excerption
+			p_article->excerption = 1;
+			break;
+		case 'O': // Unset article as excerption
+			p_article->excerption = 0;
+			break;
+		case 'F': // Set article on top
+			p_article->ontop = 1;
+			break;
+		case 'V': // Unset article on top
+			p_article->ontop = 0;
+			break;
+		case 'Z': // Set article as trnasship
+			p_article->transship = 1;
+			break;
+		default:
+			// log_error("Operation type=%s unknown, mid=%s\n", row[2], row[0]);
+			break;
+		}
+
+		if (ret < 0)
+		{
+			break;
+		}
+
+		// Update MID with last successfully proceeded article_op_log
+		last_article_op_log_mid = atoi(row[0]);
+	}
+
+	// release lock of last section
+	if (last_sid != 0)
+	{
+		if ((ret = section_list_rw_unlock(p_section)) < 0)
+		{
+			log_error("section_list_rw_unlock(sid = %d) error\n", p_section->sid);
+		}
+	}
+
+	mysql_free_result(rs);
+
+	mysql_close(db);
+
+	return ret;
+}
+
 int section_list_loader_launch(void)
 {
 	int pid;
@@ -300,6 +547,7 @@ int section_list_loader_launch(void)
 	int32_t last_aid;
 	int article_count;
 	int load_count;
+	int last_mid;
 	int i;
 
 	if (section_list_loader_pid != 0)
@@ -362,19 +610,45 @@ int section_list_loader_launch(void)
 				SYS_section_list_reload = 1; // Force reload section_list
 			}
 		}
-		else
+
+		load_count = article_block_article_count() - article_count;
+
+		if (load_count > 0)
 		{
-			load_count = article_block_article_count() - article_count;
+			log_std("Incrementally load %d articles, last_aid = %d\n", load_count, article_block_last_aid());
+		}
 
-			if (load_count > 0)
-			{
-				log_std("Incrementally load %d articles, last_aid = %d\n", load_count, article_block_last_aid());
-			}
+		if (SYS_section_list_reload)
+		{
+			continue;
+		}
 
-			for (i = 0; i < SECTION_LIST_LOAD_INTERVAL && !SYS_server_exit && !SYS_section_list_reload; i++)
+		// Load article_op log
+		last_mid = last_article_op_log_mid;
+
+		if ((ret = apply_article_op_log_from_db()) < 0)
+		{
+			log_error("apply_article_op_log_from_db() error\n");
+
+			if (ret == ERR_UNKNOWN_SECTION)
 			{
-				sleep(1);
+				SYS_section_list_reload = 1; // Force reload section_list
 			}
+		}
+
+		if (last_article_op_log_mid > last_mid)
+		{
+			log_std("Proceeded %d article logs, last_mid = %d\n", last_article_op_log_mid - last_mid, last_article_op_log_mid);
+		}
+
+		if (SYS_section_list_reload)
+		{
+			continue;
+		}
+
+		for (i = 0; i < SECTION_LIST_LOAD_INTERVAL && !SYS_server_exit && !SYS_section_list_reload; i++)
+		{
+			sleep(1);
 		}
 	}
 

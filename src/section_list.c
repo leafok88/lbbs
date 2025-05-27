@@ -399,7 +399,12 @@ ARTICLE *article_block_find_by_aid(int32_t aid)
 		}
 	}
 
-	return (p_block->articles + left);
+	if (aid != p_block->articles[left].aid) // not found
+	{
+		return NULL;
+	}
+
+	return (p_block->articles + left); // found
 }
 
 ARTICLE *article_block_find_by_index(int index)
@@ -1193,15 +1198,21 @@ int section_list_move_topic(SECTION_LIST *p_section_src, SECTION_LIST *p_section
 	int32_t first_inserted_aid_dest;
 	int move_counter;
 
-	if (p_section_dest == NULL)
+	if (p_section_src == NULL || p_section_dest == NULL)
 	{
 		log_error("section_list_move_topic() NULL pointer error\n");
 		return -1;
 	}
 
+	if (p_section_src->sid == p_section_dest->sid)
+	{
+		log_error("section_list_move_topic() src and dest section are the same\n");
+		return -1;
+	}
+
 	if ((p_article = article_block_find_by_aid(aid)) == NULL)
 	{
-		log_error("section_list_move_topic() error: article %d not found in block\n", aid);
+		log_error("article_block_find_by_aid(aid = %d) error: article not found\n", aid);
 		return -2;
 	}
 
@@ -1242,9 +1253,10 @@ int section_list_move_topic(SECTION_LIST *p_section_src, SECTION_LIST *p_section
 	{
 		if (p_section_src->sid != p_article->sid)
 		{
-			log_error("section_list_move_topic() error: src section sid %d != article %d sid %d\n",
+			log_error("section_list_move_topic() warning: src section sid %d != article %d sid %d\n",
 					  p_section_src->sid, p_article->aid, p_article->sid);
-			return -2;
+			p_article = p_article->p_topic_next;
+			continue;
 		}
 
 		// Remove from bi-directional article list of src section
@@ -1270,8 +1282,9 @@ int section_list_move_topic(SECTION_LIST *p_section_src, SECTION_LIST *p_section
 
 		if (section_list_find_article_with_offset(p_section_dest, p_article->aid, &page, &offset, &p_next) != NULL)
 		{
-			log_error("section_list_move_topic() error: article %d already in section %d\n", p_article->aid, p_section_dest->sid);
-			return -4;
+			log_error("section_list_move_topic() warning: article %d already in section %d\n", p_article->aid, p_section_dest->sid);
+			p_article = p_article->p_topic_next;
+			continue;
 		}
 
 		// Insert into bi-directional article list of dest section
@@ -1349,7 +1362,7 @@ int section_list_move_topic(SECTION_LIST *p_section_src, SECTION_LIST *p_section
 
 	if (p_section_dest->article_count - dest_article_count_old != move_article_count)
 	{
-		log_error("section_list_move_topic() error: count of moved articles %d != %d\n",
+		log_error("section_list_move_topic() warning: count of moved articles %d != %d\n",
 				  p_section_dest->article_count - dest_article_count_old, move_article_count);
 	}
 
