@@ -488,10 +488,23 @@ int apply_article_op_log_from_db(void)
 					ret = ERR_UNKNOWN_SECTION;
 					break;
 				}
+				// acquire lock of dest section
+				if ((ret = section_list_rw_lock(p_section_dest)) < 0)
+				{
+					log_error("section_list_rw_lock(sid = %d) error\n", p_section_dest);
+					break;
+				}
 				// Move topic
 				if ((ret = section_list_move_topic(p_section, p_section_dest, p_article->aid)) < 0)
 				{
-					break;
+					log_error("section_list_move_topic(src_sid=%d, dest_sid=%d, aid=%d) error (%d), retry in the next loop\n",
+							  p_section->sid, p_section_dest->sid, p_article->aid, ret);
+				}
+				// release lock of dest section
+				if (section_list_rw_unlock(p_section_dest) < 0)
+				{
+					log_error("section_list_rw_unlock(sid = %d) error\n", p_section_dest);
+					ret = -1;
 				}
 			}
 			break;
