@@ -21,6 +21,7 @@
 #include <string.h>
 #include <errno.h>
 #include <stdlib.h>
+#include <strings.h>
 
 int load_section_config_from_db(void)
 {
@@ -141,6 +142,143 @@ int load_section_config_from_db(void)
 			break;
 		}
 	}
+	mysql_free_result(rs);
+
+	mysql_close(db);
+
+	return ret;
+}
+
+int append_articles_from_db(int32_t start_aid, int global_lock)
+{
+	MYSQL *db;
+	MYSQL_RES *rs;
+	MYSQL_ROW row;
+	char sql[SQL_BUFFER_LEN];
+	ARTICLE article;
+	SECTION_LIST *p_section = NULL;
+	int32_t last_sid = 0;
+	int ret = 0;
+	int i;
+
+	db = db_open();
+	if (db == NULL)
+	{
+		log_error("db_open() error: %s\n", mysql_error(db));
+		return -2;
+	}
+
+	snprintf(sql, sizeof(sql),
+			 "SELECT AID, TID, SID, CID, UID, visible, excerption, "
+			 "ontop, `lock`, username, nickname, title, UNIX_TIMESTAMP(sub_dt) AS sub_dt "
+			 "FROM bbs WHERE AID >= %d ORDER BY AID",
+			 start_aid);
+
+	if (mysql_query(db, sql) != 0)
+	{
+		log_error("Query article list error: %s\n", mysql_error(db));
+		return -3;
+	}
+	if ((rs = mysql_use_result(db)) == NULL)
+	{
+		log_error("Get article list data failed\n");
+		return -3;
+	}
+
+	// acquire global lock
+	if (global_lock)
+	{
+		if ((ret = section_list_rw_lock(NULL)) < 0)
+		{
+			log_error("section_list_rw_lock(sid = 0) error\n");
+			goto cleanup;
+		}
+	}
+
+	while ((row = mysql_fetch_row(rs)))
+	{
+		bzero(&article, sizeof(ARTICLE));
+
+		// copy data of article
+		i = 0;
+
+		article.aid = atoi(row[i++]);
+		article.tid = atoi(row[i++]);
+		article.sid = atoi(row[i++]);
+		article.cid = atoi(row[i++]);
+		article.uid = atoi(row[i++]);
+		article.visible = (int8_t)atoi(row[i++]);
+		article.excerption = (int8_t)atoi(row[i++]);
+		article.ontop = (int8_t)atoi(row[i++]);
+		article.lock = (int8_t)atoi(row[i++]);
+
+		strncpy(article.username, row[i++], sizeof(article.username) - 1);
+		article.username[sizeof(article.username) - 1] = '\0';
+		strncpy(article.nickname, row[i++], sizeof(article.nickname) - 1);
+		article.nickname[sizeof(article.nickname) - 1] = '\0';
+		strncpy(article.title, row[i++], sizeof(article.title) - 1);
+		article.title[sizeof(article.title) - 1] = '\0';
+
+		article.sub_dt = atol(row[i++]);
+
+		// release lock of last section if different from current one
+		if (!global_lock && article.sid != last_sid && last_sid != 0)
+		{
+			if ((ret = section_list_rw_unlock(p_section)) < 0)
+			{
+				log_error("section_list_rw_unlock(sid = %d) error\n", p_section->sid);
+				break;
+			}
+		}
+
+		if ((p_section = section_list_find_by_sid(article.sid)) == NULL)
+		{
+			log_error("section_list_find_by_sid(%d) error: unknown section, try reloading section config\n", article.sid);
+			ret = -4; // known section found
+			break;
+		}
+
+		// acquire lock of current section if different from last one
+		if (!global_lock && article.sid != last_sid)
+		{
+			if ((ret = section_list_rw_lock(NULL)) < 0)
+			{
+				log_error("section_list_rw_lock(sid = 0) error\n");
+				break;
+			}
+		}
+
+		// append article to section list
+		last_sid = article.sid;
+
+		if (section_list_append_article(p_section, &article) < 0)
+		{
+			log_error("section_list_append_article(sid = %d, aid = %d) error\n",
+					  p_section->sid, article.aid);
+			ret = -3;
+			break;
+		}
+	}
+
+	// release lock of last section
+	if (!global_lock && last_sid != 0)
+	{
+		if ((ret = section_list_rw_unlock(p_section)) < 0)
+		{
+			log_error("section_list_rw_unlock(sid = %d) error\n", p_section->sid);
+		}
+	}
+
+	// release global lock
+	if (global_lock)
+	{
+		if ((ret = section_list_rw_unlock(NULL)) < 0)
+		{
+			log_error("section_list_rw_unlock(sid = 0) error\n");
+		}
+	}
+
+cleanup:
 	mysql_free_result(rs);
 
 	mysql_close(db);

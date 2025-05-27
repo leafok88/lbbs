@@ -21,7 +21,11 @@ extern int load_section_config_from_db(void);
 
 // Input global_lock = 0 : lock / unlock corresponding section per article
 //                     1 : lock / unlock all sections per invocation
-extern int append_articles_from_db(MYSQL *db, int32_t start_aid, int global_lock);
+// Return on success : last article aid (> 0)
+//                   : no article append (= 0)
+//           failure : lock / unlock error (-1)
+//                   : unknown section found (-4)
+extern int append_articles_from_db(int32_t start_aid, int global_lock);
 
 // Return on success : real page_id (>= 0)
 //           failure : error number (< 0)
