@@ -83,6 +83,7 @@ extern ARTICLE *article_block_find_by_aid(int32_t aid);
 extern ARTICLE *article_block_find_by_index(int index);
 
 extern int32_t article_block_last_aid(void);
+extern int article_block_article_count(void);
 
 extern int article_count_of_topic(int32_t aid);
 

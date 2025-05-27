@@ -215,6 +215,12 @@ int main(int argc, char *argv[])
 		printf("last_aid != %d\n", article_block_last_aid());
 	}
 
+	if (article_block_article_count() != section_count * BBS_article_limit_per_section)
+	{
+		printf("article_block_article_count() error %d != %d * %d\n",
+			   article_block_article_count(), section_count, BBS_article_limit_per_section);
+	}
+
 	last_aid = 0;
 
 	for (j = 0; j < BBS_article_limit_per_section; j++)

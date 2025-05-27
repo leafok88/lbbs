@@ -108,7 +108,7 @@ int article_block_init(const char *filename, int block_count)
 		return -1;
 	}
 
-	if (block_count > ARTICLE_BLOCK_PER_POOL)
+	if (block_count <= 0 || block_count > ARTICLE_BLOCK_PER_POOL)
 	{
 		log_error("article_block_count exceed limit %d\n", ARTICLE_BLOCK_PER_POOL);
 		return -2;
@@ -1136,6 +1136,21 @@ int32_t article_block_last_aid(void)
 	int32_t last_aid = p_block->articles[p_block->article_count - 1].aid;
 
 	return last_aid;
+}
+
+int article_block_article_count(void)
+{
+	int ret;
+
+	if (p_article_block_pool == NULL || p_article_block_pool->block_count <= 0)
+	{
+		return -1;
+	}
+
+	ret = (p_article_block_pool->block_count - 1) * ARTICLE_PER_BLOCK +
+		  p_article_block_pool->p_block[p_article_block_pool->block_count - 1]->article_count;
+
+	return ret;
 }
 
 int article_count_of_topic(int32_t aid)
