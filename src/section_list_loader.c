@@ -698,3 +698,60 @@ int section_list_loader_reload(void)
 
 	return 0;
 }
+
+int query_section_articles(SECTION_LIST *p_section, int32_t page_id, ARTICLE *p_articles[], int32_t *p_article_count)
+{
+	ARTICLE *p_article;
+	ARTICLE *p_next_page_first_article;
+	int ret = 0;
+
+	if (p_section == NULL || p_articles == NULL || p_article_count == NULL)
+	{
+		log_error("query_section_articles() NULL pointer error\n");
+		return -1;
+	}
+
+	// acquire lock of section
+	if ((ret = section_list_rd_lock(p_section)) < 0)
+	{
+		log_error("section_list_rd_lock(sid = %d) error\n", p_section->sid);
+		return -2;
+	}
+
+	if (page_id >= p_section->page_count)
+	{
+		page_id = p_section->page_count - 1;
+	}
+
+	if (page_id < 0)
+	{
+		ret = -3;
+	}
+	else
+	{
+		ret = page_id;
+		p_article = p_section->p_page_first_article[page_id];
+		p_next_page_first_article =
+			(page_id == p_section->page_count - 1 ? p_section->p_article_head : p_section->p_page_first_article[page_id + 1]);
+		*p_article_count = 0;
+
+		do
+		{
+			if (p_article->visible)
+			{
+				p_articles[*p_article_count] = p_article;
+				(*p_article_count)++;
+			}
+			p_article = p_article->p_next;
+		} while (p_article != p_next_page_first_article && (*p_article_count) <= BBS_article_limit_per_page);
+	}
+
+	// release lock of section
+	if ((ret = section_list_rd_unlock(p_section)) < 0)
+	{
+		log_error("section_list_rd_unlock(sid = %d) error\n", p_section->sid);
+		ret = -2;
+	}
+
+	return ret;
+}
