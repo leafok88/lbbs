@@ -222,19 +222,26 @@ int main(int argc, char *argv[])
 		goto cleanup;
 	}
 
-	// Load section config
+	// Load section articles
 	if (append_articles_from_db(0, 1) < 0)
 	{
 		log_error("append_articles_from_db(0, 1) error\n");
 		goto cleanup;
 	}
 
-	log_std("Debug: loaded %d articles, last_aid = %d\n", article_block_article_count(), article_block_last_aid());
+	log_std("Initially load %d articles, last_aid = %d\n", article_block_article_count(), article_block_last_aid());
 
 	// Set signal handler
 	signal(SIGHUP, sig_hup_handler);
 	signal(SIGCHLD, sig_chld_handler);
 	signal(SIGTERM, sig_term_handler);
+
+	// Launch section_list_loader process
+	if (section_list_loader_launch() < 0)
+	{
+		log_error("section_list_loader_launch() error\n");
+		goto cleanup;
+	}
 
 	// Initialize socket server
 	net_server(BBS_address, BBS_port);

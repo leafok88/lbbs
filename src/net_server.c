@@ -25,6 +25,7 @@
 #include "fork.h"
 #include "menu.h"
 #include "file_loader.h"
+#include "section_list_loader.h"
 #include <errno.h>
 #include <fcntl.h>
 #include <string.h>
@@ -212,6 +213,16 @@ int net_server(const char *hostaddr, in_port_t port)
 
 			log_std("Reload data files successfully\n");
 			sd_notify(0, "READY=1");
+		}
+
+		if (SYS_section_list_reload && !SYS_server_exit)
+		{
+			SYS_section_list_reload = 0;
+
+			if (section_list_loader_reload() < 0)
+			{
+				log_error("ksection_list_loader_reload() failed\n");
+			}
 		}
 
 		nfds = epoll_wait(epollfd, events, MAX_EVENTS, 100); // 0.1 second

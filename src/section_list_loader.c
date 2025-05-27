@@ -17,11 +17,18 @@
 #include "section_list_loader.h"
 #include "log.h"
 #include "database.h"
+#include "menu.h"
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
+#include <signal.h>
 #include <stdlib.h>
 #include <strings.h>
+#include <unistd.h>
+
+#define SECTION_LIST_LOAD_INTERVAL 10 // second
+
+static int section_list_loader_pid;
 
 int load_section_config_from_db(void)
 {
@@ -234,14 +241,14 @@ int append_articles_from_db(int32_t start_aid, int global_lock)
 		if ((p_section = section_list_find_by_sid(article.sid)) == NULL)
 		{
 			log_error("section_list_find_by_sid(%d) error: unknown section, try reloading section config\n", article.sid);
-			ret = -4; // known section found
+			ret = ERR_UNKNOWN_SECTION; // Unknown section found
 			break;
 		}
 
 		// acquire lock of current section if different from last one
 		if (!global_lock && article.sid != last_sid)
 		{
-			if ((ret = section_list_rw_lock(NULL)) < 0)
+			if ((ret = section_list_rw_lock(p_section)) < 0)
 			{
 				log_error("section_list_rw_lock(sid = 0) error\n");
 				break;
@@ -284,4 +291,123 @@ cleanup:
 	mysql_close(db);
 
 	return ret;
+}
+
+int section_list_loader_launch(void)
+{
+	int pid;
+	int ret;
+	int32_t last_aid;
+	int article_count;
+	int load_count;
+	int i;
+
+	if (section_list_loader_pid != 0)
+	{
+		log_error("section_list_loader already running, pid = %d\n", section_list_loader_pid);
+		return -2;
+	}
+
+	pid = fork();
+
+	if (pid > 0) // Parent process
+	{
+		SYS_child_process_count++;
+		section_list_loader_pid = pid;
+		log_std("Section list loader process (%d) start\n", pid);
+		return 0;
+	}
+	else if (pid < 0) // Error
+	{
+		log_error("fork() error (%d)\n", errno);
+		return -1;
+	}
+
+	// Child process
+	SYS_child_process_count = 0;
+
+	// Detach menu in shared memory
+	detach_menu_shm(p_bbs_menu);
+	free(p_bbs_menu);
+	p_bbs_menu = NULL;
+
+	// Do section data loader periodically
+	while (!SYS_server_exit)
+	{
+		if (SYS_section_list_reload)
+		{
+			SYS_section_list_reload = 0;
+
+			// Load section config
+			if (load_section_config_from_db() < 0)
+			{
+				log_error("load_section_config_from_db() error\n");
+			}
+			else
+			{
+				log_error("Reload section config successfully\n");
+			}
+		}
+
+		// Load section articles
+		last_aid = article_block_last_aid();
+		article_count = article_block_article_count();
+
+		if ((ret = append_articles_from_db(last_aid + 1, 0)) < 0)
+		{
+			log_error("append_articles_from_db(%d, 0) error\n", last_aid + 1);
+
+			if (ret == ERR_UNKNOWN_SECTION)
+			{
+				SYS_section_list_reload = 1; // Force reload section_list
+			}
+		}
+		else
+		{
+			load_count = article_block_article_count() - article_count;
+
+			if (load_count > 0)
+			{
+				log_std("Incrementally load %d articles, last_aid = %d\n", load_count, article_block_last_aid());
+			}
+
+			for (i = 0; i < SECTION_LIST_LOAD_INTERVAL && !SYS_server_exit && !SYS_section_list_reload; i++)
+			{
+				sleep(1);
+			}
+		}
+	}
+
+	// Child process exit
+
+	// Detach data pools shm
+	detach_section_list_shm();
+	detach_article_block_shm();
+	detach_trie_dict_shm();
+
+	log_std("Section list loader process exit normally\n");
+	log_end();
+
+	section_list_loader_pid = 0;
+
+	_exit(0);
+
+	return 0;
+}
+
+int section_list_loader_reload(void)
+{
+	if (section_list_loader_pid == 0)
+	{
+		log_error("section_list_loader not running\n");
+		return -2;
+	}
+
+	if (kill(section_list_loader_pid, SIGHUP) < 0)
+	{
+		log_error("Send SIGTERM signal failed (%d)\n", errno);
+		return -1;
+	}
+
+	return 0;
 }

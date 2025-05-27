@@ -83,6 +83,7 @@ extern volatile int SYS_child_process_count;
 extern volatile int SYS_child_exit;
 extern volatile int SYS_menu_reload;
 extern volatile int SYS_data_file_reload;
+extern volatile int SYS_section_list_reload;
 
 // Network
 extern const char *ip_mask(char *s, int level, char mask);

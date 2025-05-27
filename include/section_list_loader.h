@@ -17,6 +17,8 @@
 #include "section_list.h"
 #include <mysql.h>
 
+#define ERR_UNKNOWN_SECTION -101
+
 extern int load_section_config_from_db(void);
 
 // Input global_lock = 0 : lock / unlock corresponding section per article
@@ -24,9 +26,13 @@ extern int load_section_config_from_db(void);
 // Return on success : last article aid (> 0)
 //                   : no article append (= 0)
 //           failure : lock / unlock error (-1)
-//                   : unknown section found (-4)
+//                   : unknown section found (ERR_UNKNOWN_SECTION)
 extern int append_articles_from_db(int32_t start_aid, int global_lock);
 
 // Return on success : real page_id (>= 0)
 //           failure : error number (< 0)
 extern int query_section_articles(SECTION_LIST *p_section, int32_t page_id, ARTICLE *p_articles[], int32_t *p_article_count);
+
+extern int section_list_loader_launch(void);
+
+extern int section_list_loader_reload(void);
