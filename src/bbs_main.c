@@ -291,14 +291,12 @@ int bbs_main()
 	// Welcome
 	if (bbs_welcome(db) < 0)
 	{
-		mysql_close(db);
 		goto cleanup;
 	}
 
 	// User login
 	if (bbs_login(db) < 0)
 	{
-		mysql_close(db);
 		goto cleanup;
 	}
 	clearscr();
