@@ -52,14 +52,14 @@ int split_line(const char *buffer, int max_display_len, int *p_eol, int *p_displ
 			continue;
 		}
 
-		if (c > 127 && c <= 255) // GBK chinese character
+		if (c < 0 || c > 127) // GBK chinese character
 		{
 			if (*p_display_len + 2 > max_display_len)
 			{
 				break;
 			}
 			i++;
-			*p_display_len += 2;
+			(*p_display_len) += 2;
 		}
 		else
 		{
