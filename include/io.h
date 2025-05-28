@@ -19,11 +19,12 @@
 
 #include <stdio.h>
 
-#define ESC_KEY '\033'
 #define CR '\r'
 #define LF '\n'
 #define BACKSPACE '\b'
 #define BELL '\b'
+#define KEY_TAB 9
+#define KEY_ESC 27
 #define KEY_SPACE '\040'
 
 #ifndef EXTEND_KEY
@@ -32,12 +33,11 @@
 #define KEY_NULL 0xffff
 #define KEY_TIMEOUT 0xfffe
 #define KEY_CONTROL 0xff
-#define KEY_TAB 9
-#define KEY_ESC 27
 #define KEY_UP 0x0101
 #define KEY_DOWN 0x0102
 #define KEY_RIGHT 0x0103
 #define KEY_LEFT 0x0104
+#define KEY_CSI 0x011b // ESC ESC
 #define KEY_HOME 0x0201
 #define KEY_INS 0x0202
 #define KEY_DEL 0x0203

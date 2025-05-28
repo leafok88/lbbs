@@ -341,7 +341,7 @@ int igetch(int timeout)
 			continue;
 		}
 
-		if (c == ESC_KEY)
+		if (c == KEY_ESC)
 		{
 			if (in_esc == 0)
 			{
@@ -352,7 +352,7 @@ int igetch(int timeout)
 			}
 			else
 			{
-				out = ESC_KEY;
+				out = KEY_CSI;
 				in_esc = 0;
 				break;
 			}
