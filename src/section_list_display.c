@@ -42,15 +42,39 @@ static int section_list_draw_items(SECTION_LIST *p_section, int page_id, ARTICLE
 	int eol;
 	int len;
 	int i;
+	char article_flag;
+	time_t tm_now;
+
+	time(&tm_now);
 
 	clrline(4, 23);
 
 	for (i = 0; i < article_count; i++)
 	{
+		article_flag = ' ';
+
+		if (p_articles[i]->excerption)
+		{
+			article_flag = 'm';
+		}
+		else if (p_articles[i]->lock)
+		{
+			article_flag = 'x';
+		}
+
 		localtime_r(&p_articles[i]->sub_dt, &tm_sub);
-		strftime(str_time, sizeof(str_time), "%b %e", &tm_sub);
-		strncpy(title_f, p_articles[i]->title, sizeof(title_f) - 1);
+		if (tm_now - p_articles[i]->sub_dt < 3600 * 24 * 365)
+		{
+			strftime(str_time, sizeof(str_time), "%b %e ", &tm_sub);
+		}
+		else
+		{
+			strftime(str_time, sizeof(str_time), "%m/%Y", &tm_sub);
+		}
+
+		strncpy(title_f, (p_articles[i]->transship ? "[转载]" : ""), sizeof(title_f) - 1);
 		title_f[sizeof(title_f) - 1] = '\0';
+		strncat(title_f, p_articles[i]->title, sizeof(title_f) - 1 - strnlen(title_f, sizeof(title_f)));
 		len = split_line(title_f, (p_articles[i]->tid == 0 ? 46 : 49), &eol, &title_f_len);
 		if (title_f[len] != '\0')
 		{
@@ -58,8 +82,9 @@ static int section_list_draw_items(SECTION_LIST *p_section, int page_id, ARTICLE
 		}
 
 		moveto(4 + i, 1);
-		prints("  %7d %s%*s %s  %s%s",
+		prints("  %7d %c %s%*s %s %s%s",
 			   p_articles[i]->aid,
+			   article_flag,
 			   p_articles[i]->username,
 			   BBS_username_max_len - (int)strnlen(p_articles[i]->username, sizeof(p_articles[i]->username)),
 			   "",
@@ -87,7 +112,7 @@ static int section_list_draw_screen(SECTION_LIST *p_section)
 	moveto(2, 0);
 	prints("离开[\033[1;32m←\033[0;37m,\033[1;32mESC\033[0;37m] 选择[\033[1;32m↑\033[0;37m,\033[1;32m↓\033[0;37m] 阅读[\033[1;32m→\033[0;37m,\033[1;32mENTER\033[0;37m]\033[m");
 	moveto(3, 0);
-	prints("\033[44;37m  \033[1;37m 编 号  发 布 者     日  期  文 章 标 题                                      \033[m");
+	prints("\033[44;37m  \033[1;37m 编  号   发 布 者     日  期  文 章 标 题                                    \033[m");
 	show_bottom("");
 
 	return 0;
