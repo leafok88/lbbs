@@ -51,7 +51,7 @@ static int section_list_draw_items(SECTION_LIST *p_section, int page_id, ARTICLE
 		strftime(str_time, sizeof(str_time), "%b %e", &tm_sub);
 		strncpy(title_f, p_articles[i]->title, sizeof(title_f) - 1);
 		title_f[sizeof(title_f) - 1] = '\0';
-		len = split_line(title_f, (p_articles[i]->tid == 0 ? 40 : 37), &eol, &title_f_len);
+		len = split_line(title_f, (p_articles[i]->tid == 0 ? 46 : 49), &eol, &title_f_len);
 		if (title_f[len] != '\0')
 		{
 			title_f[len] = '\0';
