@@ -39,7 +39,7 @@ extern int get_data(int row, int col, char *prompt, char *buffer, int buffer_len
 
 extern int display_file_ex(const char *filename, int begin_line, int wait);
 
-extern int show_top(const char *str_left, const char *str_center);
+extern int show_top(const char *str_left, const char *str_center, const char *str_right);
 
 extern int show_bottom(const char *msg);
 

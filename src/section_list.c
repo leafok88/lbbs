@@ -633,14 +633,14 @@ SECTION_LIST *section_list_create(int32_t sid, const char *sname, const char *st
 
 	p_section->sid = sid;
 
-	strncpy(p_section->sname, sname, sizeof(p_section->sname - 1));
-	p_section->sname[sizeof(p_section->sname - 1)] = '\0';
+	strncpy(p_section->sname, sname, sizeof(p_section->sname) - 1);
+	p_section->sname[sizeof(p_section->sname) - 1] = '\0';
 
-	strncpy(p_section->stitle, stitle, sizeof(p_section->stitle - 1));
-	p_section->stitle[sizeof(p_section->stitle - 1)] = '\0';
+	strncpy(p_section->stitle, stitle, sizeof(p_section->stitle) - 1);
+	p_section->stitle[sizeof(p_section->stitle) - 1] = '\0';
 
-	strncpy(p_section->master_name, master_name, sizeof(p_section->master_name - 1));
-	p_section->master_name[sizeof(p_section->master_name - 1)] = '\0';
+	strncpy(p_section->master_list, master_name, sizeof(p_section->master_list) - 1);
+	p_section->master_list[sizeof(p_section->master_list) - 1] = '\0';
 
 	if (trie_dict_set(p_section_list_pool->p_trie_dict_section_by_name, sname, p_section_list_pool->section_count) != 1)
 	{

@@ -26,6 +26,9 @@
 #include <strings.h>
 #include <unistd.h>
 
+#define _POSIX_C_SOURCE 200809L
+#include <string.h>
+
 #define SECTION_LIST_LOAD_INTERVAL 10 // second
 
 int section_list_loader_pid;
@@ -38,7 +41,7 @@ int load_section_config_from_db(void)
 	MYSQL_ROW row, row2;
 	char sql[SQL_BUFFER_LEN];
 	int32_t sid;
-	char master_name[BBS_username_max_len + 1];
+	char master_list[(BBS_username_max_len + 1) * 3 + 1];
 	SECTION_LIST *p_section;
 	int ret;
 
@@ -76,7 +79,7 @@ int load_section_config_from_db(void)
 				 "SELECT username FROM section_master "
 				 "INNER JOIN user_list ON section_master.UID = user_list.UID "
 				 "WHERE SID = %d AND section_master.enable AND (NOW() BETWEEN begin_dt AND end_dt) "
-				 "ORDER BY major DESC LIMIT 1",
+				 "ORDER BY major DESC, begin_dt ASC LIMIT 3",
 				 sid);
 
 		if (mysql_query(db, sql) != 0)
@@ -91,14 +94,12 @@ int load_section_config_from_db(void)
 			ret = -3;
 			break;
 		}
-		if ((row2 = mysql_fetch_row(rs2)))
+
+		master_list[0] = '\0';
+		while ((row2 = mysql_fetch_row(rs2)))
 		{
-			strncpy(master_name, row2[0], sizeof(master_name) - 1);
-			master_name[sizeof(master_name) - 1] = '\0';
-		}
-		else
-		{
-			master_name[0] = '\0';
+			strncat(master_list, row2[0], sizeof(master_list) - 1 - strnlen(master_list, sizeof(master_list)));
+			strncat(master_list, " ", sizeof(master_list) - 1 - strnlen(master_list, sizeof(master_list)));
 		}
 		mysql_free_result(rs2);
 
@@ -106,7 +107,7 @@ int load_section_config_from_db(void)
 
 		if (p_section == NULL)
 		{
-			p_section = section_list_create(sid, row[1], row[2], "");
+			p_section = section_list_create(sid, row[1], row[2], master_list);
 			if (p_section == NULL)
 			{
 				log_error("section_list_create() error: load new section sid = %d sname = %s\n", sid, row[1]);
@@ -134,8 +135,8 @@ int load_section_config_from_db(void)
 			p_section->sname[sizeof(p_section->sname) - 1] = '\0';
 			strncpy(p_section->stitle, row[1], sizeof(p_section->stitle) - 1);
 			p_section->stitle[sizeof(p_section->stitle) - 1] = '\0';
-			strncpy(p_section->master_name, master_name, sizeof(p_section->master_name) - 1);
-			p_section->master_name[sizeof(p_section->master_name) - 1] = '\0';
+			strncpy(p_section->master_list, master_list, sizeof(p_section->master_list) - 1);
+			p_section->master_list[sizeof(p_section->master_list) - 1] = '\0';
 		}
 
 		p_section->class_id = atoi(row[3]);
@@ -718,13 +719,9 @@ int query_section_articles(SECTION_LIST *p_section, int32_t page_id, ARTICLE *p_
 		return -2;
 	}
 
-	if (page_id >= p_section->page_count)
+	if (page_id < 0 || page_id >= p_section->page_count)
 	{
-		page_id = p_section->page_count - 1;
-	}
-
-	if (page_id < 0)
-	{
+		log_error("Invalid page_id=%d, not in range [0, %d)\n", page_id, p_section->page_count);
 		ret = -3;
 	}
 	else
@@ -744,10 +741,15 @@ int query_section_articles(SECTION_LIST *p_section, int32_t page_id, ARTICLE *p_
 			}
 			p_article = p_article->p_next;
 		} while (p_article != p_next_page_first_article && (*p_article_count) <= BBS_article_limit_per_page);
+
+		if (*p_article_count != (page_id < p_section->page_count - 1 ? BBS_article_limit_per_page : p_section->last_page_visible_article_count))
+		{
+			log_error("Inconsistent visible article count %d detected in section %d page %d\n", *p_article_count, p_section->sid, page_id);
+		}
 	}
 
 	// release lock of section
-	if ((ret = section_list_rd_unlock(p_section)) < 0)
+	if (section_list_rd_unlock(p_section) < 0)
 	{
 		log_error("section_list_rd_unlock(sid = %d) error\n", p_section->sid);
 		ret = -2;

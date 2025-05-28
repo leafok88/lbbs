@@ -57,7 +57,7 @@ struct section_list_t
 	int8_t enable;
 	char sname[BBS_section_name_max_len + 1];
 	char stitle[BBS_section_title_max_len + 1];
-	char master_name[BBS_username_max_len + 1];
+	char master_list[(BBS_username_max_len + 1) * 3 + 1];
 	int read_user_level;
 	int write_user_level;
 	int32_t article_count;

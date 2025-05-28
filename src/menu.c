@@ -864,7 +864,7 @@ static int display_menu_current_page(MENU_SET *p_menu_set)
 	{
 		if (p_menu->title.row == 0 && p_menu->title.col == 0)
 		{
-			show_top(p_menu->title.text, BBS_name);
+			show_top(p_menu->title.text, BBS_name, "");
 		}
 		else
 		{

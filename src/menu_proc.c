@@ -21,6 +21,7 @@
 #include "io.h"
 #include "screen.h"
 #include "menu.h"
+#include "section_list_display.h"
 #include <dlfcn.h>
 #include <errno.h>
 #include <signal.h>
@@ -31,7 +32,9 @@
 
 int list_section(void *param)
 {
-	return 0;
+	section_list_display(param);
+
+	return REDRAW;
 }
 
 int exec_mbem(void *param)
