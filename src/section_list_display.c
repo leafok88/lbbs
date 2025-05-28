@@ -31,9 +31,10 @@ enum select_cmd_t
 	VIEW_ARTICLE = 1,
 	CHANGE_PAGE = 2,
 	REFRESH_SCREEN = 3,
+	CHANGE_NAME_DISPLAY = 4,
 };
 
-static int section_list_draw_items(SECTION_LIST *p_section, int page_id, ARTICLE *p_articles[], int article_count)
+static int section_list_draw_items(SECTION_LIST *p_section, int page_id, ARTICLE *p_articles[], int article_count, int display_nickname)
 {
 	char str_time[LINE_BUFFER_LEN];
 	struct tm tm_sub;
@@ -72,31 +73,32 @@ static int section_list_draw_items(SECTION_LIST *p_section, int page_id, ARTICLE
 			strftime(str_time, sizeof(str_time), "%m/%Y", &tm_sub);
 		}
 
-		strncpy(title_f, (p_articles[i]->transship ? "[转载]" : ""), sizeof(title_f) - 1);
+		strncpy(title_f, (p_articles[i]->tid == 0 ? "● " : ""), sizeof(title_f) - 1);
 		title_f[sizeof(title_f) - 1] = '\0';
+		strncat(title_f, (p_articles[i]->transship ? "[转载]" : ""), sizeof(title_f) - 1 - strnlen(title_f, sizeof(title_f)));
 		strncat(title_f, p_articles[i]->title, sizeof(title_f) - 1 - strnlen(title_f, sizeof(title_f)));
-		len = split_line(title_f, (p_articles[i]->tid == 0 ? 46 : 49), &eol, &title_f_len);
+		len = split_line(title_f, 47 - (display_nickname ? 8 : 0), &eol, &title_f_len);
 		if (title_f[len] != '\0')
 		{
 			title_f[len] = '\0';
 		}
 
 		moveto(4 + i, 1);
-		prints("  %7d %c %s%*s %s %s%s",
+		prints("  %7d %c %s%*s %s %s",
 			   p_articles[i]->aid,
 			   article_flag,
-			   p_articles[i]->username,
-			   BBS_username_max_len - (int)strnlen(p_articles[i]->username, sizeof(p_articles[i]->username)),
+			   (display_nickname ? p_articles[i]->nickname : p_articles[i]->username),
+			   (display_nickname ? BBS_nickname_max_len - (int)strnlen(p_articles[i]->nickname, sizeof(p_articles[i]->nickname))
+								 : BBS_username_max_len - (int)strnlen(p_articles[i]->username, sizeof(p_articles[i]->username))),
 			   "",
 			   str_time,
-			   (p_articles[i]->tid == 0 ? "● " : ""),
 			   title_f);
 	}
 
 	return 0;
 }
 
-static int section_list_draw_screen(SECTION_LIST *p_section)
+static int section_list_draw_screen(SECTION_LIST *p_section, int display_nickname)
 {
 	char str_section_master[LINE_BUFFER_LEN] = "诚征版主中";
 	char str_section_name[LINE_BUFFER_LEN];
@@ -110,9 +112,16 @@ static int section_list_draw_screen(SECTION_LIST *p_section)
 	clearscr();
 	show_top(str_section_master, p_section->stitle, str_section_name);
 	moveto(2, 0);
-	prints("离开[\033[1;32m←\033[0;37m,\033[1;32mESC\033[0;37m] 选择[\033[1;32m↑\033[0;37m,\033[1;32m↓\033[0;37m] 阅读[\033[1;32m→\033[0;37m,\033[1;32mENTER\033[0;37m]\033[m");
+	prints("离开[\033[1;32m←\033[0;37m,\033[1;32mESC\033[0;37m] 选择[\033[1;32m↑\033[0;37m,\033[1;32m↓\033[0;37m] 阅读[\033[1;32m→\033[0;37m,\033[1;32mENTER\033[0;37m]\033[m 昵称[\033[1;32mn\033[0;37m]\033[m");
 	moveto(3, 0);
-	prints("\033[44;37m  \033[1;37m 编  号   发 布 者     日  期  文 章 标 题                                    \033[m");
+	if (display_nickname)
+	{
+		prints("\033[44;37m  \033[1;37m 编  号   发 布 者 昵 称       日  期  文 章 标 题                            \033[m");
+	}
+	else
+	{
+		prints("\033[44;37m  \033[1;37m 编  号   发 布 者     日  期  文 章 标 题                                    \033[m");
+	}
 	show_bottom("");
 
 	return 0;
@@ -149,6 +158,8 @@ static enum select_cmd_t section_list_select(int total_page, int item_count, int
 				return EXIT_SECTION; // exit section
 			}
 			continue;
+		case 'n':
+			return CHANGE_NAME_DISPLAY;
 		case CR:
 			igetch_reset();
 		case KEY_RIGHT:
@@ -232,6 +243,8 @@ static enum select_cmd_t section_list_select(int total_page, int item_count, int
 
 int section_list_display(const char *sname)
 {
+	static int display_nickname = 0;
+
 	SECTION_LIST *p_section;
 	ARTICLE *p_articles[BBS_article_limit_per_page];
 	int article_count;
@@ -246,7 +259,7 @@ int section_list_display(const char *sname)
 		return -1;
 	}
 
-	if (section_list_draw_screen(p_section) < 0)
+	if (section_list_draw_screen(p_section, display_nickname) < 0)
 	{
 		log_error("section_list_draw_screen() error\n");
 		return -2;
@@ -269,7 +282,7 @@ int section_list_display(const char *sname)
 
 	while (!SYS_server_exit)
 	{
-		ret = section_list_draw_items(p_section, page_id, p_articles, article_count);
+		ret = section_list_draw_items(p_section, page_id, p_articles, article_count, display_nickname);
 		if (ret < 0)
 		{
 			log_error("section_list_draw_items(sid=%d, page_id=%d) error\n", p_section->sid, page_id);
@@ -305,7 +318,15 @@ int section_list_display(const char *sname)
 		case VIEW_ARTICLE:
 			log_std("Debug: article %d selected\n", p_articles[selected_index]->aid);
 		case REFRESH_SCREEN:
-			if (section_list_draw_screen(p_section) < 0)
+			if (section_list_draw_screen(p_section, display_nickname) < 0)
+			{
+				log_error("section_list_draw_screen() error\n");
+				return -2;
+			}
+			break;
+		case CHANGE_NAME_DISPLAY:
+			display_nickname = !display_nickname;
+			if (section_list_draw_screen(p_section, display_nickname) < 0)
 			{
 				log_error("section_list_draw_screen() error\n");
 				return -2;
