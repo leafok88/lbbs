@@ -473,7 +473,7 @@ int show_bottom(const char *msg)
 	time_t time_online;
 	struct tm *tm_online;
 	char msg_f[21];
-	int truncate;
+	int eol;
 	int msg_len;
 	int len;
 	int len_username;
@@ -483,12 +483,8 @@ int show_bottom(const char *msg)
 	strncpy(msg_f, msg, sizeof(msg_f) - 1);
 	msg_f[sizeof(msg_f) - 1] = '\0';
 
-	len = split_line(msg_f, 20, &truncate, &msg_len);
-	if (truncate)
-	{
-		log_error("Status string is truncated\n");
-		msg_f[len] = '\0';
-	}
+	len = split_line(msg_f, 20, &eol, &msg_len);
+	msg_f[len] = '\0';
 
 	len_username = (int)strnlen(BBS_username, sizeof(BBS_username));
 
