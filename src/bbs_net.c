@@ -357,7 +357,7 @@ int bbsnet_connect(int n)
 				else if (events[i].data.fd == STDIN_FILENO)
 				{
 					ch = igetch(0);
-					if (ch == Ctrl('C'))
+					if (ch == Ctrl('C') || ch == KEY_ESC)
 					{
 						goto cleanup;
 					}
@@ -698,6 +698,7 @@ int bbs_net()
 		switch (ch)
 		{
 		case KEY_NULL:	// broken pipe
+		case KEY_ESC:
 		case Ctrl('C'): // user cancel
 			goto cleanup;
 		case KEY_TIMEOUT:

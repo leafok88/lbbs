@@ -371,6 +371,7 @@ int display_file_ex(const char *filename, int begin_line, int wait)
 					max_lines = SCREEN_ROWS - 1;
 					clrline(begin_line, SCREEN_ROWS);
 					break;
+				case KEY_ESC:
 				case KEY_LEFT:
 				case 'q':
 				case 'Q':

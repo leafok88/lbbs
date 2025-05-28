@@ -737,6 +737,12 @@ int igetch(int timeout)
 		log_error("close(epoll) error (%d)\n");
 	}
 
+	// For ESC key
+	if (out == 0 && in_esc)
+	{
+		out = KEY_ESC;
+	}
+
 	// for debug
 	// if (out != KEY_TIMEOUT && out != KEY_NULL)
 	// {

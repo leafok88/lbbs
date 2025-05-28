@@ -1116,6 +1116,7 @@ int menu_control(MENU_SET *p_menu_set, int key)
 			return ((*(p_menu_item->action_cmd_handler))((void *)(p_menu_item->name)));
 		}
 		break;
+	case KEY_ESC:
 	case KEY_LEFT:
 		if (p_menu_set->choose_step > 0)
 		{
@@ -1307,6 +1308,11 @@ int menu_control(MENU_SET *p_menu_set, int key)
 int unload_menu(MENU_SET *p_menu_set)
 {
 	int shmid;
+
+	if (p_menu_set == NULL)
+	{
+		return -1;
+	}
 
 	if (p_menu_set->p_menu_name_dict != NULL)
 	{
