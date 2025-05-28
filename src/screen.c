@@ -22,7 +22,6 @@
 #include "io.h"
 #include "file_loader.h"
 #include <fcntl.h>
-#include <string.h>
 #include <ctype.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -32,10 +31,13 @@
 #include <sys/param.h>
 #include <sys/shm.h>
 
+#define _POSIX_C_SOURCE 200809L
+#include <string.h>
+
 #define ACTIVE_BOARD_HEIGHT 8
 
 #define STR_TOP_LEFT_MAX_LEN 40
-#define STR_TOP_CENTER_MAX_LEN 20
+#define STR_TOP_MIDDLE_MAX_LEN 20
 #define STR_TOP_RIGHT_MAX_LEN 20
 
 void moveto(int row, int col)
@@ -431,36 +433,36 @@ cleanup:
 	return ch;
 }
 
-int show_top(const char *str_left, const char *str_center)
+int show_top(const char *str_left, const char *str_middle)
 {
-	int truncate;
+	char str_left_f[STR_TOP_LEFT_MAX_LEN + 1];
+	char str_middle_f[STR_TOP_MIDDLE_MAX_LEN + 1];
+	char str_right_f[STR_TOP_RIGHT_MAX_LEN + 1];
 	int str_left_len;
-	int str_center_len;
+	int str_middle_len;
 	int str_right_len;
+	int eol;
 	int len;
 
-	len = split_line(str_left, STR_TOP_LEFT_MAX_LEN, &truncate, &str_left_len);
-	if (truncate)
-	{
-		log_error("Left string is truncated at len = %d\n", len);
-	}
+	strncpy(str_left_f, str_left, sizeof(str_left_f) - 1);
+	str_left_f[sizeof(str_left_f) - 1] = '\0';
+	len = split_line(str_left_f, STR_TOP_LEFT_MAX_LEN, &eol, &str_left_len);
+	str_left_f[len] = '\0';
 
-	len = split_line(str_center, STR_TOP_CENTER_MAX_LEN, &truncate, &str_center_len);
-	if (truncate)
-	{
-		log_error("Center string is truncated at len = %d\n", len);
-	}
+	strncpy(str_middle_f, str_middle, sizeof(str_middle_f) - 1);
+	str_middle_f[sizeof(str_middle_f) - 1] = '\0';
+	len = split_line(str_middle, STR_TOP_MIDDLE_MAX_LEN, &eol, &str_middle_len);
+	str_middle_f[len] = '\0';
 
-	len = split_line(BBS_current_section_name, STR_TOP_RIGHT_MAX_LEN, &truncate, &str_right_len);
-	if (truncate)
-	{
-		log_error("Section name is truncated at len = %d\n", len);
-	}
+	strncpy(str_right_f, BBS_current_section_name, sizeof(str_right_f) - 1);
+	str_right_f[sizeof(str_right_f) - 1] = '\0';
+	len = split_line(BBS_current_section_name, STR_TOP_RIGHT_MAX_LEN, &eol, &str_right_len);
+	str_right_f[len] = '\0';
 
 	moveto(1, 0);
 	clrtoeol();
 	prints("\033[1;44;33m%s\033[37m%*s%*s\033[33m ÌÖÂÛÇø [%s]\033[m",
-		   str_left, 44 - str_left_len, str_center, 34 - str_center_len - str_right_len, "", BBS_current_section_name);
+		   str_left_f, 44 - str_left_len, str_middle_f, 34 - str_middle_len - str_right_len, "", str_right_f);
 
 	return 0;
 }

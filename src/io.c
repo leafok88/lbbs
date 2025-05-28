@@ -58,6 +58,7 @@ int prints(const char *format, ...)
 		{
 			errno = EAGAIN;
 			ret = (BUFSIZ - stdout_buf_len - ret);
+			log_error("Output buffer is full, additional %d is required\n", ret);
 		}
 	}
 

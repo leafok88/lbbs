@@ -16,11 +16,13 @@
 
 #include "io.h"
 #include <stdio.h>
-#include <string.h>
 #include <stdarg.h>
 #include <sys/types.h>
 #include <time.h>
 #include <unistd.h>
+
+#define _POSIX_C_SOURCE 200809L
+#include <string.h>
 
 FILE *fp_log_std;
 FILE *fp_log_err;
