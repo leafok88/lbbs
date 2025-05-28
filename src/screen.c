@@ -34,6 +34,10 @@
 
 #define ACTIVE_BOARD_HEIGHT 8
 
+#define STR_TOP_LEFT_MAX_LEN 40
+#define STR_TOP_CENTER_MAX_LEN 20
+#define STR_TOP_RIGHT_MAX_LEN 20
+
 void moveto(int row, int col)
 {
 	if (row >= 0)
@@ -427,34 +431,36 @@ cleanup:
 	return ch;
 }
 
-int show_top(const char *status)
+int show_top(const char *str_left, const char *str_center)
 {
-	char status_f[21];
 	int truncate;
-	int status_len;
-	int section_name_len;
+	int str_left_len;
+	int str_center_len;
+	int str_right_len;
 	int len;
 
-	strncpy(status_f, status, sizeof(status_f) - 1);
-	status_f[sizeof(status_f) - 1] = '\0';
-
-	len = split_line(status_f, 20, &truncate, &status_len);
+	len = split_line(str_left, STR_TOP_LEFT_MAX_LEN, &truncate, &str_left_len);
 	if (truncate)
 	{
-		log_error("Status string is truncated\n");
-		status_f[len] = '\0';
+		log_error("Left string is truncated at len = %d\n", len);
 	}
 
-	len = split_line(BBS_current_section_name, BBS_section_name_max_len, &truncate, &section_name_len);
+	len = split_line(str_center, STR_TOP_CENTER_MAX_LEN, &truncate, &str_center_len);
 	if (truncate)
 	{
-		log_error("Section name is truncated\n");
+		log_error("Center string is truncated at len = %d\n", len);
+	}
+
+	len = split_line(BBS_current_section_name, STR_TOP_RIGHT_MAX_LEN, &truncate, &str_right_len);
+	if (truncate)
+	{
+		log_error("Section name is truncated at len = %d\n", len);
 	}
 
 	moveto(1, 0);
 	clrtoeol();
 	prints("\033[1;44;33m%s\033[37m%*s%*s\033[33m ÌÖÂÛÇø [%s]\033[m",
-		   status_f, 44 - status_len, BBS_name, 26 - section_name_len, "", BBS_current_section_name);
+		   str_left, 44 - str_left_len, str_center, 34 - str_center_len - str_right_len, "", BBS_current_section_name);
 
 	return 0;
 }

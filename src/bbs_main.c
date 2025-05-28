@@ -191,7 +191,7 @@ int bbs_center()
 
 	clearscr();
 
-	show_top("");
+	show_top("", BBS_name);
 	show_active_board();
 	show_bottom("");
 	display_menu(p_bbs_menu);
@@ -230,7 +230,7 @@ int bbs_center()
 			case REDRAW:
 				t_last_action = time(0);
 				clearscr();
-				show_top("");
+				show_top("", BBS_name);
 				show_active_board();
 				show_bottom("");
 				display_menu(p_bbs_menu);
