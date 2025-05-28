@@ -14,6 +14,9 @@
  *                                                                         *
  ***************************************************************************/
 
+#ifndef _SECTION_LIST_H_
+#define _SECTION_LIST_H_
+
 #include "common.h"
 #include "bbs.h"
 #include <time.h>
@@ -117,3 +120,5 @@ extern int section_list_rd_unlock(SECTION_LIST *p_section);
 extern int section_list_rw_unlock(SECTION_LIST *p_section);
 extern int section_list_rd_lock(SECTION_LIST *p_section);
 extern int section_list_rw_lock(SECTION_LIST *p_section);
+
+#endif //_SECTION_LIST_H_

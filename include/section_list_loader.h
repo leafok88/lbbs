@@ -14,6 +14,9 @@
  *                                                                         *
  ***************************************************************************/
 
+#ifndef _SECTION_LIST_LOADER_H_
+#define _SECTION_LIST_LOADER_H_
+
 #include "section_list.h"
 #include <mysql.h>
 
@@ -43,3 +46,5 @@ extern int section_list_loader_reload(void);
 // Return on success : real page_id (>= 0)
 //           failure : error number (< 0)
 extern int query_section_articles(SECTION_LIST *p_section, int32_t page_id, ARTICLE *p_articles[], int32_t *p_article_count);
+
+#endif //_SECTION_LIST_LOADER_H_
