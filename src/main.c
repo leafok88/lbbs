@@ -55,6 +55,8 @@ int main(int argc, char *argv[])
 	int std_log_redir = 0;
 	int error_log_redir = 0;
 	FILE *fp;
+	int ret;
+	int last_aid;
 
 	// Parse args
 	for (int i = 1; i < argc; i++)
@@ -223,13 +225,19 @@ int main(int argc, char *argv[])
 	}
 
 	set_last_article_op_log_from_db();
-	
+	last_aid = 0;
+
 	// Load section articles
-	if (append_articles_from_db(0, 1) < 0)
+	do
 	{
-		log_error("append_articles_from_db(0, 1) error\n");
-		goto cleanup;
-	}
+		if ((ret = append_articles_from_db(last_aid + 1, 1, LOAD_ARTICLE_COUNT_LIMIT)) < 0)
+		{
+			log_error("append_articles_from_db(0, 1, %d) error\n", LOAD_ARTICLE_COUNT_LIMIT);
+			goto cleanup;
+		}
+
+		last_aid = article_block_last_aid();
+	} while (ret == LOAD_ARTICLE_COUNT_LIMIT);
 
 	log_std("Initially load %d articles, last_aid = %d\n", article_block_article_count(), article_block_last_aid());
 

@@ -158,7 +158,7 @@ int load_section_config_from_db(void)
 	return ret;
 }
 
-int append_articles_from_db(int32_t start_aid, int global_lock)
+int append_articles_from_db(int32_t start_aid, int global_lock, int article_count_limit)
 {
 	MYSQL *db;
 	MYSQL_RES *rs;
@@ -168,6 +168,7 @@ int append_articles_from_db(int32_t start_aid, int global_lock)
 	ARTICLE *p_topic;
 	SECTION_LIST *p_section = NULL;
 	int32_t last_sid = 0;
+	int article_count = 0;
 	int ret = 0;
 	int i;
 
@@ -181,15 +182,15 @@ int append_articles_from_db(int32_t start_aid, int global_lock)
 	snprintf(sql, sizeof(sql),
 			 "SELECT AID, TID, SID, CID, UID, visible, excerption, ontop, `lock`, "
 			 "transship, username, nickname, title, UNIX_TIMESTAMP(sub_dt) AS sub_dt "
-			 "FROM bbs WHERE AID >= %d ORDER BY AID",
-			 start_aid);
+			 "FROM bbs WHERE AID >= %d ORDER BY AID LIMIT %d",
+			 start_aid, article_count_limit);
 
 	if (mysql_query(db, sql) != 0)
 	{
 		log_error("Query article list error: %s\n", mysql_error(db));
 		return -3;
 	}
-	if ((rs = mysql_use_result(db)) == NULL)
+	if ((rs = mysql_store_result(db)) == NULL)
 	{
 		log_error("Get article list data failed\n");
 		return -3;
@@ -281,6 +282,10 @@ int append_articles_from_db(int32_t start_aid, int global_lock)
 			ret = -3;
 			break;
 		}
+
+		article_count++;
+
+		// TODO: generate content cache
 	}
 
 	// release lock of last section
@@ -306,7 +311,7 @@ cleanup:
 
 	mysql_close(db);
 
-	return ret;
+	return (ret < 0 ? ret : article_count);
 }
 
 int set_last_article_op_log_from_db(void)
@@ -349,7 +354,7 @@ int set_last_article_op_log_from_db(void)
 	return last_article_op_log_mid;
 }
 
-int apply_article_op_log_from_db(void)
+int apply_article_op_log_from_db(int op_count_limit)
 {
 	MYSQL *db;
 	MYSQL_RES *rs, *rs2;
@@ -360,6 +365,7 @@ int apply_article_op_log_from_db(void)
 	SECTION_LIST *p_section_dest;
 	int32_t last_sid = 0;
 	int32_t sid_dest;
+	int op_count = 0;
 	int ret = 0;
 
 	db = db_open();
@@ -371,8 +377,9 @@ int apply_article_op_log_from_db(void)
 
 	snprintf(sql, sizeof(sql),
 			 "SELECT MID, AID, type FROM bbs_article_op "
-			 "WHERE MID > %d AND type NOT IN ('A', 'M') ORDER BY MID",
-			 last_article_op_log_mid);
+			 "WHERE MID > %d AND type NOT IN ('A') "
+			 "ORDER BY MID LIMIT %d",
+			 last_article_op_log_mid, op_count_limit);
 
 	if (mysql_query(db, sql) != 0)
 	{
@@ -451,7 +458,38 @@ int apply_article_op_log_from_db(void)
 			p_article->lock = 0;
 			break;
 		case 'M': // Modify article
-			log_error("Operation type=M should not be found\n");
+			snprintf(sql, sizeof(sql),
+					 "SELECT CID FROM bbs WHERE AID = %d",
+					 p_article->aid);
+
+			if (mysql_query(db, sql) != 0)
+			{
+				log_error("Query article error: %s\n", mysql_error(db));
+				ret = -3;
+				break;
+			}
+			if ((rs2 = mysql_store_result(db)) == NULL)
+			{
+				log_error("Get article data failed\n");
+				ret = -3;
+				break;
+			}
+			if ((row2 = mysql_fetch_row(rs2)))
+			{
+				p_article->cid = atoi(row2[0]);
+			}
+			else
+			{
+				p_article->cid = 0;
+				ret = -4;
+			}
+			mysql_free_result(rs2);
+
+			if (p_article->cid > 0)
+			{
+				// TODO: generate content cache
+			}
+
 			break;
 		case 'T': // Move article
 			snprintf(sql, sizeof(sql),
@@ -536,6 +574,8 @@ int apply_article_op_log_from_db(void)
 
 		// Update MID with last successfully proceeded article_op_log
 		last_article_op_log_mid = atoi(row[0]);
+
+		op_count++;
 	}
 
 	// release lock of last section
@@ -551,7 +591,7 @@ int apply_article_op_log_from_db(void)
 
 	mysql_close(db);
 
-	return ret;
+	return (ret < 0 ? ret : op_count);
 }
 
 int section_list_loader_launch(void)
@@ -612,21 +652,24 @@ int section_list_loader_launch(void)
 		}
 
 		// Load section articles
-		last_aid = article_block_last_aid();
 		article_count = article_block_article_count();
 
-		if ((ret = append_articles_from_db(last_aid + 1, 0)) < 0)
+		do
 		{
-			log_error("append_articles_from_db(%d, 0) error\n", last_aid + 1);
+			last_aid = article_block_last_aid();
 
-			if (ret == ERR_UNKNOWN_SECTION)
+			if ((ret = append_articles_from_db(last_aid + 1, 0, LOAD_ARTICLE_COUNT_LIMIT)) < 0)
 			{
-				SYS_section_list_reload = 1; // Force reload section_list
+				log_error("append_articles_from_db(%d, 0, %d) error\n", last_aid + 1, LOAD_ARTICLE_COUNT_LIMIT);
+
+				if (ret == ERR_UNKNOWN_SECTION)
+				{
+					SYS_section_list_reload = 1; // Force reload section_list
+				}
 			}
-		}
+		} while (ret == LOAD_ARTICLE_COUNT_LIMIT);
 
 		load_count = article_block_article_count() - article_count;
-
 		if (load_count > 0)
 		{
 			log_std("Incrementally load %d articles, last_aid = %d\n", load_count, article_block_last_aid());
@@ -640,15 +683,18 @@ int section_list_loader_launch(void)
 		// Load article_op log
 		last_mid = last_article_op_log_mid;
 
-		if ((ret = apply_article_op_log_from_db()) < 0)
+		do
 		{
-			log_error("apply_article_op_log_from_db() error\n");
-
-			if (ret == ERR_UNKNOWN_SECTION)
+			if ((ret = apply_article_op_log_from_db(LOAD_ARTICLE_COUNT_LIMIT)) < 0)
 			{
-				SYS_section_list_reload = 1; // Force reload section_list
+				log_error("apply_article_op_log_from_db() error\n");
+
+				if (ret == ERR_UNKNOWN_SECTION)
+				{
+					SYS_section_list_reload = 1; // Force reload section_list
+				}
 			}
-		}
+		} while (ret == LOAD_ARTICLE_COUNT_LIMIT);
 
 		if (last_article_op_log_mid > last_mid)
 		{
@@ -719,7 +765,11 @@ int query_section_articles(SECTION_LIST *p_section, int32_t page_id, ARTICLE *p_
 		return -2;
 	}
 
-	if (page_id < 0 || page_id >= p_section->page_count)
+	if (p_section->visible_article_count == 0)
+	{
+		*p_article_count = 0;
+	}
+	else if (page_id < 0 || page_id >= p_section->page_count)
 	{
 		log_error("Invalid page_id=%d, not in range [0, %d)\n", page_id, p_section->page_count);
 		ret = -3;

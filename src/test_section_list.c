@@ -179,7 +179,7 @@ int main(int argc, char *argv[])
 			article.tid = 0;
 			article.sid = i * 3 + 1;
 			article.cid = article.aid;
-			article.uid = 1; // TODO: randomize
+			article.uid = 1;
 			article.visible = 1;
 			article.excerption = 0;
 			article.ontop = 0;
@@ -302,7 +302,7 @@ int main(int argc, char *argv[])
 			article.tid = ((article.aid < section_first_aid + group_count) ? 0 : (section_first_aid + j % group_count));
 			article.sid = i * 3 + 1;
 			article.cid = article.aid;
-			article.uid = 1; // TODO: randomize
+			article.uid = 1;
 			article.visible = 1;
 			article.excerption = 0;
 			article.ontop = 0;
@@ -760,7 +760,7 @@ int main(int argc, char *argv[])
 			article.tid = ((article.aid < section_first_aid + group_count) ? 0 : (section_first_aid + j % group_count));
 			article.sid = i * 3 + 1;
 			article.cid = article.aid;
-			article.uid = 1; // TODO: randomize
+			article.uid = 1;
 			article.visible = 1;
 			article.excerption = 0;
 			article.ontop = 0;

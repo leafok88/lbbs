@@ -610,7 +610,7 @@ inline static void sid_to_str(int32_t sid, char *p_sid_str)
 	p_sid_str[i] = '\0';
 }
 
-SECTION_LIST *section_list_create(int32_t sid, const char *sname, const char *stitle, const char *master_name)
+SECTION_LIST *section_list_create(int32_t sid, const char *sname, const char *stitle, const char *master_list)
 {
 	SECTION_LIST *p_section;
 	char sid_str[SID_STR_LEN];
@@ -639,7 +639,7 @@ SECTION_LIST *section_list_create(int32_t sid, const char *sname, const char *st
 	strncpy(p_section->stitle, stitle, sizeof(p_section->stitle) - 1);
 	p_section->stitle[sizeof(p_section->stitle) - 1] = '\0';
 
-	strncpy(p_section->master_list, master_name, sizeof(p_section->master_list) - 1);
+	strncpy(p_section->master_list, master_list, sizeof(p_section->master_list) - 1);
 	p_section->master_list[sizeof(p_section->master_list) - 1] = '\0';
 
 	if (trie_dict_set(p_section_list_pool->p_trie_dict_section_by_name, sname, p_section_list_pool->section_count) != 1)

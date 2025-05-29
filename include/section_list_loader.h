@@ -21,6 +21,7 @@
 #include <mysql.h>
 
 #define ERR_UNKNOWN_SECTION -101
+#define LOAD_ARTICLE_COUNT_LIMIT 1000
 
 extern int section_list_loader_pid;
 extern int last_article_op_log_mid;
@@ -29,15 +30,17 @@ extern int load_section_config_from_db(void);
 
 // Input global_lock = 0 : lock / unlock corresponding section per article
 //                     1 : lock / unlock all sections per invocation
-// Return on success : last article aid (> 0)
-//                   : no article append (= 0)
+// Return on success : count of appended articles (>= 0)
 //           failure : lock / unlock error (-1)
 //                   : unknown section found (ERR_UNKNOWN_SECTION)
-extern int append_articles_from_db(int32_t start_aid, int global_lock);
+extern int append_articles_from_db(int32_t start_aid, int global_lock, int article_count_limit);
 
 extern int set_last_article_op_log_from_db(void);
 
-extern int apply_article_op_log_from_db(void);
+// Return on success : count of appended articles (>= 0)
+//           failure : lock / unlock error (-1)
+//                   : unknown section found (ERR_UNKNOWN_SECTION)
+extern int apply_article_op_log_from_db(int op_count_limit);
 
 extern int section_list_loader_launch(void);
 
