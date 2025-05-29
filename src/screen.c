@@ -473,7 +473,7 @@ int show_bottom(const char *msg)
 	char str_time[LINE_BUFFER_LEN];
 	time_t time_online;
 	struct tm *tm_online;
-	char msg_f[23];
+	char msg_f[LINE_BUFFER_LEN];
 	int eol;
 	int msg_len;
 	int len;
@@ -483,15 +483,12 @@ int show_bottom(const char *msg)
 
 	msg_f[0] = '\0';
 	msg_len = 0;
-	if (msg != NULL && msg[0] != '\0')
+	if (msg != NULL)
 	{
-		msg_f[0] = '[';
-		strncpy(msg_f + 1, msg, sizeof(msg_f) - 2);
+		strncpy(msg_f, msg, sizeof(msg_f) - 1);
 		msg_f[sizeof(msg_f) - 1] = '\0';
-		len = split_line(msg_f + 1, 20, &eol, &msg_len);
-		msg_f[len + 1] = ']';
-		msg_f[len + 2] = '\0';
-		msg_len += 2;
+		len = split_line(msg_f, 23, &eol, &msg_len);
+		msg_f[len] = '\0';
 	}
 
 	len_username = (int)strnlen(BBS_username, sizeof(BBS_username));
@@ -501,9 +498,9 @@ int show_bottom(const char *msg)
 
 	moveto(SCREEN_ROWS, 0);
 	clrtoeol();
-	prints("\033[1;44;33m时间[\033[36m%s\033[33m] %s%*s 帐号[\033[36m%s\033[33m]"
+	prints("\033[1;44;33m时间[\033[36m%s\033[33m]%s%*s \033[33m帐号[\033[36m%s\033[33m]"
 		   "[\033[36m%1d\033[33m天\033[36m%2d\033[33m时\033[36m%2d\033[33m分]\033[m",
-		   str_time, msg_f, 34 - msg_len - len_username, "", BBS_username,
+		   str_time, msg_f, 35 - msg_len - len_username, "", BBS_username,
 		   tm_online->tm_mday - 1, tm_online->tm_hour, tm_online->tm_min);
 
 	return 0;

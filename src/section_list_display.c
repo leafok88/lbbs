@@ -307,7 +307,10 @@ int section_list_display(const char *sname)
 			return -4;
 		}
 
-		snprintf(page_info_str, sizeof(page_info_str), "µÚ%d/%dÒ³", page_id + 1, MAX(page_count, 1));
+		snprintf(page_info_str, sizeof(page_info_str),
+				 "\033[33m[µÚ\033[36m%d\033[33m/\033[36m%d\033[33mÒ³]",
+				 page_id + 1, MAX(page_count, 1));
+		
 		show_bottom(page_info_str);
 		iflush();
 
