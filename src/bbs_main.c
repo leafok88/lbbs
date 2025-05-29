@@ -207,6 +207,7 @@ int bbs_center()
 
 			show_active_board();
 			show_bottom("");
+			display_menu_cursor(p_bbs_menu, 1);
 			iflush();
 		}
 

@@ -115,6 +115,7 @@ extern int unload_menu(MENU_SET *p_menu_set);
 extern int set_menu_shm_readonly(MENU_SET *p_menu_set);
 extern int detach_menu_shm(MENU_SET *p_menu_set);
 
+extern int display_menu_cursor(MENU_SET *p_menu_set, int show);
 extern int menu_control(MENU_SET *p_menu_set, int key);
 extern int display_menu(MENU_SET *p_menu_set);
 

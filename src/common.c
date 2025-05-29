@@ -70,7 +70,7 @@ const char *get_time_str(char *s, size_t len)
 
 	time(&curtime);
 	localtime_r(&curtime, &local_tm);
-	size_t j = strftime(s, len, "%Y年%m月%d日%H:%M:%S 星期", &local_tm);
+	size_t j = strftime(s, len, "%b %d %H:%M 星期", &local_tm);
 
 	if (j == 0 || j + strlen(weekday[local_tm.tm_wday]) + 1 > len)
 	{

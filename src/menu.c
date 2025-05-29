@@ -807,7 +807,7 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 	return 0;
 }
 
-static int display_menu_cursor(MENU_SET *p_menu_set, int show)
+int display_menu_cursor(MENU_SET *p_menu_set, int show)
 {
 	MENU_ID menu_id;
 	MENU_ITEM_ID menu_item_id;
