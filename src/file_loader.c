@@ -29,8 +29,6 @@
 #include <sys/shm.h>
 #include <sys/ipc.h>
 
-#define MAX_SPLIT_FILE_LINES 65536
-
 struct shm_header_t
 {
 	int shmid;

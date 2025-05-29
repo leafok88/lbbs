@@ -1,5 +1,5 @@
 /***************************************************************************
-						  str_process.h  -  description
+					   article_cache.h  -  description
 							 -------------------
 	Copyright            : (C) 2004-2025 by Leaflet
 	Email                : leaflet@leafok.com
@@ -14,15 +14,25 @@
  *                                                                         *
  ***************************************************************************/
 
-#ifndef _STR_PROCESS_H_
-#define _STR_PROCESS_H_
+#ifndef _ARTICLE_CACHE_H_
+#define _ARTICLE_CACHE_H_
 
-#include <stdio.h>
+#include "common.h"
+#include "str_process.h"
+#include "section_list.h"
 
-#define MAX_SPLIT_FILE_LINES 65536
+struct article_cache_t
+{
+	void *p_data;
+	size_t data_len;
+	long line_total;
+	long line_offsets[MAX_SPLIT_FILE_LINES];
+};
+typedef struct article_cache_t ARTICLE_CACHE;
 
-extern int split_line(const char *buffer, int max_display_len, int *p_eol, int *p_display_len);
+extern int article_cache_generate(const char *cache_dir, const ARTICLE *p_article, const char *content);
 
-extern long split_data_lines(const char *p_buf, int max_display_len, long *p_line_offsets, long line_offsets_count);
+extern int article_cache_load(ARTICLE_CACHE *p_cache, const char *cache_dir, const ARTICLE *p_article);
+extern int article_cache_unload(ARTICLE_CACHE *p_cache);
 
-#endif //_STR_PROCESS_H_
+#endif //_ARTICLE_CACHE_H_

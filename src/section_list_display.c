@@ -16,6 +16,7 @@
 
 #include "section_list_display.h"
 #include "section_list_loader.h"
+#include "article_cache.h"
 #include "common.h"
 #include "io.h"
 #include "screen.h"
@@ -256,6 +257,7 @@ int section_list_display(const char *sname)
 	int page_count;
 	int page_id = 0;
 	int selected_index = 0;
+	ARTICLE_CACHE article_cache;
 	int ret;
 
 	p_section = section_list_find_by_name(sname);
@@ -338,7 +340,23 @@ int section_list_display(const char *sname)
 			}
 			break;
 		case VIEW_ARTICLE:
-			log_std("Debug: article %d selected\n", p_articles[selected_index]->aid);
+			ret = article_cache_load(&article_cache, VAR_ARTICLE_CACHE_DIR, p_articles[selected_index]);
+			if (ret < 0)
+			{
+				log_error("article_cache_load(aid=%d, cid=%d)\n", p_articles[selected_index]->aid, p_articles[selected_index]->cid);
+				break;
+			}
+
+			log_std("Debug: view article aid = %d, cid = %d\n", p_articles[selected_index]->aid, p_articles[selected_index]->cid);
+
+			ret = article_cache_unload(&article_cache);
+			if (ret < 0)
+			{
+				log_error("article_cache_unload(aid=%d, cid=%d)\n", p_articles[selected_index]->aid, p_articles[selected_index]->cid);
+				break;
+			}
+
+			// TODO: locate last viewed article
 		case REFRESH_SCREEN:
 			if (section_list_draw_screen(sname, stitle, master_list, display_nickname) < 0)
 			{

@@ -15,6 +15,7 @@
  ***************************************************************************/
 
 #include "section_list_loader.h"
+#include "article_cache.h"
 #include "log.h"
 #include "database.h"
 #include "menu.h"
@@ -180,9 +181,11 @@ int append_articles_from_db(int32_t start_aid, int global_lock, int article_coun
 	}
 
 	snprintf(sql, sizeof(sql),
-			 "SELECT AID, TID, SID, CID, UID, visible, excerption, ontop, `lock`, "
-			 "transship, username, nickname, title, UNIX_TIMESTAMP(sub_dt) AS sub_dt "
-			 "FROM bbs WHERE AID >= %d ORDER BY AID LIMIT %d",
+			 "SELECT bbs.AID, TID, SID, bbs.CID, UID, visible, excerption, ontop, `lock`, "
+			 "transship, username, nickname, title, UNIX_TIMESTAMP(sub_dt) AS sub_dt, "
+			 "bbs_content.content "
+			 "FROM bbs INNER JOIN bbs_content ON bbs.CID = bbs_content.CID "
+			 "WHERE bbs.AID >= %d ORDER BY bbs.AID LIMIT %d",
 			 start_aid, article_count_limit);
 
 	if (mysql_query(db, sql) != 0)
@@ -190,7 +193,7 @@ int append_articles_from_db(int32_t start_aid, int global_lock, int article_coun
 		log_error("Query article list error: %s\n", mysql_error(db));
 		return -3;
 	}
-	if ((rs = mysql_store_result(db)) == NULL)
+	if ((rs = mysql_use_result(db)) == NULL)
 	{
 		log_error("Get article list data failed\n");
 		return -3;
@@ -238,7 +241,7 @@ int append_articles_from_db(int32_t start_aid, int global_lock, int article_coun
 		{
 			if ((ret = section_list_rw_unlock(p_section)) < 0)
 			{
-				log_error("section_list_rw_unlock(sid = %d) error\n", p_section->sid);
+				log_error("section_list_rw_unlock(sid=%d) error\n", p_section->sid);
 				break;
 			}
 		}
@@ -267,7 +270,7 @@ int append_articles_from_db(int32_t start_aid, int global_lock, int article_coun
 		{
 			if ((ret = section_list_rw_lock(p_section)) < 0)
 			{
-				log_error("section_list_rw_lock(sid = 0) error\n");
+				log_error("section_list_rw_lock(sid=0) error\n");
 				break;
 			}
 		}
@@ -277,7 +280,7 @@ int append_articles_from_db(int32_t start_aid, int global_lock, int article_coun
 
 		if (section_list_append_article(p_section, &article) < 0)
 		{
-			log_error("section_list_append_article(sid = %d, aid = %d) error\n",
+			log_error("section_list_append_article(sid=%d, aid=%d) error\n",
 					  p_section->sid, article.aid);
 			ret = -3;
 			break;
@@ -285,7 +288,12 @@ int append_articles_from_db(int32_t start_aid, int global_lock, int article_coun
 
 		article_count++;
 
-		// TODO: generate content cache
+		if (article_cache_generate(VAR_ARTICLE_CACHE_DIR, &article, row[i++]) < 0)
+		{
+			log_error("article_cache_generate(aid=%d, cid=%d) error\n", article.aid, article.cid);
+			ret = -4;
+			break;
+		}
 	}
 
 	// release lock of last section
@@ -293,7 +301,7 @@ int append_articles_from_db(int32_t start_aid, int global_lock, int article_coun
 	{
 		if ((ret = section_list_rw_unlock(p_section)) < 0)
 		{
-			log_error("section_list_rw_unlock(sid = %d) error\n", p_section->sid);
+			log_error("section_list_rw_unlock(sid=%d) error\n", p_section->sid);
 		}
 	}
 
@@ -302,7 +310,7 @@ int append_articles_from_db(int32_t start_aid, int global_lock, int article_coun
 	{
 		if ((ret = section_list_rw_unlock(NULL)) < 0)
 		{
-			log_error("section_list_rw_unlock(sid = 0) error\n");
+			log_error("section_list_rw_unlock(sid=0) error\n");
 		}
 	}
 
@@ -459,7 +467,9 @@ int apply_article_op_log_from_db(int op_count_limit)
 			break;
 		case 'M': // Modify article
 			snprintf(sql, sizeof(sql),
-					 "SELECT CID FROM bbs WHERE AID = %d",
+					 "SELECT bbs.CID, bbs_content.content "
+					 "FROM bbs INNER JOIN bbs_content ON bbs.CID = bbs_content.CID "
+					 "WHERE bbs.AID = %d",
 					 p_article->aid);
 
 			if (mysql_query(db, sql) != 0)
@@ -477,6 +487,12 @@ int apply_article_op_log_from_db(int op_count_limit)
 			if ((row2 = mysql_fetch_row(rs2)))
 			{
 				p_article->cid = atoi(row2[0]);
+
+				if (article_cache_generate(VAR_ARTICLE_CACHE_DIR, p_article, row2[1]) < 0)
+				{
+					log_error("article_cache_generate(aid=%d, cid=%d) error\n", p_article->aid, p_article->cid);
+					ret = -4;
+				}
 			}
 			else
 			{
@@ -484,12 +500,6 @@ int apply_article_op_log_from_db(int op_count_limit)
 				ret = -4;
 			}
 			mysql_free_result(rs2);
-
-			if (p_article->cid > 0)
-			{
-				// TODO: generate content cache
-			}
-
 			break;
 		case 'T': // Move article
 			snprintf(sql, sizeof(sql),

@@ -23,6 +23,7 @@
 #include "menu.h"
 #include "file_loader.h"
 #include "section_list_loader.h"
+#include <errno.h>
 #include <stdlib.h>
 #include <signal.h>
 #include <string.h>
@@ -147,6 +148,14 @@ int main(int argc, char *argv[])
 	if (load_conf(CONF_BBSD) < 0)
 	{
 		return -2;
+	}
+
+	// Check article cache dir
+	ret = mkdir(VAR_ARTICLE_CACHE_DIR, S_IRWXU | S_IRGRP);
+	if (ret == -1 && errno != EEXIST)
+	{
+		log_error("mkdir(%s) error (%d)\n", VAR_ARTICLE_CACHE_DIR, errno);
+		goto cleanup;
 	}
 
 	// Initialize data pools

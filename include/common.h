@@ -49,6 +49,8 @@ extern char app_version[256];
 #define VAR_SECTION_LIST_SHM "var/section_list_shm.~"
 #define VAR_TRIE_DICT_SHM "var/trie_dict_shm.~"
 
+#define VAR_ARTICLE_CACHE_DIR "var/articles/"
+
 // File loader
 extern const char *data_files_load_startup[];
 extern int data_files_load_startup_count;

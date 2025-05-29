@@ -1,7 +1,7 @@
 bin_PROGRAMS = bbsd
 EXTRA_PROGRAMS = test_trie_dict test_file_loader test_section_list 
 
-bbsd_SOURCES = bbs.c bbs_cmd.c bbs_main.c common.c database.c file_loader.c fork.c \
+bbsd_SOURCES = article_cache.c bbs.c bbs_cmd.c bbs_main.c common.c database.c file_loader.c fork.c \
 			   init.c io.c log.c login.c menu.c main.c menu_proc.c net_server.c \
 			   screen.c section_list.c section_list_display.c section_list_loader.c \
 			   str_process.c trie_dict.c user_priv.c
