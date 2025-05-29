@@ -277,9 +277,9 @@ int display_data(const void *p_data, long line_total, const long *p_line_offsets
 			}
 
 			snprintf(buffer, sizeof(buffer),
-					 "\033[1;44;33m第\033[36m%ld\033[33m-\033[36m%ld\033[33m行 (\033[36m%ld%%\033[33m) │ "
-					 "返回[\033[36m←\033[33m,\033[36mESC\033[33m] │ 移动[\033[36m↑\033[33m/\033[36m↓\033[33m/\033[36mPgUp\033[33m/\033[36mPgDn\033[33m] │ "
-					 "帮助[\033[36mh\033[33m] │",
+					 "\033[1;44;33m第\033[32m%ld\033[33m-\033[32m%ld\033[33m行 (\033[32m%ld%%\033[33m) │ "
+					 "返回[\033[32m←\033[33m,\033[32mESC\033[33m] │ 移动[\033[32m↑\033[33m/\033[32m↓\033[33m/\033[32mPgUp\033[33m/\033[32mPgDn\033[33m] │ "
+					 "帮助[\033[32mh\033[33m] │",
 					 line_current - (line - 1) + 1,
 					 MIN(line_current - (line - 1) + (SCREEN_ROWS - 2), line_total),
 					 percentile);
