@@ -113,15 +113,17 @@ static int section_list_draw_screen(const char *sname, const char *stitle, const
 	clearscr();
 	show_top(str_section_master, stitle, str_section_name);
 	moveto(2, 0);
-	prints("离开[\033[1;32m←\033[0;37m,\033[1;32mESC\033[0;37m] 选择[\033[1;32m↑\033[0;37m,\033[1;32m↓\033[0;37m] 阅读[\033[1;32m→\033[0;37m,\033[1;32mENTER\033[0;37m]\033[m 昵称[\033[1;32mn\033[0;37m]\033[m");
+	prints("返回[\033[1;32m←\033[0;37m,\033[1;32mESC\033[0;37m] 选择[\033[1;32m↑\033[0;37m,\033[1;32m↓\033[0;37m] "
+		   "阅读[\033[1;32m→\033[0;37m,\033[1;32mENTER\033[0;37m]\033[m %s[\033[1;32mn\033[0;37m]\033[m",
+		   (display_nickname ? "显示用户名" : "显示昵称"));
 	moveto(3, 0);
 	if (display_nickname)
 	{
-		prints("\033[44;37m  \033[1;37m 编  号   发 布 者 昵 称       日  期  文 章 标 题                            \033[m");
+		prints("\033[44;37m  \033[1;37m 编  号   发布者昵称           日  期  文章标题                               \033[m");
 	}
 	else
 	{
-		prints("\033[44;37m  \033[1;37m 编  号   发 布 者     日  期  文 章 标 题                                    \033[m");
+		prints("\033[44;37m  \033[1;37m 编  号   发 布 者     日  期  文章标题                                       \033[m");
 	}
 
 	return 0;
@@ -310,7 +312,7 @@ int section_list_display(const char *sname)
 		snprintf(page_info_str, sizeof(page_info_str),
 				 "\033[33m[第\033[36m%d\033[33m/\033[36m%d\033[33m页]",
 				 page_id + 1, MAX(page_count, 1));
-		
+
 		show_bottom(page_info_str);
 		iflush();
 
