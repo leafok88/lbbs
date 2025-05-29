@@ -92,14 +92,14 @@ int exitbbs(void *param)
 
 int license(void *param)
 {
-	display_file_ex(DATA_LICENSE, 1, 1);
+	display_file(DATA_LICENSE, 1, 1);
 
 	return REDRAW;
 }
 
 int copyright(void *param)
 {
-	display_file_ex(DATA_COPYRIGHT, 1, 1);
+	display_file(DATA_COPYRIGHT, 1, 1);
 
 	return REDRAW;
 }

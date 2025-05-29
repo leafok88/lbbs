@@ -37,7 +37,9 @@ extern int str_input(char *buffer, int buffer_length, int echo_mode);
 
 extern int get_data(int row, int col, char *prompt, char *buffer, int buffer_length, int echo_mode);
 
-extern int display_file_ex(const char *filename, int begin_line, int wait);
+extern int display_data(const void *p_data, long line_total, const long *p_line_offsets, int begin_line, int wait);
+
+extern int display_file(const char *filename, int begin_line, int wait);
 
 extern int show_top(const char *str_left, const char *str_center, const char *str_right);
 

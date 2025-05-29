@@ -231,27 +231,17 @@ int get_data(int row, int col, char *prompt, char *buffer, int buf_size, int ech
 	return len;
 }
 
-int display_file_ex(const char *filename, int begin_line, int wait)
+int display_data(const void *p_data, long line_total, const long *p_line_offsets, int begin_line, int wait)
 {
 	static int show_help = 1;
 	char buffer[LINE_BUFFER_LEN];
 	int ch = KEY_NULL;
 	int input_ok, line, max_lines;
 	long int line_current = 0;
-	const void *p_shm;
-	size_t data_len;
-	long line_total;
-	const void *p_data;
-	const long *p_line_offsets;
 	long int len;
 	long int percentile;
 	int loop;
-
-	if ((p_shm = get_file_shm_readonly(filename, &data_len, &line_total, &p_data, &p_line_offsets)) == NULL)
-	{
-		log_error("get_file_shm(%s) error\n", filename);
-		return KEY_NULL;
-	}
+	int eol, display_len;
 
 	clrline(begin_line, SCREEN_ROWS);
 	line = begin_line;
@@ -286,10 +276,24 @@ int display_file_ex(const char *filename, int begin_line, int wait)
 				percentile = 100;
 			}
 
+			snprintf(buffer, sizeof(buffer),
+					 "\033[1;44;33m第\033[36m%ld\033[33m-\033[36m%ld\033[33m行 (\033[36m%ld%%\033[33m) │ "
+					 "返回[\033[36m←\033[33m,\033[36mESC\033[33m] │ 移动[\033[36m↑\033[33m/\033[36m↓\033[33m/\033[36mPgUp\033[33m/\033[36mPgDn\033[33m] │ "
+					 "帮助[\033[36mh\033[33m] │",
+					 line_current - (line - 1) + 1,
+					 MIN(line_current - (line - 1) + (SCREEN_ROWS - 2), line_total),
+					 percentile);
+
+			len = split_line(buffer, SCREEN_COLS, &eol, &display_len);
+			for (;display_len < SCREEN_COLS; display_len++)
+			{
+				buffer[len++] = ' ';
+			}
+			buffer[len] = '\0';
+			strncat(buffer, "\033[m", sizeof(buffer) - 1 - strnlen(buffer, sizeof(buffer)));
+
 			moveto(SCREEN_ROWS, 0);
-			prints("\033[1;44;32m%s (%d%%)%s\033[33m          │ 结束 ← <q> │ ↑/↓/PgUp/PgDn 移动 │ ? 辅助说明 │     \033[m",
-				   (percentile < 100 ? "下面还有喔" : "没有更多了"), percentile,
-				   (percentile < 10 ? "  " : (percentile < 100 ? " " : "")));
+			prints(buffer);
 			iflush();
 
 			input_ok = 0;
@@ -327,6 +331,7 @@ int display_file_ex(const char *filename, int begin_line, int wait)
 					break;
 				case CR:
 					igetch_reset();
+				case KEY_SPACE:
 				case KEY_DOWN:
 					if (line_current + ((SCREEN_ROWS - 2) - (line - 1)) >= line_total) // Reach bottom
 					{
@@ -340,7 +345,6 @@ int display_file_ex(const char *filename, int begin_line, int wait)
 					prints("\033[S"); // Scroll up 1 line
 					break;
 				case KEY_PGUP:
-				case Ctrl('B'):
 					if (line_current - line < 0) // Reach top
 					{
 						break;
@@ -354,10 +358,7 @@ int display_file_ex(const char *filename, int begin_line, int wait)
 					max_lines = SCREEN_ROWS - 1;
 					clrline(begin_line, SCREEN_ROWS);
 					break;
-				case KEY_RIGHT:
 				case KEY_PGDN:
-				case Ctrl('F'):
-				case KEY_SPACE:
 					if (line_current + (SCREEN_ROWS - 2) - (line - 1) >= line_total) // Reach bottom
 					{
 						break;
@@ -373,13 +374,9 @@ int display_file_ex(const char *filename, int begin_line, int wait)
 					break;
 				case KEY_ESC:
 				case KEY_LEFT:
-				case 'q':
-				case 'Q':
 					loop = 0;
 					break;
-				case '?':
 				case 'h':
-				case 'H':
 					if (!show_help)
 					{
 						break;
@@ -387,7 +384,7 @@ int display_file_ex(const char *filename, int begin_line, int wait)
 
 					// Display help information
 					show_help = 0;
-					display_file_ex(DATA_READ_HELP, begin_line, 1);
+					display_file(DATA_READ_HELP, begin_line, 1);
 					show_help = 1;
 
 					// Refresh after display help information
@@ -426,6 +423,26 @@ int display_file_ex(const char *filename, int begin_line, int wait)
 	}
 
 cleanup:
+	return ch;
+}
+
+int display_file(const char *filename, int begin_line, int wait)
+{
+	int ch = KEY_NULL;
+	const void *p_shm;
+	size_t data_len;
+	long line_total;
+	const void *p_data;
+	const long *p_line_offsets;
+
+	if ((p_shm = get_file_shm_readonly(filename, &data_len, &line_total, &p_data, &p_line_offsets)) == NULL)
+	{
+		log_error("get_file_shm(%s) error\n", filename);
+		return KEY_NULL;
+	}
+
+	ch = display_data(p_data, line_total, p_line_offsets, begin_line, wait);
+
 	if (detach_file_shm(p_shm) < 0)
 	{
 		log_error("detach_file_shm(%s) error\n", filename);
