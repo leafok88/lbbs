@@ -746,13 +746,13 @@ int section_list_loader_reload(void)
 	return 0;
 }
 
-int query_section_articles(SECTION_LIST *p_section, int32_t page_id, ARTICLE *p_articles[], int32_t *p_article_count)
+int query_section_articles(SECTION_LIST *p_section, int page_id, ARTICLE *p_articles[], int *p_article_count, int *p_page_count)
 {
 	ARTICLE *p_article;
 	ARTICLE *p_next_page_first_article;
 	int ret = 0;
 
-	if (p_section == NULL || p_articles == NULL || p_article_count == NULL)
+	if (p_section == NULL || p_articles == NULL || p_article_count == NULL || p_page_count == NULL)
 	{
 		log_error("query_section_articles() NULL pointer error\n");
 		return -1;
@@ -764,6 +764,8 @@ int query_section_articles(SECTION_LIST *p_section, int32_t page_id, ARTICLE *p_
 		log_error("section_list_rd_lock(sid = %d) error\n", p_section->sid);
 		return -2;
 	}
+
+	*p_page_count = p_section->page_count;
 
 	if (p_section->visible_article_count == 0)
 	{

@@ -22,6 +22,7 @@
 #include "log.h"
 #include "str_process.h"
 #include <time.h>
+#include <sys/param.h>
 #define _POSIX_C_SOURCE 200809L
 #include <string.h>
 
@@ -122,7 +123,6 @@ static int section_list_draw_screen(const char *sname, const char *stitle, const
 	{
 		prints("\033[44;37m  \033[1;37m 编  号   发 布 者     日  期  文 章 标 题                                    \033[m");
 	}
-	show_bottom("");
 
 	return 0;
 }
@@ -248,8 +248,10 @@ int section_list_display(const char *sname)
 	SECTION_LIST *p_section;
 	char stitle[BBS_section_title_max_len + 1];
 	char master_list[(BBS_username_max_len + 1) * 3 + 1];
+	char page_info_str[LINE_BUFFER_LEN];
 	ARTICLE *p_articles[BBS_article_limit_per_page];
 	int article_count;
+	int page_count;
 	int page_id = 0;
 	int selected_index = 0;
 	int ret;
@@ -284,7 +286,7 @@ int section_list_display(const char *sname)
 		return -2;
 	}
 
-	ret = query_section_articles(p_section, page_id, p_articles, &article_count);
+	ret = query_section_articles(p_section, page_id, p_articles, &article_count, &page_count);
 	if (ret < 0)
 	{
 		log_error("query_section_articles(sid=%d, page_id=%d) error\n", p_section->sid, page_id);
@@ -304,15 +306,18 @@ int section_list_display(const char *sname)
 			log_error("section_list_draw_items(sid=%d, page_id=%d) error\n", p_section->sid, page_id);
 			return -4;
 		}
+
+		snprintf(page_info_str, sizeof(page_info_str), "第%d/%d页", page_id + 1, MAX(page_count, 1));
+		show_bottom(page_info_str);
 		iflush();
 
-		ret = section_list_select(p_section->page_count, article_count, &page_id, &selected_index);
+		ret = section_list_select(page_count, article_count, &page_id, &selected_index);
 		switch (ret)
 		{
 		case EXIT_SECTION:
 			return 0;
 		case CHANGE_PAGE:
-			ret = query_section_articles(p_section, page_id, p_articles, &article_count);
+			ret = query_section_articles(p_section, page_id, p_articles, &article_count, &page_count);
 			if (ret < 0)
 			{
 				log_error("query_section_articles(sid=%d, page_id=%d) error\n", p_section->sid, page_id);
