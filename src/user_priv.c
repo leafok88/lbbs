@@ -25,17 +25,11 @@
 
 BBS_user_priv BBS_priv;
 
-int setpriv(BBS_user_priv *p_priv, int sid, int priv, int is_favor)
+inline static int search_priv(BBS_user_priv *p_priv, int sid, int *p_offset)
 {
 	int left = 0;
 	int right = p_priv->s_count - 1;
 	int mid = 0;
-
-	if (sid == 0)
-	{
-		p_priv->g_priv = priv;
-		return 0;
-	}
 
 	while (left < right)
 	{
@@ -51,10 +45,26 @@ int setpriv(BBS_user_priv *p_priv, int sid, int priv, int is_favor)
 		}
 	}
 
-	if (left == right && sid == p_priv->s_priv_list[left].sid) // found
+	*p_offset = left;
+
+	return (left == right && sid == p_priv->s_priv_list[left].sid);
+}
+
+int setpriv(BBS_user_priv *p_priv, int sid, int priv, int is_favor)
+{
+	int offset;
+	int i;
+
+	if (sid == 0)
 	{
-		p_priv->s_priv_list[left].s_priv = priv;
-		p_priv->s_priv_list[left].is_favor = is_favor;
+		p_priv->g_priv = priv;
+		return 0;
+	}
+
+	if (search_priv(p_priv, sid, &offset)) //found
+	{
+		p_priv->s_priv_list[offset].s_priv = priv;
+		p_priv->s_priv_list[offset].is_favor = is_favor;
 		return 0;
 	}
 
@@ -65,51 +75,31 @@ int setpriv(BBS_user_priv *p_priv, int sid, int priv, int is_favor)
 	}
 
 	// move items at [left, p_priv->s_count - 1] to [left + 1, p_priv->s_count]
-	for (right = p_priv->s_count - 1; right >= left; right--)
+	for (i = p_priv->s_count - 1; i >= offset; i--)
 	{
-		p_priv->s_priv_list[right + 1] = p_priv->s_priv_list[right];
+		p_priv->s_priv_list[i + 1] = p_priv->s_priv_list[i];
 	}
 	p_priv->s_count++;
 
 	// insert new item at offset left
-	p_priv->s_priv_list[left].sid = sid;
-	p_priv->s_priv_list[left].s_priv = priv;
-	p_priv->s_priv_list[left].is_favor = is_favor;
+	p_priv->s_priv_list[offset].sid = sid;
+	p_priv->s_priv_list[offset].s_priv = priv;
+	p_priv->s_priv_list[offset].is_favor = is_favor;
 
 	return 0;
 }
 
 int getpriv(BBS_user_priv *p_priv, int sid, int *p_is_favor)
 {
-	int left = 0;
-	int right = p_priv->s_count - 1;
-	int mid = 0;
+	int offset;
 
-	while (left < right)
+	if (search_priv(p_priv, sid, &offset)) //found
 	{
-		mid = (left + right) / 2;
-
-		if (sid <= p_priv->s_priv_list[mid].sid)
-		{
-			right = mid;
-		}
-		else
-		{
-			left = mid + 1;
-		}
+		*p_is_favor = p_priv->s_priv_list[offset].is_favor;
+		return p_priv->s_priv_list[offset].s_priv;
 	}
 
-	if (left == right && sid == p_priv->s_priv_list[left].sid) // found
-	{
-		*p_is_favor = p_priv->s_priv_list[left].is_favor;
-		return p_priv->s_priv_list[left].s_priv;
-	}
-
-	if (sid != 0)
-	{
-		*p_is_favor = 0;
-	}
-
+	*p_is_favor = 0;
 	return (sid >= 0 ? p_priv->g_priv : S_NONE);
 }
 
