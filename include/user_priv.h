@@ -50,6 +50,7 @@ struct user_priv
 	{
 		int sid;
 		int s_priv;
+		int is_favor;
 	} s_priv_list[BBS_max_section];
 	int s_count;
 };
@@ -75,13 +76,21 @@ inline int checklevel2(BBS_user_priv *p_priv, int level)
 	return ((p_priv->level >= level) ? 1 : 0);
 }
 
-extern int setpriv(BBS_user_priv *p_priv, int sid, int priv);
+extern int setpriv(BBS_user_priv *p_priv, int sid, int priv, int is_favor);
 
-extern int getpriv(BBS_user_priv *p_priv, int sid);
+extern int getpriv(BBS_user_priv *p_priv, int sid, int *p_is_favor);
 
 inline int checkpriv(BBS_user_priv *p_priv, int sid, int priv)
 {
-	return (((getpriv(p_priv, sid) & priv)) == priv ? 1 : 0);
+	int is_favor = 0;
+	return (((getpriv(p_priv, sid, &is_favor) & priv)) == priv ? 1 : 0);
+}
+
+inline int is_favor(BBS_user_priv *p_priv, int sid)
+{
+	int is_favor = 0;
+	getpriv(p_priv, sid, &is_favor);
+	return is_favor;
 }
 
 extern int load_priv(MYSQL *db, BBS_user_priv *p_priv, long int uid);
