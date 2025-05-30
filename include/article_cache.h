@@ -23,14 +23,14 @@
 
 struct article_cache_t
 {
-	void *p_data;
+	char *p_data;
 	size_t data_len;
 	long line_total;
 	long line_offsets[MAX_SPLIT_FILE_LINES];
 };
 typedef struct article_cache_t ARTICLE_CACHE;
 
-extern int article_cache_generate(const char *cache_dir, const ARTICLE *p_article, const char *content);
+extern int article_cache_generate(const char *cache_dir, const ARTICLE *p_article, const char *content, int overwrite);
 
 extern int article_cache_load(ARTICLE_CACHE *p_cache, const char *cache_dir, const ARTICLE *p_article);
 extern int article_cache_unload(ARTICLE_CACHE *p_cache);

@@ -93,7 +93,7 @@ int exitbbs(void *param)
 
 int license(void *param)
 {
-	display_file(DATA_LICENSE, 1, 1);
+	display_file(DATA_LICENSE, 1, 0);
 
 	return REDRAW;
 }

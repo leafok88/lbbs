@@ -153,7 +153,7 @@ int bbs_welcome(MYSQL *db)
 	u_anonymous++;
 
 	// Display logo
-	display_file(DATA_WELCOME, 1, 0);
+	display_file(DATA_WELCOME, 1, 2);
 
 	// Display welcome message
 	prints("\r\033[1;35mª∂”≠π‚¡Ÿ\033[33m °æ %s °ø \033[35mBBS\r\n"

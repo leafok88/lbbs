@@ -244,6 +244,45 @@ static enum select_cmd_t section_list_select(int total_page, int item_count, int
 	return EXIT_SECTION;
 }
 
+static int display_article_key_handler(int *key, char *msg, size_t msg_len)
+{
+	static int topic_view = 0;
+
+	switch (*key)
+	{
+	case 0: // Set msg
+		snprintf(msg, msg_len,
+				 "| 返回[\033[32m←\033[33m,\033[32mESC\033[33m] │ "
+				 "移动[\033[32m↑\033[33m/\033[32m↓\033[33m/\033[32mPgUp\033[33m/\033[32mPgDn\033[33m] │ "
+				 "帮助[\033[32mh\033[33m] |");
+		break;
+	case 'p':
+		break;
+		topic_view = !topic_view;
+		if (topic_view)
+		{
+			snprintf(msg, msg_len,
+					 "| 返回[\033[32m←\033[33m,\033[32mESC\033[33m] │ "
+					 "同主题阅读[\033[32m↑\033[33m/\033[32m↓\033[33m] │ "
+					 "帮助[\033[32mh\033[33m] |");
+		}
+		else
+		{
+			snprintf(msg, msg_len,
+					 "| 返回[\033[32m←\033[33m,\033[32mESC\033[33m] │ "
+					 "移动[\033[32m↑\033[33m/\033[32m↓\033[33m/\033[32mPgUp\033[33m/\033[32mPgDn\033[33m] │ "
+					 "帮助[\033[32mh\033[33m] |");
+		}
+		*key = 0;
+		break;
+	case 'H':
+		*key = 'h';
+		return 0;
+	}
+
+	return 0;
+}
+
 int section_list_display(const char *sname)
 {
 	static int display_nickname = 0;
@@ -257,7 +296,7 @@ int section_list_display(const char *sname)
 	int page_count;
 	int page_id = 0;
 	int selected_index = 0;
-	ARTICLE_CACHE article_cache;
+	ARTICLE_CACHE cache;
 	int ret;
 
 	p_section = section_list_find_by_name(sname);
@@ -340,19 +379,25 @@ int section_list_display(const char *sname)
 			}
 			break;
 		case VIEW_ARTICLE:
-			ret = article_cache_load(&article_cache, VAR_ARTICLE_CACHE_DIR, p_articles[selected_index]);
+			ret = article_cache_load(&cache, VAR_ARTICLE_CACHE_DIR, p_articles[selected_index]);
 			if (ret < 0)
 			{
-				log_error("article_cache_load(aid=%d, cid=%d)\n", p_articles[selected_index]->aid, p_articles[selected_index]->cid);
+				log_error("article_cache_load(aid=%d, cid=%d) error\n", p_articles[selected_index]->aid, p_articles[selected_index]->cid);
 				break;
 			}
 
-			log_std("Debug: view article aid = %d, cid = %d\n", p_articles[selected_index]->aid, p_articles[selected_index]->cid);
-
-			ret = article_cache_unload(&article_cache);
+			ret = display_data(cache.p_data, cache.line_total, cache.line_offsets, 1, 0,
+							   display_article_key_handler, DATA_READ_HELP);
 			if (ret < 0)
 			{
-				log_error("article_cache_unload(aid=%d, cid=%d)\n", p_articles[selected_index]->aid, p_articles[selected_index]->cid);
+				log_error("display_data(aid=%d, cid=%d) error\n", p_articles[selected_index]->aid, p_articles[selected_index]->cid);
+				break;
+			}
+
+			ret = article_cache_unload(&cache);
+			if (ret < 0)
+			{
+				log_error("article_cache_unload(aid=%d, cid=%d) error\n", p_articles[selected_index]->aid, p_articles[selected_index]->cid);
 				break;
 			}
 

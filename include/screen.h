@@ -36,9 +36,12 @@ extern void set_input_echo(int echo);
 extern int str_input(char *buffer, int buffer_length, int echo_mode);
 extern int get_data(int row, int col, char *prompt, char *buffer, int buffer_length, int echo_mode);
 
-extern int display_data(const void *p_data, long line_total, const long *p_line_offsets, int begin_line, int wait,
+// eof_exit = 0 : Do not exit at EOF
+//            1 : Prompt for any key at EOF, then exit
+//            2 : Exit at EOF without prompt
+extern int display_data(const void *p_data, long line_total, const long *p_line_offsets, int begin_line, int eof_exit,
                         display_data_key_handler key_handler, const char *help_filename);
-extern int display_file(const char *filename, int begin_line, int wait);
+extern int display_file(const char *filename, int begin_line, int eof_exit);
 
 extern int show_top(const char *str_left, const char *str_center, const char *str_right);
 extern int show_bottom(const char *msg);

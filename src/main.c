@@ -151,7 +151,7 @@ int main(int argc, char *argv[])
 	}
 
 	// Check article cache dir
-	ret = mkdir(VAR_ARTICLE_CACHE_DIR, S_IRWXU | S_IRGRP);
+	ret = mkdir(VAR_ARTICLE_CACHE_DIR, 0750);
 	if (ret == -1 && errno != EEXIST)
 	{
 		log_error("mkdir(%s) error (%d)\n", VAR_ARTICLE_CACHE_DIR, errno);

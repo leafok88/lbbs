@@ -233,7 +233,7 @@ int get_data(int row, int col, char *prompt, char *buffer, int buf_size, int ech
 	return len;
 }
 
-int display_data(const void *p_data, long line_total, const long *p_line_offsets, int begin_line, int wait,
+int display_data(const void *p_data, long line_total, const long *p_line_offsets, int begin_line, int eof_exit,
 				 display_data_key_handler key_handler, const char *help_filename)
 {
 	static int show_help = 1;
@@ -260,13 +260,13 @@ int display_data(const void *p_data, long line_total, const long *p_line_offsets
 	loop = 1;
 	while (!SYS_server_exit && loop)
 	{
-		if (line_current >= line_total && line_total <= SCREEN_ROWS - 2)
+		if (eof_exit > 0 && line_current >= line_total && line_total <= SCREEN_ROWS - 2)
 		{
-			if (wait)
+			if (eof_exit == 1)
 			{
 				ch = press_any_key();
 			}
-			else
+			else // if (eof_exit == 2)
 			{
 				iflush();
 			}
@@ -445,8 +445,6 @@ cleanup:
 
 static int display_file_key_handler(int *key, char *msg, size_t msg_len)
 {
-	static int topic_view = 0;
-
 	switch (*key)
 	{
 	case 0: // Set msg
@@ -454,25 +452,6 @@ static int display_file_key_handler(int *key, char *msg, size_t msg_len)
 				 "| ·µ»Ø[\033[32m¡û\033[33m,\033[32mESC\033[33m] ©¦ "
 				 "ÒÆ¶¯[\033[32m¡ü\033[33m/\033[32m¡ý\033[33m/\033[32mPgUp\033[33m/\033[32mPgDn\033[33m] ©¦ "
 				 "°ïÖú[\033[32mh\033[33m] |");
-		break;
-	case 'p':
-		break;
-		topic_view = !topic_view;
-		if (topic_view)
-		{
-			snprintf(msg, msg_len,
-					 "| ·µ»Ø[\033[32m¡û\033[33m,\033[32mESC\033[33m] ©¦ "
-					 "Í¬Ö÷ÌâÔÄ¶Á[\033[32m¡ü\033[33m/\033[32m¡ý\033[33m] ©¦ "
-					 "°ïÖú[\033[32mh\033[33m] |");
-		}
-		else
-		{
-			snprintf(msg, msg_len,
-					 "| ·µ»Ø[\033[32m¡û\033[33m,\033[32mESC\033[33m] ©¦ "
-					 "ÒÆ¶¯[\033[32m¡ü\033[33m/\033[32m¡ý\033[33m/\033[32mPgUp\033[33m/\033[32mPgDn\033[33m] ©¦ "
-					 "°ïÖú[\033[32mh\033[33m] |");
-		}
-		*key = 0;
 		break;
 	case 'H':
 		*key = 'h';
@@ -482,7 +461,7 @@ static int display_file_key_handler(int *key, char *msg, size_t msg_len)
 	return 0;
 }
 
-int display_file(const char *filename, int begin_line, int wait)
+int display_file(const char *filename, int begin_line, int eof_exit)
 {
 	int ret;
 	const void *p_shm;
@@ -497,7 +476,7 @@ int display_file(const char *filename, int begin_line, int wait)
 		return KEY_NULL;
 	}
 
-	ret = display_data(p_data, line_total, p_line_offsets, begin_line, wait, display_file_key_handler, DATA_READ_HELP);
+	ret = display_data(p_data, line_total, p_line_offsets, begin_line, eof_exit, display_file_key_handler, DATA_READ_HELP);
 
 	if (detach_file_shm(p_shm) < 0)
 	{
