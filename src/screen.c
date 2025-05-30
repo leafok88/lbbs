@@ -222,8 +222,8 @@ int get_data(int row, int col, char *prompt, char *buffer, int buf_size, int ech
 	int len;
 
 	moveto(row, col);
-	prints(prompt);
-	prints(buffer);
+	prints("%s", prompt);
+	prints("%s", buffer);
 	iflush();
 
 	len = _str_input(buffer, buf_size, echo_mode);
@@ -293,7 +293,7 @@ int display_data(const void *p_data, long line_total, const long *p_line_offsets
 			strncat(buffer, "\033[m", sizeof(buffer) - 1 - strnlen(buffer, sizeof(buffer)));
 
 			moveto(SCREEN_ROWS, 0);
-			prints(buffer);
+			prints("%s", buffer);
 			iflush();
 
 			input_ok = 0;
