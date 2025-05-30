@@ -26,9 +26,11 @@ static const BBS_CMD bbs_cmd_list[] = {
 	{"LICENSE", license},
 	{"COPYRIGHT", copyright},
 	{"RELOADMENU", reloadbbsmenu},
-	{"SHUTDOWN", shutdownbbs}};
+	{"SHUTDOWN", shutdownbbs},
+	{"M_FAVOUR", favour_section_filter}
+};
 
-static const int bbs_cmd_count = 7;
+static const int bbs_cmd_count = 8;
 
 static TRIE_NODE *p_bbs_cmd_dict;
 

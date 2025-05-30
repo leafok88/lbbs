@@ -161,6 +161,8 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 				p_menu->title.show = 0;
 				p_menu->screen_show = 0;
 				p_menu->page_item_limit = 0;
+				p_menu->use_filter = 0;
+				p_menu->filter_handler = NULL;
 
 				q = strtok_r(NULL, MENU_CONF_DELIM_WITH_SPACE, &saveptr);
 				if (q == NULL)
@@ -653,6 +655,18 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 							return -1;
 						}
 					}
+					else if (strcmp(p, "use_filter") == 0)
+					{
+						p_menu->use_filter = 1;
+
+						// Check syntax
+						q = strtok_r(NULL, MENU_CONF_DELIM_WITH_SPACE, &saveptr);
+						if (q != NULL)
+						{
+							log_error("Unknown extra content in menu config line %d\n", fin_line);
+							return -1;
+						}
+					}
 				}
 			}
 			else // BEGIN of menu screen
@@ -771,6 +785,16 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 		{
 			log_error("Undefined menu screen [%s]\n", p);
 			return -1;
+		}
+
+		// Set menu->filter_handler of each menu pointing to filter
+		if (p_menu->use_filter == 1)
+		{
+			if ((p_menu->filter_handler = get_cmd_handler(p_menu->name)) == NULL)
+			{
+				log_error("Undefined menu filter handler [%s]\n", p_menu->name);
+				return -1;
+			}
 		}
 	}
 
@@ -969,8 +993,9 @@ int display_menu(MENU_SET *p_menu_set)
 	}
 
 	if (menu_item_pos > 0 &&
-		checkpriv(&BBS_priv, 0, p_menu_item->priv) != 0 &&
-		checklevel2(&BBS_priv, p_menu_item->level))
+		!(p_menu->use_filter ? (p_menu->filter_handler((void *)p_menu_item) == 0)
+							 : (checkpriv(&BBS_priv, 0, p_menu_item->priv) == 0 ||
+								checklevel2(&BBS_priv, p_menu_item->level) == 0)))
 	{
 		menu_selectable = 1;
 	}
@@ -991,7 +1016,9 @@ int display_menu(MENU_SET *p_menu_set)
 
 		p_menu_set->menu_item_page_id[menu_item_pos] = page_id;
 
-		if (checkpriv(&BBS_priv, 0, p_menu_item->priv) == 0 || checklevel2(&BBS_priv, p_menu_item->level) == 0)
+		if (p_menu->use_filter ? (p_menu->filter_handler((void *)p_menu_item) == 0)
+							   : (checkpriv(&BBS_priv, 0, p_menu_item->priv) == 0 ||
+								  checklevel2(&BBS_priv, p_menu_item->level) == 0))
 		{
 			p_menu_set->menu_item_display[menu_item_pos] = 0;
 			p_menu_set->menu_item_r_row[menu_item_pos] = 0;
@@ -1350,7 +1377,7 @@ int set_menu_shm_readonly(MENU_SET *p_menu_set)
 		log_error("shmat(menu_shm shmid = %d) error (%d)\n", p_menu_set->shmid, errno);
 		return -1;
 	}
-	
+
 	p_menu_set->p_reserved = p_shm;
 
 	return 0;

@@ -80,6 +80,8 @@ struct menu_t
 	int16_t item_count;
 	int16_t page_row, page_col;
 	int16_t page_item_limit;
+	int8_t use_filter;
+	bbs_cmd_handler filter_handler;
 };
 typedef struct menu_t MENU;
 

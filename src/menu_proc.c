@@ -21,6 +21,7 @@
 #include "io.h"
 #include "screen.h"
 #include "menu.h"
+#include "user_priv.h"
 #include "section_list_display.h"
 #include <dlfcn.h>
 #include <errno.h>
@@ -134,4 +135,11 @@ int shutdownbbs(void *param)
 	}
 
 	return REDRAW;
+}
+
+int favour_section_filter(void *param)
+{
+	MENU_ITEM *p_menu_item = param;
+
+	return (is_favor(&BBS_priv, p_menu_item->priv) && checklevel2(&BBS_priv, p_menu_item->level));
 }
