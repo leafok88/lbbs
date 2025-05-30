@@ -27,41 +27,76 @@ BBS_user_priv BBS_priv;
 
 int setpriv(BBS_user_priv *p_priv, int sid, int priv)
 {
-	int i;
-	if (sid > 0)
+	int left = 0;
+	int right = p_priv->s_count - 1;
+	int mid;
+
+	if (sid == 0)
 	{
-		for (i = 0; i < p_priv->s_count; i++)
+		p_priv->g_priv = priv;
+		return 0;
+	}
+
+	while (left < right)
+	{
+		mid = (left + right) / 2;
+
+		if (sid <= p_priv->s_priv_list[mid].sid)
 		{
-			if (p_priv->s_priv_list[i].sid == sid)
-			{
-				p_priv->s_priv_list[i].s_priv = priv;
-				return 0;
-			}
-		}
-		if (i < BBS_max_section)
-		{
-			p_priv->s_priv_list[i].s_priv = priv;
+			right = mid;
 		}
 		else
 		{
-			return -1;
+			left = mid + 1;
 		}
 	}
-	else
+
+	if (sid == p_priv->s_priv_list[left].sid) // found
 	{
-		p_priv->g_priv = priv;
+		p_priv->s_priv_list[left].s_priv = priv;
+		return 0;
 	}
+
+	// not found
+	if (p_priv->s_count >= BBS_max_section)
+	{
+		return -1;
+	}
+
+	// move items at [left, p_priv->s_count - 1] to [left + 1, p_priv->s_count]
+	for (right = p_priv->s_count - 1; right >= left; right--)
+	{
+		p_priv->s_priv_list[right + 1] = p_priv->s_priv_list[right];
+	}
+	// insert new item at offset left
+	p_priv->s_priv_list[left].s_priv = priv;
 
 	return 0;
 }
 
 int getpriv(BBS_user_priv *p_priv, int sid)
 {
-	int i;
-	for (i = 0; i < p_priv->s_count; i++)
+	int left = 0;
+	int right = p_priv->s_count - 1;
+	int mid;
+
+	while (left < right)
 	{
-		if (p_priv->s_priv_list[i].sid == sid)
-			return p_priv->s_priv_list[i].s_priv;
+		mid = (left + right) / 2;
+
+		if (sid <= p_priv->s_priv_list[mid].sid)
+		{
+			right = mid;
+		}
+		else
+		{
+			left = mid + 1;
+		}
+	}
+
+	if (sid == p_priv->s_priv_list[left].sid) // found
+	{
+		return p_priv->s_priv_list[left].s_priv;
 	}
 
 	return (sid >= 0 ? p_priv->g_priv : S_NONE);
@@ -83,7 +118,7 @@ int load_priv(MYSQL *db, BBS_user_priv *p_priv, long int uid)
 
 	// Permission
 	snprintf(sql, sizeof(sql), "SELECT p_post, p_msg FROM user_list WHERE UID = %ld AND verified",
-			uid);
+			 uid);
 	if (mysql_query(db, sql) != 0)
 	{
 		log_error("Query user_list error: %s\n", mysql_error(db));
@@ -103,8 +138,8 @@ int load_priv(MYSQL *db, BBS_user_priv *p_priv, long int uid)
 
 	// Admin
 	snprintf(sql, sizeof(sql), "SELECT major FROM admin_config WHERE UID = %ld "
-				 "AND enable AND (NOW() BETWEEN begin_dt AND end_dt)",
-			uid);
+							   "AND enable AND (NOW() BETWEEN begin_dt AND end_dt)",
+			 uid);
 	if (mysql_query(db, sql) != 0)
 	{
 		log_error("Query admin_config error: %s\n", mysql_error(db));
@@ -124,10 +159,10 @@ int load_priv(MYSQL *db, BBS_user_priv *p_priv, long int uid)
 
 	// Section Master
 	snprintf(sql, sizeof(sql), "SELECT section_master.SID, major FROM section_master "
-				 "INNER JOIN section_config ON section_master.SID = section_config.SID "
-				 "WHERE UID = %ld AND section_master.enable AND section_config.enable "
-				 "AND (NOW() BETWEEN begin_dt AND end_dt)",
-			uid);
+							   "INNER JOIN section_config ON section_master.SID = section_config.SID "
+							   "WHERE UID = %ld AND section_master.enable AND section_config.enable "
+							   "AND (NOW() BETWEEN begin_dt AND end_dt)",
+			 uid);
 	if (mysql_query(db, sql) != 0)
 	{
 		log_error("Query section_master error: %s\n", mysql_error(db));
@@ -147,9 +182,9 @@ int load_priv(MYSQL *db, BBS_user_priv *p_priv, long int uid)
 
 	// Section status
 	snprintf(sql, sizeof(sql), "SELECT SID, exp_get, read_user_level, write_user_level FROM section_config "
-				 "INNER JOIN section_class ON section_config.CID = section_class.CID "
-				 "WHERE section_config.enable AND section_class.enable "
-				 "ORDER BY SID");
+							   "INNER JOIN section_class ON section_config.CID = section_class.CID "
+							   "WHERE section_config.enable AND section_class.enable "
+							   "ORDER BY SID");
 	if (mysql_query(db, sql) != 0)
 	{
 		log_error("Query section_config error: %s\n", mysql_error(db));
@@ -181,8 +216,8 @@ int load_priv(MYSQL *db, BBS_user_priv *p_priv, long int uid)
 
 	// Section ban
 	snprintf(sql, sizeof(sql), "SELECT SID FROM ban_user_list WHERE UID = %ld AND enable "
-				 "AND (NOW() BETWEEN ban_dt AND unban_dt)",
-			uid);
+							   "AND (NOW() BETWEEN ban_dt AND unban_dt)",
+			 uid);
 	if (mysql_query(db, sql) != 0)
 	{
 		log_error("Query ban_user_list error: %s\n", mysql_error(db));
