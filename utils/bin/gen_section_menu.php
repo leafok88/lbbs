@@ -193,6 +193,46 @@ MENU;
 
 MENU;
 
+	// Generate menu of favourite sections
+	$buffer .= <<<MENU
+#---------------------------------------------------------------------
+%menu M_FAVOUR
+title       0, 0, "[°æ¿éÊÕ²Ø]"
+screen      2, 0, S_BOARD
+use_filter
+page        4, 1, 20
+
+MENU;
+
+	$display_row = 4;
+
+	foreach ($section_hierachy as $c_index => $section_class)
+	{
+		$class_title_f = "[" . addslashes($section_class['title']) . "]" . str_repeat(" ", 10 - str_length($section_class['title']));
+
+		foreach ($section_class["sections"] as $s_index => $section)
+		{
+			$article_count = $section['udf_values']['article_count'];
+
+			$title_f = str_repeat(" ", 5 - intval(log10($article_count))) . $article_count . " £«  " .
+				$section['name'] . str_repeat(" ", 20 - strlen($section['name'])) .
+				$class_title_f . addslashes($section['title']) . str_repeat(" ", 22 - str_length($section['title'])) .
+				$section['udf_values']['section_master'];
+
+			$buffer .= <<<MENU
+			@LIST_SECTION   {$display_row}, 4, {$section['sid']}, {$section['read_user_level']},   "{$section['name']}",    "{$title_f}"
+
+			MENU;
+
+			$display_row = 0;
+		}
+	}
+
+	$buffer .= <<<MENU
+%
+
+MENU;
+
 	unset($section_hierachy);
 
 	mysqli_close($db_conn);
