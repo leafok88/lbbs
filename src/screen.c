@@ -40,6 +40,8 @@
 #define STR_TOP_MIDDLE_MAX_LEN 20
 #define STR_TOP_RIGHT_MAX_LEN 20
 
+#define MSG_EXT_MAX_LEN 200
+
 void moveto(int row, int col)
 {
 	if (row >= 0)
@@ -231,11 +233,13 @@ int get_data(int row, int col, char *prompt, char *buffer, int buf_size, int ech
 	return len;
 }
 
-int display_data(const void *p_data, long line_total, const long *p_line_offsets, int begin_line, int wait)
+int display_data(const void *p_data, long line_total, const long *p_line_offsets, int begin_line, int wait,
+				 display_data_key_handler key_handler, const char *help_filename)
 {
 	static int show_help = 1;
 	char buffer[LINE_BUFFER_LEN];
-	int ch = KEY_NULL;
+	char msg_ext[MSG_EXT_MAX_LEN];
+	int ch = 0;
 	int input_ok, line, max_lines;
 	long int line_current = 0;
 	long int len;
@@ -246,6 +250,12 @@ int display_data(const void *p_data, long line_total, const long *p_line_offsets
 	clrline(begin_line, SCREEN_ROWS);
 	line = begin_line;
 	max_lines = SCREEN_ROWS - 1;
+
+	// update msg_ext with extended key handler
+	if (key_handler(&ch, msg_ext, sizeof(msg_ext)) != 0)
+	{
+		return ch;
+	}
 
 	loop = 1;
 	while (!SYS_server_exit && loop)
@@ -277,15 +287,13 @@ int display_data(const void *p_data, long line_total, const long *p_line_offsets
 			}
 
 			snprintf(buffer, sizeof(buffer),
-					 "\033[1;44;33m第\033[32m%ld\033[33m-\033[32m%ld\033[33m行 (\033[32m%ld%%\033[33m) │ "
-					 "返回[\033[32m←\033[33m,\033[32mESC\033[33m] │ 移动[\033[32m↑\033[33m/\033[32m↓\033[33m/\033[32mPgUp\033[33m/\033[32mPgDn\033[33m] │ "
-					 "帮助[\033[32mh\033[33m] │",
+					 "\033[1;44;33m第\033[32m%ld\033[33m-\033[32m%ld\033[33m行 (\033[32m%ld%%\033[33m) %s",
 					 line_current - (line - 1) + 1,
 					 MIN(line_current - (line - 1) + (SCREEN_ROWS - 2), line_total),
-					 percentile);
+					 percentile, msg_ext);
 
 			len = split_line(buffer, SCREEN_COLS, &eol, &display_len);
-			for (;display_len < SCREEN_COLS; display_len++)
+			for (; display_len < SCREEN_COLS; display_len++)
 			{
 				buffer[len++] = ' ';
 			}
@@ -301,6 +309,13 @@ int display_data(const void *p_data, long line_total, const long *p_line_offsets
 			{
 				ch = igetch_t(MAX_DELAY_TIME);
 				input_ok = 1;
+
+				// extended key handler
+				if (key_handler(&ch, msg_ext, sizeof(msg_ext)) != 0)
+				{
+					goto cleanup;
+				}
+
 				switch (ch)
 				{
 				case KEY_NULL:
@@ -377,21 +392,23 @@ int display_data(const void *p_data, long line_total, const long *p_line_offsets
 					loop = 0;
 					break;
 				case 'h':
-					if (!show_help)
+					if (!show_help) // Not reentrant
 					{
 						break;
 					}
 
 					// Display help information
 					show_help = 0;
-					display_file(DATA_READ_HELP, begin_line, 1);
+					display_file(help_filename, begin_line, 1);
 					show_help = 1;
-
+				case KEY_F5:
 					// Refresh after display help information
 					line_current -= (line - 1);
 					line = begin_line;
 					max_lines = SCREEN_ROWS - 1;
 					clrline(begin_line, SCREEN_ROWS);
+					break;
+				case 0: // Refresh bottom line
 					break;
 				default:
 					input_ok = 0;
@@ -426,9 +443,48 @@ cleanup:
 	return ch;
 }
 
+static int display_file_key_handler(int *key, char *msg, size_t msg_len)
+{
+	static int topic_view = 0;
+
+	switch (*key)
+	{
+	case 0: // Set msg
+		snprintf(msg, msg_len,
+				 "| 返回[\033[32m←\033[33m,\033[32mESC\033[33m] │ "
+				 "移动[\033[32m↑\033[33m/\033[32m↓\033[33m/\033[32mPgUp\033[33m/\033[32mPgDn\033[33m] │ "
+				 "帮助[\033[32mh\033[33m] |");
+		break;
+	case 'p':
+		break;
+		topic_view = !topic_view;
+		if (topic_view)
+		{
+			snprintf(msg, msg_len,
+					 "| 返回[\033[32m←\033[33m,\033[32mESC\033[33m] │ "
+					 "同主题阅读[\033[32m↑\033[33m/\033[32m↓\033[33m] │ "
+					 "帮助[\033[32mh\033[33m] |");
+		}
+		else
+		{
+			snprintf(msg, msg_len,
+					 "| 返回[\033[32m←\033[33m,\033[32mESC\033[33m] │ "
+					 "移动[\033[32m↑\033[33m/\033[32m↓\033[33m/\033[32mPgUp\033[33m/\033[32mPgDn\033[33m] │ "
+					 "帮助[\033[32mh\033[33m] |");
+		}
+		*key = 0;
+		break;
+	case 'H':
+		*key = 'h';
+		return 0;
+	}
+
+	return 0;
+}
+
 int display_file(const char *filename, int begin_line, int wait)
 {
-	int ch = KEY_NULL;
+	int ret;
 	const void *p_shm;
 	size_t data_len;
 	long line_total;
@@ -441,14 +497,14 @@ int display_file(const char *filename, int begin_line, int wait)
 		return KEY_NULL;
 	}
 
-	ch = display_data(p_data, line_total, p_line_offsets, begin_line, wait);
+	ret = display_data(p_data, line_total, p_line_offsets, begin_line, wait, display_file_key_handler, DATA_READ_HELP);
 
 	if (detach_file_shm(p_shm) < 0)
 	{
 		log_error("detach_file_shm(%s) error\n", filename);
 	}
 
-	return ch;
+	return ret;
 }
 
 int show_top(const char *str_left, const char *str_middle, const char *str_right)
