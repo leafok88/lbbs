@@ -28,6 +28,8 @@
 #include <string.h>
 
 #define ARTICLE_HEADER_MAX_LEN 4096
+#define ARTICLE_FOOTER_MAX_LEN 4096
+#define SUB_DT_MAX_LEN 50
 
 inline static int article_cache_path(char *file_path, size_t buf_len, const char *cache_dir, const ARTICLE *p_article)
 {
@@ -42,16 +44,20 @@ inline static int article_cache_path(char *file_path, size_t buf_len, const char
 	return 0;
 }
 
-int article_cache_generate(const char *cache_dir, const ARTICLE *p_article, const SECTION_LIST *p_section, const char *content, int overwrite)
+int article_cache_generate(const char *cache_dir, const ARTICLE *p_article, const SECTION_LIST *p_section,
+						   const char *content, const char *sub_ip, int overwrite)
 {
 	char data_file[FILE_PATH_LEN];
 	int fd;
 	ARTICLE_CACHE cache;
 	struct tm tm_sub_dt;
-	char str_sub_dt[50];
+	char str_sub_dt[SUB_DT_MAX_LEN + 1];
 	char header[ARTICLE_HEADER_MAX_LEN];
 	size_t header_len;
 	long header_line_cnt;
+	char footer[ARTICLE_FOOTER_MAX_LEN];
+	size_t footer_len;
+	long footer_line_cnt;
 	long i;
 
 	if (cache_dir == NULL || p_article == NULL || content == NULL)
@@ -83,30 +89,50 @@ int article_cache_generate(const char *cache_dir, const ARTICLE *p_article, cons
 
 	bzero(&cache, sizeof(cache));
 
-	// Generate article header
+	// Generate article header / footer
 	localtime_r(&(p_article->sub_dt), &tm_sub_dt);
 	strftime(str_sub_dt, sizeof(str_sub_dt), "%c", &tm_sub_dt);
 
 	snprintf(header, sizeof(header), "发布者: %s (%s), 版块: %s (%s)\n标  题: %s\n发布于: %s (%s)\n\n",
 			 p_article->username, p_article->nickname, p_section->sname, p_section->stitle, p_article->title, BBS_name, str_sub_dt);
 
+	snprintf(footer, sizeof(footer),
+			 "--\n※ 来源: %s https://%s [FROM: %s]\n",
+			 BBS_name, BBS_server, sub_ip);
+
 	header_len = strnlen(header, sizeof(header));
+	footer_len = strnlen(footer, sizeof(footer));
+
 	cache.data_len = header_len + strlen(content);
 
 	header_line_cnt = split_data_lines(header, SCREEN_COLS, cache.line_offsets, MAX_SPLIT_FILE_LINES);
 	cache.line_total = header_line_cnt +
 					   split_data_lines(content, SCREEN_COLS, cache.line_offsets + header_line_cnt, MAX_SPLIT_FILE_LINES - header_line_cnt);
-
 	if (cache.line_total >= MAX_SPLIT_FILE_LINES)
 	{
 		log_error("split_data_lines(%s) truncated over limit lines %d >= %d\n", data_file, cache.line_total, MAX_SPLIT_FILE_LINES);
-		cache.line_total = MAX_SPLIT_FILE_LINES - 1;
+		return -3;
 	}
 
 	for (i = header_line_cnt; i <= cache.line_total; i++)
 	{
 		cache.line_offsets[i] += (long)header_len;
 	}
+
+	footer_line_cnt = split_data_lines(footer, SCREEN_COLS, cache.line_offsets + cache.line_total, MAX_SPLIT_FILE_LINES - cache.line_total);
+	if (cache.line_total + footer_line_cnt >= MAX_SPLIT_FILE_LINES)
+	{
+		log_error("split_data_lines(%s) truncated over limit lines %d >= %d\n", data_file, cache.line_total + footer_line_cnt, MAX_SPLIT_FILE_LINES);
+		return -3;
+	}
+
+	for (i = 0; i <= footer_line_cnt; i++)
+	{
+		cache.line_offsets[cache.line_total + i] += (long)cache.data_len;
+	}
+
+	cache.data_len += footer_len;
+	cache.line_total += footer_line_cnt;
 
 	if (write(fd, &cache, sizeof(cache)) == -1)
 	{
@@ -120,9 +146,15 @@ int article_cache_generate(const char *cache_dir, const ARTICLE *p_article, cons
 		close(fd);
 		return -3;
 	}
-	if (write(fd, content, cache.data_len - header_len) == -1)
+	if (write(fd, content, cache.data_len - header_len - footer_len) == -1)
 	{
 		log_error("write(%s, content) error (%d)\n", data_file, errno);
+		close(fd);
+		return -3;
+	}
+	if (write(fd, footer, footer_len) == -1)
+	{
+		log_error("write(%s, footer) error (%d)\n", data_file, errno);
 		close(fd);
 		return -3;
 	}

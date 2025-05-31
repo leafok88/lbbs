@@ -169,6 +169,7 @@ int append_articles_from_db(int32_t start_aid, int global_lock, int article_coun
 	ARTICLE *p_topic;
 	SECTION_LIST *p_section = NULL;
 	int32_t last_sid = 0;
+	char sub_ip[IP_ADDR_LEN];
 	int article_count = 0;
 	int ret = 0;
 	int i;
@@ -183,7 +184,7 @@ int append_articles_from_db(int32_t start_aid, int global_lock, int article_coun
 	snprintf(sql, sizeof(sql),
 			 "SELECT bbs.AID, TID, SID, bbs.CID, UID, visible, excerption, ontop, `lock`, "
 			 "transship, username, nickname, title, UNIX_TIMESTAMP(sub_dt) AS sub_dt, "
-			 "bbs_content.content "
+			 "sub_ip, bbs_content.content "
 			 "FROM bbs INNER JOIN bbs_content ON bbs.CID = bbs_content.CID "
 			 "WHERE bbs.AID >= %d ORDER BY bbs.AID LIMIT %d",
 			 start_aid, article_count_limit);
@@ -235,6 +236,10 @@ int append_articles_from_db(int32_t start_aid, int global_lock, int article_coun
 		article.title[sizeof(article.title) - 1] = '\0';
 
 		article.sub_dt = atol(row[i++]);
+
+		strncpy(sub_ip, row[i++], sizeof(sub_ip) - 1);
+		sub_ip[sizeof(sub_ip) - 1] = '\0';
+		ip_mask(sub_ip, 1, '*');
 
 		// release lock of last section if different from current one
 		if (!global_lock && article.sid != last_sid && last_sid != 0)
@@ -288,7 +293,7 @@ int append_articles_from_db(int32_t start_aid, int global_lock, int article_coun
 
 		article_count++;
 
-		if (article_cache_generate(VAR_ARTICLE_CACHE_DIR, &article, p_section, row[i++], 0) < 0)
+		if (article_cache_generate(VAR_ARTICLE_CACHE_DIR, &article, p_section, row[i++], sub_ip, 0) < 0)
 		{
 			log_error("article_cache_generate(aid=%d, cid=%d) error\n", article.aid, article.cid);
 			ret = -4;
@@ -371,6 +376,7 @@ int apply_article_op_log_from_db(int op_count_limit)
 	ARTICLE *p_article;
 	SECTION_LIST *p_section = NULL;
 	SECTION_LIST *p_section_dest;
+	char sub_ip[IP_ADDR_LEN];
 	int32_t last_sid = 0;
 	int32_t sid_dest;
 	int op_count = 0;
@@ -467,7 +473,7 @@ int apply_article_op_log_from_db(int op_count_limit)
 			break;
 		case 'M': // Modify article
 			snprintf(sql, sizeof(sql),
-					 "SELECT bbs.CID, bbs_content.content "
+					 "SELECT bbs.CID, sub_ip, bbs_content.content "
 					 "FROM bbs INNER JOIN bbs_content ON bbs.CID = bbs_content.CID "
 					 "WHERE bbs.AID = %d",
 					 p_article->aid);
@@ -488,7 +494,11 @@ int apply_article_op_log_from_db(int op_count_limit)
 			{
 				p_article->cid = atoi(row2[0]);
 
-				if (article_cache_generate(VAR_ARTICLE_CACHE_DIR, p_article, p_section, row2[1], 0) < 0)
+				strncpy(sub_ip, row2[1], sizeof(sub_ip) - 1);
+				sub_ip[sizeof(sub_ip) - 1] = '\0';
+				ip_mask(sub_ip, 1, '*');
+
+				if (article_cache_generate(VAR_ARTICLE_CACHE_DIR, p_article, p_section, row2[2], sub_ip, 0) < 0)
 				{
 					log_error("article_cache_generate(aid=%d, cid=%d) error\n", p_article->aid, p_article->cid);
 					ret = -4;
