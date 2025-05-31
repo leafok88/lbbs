@@ -1,4 +1,4 @@
-# LBBS
+# LBBS - Classical terminal server of LeafOK BBS
 
 Copyright (C) 2004-2025 by Leaflet
 
