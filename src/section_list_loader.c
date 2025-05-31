@@ -288,7 +288,7 @@ int append_articles_from_db(int32_t start_aid, int global_lock, int article_coun
 
 		article_count++;
 
-		if (article_cache_generate(VAR_ARTICLE_CACHE_DIR, &article, row[i++], 0) < 0)
+		if (article_cache_generate(VAR_ARTICLE_CACHE_DIR, &article, p_section, row[i++], 0) < 0)
 		{
 			log_error("article_cache_generate(aid=%d, cid=%d) error\n", article.aid, article.cid);
 			ret = -4;
@@ -488,7 +488,7 @@ int apply_article_op_log_from_db(int op_count_limit)
 			{
 				p_article->cid = atoi(row2[0]);
 
-				if (article_cache_generate(VAR_ARTICLE_CACHE_DIR, p_article, row2[1], 0) < 0)
+				if (article_cache_generate(VAR_ARTICLE_CACHE_DIR, p_article, p_section, row2[1], 0) < 0)
 				{
 					log_error("article_cache_generate(aid=%d, cid=%d) error\n", p_article->aid, p_article->cid);
 					ret = -4;

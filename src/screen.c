@@ -329,6 +329,10 @@ int display_data(const void *p_data, long line_total, const long *p_line_offsets
 					break;
 				case KEY_END:
 					line_current = line_total - (SCREEN_ROWS - 2);
+					if (line_current < 0)
+					{
+						line_current = 0;
+					}
 					line = begin_line;
 					max_lines = SCREEN_ROWS - 1;
 					clrline(begin_line, SCREEN_ROWS);

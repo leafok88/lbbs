@@ -30,7 +30,7 @@ struct article_cache_t
 };
 typedef struct article_cache_t ARTICLE_CACHE;
 
-extern int article_cache_generate(const char *cache_dir, const ARTICLE *p_article, const char *content, int overwrite);
+extern int article_cache_generate(const char *cache_dir, const ARTICLE *p_article, const SECTION_LIST *p_section, const char *content, int overwrite);
 
 extern int article_cache_load(ARTICLE_CACHE *p_cache, const char *cache_dir, const ARTICLE *p_article);
 extern int article_cache_unload(ARTICLE_CACHE *p_cache);

@@ -42,12 +42,17 @@ inline static int article_cache_path(char *file_path, size_t buf_len, const char
 	return 0;
 }
 
-int article_cache_generate(const char *cache_dir, const ARTICLE *p_article, const char *content, int overwrite)
+int article_cache_generate(const char *cache_dir, const ARTICLE *p_article, const SECTION_LIST *p_section, const char *content, int overwrite)
 {
 	char data_file[FILE_PATH_LEN];
 	int fd;
 	ARTICLE_CACHE cache;
-	size_t buf_size;
+	struct tm tm_sub_dt;
+	char str_sub_dt[50];
+	char header[ARTICLE_HEADER_MAX_LEN];
+	size_t header_len;
+	long header_line_cnt;
+	long i;
 
 	if (cache_dir == NULL || p_article == NULL || content == NULL)
 	{
@@ -70,31 +75,37 @@ int article_cache_generate(const char *cache_dir, const ARTICLE *p_article, cons
 		}
 	}
 
-	buf_size = ARTICLE_HEADER_MAX_LEN + strlen(content) + 1;
-	cache.p_data = malloc(buf_size);
-	if (cache.p_data == NULL)
-	{
-		log_error("malloc(size=%ld) error OOM\n", buf_size);
-		return -1;
-	}
-
 	if ((fd = open(data_file, O_WRONLY | O_CREAT | O_TRUNC, 0640)) == -1)
 	{
 		log_error("open(%s) error (%d)\n", data_file, errno);
 		return -2;
 	}
 
-	// TODO: Generate article header
-	cache.data_len = (size_t)snprintf(cache.p_data,
-									  ARTICLE_HEADER_MAX_LEN + strlen(content) + 1,
-									  "%s",
-									  content);
+	bzero(&cache, sizeof(cache));
 
-	bzero(cache.line_offsets, sizeof(cache.line_offsets));
-	cache.line_total = split_data_lines(cache.p_data, SCREEN_COLS, cache.line_offsets, MAX_SPLIT_FILE_LINES);
+	// Generate article header
+	localtime_r(&(p_article->sub_dt), &tm_sub_dt);
+	strftime(str_sub_dt, sizeof(str_sub_dt), "%c", &tm_sub_dt);
+
+	snprintf(header, sizeof(header), "发布者: %s (%s), 版块: %s (%s)\n标  题: %s\n发布于: %s (%s)\n\n",
+			 p_article->username, p_article->nickname, p_section->sname, p_section->stitle, p_article->title, BBS_name, str_sub_dt);
+
+	header_len = strnlen(header, sizeof(header));
+	cache.data_len = header_len + strlen(content);
+
+	header_line_cnt = split_data_lines(header, SCREEN_COLS, cache.line_offsets, MAX_SPLIT_FILE_LINES);
+	cache.line_total = header_line_cnt +
+					   split_data_lines(content, SCREEN_COLS, cache.line_offsets + header_line_cnt, MAX_SPLIT_FILE_LINES - header_line_cnt);
+
 	if (cache.line_total >= MAX_SPLIT_FILE_LINES)
 	{
-		log_error("split_data_lines(%s) truncated over limit lines\n", data_file);
+		log_error("split_data_lines(%s) truncated over limit lines %d >= %d\n", data_file, cache.line_total, MAX_SPLIT_FILE_LINES);
+		cache.line_total = MAX_SPLIT_FILE_LINES - 1;
+	}
+
+	for (i = header_line_cnt; i <= cache.line_total; i++)
+	{
+		cache.line_offsets[i] += (long)header_len;
 	}
 
 	if (write(fd, &cache, sizeof(cache)) == -1)
@@ -103,9 +114,15 @@ int article_cache_generate(const char *cache_dir, const ARTICLE *p_article, cons
 		close(fd);
 		return -3;
 	}
-	if (write(fd, cache.p_data, cache.data_len) == -1)
+	if (write(fd, header, header_len) == -1)
 	{
-		log_error("write(%s, data) error (%d)\n", data_file, errno);
+		log_error("write(%s, header) error (%d)\n", data_file, errno);
+		close(fd);
+		return -3;
+	}
+	if (write(fd, content, cache.data_len - header_len) == -1)
+	{
+		log_error("write(%s, content) error (%d)\n", data_file, errno);
 		close(fd);
 		return -3;
 	}
@@ -115,8 +132,6 @@ int article_cache_generate(const char *cache_dir, const ARTICLE *p_article, cons
 		log_error("close(%s) error (%d)\n", data_file, errno);
 		return -2;
 	}
-
-	free(cache.p_data);
 
 	return 0;
 }
