@@ -140,6 +140,9 @@ int article_cache_load(ARTICLE_CACHE *p_cache, const char *cache_dir, const ARTI
 {
 	char data_file[FILE_PATH_LEN];
 	int fd;
+	struct stat sb;
+	void *p_mmap;
+	size_t mmap_len;
 
 	if (p_cache == NULL || cache_dir == NULL || p_article == NULL)
 	{
@@ -159,28 +162,20 @@ int article_cache_load(ARTICLE_CACHE *p_cache, const char *cache_dir, const ARTI
 		return -2;
 	}
 
-	if (read(fd, (void *)p_cache, sizeof(ARTICLE_CACHE)) == -1)
+	if (fstat(fd, &sb) < 0)
 	{
-		log_error("read(%s, cache) error (%d)\n", data_file, errno);
-		close(fd);
-		return -3;
+		log_error("fstat(fd) error (%d)\n", errno);
+		return -2;
 	}
 
-	p_cache->p_data = malloc(p_cache->data_len + 1);
-	if (p_cache->p_data == NULL)
-	{
-		log_error("malloc(size=%ld) error OOM\n", p_cache->data_len + 1);
-		close(fd);
-		return -1;
-	}
+	mmap_len = (size_t)sb.st_size;
 
-	if (read(fd, p_cache->p_data, p_cache->data_len) == -1)
+	p_mmap = mmap(NULL, mmap_len, PROT_READ, MAP_SHARED, fd, 0L);
+	if (p_mmap == MAP_FAILED)
 	{
-		log_error("read(%s, data) error (%d)\n", data_file, errno);
-		close(fd);
-		return -3;
+		log_error("mmap(%s) error (%d)\n", data_file, errno);
+		return -2;
 	}
-	p_cache->p_data[p_cache->data_len] = '\0';
 
 	if (close(fd) == -1)
 	{
@@ -188,18 +183,42 @@ int article_cache_load(ARTICLE_CACHE *p_cache, const char *cache_dir, const ARTI
 		return -2;
 	}
 
+	memcpy((void *)p_cache, p_mmap, sizeof(ARTICLE_CACHE));
+
+	if (sizeof(ARTICLE_CACHE) + p_cache->data_len != mmap_len)
+	{
+		log_error("Inconsistent length, cache_len(%ld) + data_len(%ld) != mmap_len(%ld)\n",
+				  sizeof(ARTICLE_CACHE), p_cache->data_len, mmap_len);
+
+		if (munmap(p_mmap, mmap_len) < 0)
+		{
+			log_error("munmap() error (%d)\n", errno);
+		}
+
+		return -3;
+	}
+
+	p_cache->p_mmap = p_mmap;
+	p_cache->p_data = p_mmap + sizeof(ARTICLE_CACHE);
+
 	return 0;
 }
 
 int article_cache_unload(ARTICLE_CACHE *p_cache)
 {
-	if (p_cache == NULL || p_cache->p_data == NULL)
+	if (p_cache == NULL || p_cache->p_mmap == NULL)
 	{
 		log_error("article_cache_unload() NULL pointer error\n");
 		return -1;
 	}
 
-	free(p_cache->p_data);
+	if (munmap(p_cache->p_mmap, sizeof(ARTICLE_CACHE) + p_cache->data_len) < 0)
+	{
+		log_error("munmap() error (%d)\n", errno);
+		return -2;
+	}
+
+	p_cache->p_mmap = NULL;
 	p_cache->p_data = NULL;
 
 	return 0;

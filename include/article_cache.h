@@ -23,6 +23,7 @@
 
 struct article_cache_t
 {
+	void *p_mmap;
 	char *p_data;
 	size_t data_len;
 	long line_total;
