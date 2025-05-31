@@ -463,8 +463,8 @@ static int display_file_key_handler(int *p_key, DISPLAY_CTX *p_ctx)
 	{
 	case 0: // Set msg
 		snprintf(p_ctx->msg, sizeof(p_ctx->msg),
-				 "| 返回[\033[32m←\033[33m,\033[32mESC\033[33m] │ "
-				 "移动[\033[32m↑\033[33m/\033[32m↓\033[33m/\033[32mPgUp\033[33m/\033[32mPgDn\033[33m] │ "
+				 "| 返回[\033[32m←\033[33m,\033[32mESC\033[33m] | "
+				 "移动[\033[32m↑\033[33m/\033[32m↓\033[33m/\033[32mPgUp\033[33m/\033[32mPgDn\033[33m] | "
 				 "帮助[\033[32mh\033[33m] |");
 		break;
 	}
