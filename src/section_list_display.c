@@ -28,6 +28,7 @@
 #include <string.h>
 
 static int section_topic_view_mode = 0;
+static int section_topic_view_tid = -1;
 
 enum select_cmd_t
 {
@@ -88,7 +89,8 @@ static int section_list_draw_items(int page_id, ARTICLE *p_articles[], int artic
 		}
 
 		moveto(4 + i, 1);
-		prints("  %7d %c %s%*s %s %s",
+		prints("  %s%7d\033[m %c %s%*s %s %s%s\033[m",
+			   (p_articles[i]->aid == section_topic_view_tid ? "\033[33m" : (p_articles[i]->tid == section_topic_view_tid ? "\033[36m" : "")),
 			   p_articles[i]->aid,
 			   article_flag,
 			   (display_nickname ? p_articles[i]->nickname : p_articles[i]->username),
@@ -96,6 +98,7 @@ static int section_list_draw_items(int page_id, ARTICLE *p_articles[], int artic
 								 : BBS_username_max_len - (int)strnlen(p_articles[i]->username, sizeof(p_articles[i]->username))),
 			   "",
 			   str_time,
+			   (p_articles[i]->aid == section_topic_view_tid ? "\033[33m" : (p_articles[i]->tid == section_topic_view_tid ? "\033[36m" : "")),
 			   title_f);
 	}
 
@@ -258,14 +261,14 @@ static int display_article_key_handler(int *p_key, DISPLAY_CTX *p_ctx)
 			snprintf(p_ctx->msg, sizeof(p_ctx->msg),
 					 "| 返回[\033[32m←\033[33m,\033[32mESC\033[33m] │ "
 					 "同主题阅读[\033[32m↑\033[33m/\033[32m↓\033[33m] │ "
-					 "帮助[\033[32mh\033[33m] |");
+					 "模式[\033[32mp\033[33m] | 帮助[\033[32mh\033[33m] |");
 		}
 		else
 		{
 			snprintf(p_ctx->msg, sizeof(p_ctx->msg),
 					 "| 返回[\033[32m←\033[33m,\033[32mESC\033[33m] │ "
 					 "移动[\033[32m↑\033[33m/\033[32m↓\033[33m/\033[32mPgUp\033[33m/\033[32mPgDn\033[33m] │ "
-					 "帮助[\033[32mh\033[33m] |");
+					 "模式[\033[32mp\033[33m] | 帮助[\033[32mh\033[33m] |");
 		}
 		*p_key = 0;
 		break;
@@ -498,6 +501,9 @@ int section_list_display(const char *sname)
 					break;
 				}
 			} while (loop);
+
+			// Update current topic
+			section_topic_view_tid = (p_articles[selected_index]->tid == 0 ? p_articles[selected_index]->aid : p_articles[selected_index]->tid);
 		case REFRESH_SCREEN:
 			if (section_list_draw_screen(sname, stitle, master_list, display_nickname) < 0)
 			{
