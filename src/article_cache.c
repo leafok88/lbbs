@@ -97,7 +97,7 @@ int article_cache_generate(const char *cache_dir, const ARTICLE *p_article, cons
 			 p_article->username, p_article->nickname, p_section->sname, p_section->stitle, p_article->title, BBS_name, str_sub_dt);
 
 	snprintf(footer, sizeof(footer),
-			 "--\n※ 来源: %s https://%s [FROM: %s]\n",
+			 "--\n※ 来源: %s http://%s [FROM: %s]\n",
 			 BBS_name, BBS_server, sub_ip);
 
 	header_len = strnlen(header, sizeof(header));
