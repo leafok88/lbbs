@@ -269,6 +269,26 @@ static int display_article_key_handler(int *p_key, DISPLAY_CTX *p_ctx)
 		}
 		*p_key = 0;
 		break;
+	case KEY_UP:
+		if (p_ctx->reach_begin)
+		{
+			if (section_topic_view_mode)
+			{
+				*p_key = KEY_PGUP;
+			}
+			return 1;
+		}
+		break;
+	case KEY_DOWN:
+		if (p_ctx->reach_end)
+		{
+			if (section_topic_view_mode)
+			{
+				*p_key = KEY_PGDN;
+			}
+			return 1;
+		}
+		break;
 	}
 
 	return 0;
@@ -289,6 +309,8 @@ int section_list_display(const char *sname)
 	int selected_index = 0;
 	ARTICLE_CACHE cache;
 	int ret;
+	int loop;
+	int direction;
 
 	p_section = section_list_find_by_name(sname);
 	if (p_section == NULL)
@@ -370,29 +392,112 @@ int section_list_display(const char *sname)
 			}
 			break;
 		case VIEW_ARTICLE:
-			ret = article_cache_load(&cache, VAR_ARTICLE_CACHE_DIR, p_articles[selected_index]);
-			if (ret < 0)
+			do
 			{
-				log_error("article_cache_load(aid=%d, cid=%d) error\n", p_articles[selected_index]->aid, p_articles[selected_index]->cid);
-				break;
-			}
+				loop = 0;
 
-			ret = display_data(cache.p_data, cache.line_total, cache.line_offsets, 1, 0,
-							   display_article_key_handler, DATA_READ_HELP);
-			if (ret < 0)
-			{
-				log_error("display_data(aid=%d, cid=%d) error\n", p_articles[selected_index]->aid, p_articles[selected_index]->cid);
-				break;
-			}
+				if (article_cache_load(&cache, VAR_ARTICLE_CACHE_DIR, p_articles[selected_index]) < 0)
+				{
+					log_error("article_cache_load(aid=%d, cid=%d) error\n", p_articles[selected_index]->aid, p_articles[selected_index]->cid);
+					break;
+				}
 
-			ret = article_cache_unload(&cache);
-			if (ret < 0)
-			{
-				log_error("article_cache_unload(aid=%d, cid=%d) error\n", p_articles[selected_index]->aid, p_articles[selected_index]->cid);
-				break;
-			}
+				ret = display_data(cache.p_data, cache.line_total, cache.line_offsets, 1, 0,
+								   display_article_key_handler, DATA_READ_HELP);
 
-			// TODO: locate last viewed article
+				if (article_cache_unload(&cache) < 0)
+				{
+					log_error("article_cache_unload(aid=%d, cid=%d) error\n", p_articles[selected_index]->aid, p_articles[selected_index]->cid);
+					break;
+				}
+
+				switch (ret)
+				{
+				case KEY_UP:
+					if (selected_index <= 0)
+					{
+						if (page_id > 0)
+						{
+							page_id--;
+							selected_index = BBS_article_limit_per_page - 1;
+
+							ret = query_section_articles(p_section, page_id, p_articles, &article_count, &page_count);
+							if (ret < 0)
+							{
+								log_error("query_section_articles(sid=%d, page_id=%d) error\n", p_section->sid, page_id);
+								return -3;
+							}
+
+							if (article_count != BBS_article_limit_per_page) // page is not full
+							{
+								selected_index = MAX(0, article_count - 1);
+							}
+							else
+							{
+								loop = 1;
+							}
+						}
+					}
+					else
+					{
+						selected_index--;
+						loop = 1;
+					}
+					break;
+				case KEY_DOWN:
+					if (selected_index + 1 >= article_count) // next page
+					{
+						if (page_id + 1 < page_count)
+						{
+							page_id++;
+							selected_index = 0;
+
+							ret = query_section_articles(p_section, page_id, p_articles, &article_count, &page_count);
+							if (ret < 0)
+							{
+								log_error("query_section_articles(sid=%d, page_id=%d) error\n", p_section->sid, page_id);
+								return -3;
+							}
+
+							if (article_count == 0) // empty page
+							{
+								selected_index = 0;
+							}
+							else
+							{
+								loop = 1;
+							}
+						}
+					}
+					else
+					{
+						selected_index++;
+						loop = 1;
+					}
+					break;
+				case KEY_PGUP:
+				case KEY_PGDN:
+					direction = (ret == KEY_PGUP ? -1 : 1);
+					ret = locate_article_in_section(p_section, p_articles[selected_index], direction, &page_id, &selected_index, &page_count);
+					if (ret < 0)
+					{
+						log_error("locate_article_in_section(sid=%d, aid=%d, direction=%d) error\n",
+								  p_section->sid, p_articles[selected_index]->aid, direction);
+						return -3;
+					}
+					else if (ret > 0)
+					{
+						ret = query_section_articles(p_section, page_id, p_articles, &article_count, &page_count);
+						if (ret < 0)
+						{
+							log_error("query_section_articles(sid=%d, page_id=%d) error\n", p_section->sid, page_id);
+							return -3;
+						}
+						loop = 1;
+					}
+					break;
+				}
+			} while (loop);
 		case REFRESH_SCREEN:
 			if (section_list_draw_screen(sname, stitle, master_list, display_nickname) < 0)
 			{

@@ -819,3 +819,64 @@ int query_section_articles(SECTION_LIST *p_section, int page_id, ARTICLE *p_arti
 
 	return ret;
 }
+
+int locate_article_in_section(SECTION_LIST *p_section, const ARTICLE *p_article_cur, int direction,
+							  int *p_page_id, int *p_offset, int *p_article_count)
+{
+	ARTICLE *p_article = NULL;
+	ARTICLE *p_next;
+	int32_t aid = 0;
+	int ret = 0;
+
+	if (p_section == NULL || p_article_cur == NULL || p_page_id == NULL || p_offset == NULL || p_article_count == NULL)
+	{
+		log_error("locate_article_in_section() NULL pointer error\n");
+		return -1;
+	}
+
+	// acquire lock of section
+	if ((ret = section_list_rd_lock(p_section)) < 0)
+	{
+		log_error("section_list_rd_lock(sid = %d) error\n", p_section->sid);
+		return -2;
+	}
+
+	if (direction == 0)
+	{
+		aid = p_article_cur->aid;
+	}
+	else if (direction == 1)
+	{
+		aid = p_article_cur->p_topic_next->aid;
+		if (aid <= p_article_cur->aid)
+		{
+			aid = 0;
+		}
+	}
+	else if (direction == -1)
+	{
+		aid = p_article_cur->p_topic_prior->aid;
+		if (aid >= p_article_cur->aid)
+		{
+			aid = 0;
+		}
+	}
+
+	if (aid > 0)
+	{
+		p_article = section_list_find_article_with_offset(p_section, aid, p_page_id, p_offset, &p_next);
+		if (p_article != NULL)
+		{
+			*p_article_count = (*p_page_id == p_section->page_count - 1 ? p_section->last_page_visible_article_count : BBS_article_limit_per_page);
+		}
+	}
+
+	// release lock of section
+	if (section_list_rd_unlock(p_section) < 0)
+	{
+		log_error("section_list_rd_unlock(sid = %d) error\n", p_section->sid);
+		ret = -2;
+	}
+
+	return (ret < 0 ? ret : (p_article == NULL ? 0 : 1));
+}
