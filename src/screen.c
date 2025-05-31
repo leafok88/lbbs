@@ -40,8 +40,6 @@
 #define STR_TOP_MIDDLE_MAX_LEN 20
 #define STR_TOP_RIGHT_MAX_LEN 20
 
-#define MSG_EXT_MAX_LEN 200
-
 void moveto(int row, int col)
 {
 	if (row >= 0)
@@ -238,7 +236,7 @@ int display_data(const void *p_data, long line_total, const long *p_line_offsets
 {
 	static int show_help = 1;
 	char buffer[LINE_BUFFER_LEN];
-	char msg_ext[MSG_EXT_MAX_LEN];
+	DISPLAY_CTX ctx;
 	int ch = 0;
 	int input_ok, line, max_lines;
 	long int line_current = 0;
@@ -252,7 +250,7 @@ int display_data(const void *p_data, long line_total, const long *p_line_offsets
 	max_lines = SCREEN_ROWS - 1;
 
 	// update msg_ext with extended key handler
-	if (key_handler(&ch, msg_ext, sizeof(msg_ext)) != 0)
+	if (key_handler(&ch, &ctx) != 0)
 	{
 		return ch;
 	}
@@ -277,20 +275,28 @@ int display_data(const void *p_data, long line_total, const long *p_line_offsets
 
 		if (line_current >= line_total || line >= max_lines)
 		{
+			ctx.reach_begin = (line_current < line ? 1 : 0);
+
 			if (line_current - (line - 1) + (SCREEN_ROWS - 2) < line_total)
 			{
 				percentile = (line_current - (line - 1) + (SCREEN_ROWS - 2)) * 100 / line_total;
+				ctx.reach_end = 0;
 			}
 			else
 			{
 				percentile = 100;
+				ctx.reach_end = 1;
 			}
+
+			ctx.line_top = line_current - (line - 1) + 1;
+			ctx.line_bottom = MIN(line_current - (line - 1) + (SCREEN_ROWS - 2), line_total);
 
 			snprintf(buffer, sizeof(buffer),
 					 "\033[1;44;33m第\033[32m%ld\033[33m-\033[32m%ld\033[33m行 (\033[32m%ld%%\033[33m) %s",
-					 line_current - (line - 1) + 1,
-					 MIN(line_current - (line - 1) + (SCREEN_ROWS - 2), line_total),
-					 percentile, msg_ext);
+					 ctx.line_top,
+					 ctx.line_bottom,
+					 percentile,
+					 ctx.msg);
 
 			len = split_line(buffer, SCREEN_COLS, &eol, &display_len);
 			for (; display_len < SCREEN_COLS; display_len++)
@@ -311,7 +317,7 @@ int display_data(const void *p_data, long line_total, const long *p_line_offsets
 				input_ok = 1;
 
 				// extended key handler
-				if (key_handler(&ch, msg_ext, sizeof(msg_ext)) != 0)
+				if (key_handler(&ch, &ctx) != 0)
 				{
 					goto cleanup;
 				}
@@ -322,7 +328,7 @@ int display_data(const void *p_data, long line_total, const long *p_line_offsets
 				case KEY_TIMEOUT:
 					goto cleanup;
 				case KEY_HOME:
-					if (line_current - line < 0) // Reach top
+					if (line_current - line < 0) // Reach begin
 					{
 						break;
 					}
@@ -342,7 +348,7 @@ int display_data(const void *p_data, long line_total, const long *p_line_offsets
 					clrline(begin_line, SCREEN_ROWS);
 					break;
 				case KEY_UP:
-					if (line_current - line < 0) // Reach top
+					if (line_current - line < 0) // Reach begin
 					{
 						break;
 					}
@@ -356,7 +362,7 @@ int display_data(const void *p_data, long line_total, const long *p_line_offsets
 					igetch_reset();
 				case KEY_SPACE:
 				case KEY_DOWN:
-					if (line_current + ((SCREEN_ROWS - 2) - (line - 1)) >= line_total) // Reach bottom
+					if (line_current + ((SCREEN_ROWS - 2) - (line - 1)) >= line_total) // Reach end
 					{
 						break;
 					}
@@ -368,7 +374,7 @@ int display_data(const void *p_data, long line_total, const long *p_line_offsets
 					prints("\033[S"); // Scroll up 1 line
 					break;
 				case KEY_PGUP:
-					if (line_current - line < 0) // Reach top
+					if (line_current - line < 0) // Reach begin
 					{
 						break;
 					}
@@ -382,7 +388,7 @@ int display_data(const void *p_data, long line_total, const long *p_line_offsets
 					clrline(begin_line, SCREEN_ROWS);
 					break;
 				case KEY_PGDN:
-					if (line_current + (SCREEN_ROWS - 2) - (line - 1) >= line_total) // Reach bottom
+					if (line_current + (SCREEN_ROWS - 2) - (line - 1) >= line_total) // Reach end
 					{
 						break;
 					}
@@ -451,19 +457,16 @@ cleanup:
 	return ch;
 }
 
-static int display_file_key_handler(int *key, char *msg, size_t msg_len)
+static int display_file_key_handler(int *p_key, DISPLAY_CTX *p_ctx)
 {
-	switch (*key)
+	switch (*p_key)
 	{
 	case 0: // Set msg
-		snprintf(msg, msg_len,
+		snprintf(p_ctx->msg, sizeof(p_ctx->msg),
 				 "| 返回[\033[32m←\033[33m,\033[32mESC\033[33m] │ "
 				 "移动[\033[32m↑\033[33m/\033[32m↓\033[33m/\033[32mPgUp\033[33m/\033[32mPgDn\033[33m] │ "
 				 "帮助[\033[32mh\033[33m] |");
 		break;
-	case 'H':
-		*key = 'h';
-		return 0;
 	}
 
 	return 0;

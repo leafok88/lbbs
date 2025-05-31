@@ -27,6 +27,8 @@
 #define _POSIX_C_SOURCE 200809L
 #include <string.h>
 
+static int section_topic_view_mode = 0;
+
 enum select_cmd_t
 {
 	EXIT_SECTION = 0,
@@ -244,40 +246,29 @@ static enum select_cmd_t section_list_select(int total_page, int item_count, int
 	return EXIT_SECTION;
 }
 
-static int display_article_key_handler(int *key, char *msg, size_t msg_len)
+static int display_article_key_handler(int *p_key, DISPLAY_CTX *p_ctx)
 {
-	static int topic_view = 0;
-
-	switch (*key)
+	switch (*p_key)
 	{
-	case 0: // Set msg
-		snprintf(msg, msg_len,
-				 "| 返回[\033[32m←\033[33m,\033[32mESC\033[33m] │ "
-				 "移动[\033[32m↑\033[33m/\033[32m↓\033[33m/\033[32mPgUp\033[33m/\033[32mPgDn\033[33m] │ "
-				 "帮助[\033[32mh\033[33m] |");
-		break;
 	case 'p':
-		break;
-		topic_view = !topic_view;
-		if (topic_view)
+		section_topic_view_mode = !section_topic_view_mode;
+	case 0: // Set msg
+		if (section_topic_view_mode)
 		{
-			snprintf(msg, msg_len,
+			snprintf(p_ctx->msg, sizeof(p_ctx->msg),
 					 "| 返回[\033[32m←\033[33m,\033[32mESC\033[33m] │ "
 					 "同主题阅读[\033[32m↑\033[33m/\033[32m↓\033[33m] │ "
 					 "帮助[\033[32mh\033[33m] |");
 		}
 		else
 		{
-			snprintf(msg, msg_len,
+			snprintf(p_ctx->msg, sizeof(p_ctx->msg),
 					 "| 返回[\033[32m←\033[33m,\033[32mESC\033[33m] │ "
 					 "移动[\033[32m↑\033[33m/\033[32m↓\033[33m/\033[32mPgUp\033[33m/\033[32mPgDn\033[33m] │ "
 					 "帮助[\033[32mh\033[33m] |");
 		}
-		*key = 0;
+		*p_key = 0;
 		break;
-	case 'H':
-		*key = 'h';
-		return 0;
 	}
 
 	return 0;

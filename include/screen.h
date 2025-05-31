@@ -20,8 +20,19 @@
 #include <stddef.h>
 
 #define CTRL_SEQ_CLR_LINE "\033[K"
+#define MSG_EXT_MAX_LEN 200
 
-typedef int (*display_data_key_handler)(int *key, char *msg, size_t msg_len);
+struct display_ctx_t
+{
+	int reach_begin; // of data
+	int reach_end; // of data
+   long line_top; // current screen
+   long line_bottom; // current screen
+   char msg[MSG_EXT_MAX_LEN];
+};
+typedef struct display_ctx_t DISPLAY_CTX;
+
+typedef int (*display_data_key_handler)(int *p_key, DISPLAY_CTX *p_ctx);
 
 extern void moveto(int row, int col);
 extern void clrtoeol();
