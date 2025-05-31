@@ -821,14 +821,17 @@ int query_section_articles(SECTION_LIST *p_section, int page_id, ARTICLE *p_arti
 }
 
 int locate_article_in_section(SECTION_LIST *p_section, const ARTICLE *p_article_cur, int direction,
-							  int *p_page_id, int *p_offset, int *p_article_count)
+							  int *p_page_id, int *p_visible_offset, int *p_article_count)
 {
-	ARTICLE *p_article = NULL;
-	ARTICLE *p_next;
+	const ARTICLE *p_article = NULL;
+	ARTICLE *p_tmp;
 	int32_t aid = 0;
+	int page_id;
+	int offset;
 	int ret = 0;
+	int i;
 
-	if (p_section == NULL || p_article_cur == NULL || p_page_id == NULL || p_offset == NULL || p_article_count == NULL)
+	if (p_section == NULL || p_article_cur == NULL || p_page_id == NULL || p_visible_offset == NULL || p_article_count == NULL)
 	{
 		log_error("locate_article_in_section() NULL pointer error\n");
 		return -1;
@@ -847,27 +850,54 @@ int locate_article_in_section(SECTION_LIST *p_section, const ARTICLE *p_article_
 	}
 	else if (direction == 1)
 	{
-		aid = p_article_cur->p_topic_next->aid;
-		if (aid <= p_article_cur->aid)
+		p_article = p_article_cur;
+		do
 		{
-			aid = 0;
-		}
+			p_article = p_article->p_topic_next;
+		} while (p_article != p_article_cur && p_article->visible == 0);
+
+		aid = (p_article->aid > p_article_cur->aid ? p_article->aid : 0);
 	}
 	else if (direction == -1)
 	{
-		aid = p_article_cur->p_topic_prior->aid;
-		if (aid >= p_article_cur->aid)
+		p_article = p_article_cur;
+		do
 		{
-			aid = 0;
-		}
+			p_article = p_article->p_topic_prior;
+		} while (p_article != p_article_cur && p_article->visible == 0);
+
+		aid = (p_article->aid < p_article_cur->aid ? p_article->aid : 0);
 	}
+
+	p_article = NULL;
 
 	if (aid > 0)
 	{
-		p_article = section_list_find_article_with_offset(p_section, aid, p_page_id, p_offset, &p_next);
+		p_article = section_list_find_article_with_offset(p_section, aid, &page_id, &offset, &p_tmp);
 		if (p_article != NULL)
 		{
-			*p_article_count = (*p_page_id == p_section->page_count - 1 ? p_section->last_page_visible_article_count : BBS_article_limit_per_page);
+			*p_article_count = (page_id == p_section->page_count - 1 ? p_section->last_page_visible_article_count : BBS_article_limit_per_page);
+
+			p_article = p_section->p_page_first_article[page_id];
+			for (i = 0; i < *p_article_count;)
+			{
+				if (p_article->visible)
+				{
+					if (p_article->aid == aid)
+					{
+						*p_page_id = page_id;
+						*p_visible_offset = i;
+						break;
+					}
+					i++;
+					if (i >= *p_article_count)
+					{
+						log_error("Visible article (aid=%d) not found in page %d\n", aid, page_id);
+						p_article = NULL;
+					}
+				}
+				p_article = p_article->p_next;
+			}
 		}
 	}
 
