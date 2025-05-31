@@ -274,9 +274,16 @@ int net_server(const char *hostaddr, in_port_t port)
 
 					log_std("Accept connection from %s:%d\n", hostaddr_client, port_client);
 
-					if (fork_server() < 0)
+					if (SYS_child_process_count - 1 < BBS_max_client)
 					{
-						log_error("fork_server() error\n");
+						if (fork_server() < 0)
+						{
+							log_error("fork_server() error\n");
+						}
+					}
+					else
+					{
+						log_error("Rejected client connection over limit (%d)\n", SYS_child_process_count - 1);
 					}
 
 					if (close(socket_client) == -1)
