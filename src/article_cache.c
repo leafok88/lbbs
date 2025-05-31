@@ -31,6 +31,17 @@
 #define ARTICLE_FOOTER_MAX_LEN 4096
 #define SUB_DT_MAX_LEN 50
 
+static const char *BBS_article_footer_color[] = {
+	"\033[31m",
+	"\033[32m",
+	"\033[33m",
+	"\033[34m",
+	"\033[35m",
+	"\033[36m",
+	"\033[37m",
+};
+static const int BBS_article_footer_color_count = 7;
+
 inline static int article_cache_path(char *file_path, size_t buf_len, const char *cache_dir, const ARTICLE *p_article)
 {
 	if (file_path == NULL || cache_dir == NULL || p_article == NULL)
@@ -97,7 +108,8 @@ int article_cache_generate(const char *cache_dir, const ARTICLE *p_article, cons
 			 p_article->username, p_article->nickname, p_section->sname, p_section->stitle, p_article->title, BBS_name, str_sub_dt);
 
 	snprintf(footer, sizeof(footer),
-			 "--\n※ 来源: %s http://%s [FROM: %s]\n",
+			 "--\n%s※ 来源: %s http://%s [FROM: %s]\033[m\n",
+			 BBS_article_footer_color[p_article->aid % BBS_article_footer_color_count],
 			 BBS_name, BBS_server, sub_ip);
 
 	header_len = strnlen(header, sizeof(header));
