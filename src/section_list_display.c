@@ -90,7 +90,7 @@ static int section_list_draw_items(int page_id, ARTICLE *p_articles[], int artic
 
 		moveto(4 + i, 1);
 		prints("  %s%7d\033[m %c %s%*s %s %s%s\033[m",
-			   (p_articles[i]->aid == section_topic_view_tid ? "\033[33m" : (p_articles[i]->tid == section_topic_view_tid ? "\033[36m" : "")),
+			   (p_articles[i]->aid == section_topic_view_tid ? "\033[1;33m" : (p_articles[i]->tid == section_topic_view_tid ? "\033[1;36m" : "")),
 			   p_articles[i]->aid,
 			   article_flag,
 			   (display_nickname ? p_articles[i]->nickname : p_articles[i]->username),
@@ -98,7 +98,7 @@ static int section_list_draw_items(int page_id, ARTICLE *p_articles[], int artic
 								 : BBS_username_max_len - (int)strnlen(p_articles[i]->username, sizeof(p_articles[i]->username))),
 			   "",
 			   str_time,
-			   (p_articles[i]->aid == section_topic_view_tid ? "\033[33m" : (p_articles[i]->tid == section_topic_view_tid ? "\033[36m" : "")),
+			   (p_articles[i]->aid == section_topic_view_tid ? "\033[1;33m" : (p_articles[i]->tid == section_topic_view_tid ? "\033[1;36m" : "")),
 			   title_f);
 	}
 
