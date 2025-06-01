@@ -55,7 +55,7 @@ int port_client;
 volatile int SYS_server_exit = 0;
 volatile int SYS_child_process_count = 0;
 volatile int SYS_child_exit = 0;
-volatile int SYS_menu_reload = 0;
+volatile int SYS_conf_reload = 0;
 volatile int SYS_data_file_reload = 0;
 volatile int SYS_section_list_reload = 0;
 
@@ -84,7 +84,7 @@ const char *get_time_str(char *s, size_t len)
 
 void sig_hup_handler(int i)
 {
-	SYS_menu_reload = 1;
+	SYS_conf_reload = 1;
 	SYS_data_file_reload = 1;
 	SYS_section_list_reload = 1;
 }

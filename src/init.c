@@ -108,6 +108,15 @@ int load_conf(const char *conf_file)
 		if (strcmp(c_name, "bbs_max_client") == 0)
 		{
 			fscanf(fin, "%d", &BBS_max_client);
+			if (BBS_max_client > MAX_CLIENTS_LIMIT)
+			{
+				log_error("Config BBS_max_client > limit (%d), reset it to limit\n", BBS_max_client);
+				BBS_max_client = MAX_CLIENTS_LIMIT;
+			}
+		}
+		if (strcmp(c_name, "bbs_max_client_per_ip") == 0)
+		{
+			fscanf(fin, "%d", &BBS_max_client_per_ip);
 		}
 		if (strcmp(c_name, "bbs_max_user") == 0)
 		{

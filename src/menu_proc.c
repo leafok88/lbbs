@@ -86,7 +86,7 @@ int exec_mbem(void *param)
 	return REDRAW;
 }
 
-int exitbbs(void *param)
+int exit_bbs(void *param)
 {
 	return EXITBBS;
 }
@@ -105,7 +105,7 @@ int copyright(void *param)
 	return REDRAW;
 }
 
-int reloadbbsmenu(void *param)
+int reload_bbs_conf(void *param)
 {
 	clearscr();
 
@@ -125,7 +125,7 @@ int reloadbbsmenu(void *param)
 	return REDRAW;
 }
 
-int shutdownbbs(void *param)
+int shutdown_bbs(void *param)
 {
 	log_std("Notify main process to exit\n");
 

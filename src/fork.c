@@ -37,7 +37,7 @@ int fork_server()
 	{
 		SYS_child_process_count++;
 		log_std("Child process (%d) start\n", pid);
-		return 0;
+		return pid;
 	}
 	else if (pid < 0) // Error
 	{

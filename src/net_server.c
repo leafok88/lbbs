@@ -22,6 +22,7 @@
 #include "common.h"
 #include "log.h"
 #include "io.h"
+#include "init.h"
 #include "fork.h"
 #include "menu.h"
 #include "file_loader.h"
@@ -39,6 +40,15 @@
 #include <arpa/inet.h>
 #include <systemd/sd-daemon.h>
 
+struct process_sockaddr_t
+{
+	pid_t pid;
+	in_addr_t s_addr;
+};
+typedef struct process_sockaddr_t PROCESS_SOCKADDR;
+
+static PROCESS_SOCKADDR process_sockaddr_pool[MAX_CLIENTS_LIMIT];
+
 int net_server(const char *hostaddr, in_port_t port)
 {
 	unsigned int namelen;
@@ -50,6 +60,8 @@ int net_server(const char *hostaddr, in_port_t port)
 	siginfo_t siginfo;
 	int sd_notify_stopping = 0;
 	MENU_SET *p_bbs_menu_new;
+	int i, j;
+	pid_t pid;
 
 	socket_server = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 
@@ -143,6 +155,20 @@ int net_server(const char *hostaddr, in_port_t port)
 
 				SYS_child_process_count--;
 				log_std("Child process (%d) exited\n", siginfo.si_pid);
+
+				i = 0;
+				for (; i < BBS_max_client; i++)
+				{
+					if (process_sockaddr_pool[i].pid == siginfo.si_pid)
+					{
+						process_sockaddr_pool[i].pid = 0;
+						break;
+					}
+				}
+				if (i >= BBS_max_client)
+				{
+					log_error("Child process (%d) not found in process sockaddr pool\n", siginfo.si_pid);
+				}
 			}
 			else if (ret == 0)
 			{
@@ -166,10 +192,16 @@ int net_server(const char *hostaddr, in_port_t port)
 			sd_notifyf(0, "STATUS=Waiting for %d child process to exit", SYS_child_process_count);
 		}
 
-		if (SYS_menu_reload && !SYS_server_exit)
+		if (SYS_conf_reload && !SYS_server_exit)
 		{
-			SYS_menu_reload = 0;
+			SYS_conf_reload = 0;
 			sd_notify(0, "RELOADING=1");
+
+			// Reload configuration
+			if (load_conf(CONF_BBSD) < 0)
+			{
+				log_error("Reload conf failed\n");
+			}
 
 			p_bbs_menu_new = calloc(1, sizeof(MENU_SET));
 			if (p_bbs_menu_new == NULL)
@@ -276,9 +308,47 @@ int net_server(const char *hostaddr, in_port_t port)
 
 					if (SYS_child_process_count - 1 < BBS_max_client)
 					{
-						if (fork_server() < 0)
+						j = 0;
+						for (i = 0; i < BBS_max_client; i++)
 						{
-							log_error("fork_server() error\n");
+							if (process_sockaddr_pool[i].pid != 0 && process_sockaddr_pool[i].s_addr == sin.sin_addr.s_addr)
+							{
+								j++;
+								if (j >= BBS_max_client_per_ip)
+								{
+									log_error("Too many client connections (%d) from %s\n", j, hostaddr_client);
+									break;
+								}
+							}
+						}
+
+						if (j < BBS_max_client_per_ip)
+						{
+							if ((pid = fork_server()) < 0)
+							{
+								log_error("fork_server() error\n");
+							}
+							else if (pid > 0)
+							{
+								i = 0;
+								for (; i < BBS_max_client; i++)
+								{
+									if (process_sockaddr_pool[i].pid == 0)
+									{
+										break;
+									}
+								}
+
+								if (i >= BBS_max_client)
+								{
+									log_error("Process sockaddr pool depleted\n");
+								}
+								else
+								{
+									process_sockaddr_pool[i].pid = pid;
+									process_sockaddr_pool[i].s_addr = sin.sin_addr.s_addr;
+								}
+							}
 						}
 					}
 					else
