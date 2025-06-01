@@ -224,6 +224,7 @@ int article_cache_load(ARTICLE_CACHE *p_cache, const char *cache_dir, const ARTI
 		return -3;
 	}
 
+	bzero(p_cache, sizeof(*p_cache));
 	memcpy((void *)p_cache, p_mmap, (size_t)(((ARTICLE_CACHE *)p_mmap)->mmap_len - ((ARTICLE_CACHE *)p_mmap)->data_len));
 
 	p_cache->p_mmap = p_mmap;
