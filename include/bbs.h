@@ -35,6 +35,7 @@ extern char BBS_server[256];
 extern char BBS_address[50];
 extern in_port_t BBS_port;
 extern unsigned int BBS_max_client;
+extern unsigned int BBS_max_client_per_ip;
 extern unsigned int BBS_max_user;
 extern char BBS_start_dt[50];
 

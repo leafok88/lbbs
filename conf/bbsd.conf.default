@@ -4,6 +4,7 @@ bbs_server localhost
 # bbs_address
 bbs_port 23
 bbs_max_client 1000
+bbs_max_client_per_ip 2
 bbs_max_user 10000
 bbs_start_dt 2000-1-1
 db_host localhost

@@ -22,11 +22,11 @@
 static const BBS_CMD bbs_cmd_list[] = {
 	{"LIST_SECTION", list_section},
 	{"RunMBEM", exec_mbem},
-	{"EXITBBS", exitbbs},
+	{"EXITBBS", exit_bbs},
 	{"LICENSE", license},
 	{"COPYRIGHT", copyright},
-	{"RELOADMENU", reloadbbsmenu},
-	{"SHUTDOWN", shutdownbbs},
+	{"RELOADCONF", reload_bbs_conf},
+	{"SHUTDOWN", shutdown_bbs},
 	{"M_FAVOUR", favour_section_filter}
 };
 

@@ -62,6 +62,7 @@ extern int data_files_load_timeval_count;
 #define SCREEN_COLS 80
 
 // Network
+#define MAX_CLIENTS_LIMIT 2048
 #define IP_ADDR_LEN 50
 #define MAX_EVENTS 10
 
@@ -83,7 +84,7 @@ extern void sig_chld_handler(int);
 extern volatile int SYS_server_exit;
 extern volatile int SYS_child_process_count;
 extern volatile int SYS_child_exit;
-extern volatile int SYS_menu_reload;
+extern volatile int SYS_conf_reload;
 extern volatile int SYS_data_file_reload;
 extern volatile int SYS_section_list_reload;
 

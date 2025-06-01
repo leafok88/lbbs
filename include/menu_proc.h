@@ -19,12 +19,12 @@
 
 extern int list_section(void *param);
 extern int exec_mbem(void *param);
-extern int exitbbs(void *param);
+extern int exit_bbs(void *param);
 extern int bbsnet(void *param);
 extern int license(void *param);
 extern int copyright(void *param);
-extern int reloadbbsmenu(void *param);
-extern int shutdownbbs(void *param);
+extern int reload_bbs_conf(void *param);
+extern int shutdown_bbs(void *param);
 extern int favour_section_filter(void *param);
 
 #endif //_MENU_PROC_H_
