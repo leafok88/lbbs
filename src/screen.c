@@ -438,9 +438,15 @@ int display_data(const void *p_data, long line_total, const long *p_line_offsets
 		len = p_line_offsets[line_current + 1] - p_line_offsets[line_current];
 		if (len >= LINE_BUFFER_LEN)
 		{
-			log_error("buffer overflow: len=%ld(%ld - %ld) line=%ld \n",
+			log_error("Buffer overflow: len=%ld(%ld - %ld) line=%ld \n",
 					  len, p_line_offsets[line_current + 1], p_line_offsets[line_current], line_current);
 			len = LINE_BUFFER_LEN - 1;
+		}
+		else if (len < 0)
+		{
+			log_error("Incorrect line offsets: len=%ld(%ld - %ld) line=%ld \n",
+					  len, p_line_offsets[line_current + 1], p_line_offsets[line_current], line_current);
+			len = 0;
 		}
 
 		memcpy(buffer, (const char *)p_data + p_line_offsets[line_current], (size_t)len);
