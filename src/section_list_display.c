@@ -273,21 +273,33 @@ static int display_article_key_handler(int *p_key, DISPLAY_CTX *p_ctx)
 		*p_key = 0;
 		break;
 	case KEY_UP:
+	case KEY_PGUP:
+	case KEY_HOME:
 		if (p_ctx->reach_begin)
 		{
 			if (section_topic_view_mode)
 			{
 				*p_key = KEY_PGUP;
 			}
+			else
+			{
+				*p_key = KEY_UP;
+			}
 			return 1;
 		}
 		break;
 	case KEY_DOWN:
+	case KEY_PGDN:
+	case KEY_END:
 		if (p_ctx->reach_end)
 		{
 			if (section_topic_view_mode)
 			{
 				*p_key = KEY_PGDN;
+			}
+			else
+			{
+				*p_key = KEY_DOWN;
 			}
 			return 1;
 		}
