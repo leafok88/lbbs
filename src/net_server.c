@@ -156,18 +156,21 @@ int net_server(const char *hostaddr, in_port_t port)
 				SYS_child_process_count--;
 				log_std("Child process (%d) exited\n", siginfo.si_pid);
 
-				i = 0;
-				for (; i < BBS_max_client; i++)
+				if (siginfo.si_pid != section_list_loader_pid)
 				{
-					if (process_sockaddr_pool[i].pid == siginfo.si_pid)
+					i = 0;
+					for (; i < BBS_max_client; i++)
 					{
-						process_sockaddr_pool[i].pid = 0;
-						break;
+						if (process_sockaddr_pool[i].pid == siginfo.si_pid)
+						{
+							process_sockaddr_pool[i].pid = 0;
+							break;
+						}
 					}
-				}
-				if (i >= BBS_max_client)
-				{
-					log_error("Child process (%d) not found in process sockaddr pool\n", siginfo.si_pid);
+					if (i >= BBS_max_client)
+					{
+						log_error("Child process (%d) not found in process sockaddr pool\n", siginfo.si_pid);
+					}
 				}
 			}
 			else if (ret == 0)
