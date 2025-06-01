@@ -122,10 +122,6 @@ int load_file(const char *filename)
 	}
 
 	line_total = split_data_lines(p_data, SCREEN_COLS, line_offsets, MAX_SPLIT_FILE_LINES);
-	if (line_total >= MAX_SPLIT_FILE_LINES)
-	{
-		log_error("split_data_lines() truncated over limit lines\n");
-	}
 
 	// Allocate shared memory
 	proj_id = (int)(time(NULL) % getpid());

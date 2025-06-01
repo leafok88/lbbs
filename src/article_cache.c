@@ -120,11 +120,6 @@ int article_cache_generate(const char *cache_dir, const ARTICLE *p_article, cons
 	header_line_cnt = split_data_lines(header, SCREEN_COLS, cache.line_offsets, MAX_SPLIT_FILE_LINES);
 	cache.line_total = header_line_cnt +
 					   split_data_lines(content, SCREEN_COLS, cache.line_offsets + header_line_cnt, MAX_SPLIT_FILE_LINES - header_line_cnt);
-	if (cache.line_total >= MAX_SPLIT_FILE_LINES)
-	{
-		log_error("split_data_lines(%s) truncated over limit lines %d >= %d\n", data_file, cache.line_total, MAX_SPLIT_FILE_LINES);
-		return -3;
-	}
 
 	for (i = header_line_cnt; i <= cache.line_total; i++)
 	{
@@ -132,11 +127,6 @@ int article_cache_generate(const char *cache_dir, const ARTICLE *p_article, cons
 	}
 
 	footer_line_cnt = split_data_lines(footer, SCREEN_COLS, cache.line_offsets + cache.line_total, MAX_SPLIT_FILE_LINES - cache.line_total);
-	if (cache.line_total + footer_line_cnt >= MAX_SPLIT_FILE_LINES)
-	{
-		log_error("split_data_lines(%s) truncated over limit lines %d >= %d\n", data_file, cache.line_total + footer_line_cnt, MAX_SPLIT_FILE_LINES);
-		return -3;
-	}
 
 	for (i = 0; i <= footer_line_cnt; i++)
 	{
@@ -145,8 +135,9 @@ int article_cache_generate(const char *cache_dir, const ARTICLE *p_article, cons
 
 	cache.data_len += footer_len;
 	cache.line_total += footer_line_cnt;
+	cache.mmap_len = sizeof(cache) - sizeof(long) * (MAX_SPLIT_FILE_LINES - (size_t)(cache.line_total) - 1) + cache.data_len;
 
-	if (write(fd, &cache, sizeof(cache)) == -1)
+	if (write(fd, &cache, cache.mmap_len - cache.data_len) == -1)
 	{
 		log_error("write(%s, cache) error (%d)\n", data_file, errno);
 		close(fd);
@@ -227,23 +218,16 @@ int article_cache_load(ARTICLE_CACHE *p_cache, const char *cache_dir, const ARTI
 		return -2;
 	}
 
-	memcpy((void *)p_cache, p_mmap, sizeof(ARTICLE_CACHE));
-
-	if (sizeof(ARTICLE_CACHE) + p_cache->data_len != mmap_len)
+	if (((ARTICLE_CACHE *)p_mmap)->mmap_len != mmap_len)
 	{
-		log_error("Inconsistent length, cache_len(%ld) + data_len(%ld) != mmap_len(%ld)\n",
-				  sizeof(ARTICLE_CACHE), p_cache->data_len, mmap_len);
-
-		if (munmap(p_mmap, mmap_len) < 0)
-		{
-			log_error("munmap() error (%d)\n", errno);
-		}
-
+		log_error("Inconsistent mmap len of article (cid=%d), %ld != %ld\n", p_article->cid, p_cache->mmap_len, mmap_len);
 		return -3;
 	}
 
+	memcpy((void *)p_cache, p_mmap, (size_t)(((ARTICLE_CACHE *)p_mmap)->mmap_len - ((ARTICLE_CACHE *)p_mmap)->data_len));
+
 	p_cache->p_mmap = p_mmap;
-	p_cache->p_data = p_mmap + sizeof(ARTICLE_CACHE);
+	p_cache->p_data = p_mmap + (p_cache->mmap_len - p_cache->data_len);
 
 	return 0;
 }
@@ -256,7 +240,7 @@ int article_cache_unload(ARTICLE_CACHE *p_cache)
 		return -1;
 	}
 
-	if (munmap(p_cache->p_mmap, sizeof(ARTICLE_CACHE) + p_cache->data_len) < 0)
+	if (munmap(p_cache->p_mmap, p_cache->mmap_len) < 0)
 	{
 		log_error("munmap() error (%d)\n", errno);
 		return -2;
