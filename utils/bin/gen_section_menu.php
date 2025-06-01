@@ -139,7 +139,7 @@ MENU;
 			$title_f = str_repeat(" ", 5 - intval(log10($article_count))) . $article_count . " ＋  " .
 				$section['name'] . str_repeat(" ", 20 - strlen($section['name'])) .
 				$class_title_f . addslashes($section['title']) . str_repeat(" ", 22 - str_length($section['title'])) .
-				$section['udf_values']['section_master'];
+				($section['udf_values']['section_master'] == "" ? "诚征版主中" : $section['udf_values']['section_master']);
 
 			$buffer .= <<<MENU
 			@LIST_SECTION   {$display_row}, 4, 1, {$section['read_user_level']},   "{$section['name']}",    "{$title_f}"
@@ -177,7 +177,7 @@ MENU;
 			$title_f = str_repeat(" ", 5 - intval(log10($article_count))) . $article_count . " ＋  " .
 				$section['name'] . str_repeat(" ", 20 - strlen($section['name'])) .
 				$class_title_f . addslashes($section['title']) . str_repeat(" ", 22 - str_length($section['title'])) .
-				$section['udf_values']['section_master'];
+				($section['udf_values']['section_master'] == "" ? "诚征版主中" : $section['udf_values']['section_master']);
 
 			$buffer .= <<<MENU
 			@LIST_SECTION   {$display_row}, 4, 1, {$section['read_user_level']},   "{$section['name']}",    "{$title_f}"
@@ -217,7 +217,7 @@ MENU;
 			$title_f = str_repeat(" ", 5 - intval(log10($article_count))) . $article_count . " ＋  " .
 				$section['name'] . str_repeat(" ", 20 - strlen($section['name'])) .
 				$class_title_f . addslashes($section['title']) . str_repeat(" ", 22 - str_length($section['title'])) .
-				$section['udf_values']['section_master'];
+				($section['udf_values']['section_master'] == "" ? "诚征版主中" : $section['udf_values']['section_master']);
 
 			$buffer .= <<<MENU
 			@LIST_SECTION   {$display_row}, 4, {$section['sid']}, {$section['read_user_level']},   "{$section['name']}",    "{$title_f}"
