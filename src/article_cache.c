@@ -118,8 +118,22 @@ int article_cache_generate(const char *cache_dir, const ARTICLE *p_article, cons
 	cache.data_len = header_len + strlen(content);
 
 	header_line_cnt = split_data_lines(header, SCREEN_COLS, cache.line_offsets, MAX_SPLIT_FILE_LINES);
+
+	if (header_len != cache.line_offsets[header_line_cnt])
+	{
+		log_std("Header of article(aid=%d) is truncated from %ld to %ld\n", p_article->aid, header_len, cache.line_offsets[header_line_cnt]);
+		header_len = (size_t)cache.line_offsets[header_line_cnt];
+	}
+
 	cache.line_total = header_line_cnt +
 					   split_data_lines(content, SCREEN_COLS, cache.line_offsets + header_line_cnt, MAX_SPLIT_FILE_LINES - header_line_cnt);
+
+	if (cache.data_len - header_len != (size_t)cache.line_offsets[cache.line_total])
+	{
+		log_std("Body of article(aid=%d) is truncated from %ld to %ld\n",
+				p_article->aid, cache.data_len - header_len, cache.line_offsets[cache.line_total]);
+		cache.data_len = header_len + (size_t)(cache.line_offsets[cache.line_total]);
+	}
 
 	for (i = header_line_cnt; i <= cache.line_total; i++)
 	{
@@ -127,6 +141,13 @@ int article_cache_generate(const char *cache_dir, const ARTICLE *p_article, cons
 	}
 
 	footer_line_cnt = split_data_lines(footer, SCREEN_COLS, cache.line_offsets + cache.line_total, MAX_SPLIT_FILE_LINES - cache.line_total);
+
+	if (footer_len != cache.line_offsets[cache.line_total + footer_line_cnt])
+	{
+		log_std("Footer of article(aid=%d) is truncated from %ld to %ld\n",
+				p_article->aid, footer_len, cache.line_offsets[cache.line_total + footer_line_cnt]);
+		footer_len = (size_t)(cache.line_offsets[cache.line_total + footer_line_cnt]);
+	}
 
 	for (i = 0; i <= footer_line_cnt; i++)
 	{
