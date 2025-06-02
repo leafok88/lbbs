@@ -16,37 +16,36 @@
 
 #include "lml.h"
 #include "log.h"
+#include "common.h"
 #include <stdio.h>
 #include <string.h>
 #include <sys/param.h>
 
-#define LML_TAG_PARAM_MAX_LEN 20
-#define LML_TAG_OUTPUT_BUF_LEN 256
+#define LML_TAG_PARAM_BUF_LEN 256
+#define LML_TAG_OUTPUT_BUF_LEN 1024
 
-#define LML_TAG_COUNT 21
+#define LML_TAG_COUNT 19
 
-const static char *LML_tag_name[][2] = {
-	{"left", "["},
-	{"right", "]"},
-	{"underline", "\033[4m"},
-	{"/underline", "\033[24m"},
-	{"u", "\033[4m"},
-	{"/u", "\033[24m"},
-	{"url", ""},
-	{"/url", "(链接: %s)"},
-	{"link", ""},
-	{"/link", "(链接: %s)"},
-	{"email", ""},
-	{"/email", "(Email: %s)"},
-	{"user", ""},
-	{"/user", "(用户: %s)"},
-	{"article", ""},
-	{"/article", "(文章: %s)"},
-	{"hide", ""},
-	{"/hide", ""},
-	{"image", "(图片: %s)"},
-	{"flash", "(Flash: %s)"},
-	{"bwf", "\033[31m****\033[m"},
+const static char *LML_tag_def[][3] = {
+	{"left", "[", ""},
+	{"right", "]", NULL},
+	{"underline", "\033[4m", ""},
+	{"/underline", "\033[24m", NULL},
+	{"u", "\033[4m", ""},
+	{"/u", "\033[24m", NULL},
+	{"url", "", ""},
+	{"/url", "(链接: %s)", NULL},
+	{"link", "", ""},
+	{"/link", "(链接: %s)", NULL},
+	{"email", "", ""},
+	{"/email", "(Email: %s)", NULL},
+	{"user", "", ""},
+	{"/user", "(用户: %s)", NULL},
+	{"article", "", ""},
+	{"/article", "(文章: %s)", NULL},
+	{"image", "(图片: %s)", ""},
+	{"flash", "(Flash: %s)", ""},
+	{"bwf", "\033[31m****\033[m", ""},
 };
 
 static int LML_tag_name_len[LML_TAG_COUNT];
@@ -60,7 +59,7 @@ inline static void lml_init(void)
 	{
 		for (i = 0; i < LML_TAG_COUNT; i++)
 		{
-			LML_tag_name_len[i] = (int)strlen(LML_tag_name[i][0]);
+			LML_tag_name_len[i] = (int)strlen(LML_tag_def[i][0]);
 		}
 
 		LML_init = 1;
@@ -69,14 +68,14 @@ inline static void lml_init(void)
 
 int lml_plain(const char *str_in, char *str_out, int buf_len)
 {
-	char tag_param_buf[LML_TAG_PARAM_MAX_LEN + 1];
+	char tag_param_buf[LML_TAG_PARAM_BUF_LEN];
 	char tag_output_buf[LML_TAG_OUTPUT_BUF_LEN];
 	int i;
 	int j = 0;
 	int k;
 	int tag_start_pos = -1;
 	int tag_end_pos = -1;
-	int tag_param_pos;
+	int tag_param_pos = -1;
 	int tag_output_len;
 
 	lml_init();
@@ -101,8 +100,9 @@ int lml_plain(const char *str_in, char *str_out, int buf_len)
 
 				for (k = 0; k < LML_TAG_COUNT; k++)
 				{
-					if (strncasecmp(LML_tag_name[k][0], str_in + tag_start_pos, (size_t)LML_tag_name_len[k]) == 0)
+					if (strncasecmp(LML_tag_def[k][0], str_in + tag_start_pos, (size_t)LML_tag_name_len[k]) == 0)
 					{
+						tag_param_pos = -1;
 						switch (str_in[tag_start_pos + LML_tag_name_len[k]])
 						{
 						case ' ':
@@ -111,13 +111,15 @@ int lml_plain(const char *str_in, char *str_out, int buf_len)
 							{
 								tag_param_pos++;
 							}
-							if (tag_end_pos - tag_param_pos > 0)
-							{
-								strncpy(tag_param_buf, str_in + tag_param_pos, (size_t)MIN(tag_end_pos - tag_param_pos, LML_TAG_PARAM_MAX_LEN));
-								tag_param_buf[MIN(tag_end_pos - tag_param_pos, LML_TAG_PARAM_MAX_LEN)] = '\0';
-							}
+							strncpy(tag_param_buf, str_in + tag_param_pos, (size_t)MIN(tag_end_pos - tag_param_pos, LML_TAG_PARAM_BUF_LEN));
+							tag_param_buf[MIN(tag_end_pos - tag_param_pos, LML_TAG_PARAM_BUF_LEN)] = '\0';
 						case ']':
-							tag_output_len = snprintf(tag_output_buf, LML_TAG_OUTPUT_BUF_LEN, LML_tag_name[k][1], tag_param_buf);
+							if (tag_param_pos == -1 && LML_tag_def[k][2] != NULL) // Apply default param if not defined
+							{
+								strncpy(tag_param_buf, LML_tag_def[k][2], LML_TAG_PARAM_BUF_LEN - 1);
+								tag_param_buf[LML_TAG_PARAM_BUF_LEN - 1] = '\0';
+							}
+							tag_output_len = snprintf(tag_output_buf, LML_TAG_OUTPUT_BUF_LEN, LML_tag_def[k][1], tag_param_buf);
 							if (j + tag_output_len >= buf_len - 1)
 							{
 								log_error("Buffer is not longer enough for output string %d >= %d\n", j + tag_output_len, buf_len - 1);

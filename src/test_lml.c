@@ -27,17 +27,16 @@ const char *str_in[] = {
 	"[left]ABCD[right]EFG",
 	"A[u]BCDE[/underline]FG",
 	"A[url BCDE[/url]FG",
-	"AB[email CDE]F[/eMAil]G",
+	"AB[email CDE]F[/eMAil]G01[emaiL]23456[/email]789",
 	"A[user DE]BC[  /User  ]FG",
 	"[article A B CD]EF[/article   ]G",
-	"AB[hide]CDE[/Hide]FG",
 	"A[ image  BCD]EFG",
 	"AB[ Flash  CDE ]FG",
 	"AB[bwf]CDEFG",
 	"[lef]A[rightBCD[right]EF[left[left[]G[left",
 };
 
-int str_cnt = 11;
+int str_cnt = 10;
 
 int main(int argc, char *argv[])
 {
