@@ -39,3 +39,4 @@ Makefile.in
 /src/test_trie_dict
 /src/test_file_loader
 /src/test_section_list
+/src/test_lml

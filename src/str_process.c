@@ -25,10 +25,11 @@ int split_line(const char *buffer, int max_display_len, int *p_eol, int *p_displ
 	int i;
 	*p_eol = 0;
 	*p_display_len = 0;
+	char c;
 
 	for (i = 0; buffer[i] != '\0'; i++)
 	{
-		char c = buffer[i];
+		c = buffer[i];
 
 		if (c == '\r' || c == '\7') // skip
 		{
