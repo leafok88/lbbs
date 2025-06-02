@@ -115,8 +115,6 @@ int article_cache_generate(const char *cache_dir, const ARTICLE *p_article, cons
 	header_len = strnlen(header, sizeof(header));
 	footer_len = strnlen(footer, sizeof(footer));
 
-	cache.data_len = header_len + strlen(content);
-
 	header_line_cnt = split_data_lines(header, SCREEN_COLS, cache.line_offsets, MAX_SPLIT_FILE_LINES);
 
 	if (header_len != cache.line_offsets[header_line_cnt])
@@ -127,6 +125,8 @@ int article_cache_generate(const char *cache_dir, const ARTICLE *p_article, cons
 
 	cache.line_total = header_line_cnt +
 					   split_data_lines(content, SCREEN_COLS, cache.line_offsets + header_line_cnt, MAX_SPLIT_FILE_LINES - header_line_cnt);
+
+	cache.data_len = header_len + strlen(content);
 
 	if (cache.data_len - header_len != (size_t)cache.line_offsets[cache.line_total])
 	{
