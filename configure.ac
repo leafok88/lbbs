@@ -21,6 +21,7 @@ AC_PROG_MAKE_SET
 # Checks for libraries.
 AC_CHECK_LIB([mysqlclient], [mysql_connect])
 AC_CHECK_LIB([z], [unzip])
+AC_CHECK_LIB([ssh])
 
 AC_HEADER_SYS_WAIT
 AC_CHECK_HEADERS([arpa/inet.h dflcn.h fcntl.h libssh/libssh.h libssh/server.h memory.h mysql/mysql.h netdb.h netinet/in.h signal.h \
