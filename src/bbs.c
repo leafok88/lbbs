@@ -24,7 +24,7 @@
 char BBS_id[20] = "";
 char BBS_name[50] = "";
 char BBS_server[256] = "";
-char BBS_address[50] = "";
+char BBS_address[50] = "0.0.0.0";
 in_port_t BBS_port = 23;
 unsigned int BBS_max_client = 256;
 unsigned int BBS_max_client_per_ip = 5;

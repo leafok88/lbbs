@@ -19,11 +19,13 @@
 
 #include <mysql/mysql.h>
 
+#define BBS_login_retry_times 3
+
 extern void login_fail();
 
 extern int bbs_login(MYSQL *db);
 
-extern int check_user(MYSQL *db, char *username, char *password);
+extern int check_user(MYSQL *db, const char *username, const char *password);
 
 extern int load_user_info(MYSQL *db, long int BBS_uid);
 

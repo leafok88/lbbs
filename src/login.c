@@ -36,10 +36,10 @@ int bbs_login(MYSQL *db)
 {
 	char username[BBS_username_max_len + 1];
 	char password[BBS_password_max_len + 1];
-	int count = 0;
+	int i = 0;
 	int ok = 0;
 
-	for (; !SYS_server_exit && !ok && count < 3; count++)
+	for (; !SYS_server_exit && !ok && i < BBS_login_retry_times; i++)
 	{
 		prints("\033[1;33mÇëÊäÈëÕÊºÅ\033[m(ÊÔÓÃÇëÊäÈë`\033[1;36mguest\033[m', "
 			   "×¢²áÇëÊäÈë`\033[1;31mnew\033[m'): ");
@@ -91,7 +91,7 @@ int bbs_login(MYSQL *db)
 	return 0;
 }
 
-int check_user(MYSQL *db, char *username, char *password)
+int check_user(MYSQL *db, const char *username, const char *password)
 {
 	MYSQL_RES *rs;
 	MYSQL_ROW row;

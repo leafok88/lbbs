@@ -27,7 +27,7 @@
 #include <stdlib.h>
 #include <errno.h>
 
-int fork_server()
+int fork_server(void)
 {
 	int pid;
 
@@ -49,7 +49,6 @@ int fork_server()
 	if (close(socket_server) == -1)
 	{
 		log_error("Close server socket failed\n");
-		return -2;
 	}
 
 	// Redirect Input
@@ -57,7 +56,7 @@ int fork_server()
 	if (dup2(socket_client, STDIN_FILENO) == -1)
 	{
 		log_error("Redirect stdin to client socket failed\n");
-		return -3;
+		goto cleanup;
 	}
 
 	// Redirect Output
@@ -65,13 +64,14 @@ int fork_server()
 	if (dup2(socket_client, STDOUT_FILENO) == -1)
 	{
 		log_error("Redirect stdout to client socket failed\n");
-		return -4;
+		goto cleanup;
 	}
 
 	SYS_child_process_count = 0;
 
 	bbs_main();
 
+cleanup:
 	// Child process exit
 	SYS_server_exit = 1;
 
@@ -88,6 +88,6 @@ int fork_server()
 	log_end();
 
 	_exit(0);
-	
+
 	return 0;
 }

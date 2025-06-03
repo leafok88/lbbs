@@ -17,6 +17,6 @@
 #ifndef _FORK_H_
 #define _FORK_H_
 
-extern int fork_server();
+extern int fork_server(void);
 
 #endif //_FORK_H_
