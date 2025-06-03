@@ -100,18 +100,18 @@ static int lml_tag_quote_filter(const char *tag_name, const char *tag_param_buf,
 const static char *LML_tag_def[][3] = {
 	{"left", "[", ""},
 	{"right", "]", NULL},
-	{"bold", "\033[1m", ""},
+	{"bold", "\033[1m", ""}, // does not work in Fterm
 	{"/bold", "\033[22m", NULL},
 	{"b", "\033[1m", ""},
 	{"/b", "\033[22m", NULL},
 	{"italic", "\033[5m", ""}, // use blink instead
-	{"/italic", "\033[25m", NULL},
+	{"/italic", "\033[m", NULL}, // \033[25m does not work in Fterm
 	{"i", "\033[5m", ""},
-	{"/i", "\033[25m", NULL},
+	{"/i", "\033[m", NULL},
 	{"underline", "\033[4m", ""},
-	{"/underline", "\033[24m", NULL},
+	{"/underline", "\033[m", NULL}, // \033[24m does not work in Fterm
 	{"u", "\033[4m", ""},
-	{"/u", "\033[24m", NULL},
+	{"/u", "\033[m", NULL},
 	{"color", NULL, (const char *)lml_tag_color_filter},
 	{"/color", "\033[m", NULL},
 	{"quote", NULL, (const char *)lml_tag_quote_filter},
