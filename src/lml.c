@@ -24,15 +24,61 @@
 #define LML_TAG_PARAM_BUF_LEN 256
 #define LML_TAG_OUTPUT_BUF_LEN 1024
 
-#define LML_TAG_COUNT 19
+typedef int (*lml_tag_filter_cb)(const char *tag_name, const char *tag_param_buf, char *tag_output_buf, size_t tag_output_buf_len);
+
+static int lml_tag_color_filter(const char *tag_name, const char *tag_param_buf, char *tag_output_buf, size_t tag_output_buf_len)
+{
+	if (strcasecmp(tag_name, "color") == 0)
+	{
+		if (strcasecmp(tag_param_buf, "red") == 0)
+		{
+			return snprintf(tag_output_buf, tag_output_buf_len, "\033[1;31m");
+		}
+		else if (strcasecmp(tag_param_buf, "green") == 0)
+		{
+			return snprintf(tag_output_buf, tag_output_buf_len, "\033[1;32m");
+		}
+		else if (strcasecmp(tag_param_buf, "yellow") == 0)
+		{
+			return snprintf(tag_output_buf, tag_output_buf_len, "\033[1;33m");
+		}
+		else if (strcasecmp(tag_param_buf, "blue") == 0)
+		{
+			return snprintf(tag_output_buf, tag_output_buf_len, "\033[1;34m");
+		}
+		else if (strcasecmp(tag_param_buf, "magenta") == 0)
+		{
+			return snprintf(tag_output_buf, tag_output_buf_len, "\033[1;35m");
+		}
+		else if (strcasecmp(tag_param_buf, "cyan") == 0)
+		{
+			return snprintf(tag_output_buf, tag_output_buf_len, "\033[1;36m");
+		}
+		else if (strcasecmp(tag_param_buf, "black") == 0)
+		{
+			return snprintf(tag_output_buf, tag_output_buf_len, "\033[1;30;47m");
+		}
+	}
+	return 0;
+}
 
 const static char *LML_tag_def[][3] = {
 	{"left", "[", ""},
 	{"right", "]", NULL},
+	{"bold", "\033[1m", ""},
+	{"/bold", "\033[21m", NULL},
+	{"b", "\033[1m", ""},
+	{"/b", "\033[21m", NULL},
+	{"italic", "\033[3m", ""},
+	{"/italic", "\033[23m", NULL},
+	{"i", "\033[3m", ""},
+	{"/i", "\033[23m", NULL},
 	{"underline", "\033[4m", ""},
 	{"/underline", "\033[24m", NULL},
 	{"u", "\033[4m", ""},
 	{"/u", "\033[24m", NULL},
+	{"color", NULL, (const char *)lml_tag_color_filter},
+	{"/color", "\033[m", NULL},
 	{"url", "", ""},
 	{"/url", "(а╢╫с: %s)", NULL},
 	{"link", "", ""},
@@ -45,8 +91,10 @@ const static char *LML_tag_def[][3] = {
 	{"/article", "(ндуб: %s)", NULL},
 	{"image", "(м╪ф╛: %s)", ""},
 	{"flash", "(Flash: %s)", ""},
-	{"bwf", "\033[31m****\033[m", ""},
+	{"bwf", "\033[1;31m****\033[m", ""},
 };
+
+#define LML_TAG_COUNT 29
 
 static int LML_tag_name_len[LML_TAG_COUNT];
 static int LML_init = 0;
@@ -114,12 +162,20 @@ int lml_plain(const char *str_in, char *str_out, int buf_len)
 							strncpy(tag_param_buf, str_in + tag_param_pos, (size_t)MIN(tag_end_pos - tag_param_pos, LML_TAG_PARAM_BUF_LEN));
 							tag_param_buf[MIN(tag_end_pos - tag_param_pos, LML_TAG_PARAM_BUF_LEN)] = '\0';
 						case ']':
-							if (tag_param_pos == -1 && LML_tag_def[k][2] != NULL) // Apply default param if not defined
+							if (tag_param_pos == -1 && LML_tag_def[k][1] != NULL && LML_tag_def[k][2] != NULL) // Apply default param if not defined
 							{
 								strncpy(tag_param_buf, LML_tag_def[k][2], LML_TAG_PARAM_BUF_LEN - 1);
 								tag_param_buf[LML_TAG_PARAM_BUF_LEN - 1] = '\0';
 							}
-							tag_output_len = snprintf(tag_output_buf, LML_TAG_OUTPUT_BUF_LEN, LML_tag_def[k][1], tag_param_buf);
+							if (LML_tag_def[k][1] != NULL)
+							{
+								tag_output_len = snprintf(tag_output_buf, LML_TAG_OUTPUT_BUF_LEN, LML_tag_def[k][1], tag_param_buf);
+							}
+							else
+							{
+								tag_output_len = ((lml_tag_filter_cb)LML_tag_def[k][2])(
+									LML_tag_def[k][0], tag_param_buf, tag_output_buf, LML_TAG_OUTPUT_BUF_LEN);
+							}
 							if (j + tag_output_len >= buf_len - 1)
 							{
 								log_error("Buffer is not longer enough for output string %d >= %d\n", j + tag_output_len, buf_len - 1);

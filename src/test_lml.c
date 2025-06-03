@@ -34,9 +34,10 @@ const char *str_in[] = {
 	"AB[ Flash  CDE ]FG",
 	"AB[bwf]CDEFG",
 	"[lef]A[rightBCD[right]EF[left[left[]G[left",
+	"A[ color  BCD]EF[/color]G[color black]0[/color][color magenta]1[color cyan]23[/color]4[color red]5[/color]6[color yellOw]7[/color]8[color green]9[color blue]0[/color]",
 };
 
-int str_cnt = 10;
+int str_cnt = 11;
 
 int main(int argc, char *argv[])
 {
