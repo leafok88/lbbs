@@ -3,8 +3,8 @@
 #include "log.h"
 #include "user_priv.h"
 #include <stdio.h>
-#include <mysql.h>
 #include <stdlib.h>
+#include <mysql/mysql.h>
 
 int BBS_user_money = 0;
 

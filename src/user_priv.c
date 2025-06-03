@@ -20,8 +20,8 @@
 #include "database.h"
 #include "log.h"
 #include <stdio.h>
-#include <mysql.h>
 #include <stdlib.h>
+#include <mysql/mysql.h>
 
 BBS_user_priv BBS_priv;
 
