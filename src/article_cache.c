@@ -16,6 +16,7 @@
 
 #include "article_cache.h"
 #include "log.h"
+#include "lml.h"
 #include <errno.h>
 #include <stdio.h>
 #include <fcntl.h>
@@ -28,6 +29,7 @@
 #include <string.h>
 
 #define ARTICLE_HEADER_MAX_LEN 4096
+#define ARTICLE_CONTENT_MAX_LEN 1024 * 1024 * 4 // 4MB
 #define ARTICLE_FOOTER_MAX_LEN 4096
 #define SUB_DT_MAX_LEN 50
 
@@ -66,6 +68,7 @@ int article_cache_generate(const char *cache_dir, const ARTICLE *p_article, cons
 	char header[ARTICLE_HEADER_MAX_LEN];
 	size_t header_len;
 	long header_line_cnt;
+	char content_f[ARTICLE_CONTENT_MAX_LEN];
 	char footer[ARTICLE_FOOTER_MAX_LEN];
 	size_t footer_len;
 	long footer_line_cnt;
@@ -123,10 +126,11 @@ int article_cache_generate(const char *cache_dir, const ARTICLE *p_article, cons
 		header_len = (size_t)cache.line_offsets[header_line_cnt];
 	}
 
-	cache.line_total = header_line_cnt +
-					   split_data_lines(content, SCREEN_COLS, cache.line_offsets + header_line_cnt, MAX_SPLIT_FILE_LINES - header_line_cnt);
+	// Apply LML render to content body
+	cache.data_len = header_len + (size_t)lml_plain(content, content_f, ARTICLE_CONTENT_MAX_LEN);
 
-	cache.data_len = header_len + strlen(content);
+	cache.line_total = header_line_cnt +
+					   split_data_lines(content_f, SCREEN_COLS, cache.line_offsets + header_line_cnt, MAX_SPLIT_FILE_LINES - header_line_cnt);
 
 	if (cache.data_len - header_len != (size_t)cache.line_offsets[cache.line_total])
 	{
@@ -170,7 +174,7 @@ int article_cache_generate(const char *cache_dir, const ARTICLE *p_article, cons
 		close(fd);
 		return -3;
 	}
-	if (write(fd, content, cache.data_len - header_len - footer_len) == -1)
+	if (write(fd, content_f, cache.data_len - header_len - footer_len) == -1)
 	{
 		log_error("write(%s, content) error (%d)\n", data_file, errno);
 		close(fd);
