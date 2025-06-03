@@ -66,9 +66,9 @@ static int lml_tag_color_filter(const char *tag_name, const char *tag_param_buf,
 #define LML_TAG_QUOTE_LEVEL_LOOP 3
 
 static const char *lml_tag_quote_color[] = {
-	"\033[33m",
-	"\033[32m",
-	"\033[35m",
+	"\033[33m", // yellow
+	"\033[32m", // green
+	"\033[35m", // magenta
 };
 
 static int lml_tag_quote_level = 0;
@@ -90,14 +90,8 @@ static int lml_tag_quote_filter(const char *tag_name, const char *tag_param_buf,
 		{
 			lml_tag_quote_level--;
 		}
-		if (lml_tag_quote_level > 0)
-		{
-			return snprintf(tag_output_buf, tag_output_buf_len, lml_tag_quote_color[lml_tag_quote_level % LML_TAG_QUOTE_LEVEL_LOOP]);
-		}
-		else
-		{
-			return snprintf(tag_output_buf, tag_output_buf_len, "\033[m");
-		}
+		return snprintf(tag_output_buf, tag_output_buf_len,
+						(lml_tag_quote_level > 0 ? lml_tag_quote_color[lml_tag_quote_level % LML_TAG_QUOTE_LEVEL_LOOP] : "\033[m"));
 	}
 
 	return 0;
@@ -107,13 +101,13 @@ const static char *LML_tag_def[][3] = {
 	{"left", "[", ""},
 	{"right", "]", NULL},
 	{"bold", "\033[1m", ""},
-	{"/bold", "\033[21m", NULL},
+	{"/bold", "\033[22m", NULL},
 	{"b", "\033[1m", ""},
-	{"/b", "\033[21m", NULL},
-	{"italic", "\033[3m", ""},
-	{"/italic", "\033[23m", NULL},
-	{"i", "\033[3m", ""},
-	{"/i", "\033[23m", NULL},
+	{"/b", "\033[22m", NULL},
+	{"italic", "\033[5m", ""}, // use blink instead
+	{"/italic", "\033[25m", NULL},
+	{"i", "\033[5m", ""},
+	{"/i", "\033[25m", NULL},
 	{"underline", "\033[4m", ""},
 	{"/underline", "\033[24m", NULL},
 	{"u", "\033[4m", ""},
@@ -168,6 +162,8 @@ int lml_plain(const char *str_in, char *str_out, int buf_len)
 	int tag_end_pos = -1;
 	int tag_param_pos = -1;
 	int tag_output_len;
+	int new_line = 1;
+	int fb_quote_level = 0;
 
 	lml_init();
 
@@ -175,6 +171,60 @@ int lml_plain(const char *str_in, char *str_out, int buf_len)
 
 	for (i = 0; str_in[i] != '\0'; i++)
 	{
+		if (new_line)
+		{
+			if (fb_quote_level > 0)
+			{
+				lml_tag_quote_level -= fb_quote_level;
+
+				tag_output_len = snprintf(tag_output_buf, LML_TAG_OUTPUT_BUF_LEN,
+										  (lml_tag_quote_level > 0 ? lml_tag_quote_color[lml_tag_quote_level % LML_TAG_QUOTE_LEVEL_LOOP] : "\033[m"));
+				if (j + tag_output_len >= buf_len - 1)
+				{
+					log_error("Buffer is not longer enough for output string %d >= %d\n", j + tag_output_len, buf_len - 1);
+					str_out[j] = '\0';
+					return j;
+				}
+				memcpy(str_out + j, tag_output_buf, (size_t)tag_output_len);
+				j += tag_output_len;
+
+				fb_quote_level = 0;
+			}
+
+			while (str_in[i + fb_quote_level * 2] == ':' && str_in[i + fb_quote_level * 2 + 1] == ' ') // FB2000 quote leading str
+			{
+				fb_quote_level++;
+			}
+
+			if (fb_quote_level > 0)
+			{
+				lml_tag_quote_level += fb_quote_level;
+
+				tag_output_len = snprintf(tag_output_buf, LML_TAG_OUTPUT_BUF_LEN,
+										  lml_tag_quote_color[(lml_tag_quote_level) % LML_TAG_QUOTE_LEVEL_LOOP]);
+				if (j + tag_output_len >= buf_len - 1)
+				{
+					log_error("Buffer is not longer enough for output string %d >= %d\n", j + tag_output_len, buf_len - 1);
+					str_out[j] = '\0';
+					return j;
+				}
+				memcpy(str_out + j, tag_output_buf, (size_t)tag_output_len);
+				j += tag_output_len;
+			}
+
+			new_line = 0;
+		}
+
+		if (str_in[i] == '\n')
+		{
+			tag_start_pos = -1; // jump out of tag at end of line
+			new_line = 1;
+		}
+		else if (str_in[i] == '\r')
+		{
+			continue; // ignore '\r'
+		}
+
 		if (str_in[i] == '[')
 		{
 			tag_start_pos = i + 1;
@@ -270,6 +320,19 @@ int lml_plain(const char *str_in, char *str_out, int buf_len)
 		{
 			// Do nothing
 		}
+	}
+
+	if (lml_tag_quote_level > 0)
+	{
+		tag_output_len = snprintf(tag_output_buf, LML_TAG_OUTPUT_BUF_LEN, "\033[m");
+		if (j + tag_output_len >= buf_len - 1)
+		{
+			log_error("Buffer is not longer enough for output string %d >= %d\n", j + tag_output_len, buf_len - 1);
+			str_out[j] = '\0';
+			return j;
+		}
+		memcpy(str_out + j, tag_output_buf, (size_t)tag_output_len);
+		j += tag_output_len;
 	}
 
 	str_out[j] = '\0';

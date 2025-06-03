@@ -25,7 +25,7 @@
 
 const char *str_in[] = {
 	"[left]ABCD[right]EFG",
-	"A[u]BCDE[/underline]FG",
+	"A[u]B[italic]CD[/i]E[/underline][b]FG[/bold]",
 	"A[url BCDE[/url]FG",
 	"AB[email CDE]F[/eMAil]G01[emaiL]23456[/email]789",
 	"A[user DE]BC[  /User  ]FG",
@@ -36,9 +36,10 @@ const char *str_in[] = {
 	"[lef]A[rightBCD[right]EF[left[left[]G[left",
 	"A[ color  BCD]EF[/color]G[color black]0[/color][color magenta]1[color cyan]23[/color]4[color red]5[/color]6[color yellOw]7[/color]8[color green]9[color blue]0[/color]",
 	"A[quote]B[quote]C[quote]D[quote]E[/quote]F[/quote]G[/quote]0[/quote]1[/quote]2[quote]3[/quote]4[/quote]56789",
+	": ABCDE[quote]FG\r\nab[/quote]cd[quote]ef[quote]g\r\n: : 012[/quote]345[/quote]6789\nABC[quote]DEFG"
 };
 
-int str_cnt = 12;
+int str_cnt = 13;
 
 int main(int argc, char *argv[])
 {
