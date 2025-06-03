@@ -23,8 +23,6 @@ AC_CHECK_LIB([mysqlclient], [mysql_connect])
 AC_CHECK_LIB([z], [unzip])
 AC_CHECK_LIB([ssh], [ssh_init])
 
-AX_CHECK_MYSQL()
-
 AC_HEADER_SYS_WAIT
 AC_CHECK_HEADERS([arpa/inet.h dflcn.h fcntl.h libssh/libssh.h libssh/server.h memory.h mysql/mysql.h netdb.h netinet/in.h signal.h \
 					stdint.h stdlib.h string.h strings.h sys/epoll.h sys/ioctl.h sys/ipc.h sys/mman.h sys/param.h sys/socket.h \
