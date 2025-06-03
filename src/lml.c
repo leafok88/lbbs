@@ -62,6 +62,47 @@ static int lml_tag_color_filter(const char *tag_name, const char *tag_param_buf,
 	return 0;
 }
 
+#define LML_TAG_QUOTE_MAX_LEVEL 10
+#define LML_TAG_QUOTE_LEVEL_LOOP 3
+
+static const char *lml_tag_quote_color[] = {
+	"\033[33m",
+	"\033[32m",
+	"\033[35m",
+};
+
+static int lml_tag_quote_level = 0;
+
+static int lml_tag_quote_filter(const char *tag_name, const char *tag_param_buf, char *tag_output_buf, size_t tag_output_buf_len)
+{
+
+	if (strcasecmp(tag_name, "quote") == 0)
+	{
+		if (lml_tag_quote_level <= LML_TAG_QUOTE_MAX_LEVEL)
+		{
+			lml_tag_quote_level++;
+		}
+		return snprintf(tag_output_buf, tag_output_buf_len, lml_tag_quote_color[lml_tag_quote_level % LML_TAG_QUOTE_LEVEL_LOOP]);
+	}
+	else if (strcasecmp(tag_name, "/quote") == 0)
+	{
+		if (lml_tag_quote_level > 0)
+		{
+			lml_tag_quote_level--;
+		}
+		if (lml_tag_quote_level > 0)
+		{
+			return snprintf(tag_output_buf, tag_output_buf_len, lml_tag_quote_color[lml_tag_quote_level % LML_TAG_QUOTE_LEVEL_LOOP]);
+		}
+		else
+		{
+			return snprintf(tag_output_buf, tag_output_buf_len, "\033[m");
+		}
+	}
+
+	return 0;
+}
+
 const static char *LML_tag_def[][3] = {
 	{"left", "[", ""},
 	{"right", "]", NULL},
@@ -79,6 +120,8 @@ const static char *LML_tag_def[][3] = {
 	{"/u", "\033[24m", NULL},
 	{"color", NULL, (const char *)lml_tag_color_filter},
 	{"/color", "\033[m", NULL},
+	{"quote", NULL, (const char *)lml_tag_quote_filter},
+	{"/quote", NULL, (const char *)lml_tag_quote_filter},
 	{"url", "", ""},
 	{"/url", "(Á´½Ó: %s)", NULL},
 	{"link", "", ""},
@@ -94,7 +137,7 @@ const static char *LML_tag_def[][3] = {
 	{"bwf", "\033[1;31m****\033[m", ""},
 };
 
-#define LML_TAG_COUNT 29
+#define LML_TAG_COUNT 31
 
 static int LML_tag_name_len[LML_TAG_COUNT];
 static int LML_init = 0;
@@ -127,6 +170,8 @@ int lml_plain(const char *str_in, char *str_out, int buf_len)
 	int tag_output_len;
 
 	lml_init();
+
+	lml_tag_quote_level = 0;
 
 	for (i = 0; str_in[i] != '\0'; i++)
 	{
