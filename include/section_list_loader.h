@@ -18,7 +18,7 @@
 #define _SECTION_LIST_LOADER_H_
 
 #include "section_list.h"
-#include <mysql.h>
+#include <mysql/mysql.h>
 
 #define ERR_UNKNOWN_SECTION -101
 #define LOAD_ARTICLE_COUNT_LIMIT 1000

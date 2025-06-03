@@ -17,7 +17,7 @@
 #ifndef _DATABASE_H_
 #define _DATABASE_H_
 
-#include <mysql.h>
+#include <mysql/mysql.h>
 
 #define SQL_BUFFER_LEN 2048
 

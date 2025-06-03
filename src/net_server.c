@@ -39,6 +39,8 @@
 #include <sys/epoll.h>
 #include <arpa/inet.h>
 #include <systemd/sd-daemon.h>
+#include <libssh/libssh.h>
+#include <libssh/server.h>
 
 struct process_sockaddr_t
 {

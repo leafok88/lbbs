@@ -18,7 +18,7 @@
 #define _USER_PRIV_H_
 
 #include "bbs.h"
-#include <mysql.h>
+#include <mysql/mysql.h>
 
 // User privilege
 #define S_NONE 0x0

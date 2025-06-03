@@ -17,7 +17,7 @@
 #ifndef _LOGIN_H_
 #define _LOGIN_H_
 
-#include <mysql.h>
+#include <mysql/mysql.h>
 
 extern void login_fail();
 

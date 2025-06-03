@@ -27,10 +27,10 @@
 #include <errno.h>
 #include <ctype.h>
 #include <string.h>
-#include <mysql.h>
 #include <regex.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <mysql/mysql.h>
 
 int bbs_login(MYSQL *db)
 {
