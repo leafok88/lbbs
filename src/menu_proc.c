@@ -127,7 +127,7 @@ int reload_bbs_conf(void *param)
 
 int shutdown_bbs(void *param)
 {
-	log_std("Notify main process to exit\n");
+	log_common("Notify main process to exit\n");
 
 	if (kill(getppid(), SIGTERM) < 0)
 	{

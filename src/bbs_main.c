@@ -177,7 +177,7 @@ int bbs_logout(MYSQL *db)
 
 	display_file(DATA_GOODBYE, 1, 1);
 
-	log_std("User logout\n");
+	log_common("User logout\n");
 
 	return 0;
 }

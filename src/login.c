@@ -85,7 +85,7 @@ int bbs_login(MYSQL *db)
 		return -1;
 	}
 
-	log_std("User \"%s\"(%ld) login from %s:%d\n",
+	log_common("User \"%s\"(%ld) login from %s:%d\n",
 			BBS_username, BBS_priv.uid, hostaddr_client, port_client);
 
 	return 0;

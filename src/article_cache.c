@@ -122,7 +122,7 @@ int article_cache_generate(const char *cache_dir, const ARTICLE *p_article, cons
 
 	if (header_len != cache.line_offsets[header_line_cnt])
 	{
-		log_std("Header of article(aid=%d) is truncated from %ld to %ld\n", p_article->aid, header_len, cache.line_offsets[header_line_cnt]);
+		log_common("Header of article(aid=%d) is truncated from %ld to %ld\n", p_article->aid, header_len, cache.line_offsets[header_line_cnt]);
 		header_len = (size_t)cache.line_offsets[header_line_cnt];
 	}
 
@@ -134,7 +134,7 @@ int article_cache_generate(const char *cache_dir, const ARTICLE *p_article, cons
 
 	if (cache.data_len - header_len != (size_t)cache.line_offsets[cache.line_total])
 	{
-		log_std("Body of article(aid=%d) is truncated from %ld to %ld\n",
+		log_common("Body of article(aid=%d) is truncated from %ld to %ld\n",
 				p_article->aid, cache.data_len - header_len, cache.line_offsets[cache.line_total]);
 		cache.data_len = header_len + (size_t)(cache.line_offsets[cache.line_total]);
 	}
@@ -148,7 +148,7 @@ int article_cache_generate(const char *cache_dir, const ARTICLE *p_article, cons
 
 	if (footer_len != cache.line_offsets[cache.line_total + footer_line_cnt])
 	{
-		log_std("Footer of article(aid=%d) is truncated from %ld to %ld\n",
+		log_common("Footer of article(aid=%d) is truncated from %ld to %ld\n",
 				p_article->aid, footer_len, cache.line_offsets[cache.line_total + footer_line_cnt]);
 		footer_len = (size_t)(cache.line_offsets[cache.line_total + footer_line_cnt]);
 	}

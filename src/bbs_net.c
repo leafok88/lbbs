@@ -385,7 +385,7 @@ int bbsnet_connect(int n)
 
 	prints("\033[1;31m连接成功！\033[m\r\n");
 	iflush();
-	log_std("BBSNET connect to %s:%d\n", remote_addr, remote_port);
+	log_common("BBSNET connect to %s:%d\n", remote_addr, remote_port);
 
 	ev.events = EPOLLIN | EPOLLOUT | EPOLLET;
 	ev.data.fd = sock;
@@ -456,7 +456,7 @@ int bbsnet_connect(int n)
 					}
 					else if (ret == 0) // broken pipe
 					{
-						log_std("read(STDIN) EOF\n");
+						log_common("read(STDIN) EOF\n");
 						stdin_read_wait = 0;
 						loop = 0;
 						break;
@@ -496,7 +496,7 @@ int bbsnet_connect(int n)
 					}
 					else if (ret == 0) // broken pipe
 					{
-						log_std("write(socket) EOF\n");
+						log_common("write(socket) EOF\n");
 						sock_write_wait = 0;
 						loop = 0;
 						break;
@@ -541,7 +541,7 @@ int bbsnet_connect(int n)
 					}
 					else if (ret == 0) // broken pipe
 					{
-						log_std("read(socket) EOF\n");
+						log_common("read(socket) EOF\n");
 						sock_read_wait = 0;
 						loop = 0;
 						break;
@@ -580,7 +580,7 @@ int bbsnet_connect(int n)
 					}
 					else if (ret == 0) // broken pipe
 					{
-						log_std("write(STDOUT) EOF\n");
+						log_common("write(STDOUT) EOF\n");
 						stdout_write_wait = 0;
 						loop = 0;
 						break;
@@ -622,7 +622,7 @@ cleanup:
 	t_used = time(0) - t_used;
 	tm_used = gmtime(&t_used);
 
-	log_std("BBSNET disconnect, %d days %d hours %d minutes %d seconds used\n",
+	log_common("BBSNET disconnect, %d days %d hours %d minutes %d seconds used\n",
 			tm_used->tm_mday - 1, tm_used->tm_hour, tm_used->tm_min,
 			tm_used->tm_sec);
 

@@ -36,7 +36,7 @@ int fork_server(void)
 	if (pid > 0) // Parent process
 	{
 		SYS_child_process_count++;
-		log_std("Child process (%d) start\n", pid);
+		log_common("Child process (%d) start\n", pid);
 		return pid;
 	}
 	else if (pid < 0) // Error
@@ -84,7 +84,7 @@ cleanup:
 	close(STDIN_FILENO);
 	close(STDOUT_FILENO);
 
-	log_std("Process exit normally\n");
+	log_common("Process exit normally\n");
 	log_end();
 
 	_exit(0);

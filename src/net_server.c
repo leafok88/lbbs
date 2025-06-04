@@ -106,7 +106,7 @@ int net_server(const char *hostaddr, in_port_t port)
 	port_server = ntohs(sin.sin_port);
 	namelen = sizeof(sin);
 
-	log_std("Listening at %s:%d\n", hostaddr_server, port_server);
+	log_common("Listening at %s:%d\n", hostaddr_server, port_server);
 
 	epollfd = epoll_create1(0);
 	if (epollfd < 0)
@@ -155,7 +155,7 @@ int net_server(const char *hostaddr, in_port_t port)
 				SYS_child_exit = 1; // Retry waitid
 
 				SYS_child_process_count--;
-				log_std("Child process (%d) exited\n", siginfo.si_pid);
+				log_common("Child process (%d) exited\n", siginfo.si_pid);
 
 				if (siginfo.si_pid != section_list_loader_pid)
 				{
@@ -187,7 +187,7 @@ int net_server(const char *hostaddr, in_port_t port)
 
 		if (SYS_server_exit && !SYS_child_exit && SYS_child_process_count > 0)
 		{
-			log_std("Notify %d child process to exit\n", SYS_child_process_count);
+			log_common("Notify %d child process to exit\n", SYS_child_process_count);
 			if (kill(0, SIGTERM) < 0)
 			{
 				log_error("Send SIGTERM signal failed (%d)\n", errno);
@@ -228,7 +228,7 @@ int net_server(const char *hostaddr, in_port_t port)
 				p_bbs_menu = p_bbs_menu_new;
 				p_bbs_menu_new = NULL;
 
-				log_std("Reload menu successfully\n");
+				log_common("Reload menu successfully\n");
 			}
 
 			sd_notify(0, "READY=1");
@@ -247,7 +247,7 @@ int net_server(const char *hostaddr, in_port_t port)
 				}
 			}
 
-			log_std("Reload data files successfully\n");
+			log_common("Reload data files successfully\n");
 			sd_notify(0, "READY=1");
 		}
 
@@ -308,7 +308,7 @@ int net_server(const char *hostaddr, in_port_t port)
 
 					port_client = ntohs(sin.sin_port);
 
-					log_std("Accept connection from %s:%d\n", hostaddr_client, port_client);
+					log_common("Accept connection from %s:%d\n", hostaddr_client, port_client);
 
 					if (SYS_child_process_count - 1 < BBS_max_client)
 					{

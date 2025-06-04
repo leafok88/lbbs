@@ -24,20 +24,20 @@
 #define _POSIX_C_SOURCE 200809L
 #include <string.h>
 
-FILE *fp_log_std;
-FILE *fp_log_err;
+FILE *fp_common_log;
+FILE *fp_error_log;
 
-int log_begin(char *file_log_std, char *file_log_err)
+int log_begin(char *common_log_file, char *error_log_file)
 {
-	fp_log_std = fopen(file_log_std, "a");
-	if (fp_log_std == NULL)
+	fp_common_log = fopen(common_log_file, "a");
+	if (fp_common_log == NULL)
 	{
 		perror("log_begin failed\n");
 		return -1;
 	}
 
-	fp_log_err = fopen(file_log_err, "a");
-	if (fp_log_err == NULL)
+	fp_error_log = fopen(error_log_file, "a");
+	if (fp_error_log == NULL)
 	{
 		perror("log_begin failed\n");
 		return -2;
@@ -48,8 +48,8 @@ int log_begin(char *file_log_std, char *file_log_err)
 
 void log_end()
 {
-	fclose(fp_log_std);
-	fclose(fp_log_err);
+	fclose(fp_common_log);
+	fclose(fp_error_log);
 }
 
 int log_head(char *buf, size_t len)
@@ -66,7 +66,7 @@ int log_head(char *buf, size_t len)
 	return 0;
 }
 
-int log_std(const char *format, ...)
+int log_common(const char *format, ...)
 {
 	va_list args;
 	int retval;
@@ -76,10 +76,10 @@ int log_std(const char *format, ...)
 	strncat(buf, format, sizeof(buf) - strnlen(buf, sizeof(buf)));
 
 	va_start(args, format);
-	retval = vfprintf(fp_log_std, buf, args);
+	retval = vfprintf(fp_common_log, buf, args);
 	va_end(args);
 
-	fflush(fp_log_std);
+	fflush(fp_common_log);
 
 	return retval;
 }
@@ -94,26 +94,26 @@ int log_error(const char *format, ...)
 	strncat(buf, format, sizeof(buf) - strnlen(buf, sizeof(buf)));
 
 	va_start(args, format);
-	retval = vfprintf(fp_log_err, buf, args);
+	retval = vfprintf(fp_error_log, buf, args);
 	va_end(args);
 
-	fflush(fp_log_err);
+	fflush(fp_error_log);
 
 	return retval;
 }
 
-int log_std_redirect(int fd)
+int log_common_redir(int fd)
 {
 	int ret;
-	close(fileno(fp_log_std));
-	ret = dup2(fd, fileno(fp_log_std));
+	close(fileno(fp_common_log));
+	ret = dup2(fd, fileno(fp_common_log));
 	return ret;
 }
 
-int log_err_redirect(int fd)
+int log_error_redir(int fd)
 {
 	int ret;
-	close(fileno(fp_log_err));
-	ret = dup2(fd, fileno(fp_log_err));
+	close(fileno(fp_error_log));
+	ret = dup2(fd, fileno(fp_error_log));
 	return ret;
 }

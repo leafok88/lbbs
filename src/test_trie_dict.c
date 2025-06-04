@@ -55,8 +55,8 @@ int main(int argc, char *argv[])
 		return -1;
 	}
 
-	log_std_redirect(STDOUT_FILENO);
-	log_err_redirect(STDERR_FILENO);
+	log_common_redir(STDOUT_FILENO);
+	log_error_redir(STDERR_FILENO);
 
 	if ((fp = fopen(TRIE_DICT_SHM_FILE, "w")) == NULL)
 	{

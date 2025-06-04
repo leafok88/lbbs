@@ -23,11 +23,11 @@ static int auth_password(ssh_session session, const char *user,
 {
 	(void)userdata;
 
-	log_std("Authenticating user %s pwd %s\n", user, password);
+	log_common("Authenticating user %s pwd %s\n", user, password);
 	if (strcmp(user, USER) == 0 && strcmp(password, PASSWORD) == 0)
 	{
 		authenticated = 1;
-		log_std("Authenticated\n");
+		log_common("Authenticated\n");
 		return SSH_AUTH_SUCCESS;
 	}
 	if (tries >= 3)
@@ -52,7 +52,7 @@ static int pty_request(ssh_session session, ssh_channel channel, const char *ter
 	(void)px;
 	(void)py;
 	(void)userdata;
-	log_std("Allocated terminal\n");
+	log_common("Allocated terminal\n");
 	return 0;
 }
 
@@ -61,7 +61,7 @@ static int shell_request(ssh_session session, ssh_channel channel, void *userdat
 	(void)session;
 	(void)channel;
 	(void)userdata;
-	log_std("Allocated shell\n");
+	log_common("Allocated shell\n");
 	return 0;
 }
 struct ssh_channel_callbacks_struct channel_cb = {
@@ -76,7 +76,7 @@ static ssh_channel new_session_channel(ssh_session session, void *userdata)
 	if (channel != NULL)
 		return NULL;
 
-	log_std("Allocated session channel\n");
+	log_common("Allocated session channel\n");
 	channel = ssh_channel_new(session);
 	ssh_callbacks_init(&channel_cb);
 	ssh_set_channel_callbacks(channel, &channel_cb);
@@ -167,7 +167,7 @@ int ssh_server(const char *hostaddr, unsigned int port)
 				}
 				else
 				{
-					log_std("Authenticated and got a channel\n");
+					log_common("Authenticated and got a channel\n");
 				}
 
 				snprintf(buf, sizeof(buf), "Hello, welcome to the Sample SSH proxy.\r\nPlease select your destination: ");
@@ -197,7 +197,7 @@ int ssh_server(const char *hostaddr, unsigned int port)
 				} while (i > 0);
 				snprintf(buf, sizeof(buf), "Trying to connect to \"%s\"\r\n", host);
 				ssh_channel_write(channel, buf, (uint32_t)strlen(buf));
-				log_std("%s", buf);
+				log_common("%s", buf);
 
 				ssh_disconnect(session);
 				ssh_free(session);
@@ -233,8 +233,8 @@ int main(int argc, char *argv[])
 		return -1;
 	}
 
-	log_std_redirect(STDOUT_FILENO);
-	log_err_redirect(STDERR_FILENO);
+	log_common_redir(STDOUT_FILENO);
+	log_error_redir(STDERR_FILENO);
 
 	ssh_server("0.0.0.0", 2322);
 

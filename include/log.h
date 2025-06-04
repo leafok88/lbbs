@@ -19,18 +19,18 @@
 
 #include <stddef.h>
 
-extern int log_begin(char *file_log_std, char *file_log_err);
+extern int log_begin(char *common_log_file, char *error_log_file);
 
 extern void log_end();
 
 extern int log_head(char *buf, size_t len);
 
-extern int log_std(const char *format, ...);
+extern int log_common(const char *format, ...);
 
 extern int log_error(const char *format, ...);
 
-extern int log_std_redirect(int fd);
+extern int log_common_redir(int fd);
 
-extern int log_err_redirect(int fd);
+extern int log_error_redir(int fd);
 
 #endif //_LOG_H_

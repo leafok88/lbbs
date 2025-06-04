@@ -137,11 +137,11 @@ int main(int argc, char *argv[])
 
 	if ((!daemon) && std_log_redir)
 	{
-		log_std_redirect(STDERR_FILENO);
+		log_common_redir(STDERR_FILENO);
 	}
 	if ((!daemon) && error_log_redir)
 	{
-		log_err_redirect(STDERR_FILENO);
+		log_error_redir(STDERR_FILENO);
 	}
 
 	// Load configuration
@@ -248,7 +248,7 @@ int main(int argc, char *argv[])
 		last_aid = article_block_last_aid();
 	} while (ret == LOAD_ARTICLE_COUNT_LIMIT);
 
-	log_std("Initially load %d articles, last_aid = %d\n", article_block_article_count(), article_block_last_aid());
+	log_common("Initially load %d articles, last_aid = %d\n", article_block_article_count(), article_block_last_aid());
 
 	// Set signal handler
 	signal(SIGHUP, sig_hup_handler);
@@ -292,7 +292,7 @@ cleanup:
 		log_error("unlink(%s) error\n", VAR_SECTION_LIST_SHM);
 	}
 
-	log_std("Main process exit normally\n");
+	log_common("Main process exit normally\n");
 
 	return 0;
 }

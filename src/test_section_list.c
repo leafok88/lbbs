@@ -70,8 +70,8 @@ int main(int argc, char *argv[])
 		return -1;
 	}
 
-	log_std_redirect(STDOUT_FILENO);
-	log_err_redirect(STDERR_FILENO);
+	log_common_redir(STDOUT_FILENO);
+	log_error_redir(STDERR_FILENO);
 
 	// - 1 to make blocks allocated is less than required, to trigger error handling
 	block_count = BBS_article_limit_per_section * BBS_max_section / ARTICLE_PER_BLOCK;

@@ -636,7 +636,7 @@ int section_list_loader_launch(void)
 	{
 		SYS_child_process_count++;
 		section_list_loader_pid = pid;
-		log_std("Section list loader process (%d) start\n", pid);
+		log_common("Section list loader process (%d) start\n", pid);
 		return 0;
 	}
 	else if (pid < 0) // Error
@@ -692,7 +692,7 @@ int section_list_loader_launch(void)
 		load_count = article_block_article_count() - article_count;
 		if (load_count > 0)
 		{
-			log_std("Incrementally load %d articles, last_aid = %d\n", load_count, article_block_last_aid());
+			log_common("Incrementally load %d articles, last_aid = %d\n", load_count, article_block_last_aid());
 		}
 
 		if (SYS_section_list_reload)
@@ -718,7 +718,7 @@ int section_list_loader_launch(void)
 
 		if (last_article_op_log_mid > last_mid)
 		{
-			log_std("Proceeded %d article logs, last_mid = %d\n", last_article_op_log_mid - last_mid, last_article_op_log_mid);
+			log_common("Proceeded %d article logs, last_mid = %d\n", last_article_op_log_mid - last_mid, last_article_op_log_mid);
 		}
 
 		if (SYS_section_list_reload)
@@ -739,7 +739,7 @@ int section_list_loader_launch(void)
 	detach_article_block_shm();
 	detach_trie_dict_shm();
 
-	log_std("Section list loader process exit normally\n");
+	log_common("Section list loader process exit normally\n");
 	log_end();
 
 	section_list_loader_pid = 0;
