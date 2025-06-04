@@ -29,15 +29,22 @@
 #define BBS_nickname_max_len 20
 #define BBS_user_tz_max_len 50
 
-extern char BBS_id[20];
-extern char BBS_name[50];
-extern char BBS_server[256];
-extern char BBS_address[50];
+#define BBS_id_max_len 20
+#define BBS_name_max_len 50
+#define BBS_server_max_len 255
+#define BBS_address_max_len 50
+#define BBS_start_dt_max_len 50
+
+extern char BBS_id[BBS_id_max_len + 1];
+extern char BBS_name[BBS_name_max_len + 1];
+extern char BBS_server[BBS_server_max_len + 1];
+extern char BBS_address[BBS_address_max_len + 1];
 extern in_port_t BBS_port;
-extern unsigned int BBS_max_client;
-extern unsigned int BBS_max_client_per_ip;
-extern unsigned int BBS_max_user;
-extern char BBS_start_dt[50];
+extern int BBS_ssh_v2;
+extern int BBS_max_client;
+extern int BBS_max_client_per_ip;
+extern int BBS_max_user;
+extern char BBS_start_dt[BBS_start_dt_max_len + 1];
 
 // Session
 #define MAX_DELAY_TIME 600 // 10 minutes

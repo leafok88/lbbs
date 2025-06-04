@@ -62,9 +62,13 @@ extern int data_files_load_timeval_count;
 #define SCREEN_COLS 80
 
 // Network
-#define MAX_CLIENTS_LIMIT 2048
+#define MAX_CLIENT_LIMIT 2000
+#define MAX_CLIENT_PER_IP_LIMIT 100
 #define IP_ADDR_LEN 50
 #define MAX_EVENTS 10
+
+// User
+#define BBS_MAX_USER_LIMIT 100000
 
 extern int socket_server;
 extern int socket_client;

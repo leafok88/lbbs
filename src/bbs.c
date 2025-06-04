@@ -15,21 +15,23 @@
  ***************************************************************************/
 
 #include "bbs.h"
+#include "common.h"
 #include "user_priv.h"
 #include <stdio.h>
 #include <signal.h>
 #include <time.h>
 
 // BBS enviroment
-char BBS_id[20] = "";
-char BBS_name[50] = "";
-char BBS_server[256] = "";
-char BBS_address[50] = "0.0.0.0";
+char BBS_id[BBS_id_max_len + 1] = "Example BBS";
+char BBS_name[BBS_name_max_len + 1] = "Example Site Name";
+char BBS_server[BBS_server_max_len + 1] = "bbs.example.com";
+char BBS_address[BBS_address_max_len + 1] = "0.0.0.0";
 in_port_t BBS_port = 23;
-unsigned int BBS_max_client = 256;
-unsigned int BBS_max_client_per_ip = 5;
-unsigned int BBS_max_user = 10000;
-char BBS_start_dt[50] = "2004年 1月 1日";
+int BBS_ssh_v2 = 0;
+int BBS_max_client = MAX_CLIENT_LIMIT;
+int BBS_max_client_per_ip = MAX_CLIENT_PER_IP_LIMIT;
+int BBS_max_user = BBS_MAX_USER_LIMIT;
+char BBS_start_dt[BBS_start_dt_max_len + 1] = "2000年 1月 1日";
 
 char BBS_username[BBS_username_max_len + 1];
 char BBS_user_tz[BBS_user_tz_max_len + 1];

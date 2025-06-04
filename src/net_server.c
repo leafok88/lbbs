@@ -48,7 +48,7 @@ struct process_sockaddr_t
 };
 typedef struct process_sockaddr_t PROCESS_SOCKADDR;
 
-static PROCESS_SOCKADDR process_sockaddr_pool[MAX_CLIENTS_LIMIT];
+static PROCESS_SOCKADDR process_sockaddr_pool[MAX_CLIENT_LIMIT];
 
 int net_server(const char *hostaddr, in_port_t port)
 {

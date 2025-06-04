@@ -28,6 +28,8 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#define CONF_DELIM_WITH_SPACE " \t\r\n"
+
 int init_daemon(void)
 {
 	int pid;
@@ -65,88 +67,143 @@ int init_daemon(void)
 
 int load_conf(const char *conf_file)
 {
-	char temp[256];
-
-	// Load configuration
-	char c_name[256];
+	char buffer[LINE_BUFFER_LEN];
+	char *saveptr = NULL;
+	char *p, *q, *r;
+	char *y, *m, *d;
 	FILE *fin;
 
+	// Load configuration
 	if ((fin = fopen(conf_file, "r")) == NULL)
 	{
 		log_error("Open %s failed", conf_file);
 		return -1;
 	}
 
-	while (fscanf(fin, "%s", c_name) != EOF)
+	while (fgets(buffer, sizeof(buffer), fin) != NULL)
 	{
-		if (c_name[0] == '#')
+		p = strtok_r(buffer, CONF_DELIM_WITH_SPACE, &saveptr);
+		if (p == NULL) // Blank line
 		{
-			fgets(temp, 256, fin);
 			continue;
 		}
-		fscanf(fin, "%*c");
-		if (strcmp(c_name, "bbs_id") == 0)
+
+		if (*p == '#' || *p == '\r' || *p == '\n') // Comment or blank line
 		{
-			fscanf(fin, "%s", BBS_id);
+			continue;
 		}
-		if (strcmp(c_name, "bbs_name") == 0)
+
+		q = strtok_r(NULL, CONF_DELIM_WITH_SPACE, &saveptr);
+		if (q == NULL) // Empty value
 		{
-			fscanf(fin, "%s", BBS_name);
+			log_error("Skip empty value of config item: %s\n", p);
+			continue;
 		}
-		if (strcmp(c_name, "bbs_server") == 0)
+
+		// Check syntax
+		r = strtok_r(NULL, CONF_DELIM_WITH_SPACE, &saveptr);
+		if (r != NULL && r[0] != '#')
 		{
-			fscanf(fin, "%s", BBS_server);
+			log_error("Skip config line with extra value %s = %s %s\n", p, q, r);
+			continue;
 		}
-		if (strcmp(c_name, "bbs_address") == 0)
+
+		if (strcasecmp(p, "bbs_id") == 0)
 		{
-			fscanf(fin, "%s", BBS_address);
+			strncpy(BBS_id, q, sizeof(BBS_id) - 1);
+			BBS_id[sizeof(BBS_id) - 1] = '\0';
 		}
-		if (strcmp(c_name, "bbs_port") == 0)
+		else if (strcasecmp(p, "bbs_name") == 0)
 		{
-			fscanf(fin, "%hu", &BBS_port);
+			strncpy(BBS_name, q, sizeof(BBS_name) - 1);
+			BBS_name[sizeof(BBS_name) - 1] = '\0';
 		}
-		if (strcmp(c_name, "bbs_max_client") == 0)
+		else if (strcasecmp(p, "bbs_server") == 0)
 		{
-			fscanf(fin, "%d", &BBS_max_client);
-			if (BBS_max_client > MAX_CLIENTS_LIMIT)
+			strncpy(BBS_server, q, sizeof(BBS_server) - 1);
+			BBS_server[sizeof(BBS_server) - 1] = '\0';
+		}
+		else if (strcasecmp(p, "bbs_address") == 0)
+		{
+			strncpy(BBS_address, q, sizeof(BBS_address) - 1);
+			BBS_address[sizeof(BBS_address) - 1] = '\0';
+		}
+		else if (strcasecmp(p, "bbs_port") == 0)
+		{
+			BBS_port = (in_port_t)atoi(q);
+		}
+		else if (strcasecmp(p, "bbs_ssh") == 0)
+		{
+			BBS_ssh_v2 = (strcasecmp(q, "v2") == 0 ? 1 : 0);
+		}
+		else if (strcasecmp(p, "bbs_max_client") == 0)
+		{
+			BBS_max_client = atoi(q);
+			if (BBS_max_client <= 0 || BBS_max_client > MAX_CLIENT_LIMIT)
 			{
-				log_error("Config BBS_max_client > limit (%d), reset it to limit\n", BBS_max_client);
-				BBS_max_client = MAX_CLIENTS_LIMIT;
+				log_error("Ignore config bbs_max_client with incorrect value %d\n", BBS_max_client);
+				BBS_max_client = MAX_CLIENT_LIMIT;
 			}
 		}
-		if (strcmp(c_name, "bbs_max_client_per_ip") == 0)
+		else if (strcasecmp(p, "bbs_max_client_per_ip") == 0)
 		{
-			fscanf(fin, "%d", &BBS_max_client_per_ip);
+			BBS_max_client_per_ip = atoi(q);
+			if (BBS_max_client_per_ip <= 0 || BBS_max_client_per_ip > MAX_CLIENT_PER_IP_LIMIT)
+			{
+				log_error("Ignore config bbs_max_client with incorrect value %d\n", BBS_max_client_per_ip);
+				BBS_max_client_per_ip = MAX_CLIENT_PER_IP_LIMIT;
+			}
 		}
-		if (strcmp(c_name, "bbs_max_user") == 0)
+		else if (strcasecmp(p, "bbs_max_user") == 0)
 		{
-			fscanf(fin, "%d", &BBS_max_user);
+			BBS_max_user = atoi(q);
+			if (BBS_max_user <= 0 || BBS_max_user > BBS_MAX_USER_LIMIT)
+			{
+				log_error("Ignore config bbs_max_client with incorrect value %d\n", BBS_max_user);
+				BBS_max_user = BBS_MAX_USER_LIMIT;
+			}
 		}
-		if (strcmp(c_name, "bbs_start_dt") == 0)
+		else if (strcasecmp(p, "bbs_start_dt") == 0)
 		{
-			int y = 0, m = 0, d = 0;
-			fscanf(fin, "%d-%d-%d", &y, &m, &d);
-			snprintf(BBS_start_dt, sizeof(BBS_start_dt), "%4d年%2d月%2d日", y, m, d);
+			y = strtok_r(q, "-", &saveptr);
+			m = strtok_r(NULL, "-", &saveptr);
+			d = strtok_r(NULL, "-", &saveptr);
+
+			if (y == NULL || m == NULL || d == NULL)
+			{
+				log_error("Ignore config bbs_start_dt with incorrect value\n");
+				continue;
+			}
+			snprintf(BBS_start_dt, sizeof(BBS_start_dt), "%4s年%2s月%2s日", y, m, d);
 		}
-		if (strcmp(c_name, "db_host") == 0)
+		else if (strcasecmp(p, "db_host") == 0)
 		{
-			fscanf(fin, "%s", DB_host);
+			strncpy(DB_host, q, sizeof(DB_host) - 1);
+			DB_host[sizeof(DB_host) - 1] = '\0';
 		}
-		if (strcmp(c_name, "db_username") == 0)
+		else if (strcasecmp(p, "db_username") == 0)
 		{
-			fscanf(fin, "%s", DB_username);
+			strncpy(DB_username, q, sizeof(DB_username) - 1);
+			DB_username[sizeof(DB_username) - 1] = '\0';
 		}
-		if (strcmp(c_name, "db_password") == 0)
+		else if (strcasecmp(p, "db_password") == 0)
 		{
-			fscanf(fin, "%s", DB_password);
+			strncpy(DB_password, q, sizeof(DB_password) - 1);
+			DB_password[sizeof(DB_password) - 1] = '\0';
 		}
-		if (strcmp(c_name, "db_database") == 0)
+		else if (strcasecmp(p, "db_database") == 0)
 		{
-			fscanf(fin, "%s", DB_database);
+			strncpy(DB_database, q, sizeof(DB_database) - 1);
+			DB_database[sizeof(DB_database) - 1] = '\0';
 		}
-		if (strcmp(c_name, "db_timezone") == 0)
+		else if (strcasecmp(p, "db_timezone") == 0)
 		{
-			fscanf(fin, "%s", DB_timezone);
+			strncpy(DB_timezone, q, sizeof(DB_timezone) - 1);
+			DB_timezone[sizeof(DB_timezone) - 1] = '\0';
+		}
+		else
+		{
+			log_error("Unknown config %s = %s\n", p, q);
 		}
 	}
 
