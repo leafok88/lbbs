@@ -14,7 +14,9 @@
  *                                                                         *
  ***************************************************************************/
 
+#include "log.h"
 #include "io.h"
+#include "common.h"
 #include <stdio.h>
 #include <stdarg.h>
 #include <sys/types.h>
@@ -70,7 +72,7 @@ int log_common(const char *format, ...)
 {
 	va_list args;
 	int retval;
-	char buf[1024];
+	char buf[LINE_BUFFER_LEN];
 
 	log_head(buf, sizeof(buf));
 	strncat(buf, format, sizeof(buf) - strnlen(buf, sizeof(buf)));
@@ -88,7 +90,7 @@ int log_error(const char *format, ...)
 {
 	va_list args;
 	int retval;
-	char buf[1024];
+	char buf[LINE_BUFFER_LEN];
 
 	log_head(buf, sizeof(buf));
 	strncat(buf, format, sizeof(buf) - strnlen(buf, sizeof(buf)));

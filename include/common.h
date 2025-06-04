@@ -23,7 +23,7 @@
 #define FILE_PATH_LEN 4096
 
 // Version
-extern char app_version[256];
+#define APP_NAME_VER "LBBS-devel version 1.0"
 
 // Enviroment
 #define CONF_BBSD "conf/bbsd.conf"

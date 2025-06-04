@@ -35,7 +35,7 @@
 int bbs_info()
 {
 	prints("ª∂”≠π‚¡Ÿ \033[1;33m%s \033[32m[%s]  \033[37m( %s )\r\n",
-		   BBS_name, BBS_server, app_version);
+		   BBS_name, BBS_server, APP_NAME_VER);
 
 	return iflush();
 }

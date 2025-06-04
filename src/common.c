@@ -23,9 +23,6 @@
 #include <time.h>
 #include <sys/types.h>
 
-// Version information
-char app_version[256] = "LBBS-devel version 1.0";
-
 // File loader
 const char *data_files_load_startup[] = {
 	DATA_WELCOME,
