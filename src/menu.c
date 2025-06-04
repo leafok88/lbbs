@@ -1052,7 +1052,9 @@ int display_menu(MENU_SET *p_menu_set)
 
 	if (!menu_selectable)
 	{
-		log_error("No selectable menu item in current menu (%s)\n", p_menu->name);
+		moveto(p_menu->screen_row, p_menu->screen_col);
+		prints("没有可选项");
+		press_any_key();
 		return -1;
 	}
 
