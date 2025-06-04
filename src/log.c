@@ -17,7 +17,6 @@
 #include "log.h"
 #include "io.h"
 #include "common.h"
-#include <stdio.h>
 #include <stdarg.h>
 #include <sys/types.h>
 #include <time.h>
@@ -26,8 +25,10 @@
 #define _POSIX_C_SOURCE 200809L
 #include <string.h>
 
-FILE *fp_common_log;
-FILE *fp_error_log;
+#define STR_LOG_TIME_MAX_LEN 50
+
+static FILE *fp_common_log;
+static FILE *fp_error_log;
 
 int log_begin(char *common_log_file, char *error_log_file)
 {
@@ -54,52 +55,43 @@ void log_end()
 	fclose(fp_error_log);
 }
 
-int log_head(char *buf, size_t len)
+inline static void log_head(char *buf, size_t len, int log_level, const char *app_file, int app_line)
 {
 	time_t t;
 	struct tm gm_tm;
-	char s_time[256];
+	char s_time[STR_LOG_TIME_MAX_LEN + 1];
 
 	time(&t);
 	gmtime_r(&t, &gm_tm);
 	strftime(s_time, sizeof(s_time), "%Y-%m-%d %H:%M:%S", &gm_tm);
-	snprintf(buf, len, "[%s] [%d] ", s_time, getpid());
 
-	return 0;
+	if (log_level == LOG_LEVEL_COMMON)
+	{
+		snprintf(buf, len, "[%s] [%d] [INFO] ", s_time, getpid());
+	}
+	else // if (log_level == LOG_LEVEL_ERROR)
+	{
+		snprintf(buf, len, "[%s] [%d] [ERROR] [%s : %d] ", s_time, getpid(), app_file, app_line);
+	}
 }
 
-int log_common(const char *format, ...)
+int log_printf(int log_level, const char *app_file, int app_line, const char *format, ...)
 {
 	va_list args;
 	int retval;
 	char buf[LINE_BUFFER_LEN];
+	FILE *fp_log;
 
-	log_head(buf, sizeof(buf));
+	fp_log = (log_level == LOG_LEVEL_ERROR ? fp_error_log : fp_common_log);
+
+	log_head(buf, sizeof(buf), log_level, app_file, app_line);
 	strncat(buf, format, sizeof(buf) - strnlen(buf, sizeof(buf)));
 
 	va_start(args, format);
-	retval = vfprintf(fp_common_log, buf, args);
+	retval = vfprintf(fp_log, buf, args);
 	va_end(args);
 
-	fflush(fp_common_log);
-
-	return retval;
-}
-
-int log_error(const char *format, ...)
-{
-	va_list args;
-	int retval;
-	char buf[LINE_BUFFER_LEN];
-
-	log_head(buf, sizeof(buf));
-	strncat(buf, format, sizeof(buf) - strnlen(buf, sizeof(buf)));
-
-	va_start(args, format);
-	retval = vfprintf(fp_error_log, buf, args);
-	va_end(args);
-
-	fflush(fp_error_log);
+	fflush(fp_log);
 
 	return retval;
 }

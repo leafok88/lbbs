@@ -320,7 +320,7 @@ int net_server(const char *hostaddr, in_port_t port)
 								j++;
 								if (j >= BBS_max_client_per_ip)
 								{
-									log_error("Too many client connections (%d) from %s\n", j, hostaddr_client);
+									log_common("Too many client connections (%d) from %s\n", j, hostaddr_client);
 									break;
 								}
 							}
