@@ -636,7 +636,7 @@ int section_list_loader_launch(void)
 	{
 		SYS_child_process_count++;
 		section_list_loader_pid = pid;
-		log_common("Section list loader process (%d) start\n", pid);
+		log_common("Section list loader process (pid = %d) start\n", pid);
 		return 0;
 	}
 	else if (pid < 0) // Error
