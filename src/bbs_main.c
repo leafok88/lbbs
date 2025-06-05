@@ -161,9 +161,11 @@ int bbs_welcome(MYSQL *db)
 		   "匿名游客[\033[36m%d\033[32m] "
 		   "注册用户数[\033[36m%d/%d\033[32m]\r\n"
 		   "从 [\033[36m%s\033[32m] 起，最高人数记录："
-		   "[\033[36m%d\033[32m]，累计访问人次：[\033[36m%d\033[32m]\r\n",
+		   "[\033[36m%d\033[32m]，累计访问人次：[\033[36m%d\033[32m]\033[m\r\n",
 		   BBS_name, u_online, BBS_max_client, u_anonymous, u_total,
 		   BBS_max_user, BBS_start_dt, max_u_online, u_login_count);
+
+	iflush();
 
 	return 0;
 }
@@ -296,10 +298,17 @@ int bbs_main()
 	}
 
 	// User login
-	if (bbs_login(db) < 0)
+	if (SSH_v2)
+	{
+		prints("\033[1m%s 欢迎使用ssh方式访问 \033[1;33m按任意键继续...\033[m", BBS_username);
+		iflush();
+		igetch_t(MAX_DELAY_TIME);
+	}
+	else if (bbs_login(db) < 0)
 	{
 		goto cleanup;
 	}
+
 	clearscr();
 
 	// BBS Top 10

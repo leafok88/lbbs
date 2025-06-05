@@ -134,7 +134,7 @@ int load_conf(const char *conf_file)
 		}
 		else if (strcasecmp(p, "bbs_ssh") == 0)
 		{
-			BBS_ssh_v2 = (strcasecmp(q, "v2") == 0 ? 1 : 0);
+			SSH_v2 = (strcasecmp(q, "v2") == 0 ? 1 : 0);
 		}
 		else if (strcasecmp(p, "bbs_max_client") == 0)
 		{

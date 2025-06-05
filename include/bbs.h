@@ -40,7 +40,6 @@ extern char BBS_name[BBS_name_max_len + 1];
 extern char BBS_server[BBS_server_max_len + 1];
 extern char BBS_address[BBS_address_max_len + 1];
 extern in_port_t BBS_port;
-extern int BBS_ssh_v2;
 extern int BBS_max_client;
 extern int BBS_max_client_per_ip;
 extern int BBS_max_user;

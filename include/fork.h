@@ -17,6 +17,8 @@
 #ifndef _FORK_H_
 #define _FORK_H_
 
-extern int fork_server(void);
+#include <libssh/server.h>
+
+extern int fork_server(ssh_bind sshbind);
 
 #endif //_FORK_H_

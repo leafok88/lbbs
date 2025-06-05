@@ -13,7 +13,7 @@
 #define USER "test"
 #define PASSWORD "123456"
 
-static ssh_channel channel;
+static ssh_channel SSH_channel;
 static int authenticated = 0;
 static int tries = 0;
 static int error = 0;
@@ -64,6 +64,7 @@ static int shell_request(ssh_session session, ssh_channel channel, void *userdat
 	log_common("Allocated shell\n");
 	return 0;
 }
+
 struct ssh_channel_callbacks_struct channel_cb = {
 	.channel_pty_request_function = pty_request,
 	.channel_shell_request_function = shell_request};
@@ -73,21 +74,21 @@ static ssh_channel new_session_channel(ssh_session session, void *userdata)
 	(void)session;
 	(void)userdata;
 
-	if (channel != NULL)
+	if (SSH_channel != NULL)
 		return NULL;
 
 	log_common("Allocated session channel\n");
-	channel = ssh_channel_new(session);
+	SSH_channel = ssh_channel_new(session);
 	ssh_callbacks_init(&channel_cb);
-	ssh_set_channel_callbacks(channel, &channel_cb);
+	ssh_set_channel_callbacks(SSH_channel, &channel_cb);
 
-	return channel;
+	return SSH_channel;
 }
 
 int ssh_server(const char *hostaddr, unsigned int port)
 {
-	ssh_session session;
 	ssh_bind sshbind;
+	ssh_session session;
 	ssh_event event;
 
 	struct ssh_server_callbacks_struct cb = {
@@ -147,7 +148,7 @@ int ssh_server(const char *hostaddr, unsigned int port)
 				event = ssh_event_new();
 				ssh_event_add_session(event, session);
 
-				while (!(authenticated && channel != NULL))
+				while (!(authenticated && SSH_channel != NULL))
 				{
 					if (error)
 						break;
@@ -171,13 +172,13 @@ int ssh_server(const char *hostaddr, unsigned int port)
 				}
 
 				snprintf(buf, sizeof(buf), "Hello, welcome to the Sample SSH proxy.\r\nPlease select your destination: ");
-				ssh_channel_write(channel, buf, (uint32_t)strlen(buf));
+				ssh_channel_write(SSH_channel, buf, (uint32_t)strlen(buf));
 				do
 				{
-					i = ssh_channel_read(channel, buf, sizeof(buf), 0);
+					i = ssh_channel_read(SSH_channel, buf, sizeof(buf), 0);
 					if (i > 0)
 					{
-						ssh_channel_write(channel, buf, (uint32_t)i);
+						ssh_channel_write(SSH_channel, buf, (uint32_t)i);
 						if (strlen(host) + (size_t)i < sizeof(host))
 						{
 							strncat(host, buf, (size_t)i);
@@ -185,7 +186,7 @@ int ssh_server(const char *hostaddr, unsigned int port)
 						if (strchr(host, '\x0d'))
 						{
 							*strchr(host, '\x0d') = '\0';
-							ssh_channel_write(channel, "\n", 1);
+							ssh_channel_write(SSH_channel, "\n", 1);
 							break;
 						}
 					}
@@ -196,7 +197,7 @@ int ssh_server(const char *hostaddr, unsigned int port)
 					}
 				} while (i > 0);
 				snprintf(buf, sizeof(buf), "Trying to connect to \"%s\"\r\n", host);
-				ssh_channel_write(channel, buf, (uint32_t)strlen(buf));
+				ssh_channel_write(SSH_channel, buf, (uint32_t)strlen(buf));
 				log_common("%s", buf);
 
 				ssh_disconnect(session);

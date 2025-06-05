@@ -40,6 +40,7 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <systemd/sd-daemon.h>
+#include <libssh/server.h>
 
 struct process_sockaddr_t
 {
@@ -52,6 +53,7 @@ static PROCESS_SOCKADDR process_sockaddr_pool[MAX_CLIENT_LIMIT];
 
 int net_server(const char *hostaddr, in_port_t port)
 {
+	ssh_bind sshbind;
 	unsigned int namelen;
 	int ret;
 	int flags;
@@ -63,7 +65,22 @@ int net_server(const char *hostaddr, in_port_t port)
 	MENU_SET *p_bbs_menu_new;
 	int i, j;
 	pid_t pid;
+	int ssh_log_level = SSH_LOG_NOLOG;
 
+	ssh_init();
+
+	sshbind = ssh_bind_new();
+
+	if (ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_BINDADDR, hostaddr) < 0 ||
+		ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_BINDPORT, &port) < 0 ||
+		ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_HOSTKEY, SSH_HOST_KEYFILE) < 0 ||
+		ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_LOG_VERBOSITY, &ssh_log_level) < 0)
+	{
+		log_error("Error setting SSH bind options: %s\n", ssh_get_error(sshbind));
+		ssh_bind_free(sshbind);
+		return -1;
+	}
+	
 	socket_server = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 
 	if (socket_server < 0)
@@ -328,7 +345,7 @@ int net_server(const char *hostaddr, in_port_t port)
 
 						if (j < BBS_max_client_per_ip)
 						{
-							if ((pid = fork_server()) < 0)
+							if ((pid = fork_server(sshbind)) < 0)
 							{
 								log_error("fork_server() error\n");
 							}
@@ -380,6 +397,9 @@ int net_server(const char *hostaddr, in_port_t port)
 	{
 		log_error("Close server socket failed\n");
 	}
+
+	ssh_bind_free(sshbind);
+	ssh_finalize();
 
 	return 0;
 }

@@ -27,7 +27,6 @@ char BBS_name[BBS_name_max_len + 1] = "Example Site Name";
 char BBS_server[BBS_server_max_len + 1] = "bbs.example.com";
 char BBS_address[BBS_address_max_len + 1] = "0.0.0.0";
 in_port_t BBS_port = 23;
-int BBS_ssh_v2 = 0;
 int BBS_max_client = MAX_CLIENT_LIMIT;
 int BBS_max_client_per_ip = MAX_CLIENT_PER_IP_LIMIT;
 int BBS_max_user = BBS_MAX_USER_LIMIT;

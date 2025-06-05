@@ -36,6 +36,9 @@
 #include <netinet/in.h>
 #include <netinet/ip.h>
 #include <arpa/inet.h>
+#include <libssh/libssh.h>
+#include <libssh/server.h>
+#include <libssh/callbacks.h>
 
 #define MENU_CONF_DELIM " \t\r\n"
 
@@ -408,6 +411,13 @@ int bbsnet_connect(int n)
 
 	while (loop && !SYS_server_exit)
 	{
+		if (SSH_v2 && ssh_channel_is_closed(SSH_channel))
+		{
+			log_error("SSH channel is closed\n");
+			loop = 0;
+			break;
+		}
+
 		nfds = epoll_wait(epollfd, events, MAX_EVENTS, 100); // 0.1 second
 
 		if (nfds < 0)
@@ -435,7 +445,31 @@ int bbsnet_connect(int n)
 				stdin_read_wait = 1;
 				while (input_buf_len < sizeof(input_buf) && !SYS_server_exit)
 				{
-					ret = (int)read(STDIN_FILENO, input_buf + input_buf_len, sizeof(input_buf) - (size_t)input_buf_len);
+					if (SSH_v2)
+					{
+						ret = ssh_channel_read_nonblocking(SSH_channel, input_buf + input_buf_len, sizeof(input_buf) - (uint32_t)input_buf_len, 0);
+						if (ret == SSH_ERROR)
+						{
+							log_error("ssh_channel_read_nonblocking() error: %s\n", ssh_get_error(SSH_session));
+							loop = 0;
+							break;
+						}
+						else if (ret == SSH_EOF)
+						{
+							stdin_read_wait = 0;
+							loop = 0;
+							break;
+						}
+						else if (ret == 0)
+						{
+							stdin_read_wait = 0;
+							break; // Check whether channel is still open
+						}
+					}
+					else
+					{
+						ret = (int)read(STDIN_FILENO, input_buf + input_buf_len, sizeof(input_buf) - (size_t)input_buf_len);
+					}
 					if (ret < 0)
 					{
 						if (errno == EAGAIN || errno == EWOULDBLOCK)
@@ -559,7 +593,20 @@ int bbsnet_connect(int n)
 				stdout_write_wait = 1;
 				while (output_buf_offset < output_buf_len && !SYS_server_exit)
 				{
-					ret = (int)write(STDOUT_FILENO, output_buf + output_buf_offset, (size_t)(output_buf_len - output_buf_offset));
+					if (SSH_v2)
+					{
+						ret = ssh_channel_write(SSH_channel, output_buf + output_buf_offset, (uint32_t)(output_buf_len - output_buf_offset));
+						if (ret == SSH_ERROR)
+						{
+							log_error("ssh_channel_write() error: %s\n", ssh_get_error(SSH_session));
+							loop = 0;
+							break;
+						}
+					}
+					else
+					{
+						ret = (int)write(STDOUT_FILENO, output_buf + output_buf_offset, (size_t)(output_buf_len - output_buf_offset));
+					}
 					if (ret < 0)
 					{
 						if (errno == EAGAIN || errno == EWOULDBLOCK)
@@ -623,8 +670,8 @@ cleanup:
 	tm_used = gmtime(&t_used);
 
 	log_common("BBSNET disconnect, %d days %d hours %d minutes %d seconds used\n",
-			tm_used->tm_mday - 1, tm_used->tm_hour, tm_used->tm_min,
-			tm_used->tm_sec);
+			   tm_used->tm_mday - 1, tm_used->tm_hour, tm_used->tm_min,
+			   tm_used->tm_sec);
 
 	return 0;
 }
@@ -697,7 +744,7 @@ int bbs_net()
 		ch = igetch(100);
 		switch (ch)
 		{
-		case KEY_NULL:	// broken pipe
+		case KEY_NULL: // broken pipe
 		case KEY_ESC:
 		case Ctrl('C'): // user cancel
 			goto cleanup;

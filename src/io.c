@@ -27,6 +27,9 @@
 #include <sys/select.h>
 #include <sys/ioctl.h>
 #include <sys/epoll.h>
+#include <libssh/libssh.h>
+#include <libssh/server.h>
+#include <libssh/callbacks.h>
 
 static char stdout_buf[BUFSIZ];
 static int stdout_buf_len = 0;
@@ -147,7 +150,20 @@ int iflush()
 			{
 				while (stdout_buf_offset < stdout_buf_len && !SYS_server_exit) // write until complete or error
 				{
-					ret = (int)write(STDOUT_FILENO, stdout_buf + stdout_buf_offset, (size_t)(stdout_buf_len - stdout_buf_offset));
+					if (SSH_v2)
+					{
+						ret = ssh_channel_write(SSH_channel, stdout_buf + stdout_buf_offset, (uint32_t)(stdout_buf_len - stdout_buf_offset));
+						if (ret == SSH_ERROR)
+						{
+							log_error("ssh_channel_write() error: %s\n", ssh_get_error(SSH_session));
+							retry = 0;
+							break;
+						}
+					}
+					else
+					{
+						ret = (int)write(STDOUT_FILENO, stdout_buf + stdout_buf_offset, (size_t)(stdout_buf_len - stdout_buf_offset));
+					}
 					if (ret < 0)
 					{
 						if (errno == EAGAIN || errno == EWOULDBLOCK)
@@ -249,6 +265,13 @@ int igetch(int timeout)
 		len = 0;
 		pos = 0;
 
+		if (SSH_v2 && ssh_channel_is_closed(SSH_channel))
+		{
+			log_error("SSH channel is closed\n");
+			loop = 0;
+			break;
+		}
+
 		nfds = epoll_wait(epollfd, events, MAX_EVENTS, timeout);
 
 		if (nfds < 0)
@@ -272,7 +295,29 @@ int igetch(int timeout)
 			{
 				while (len < sizeof(buf) && !SYS_server_exit) // read until complete or error
 				{
-					ret = (int)read(STDIN_FILENO, buf + len, sizeof(buf) - (size_t)len);
+					if (SSH_v2)
+					{
+						ret = ssh_channel_read_nonblocking(SSH_channel, buf + len, sizeof(buf) - (uint32_t)len, 0);
+						if (ret == SSH_ERROR)
+						{
+							log_error("ssh_channel_read_nonblocking() error: %s\n", ssh_get_error(SSH_session));
+							loop = 0;
+							break;
+						}
+						else if (ret == SSH_EOF)
+						{
+							loop = 0;
+							break;
+						}
+						else if (ret == 0)
+						{
+							break; // Check whether channel is still open
+						}
+					}
+					else
+					{
+						ret = (int)read(STDIN_FILENO, buf + len, sizeof(buf) - (size_t)len);
+					}
 					if (ret < 0)
 					{
 						if (errno == EAGAIN || errno == EWOULDBLOCK)
@@ -508,7 +553,7 @@ int igetch(int timeout)
 					break;
 				}
 			}
-			if (i == 4 && tmp[0] == 91 && tmp[1] == 49 && tmp[3] == 126)  // Fterm
+			if (i == 4 && tmp[0] == 91 && tmp[1] == 49 && tmp[3] == 126) // Fterm
 			{
 				in_ascii = 0;
 				switch (tmp[2])

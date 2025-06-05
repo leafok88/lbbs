@@ -18,6 +18,7 @@
 #define _COMMON_H_
 
 #include <stddef.h>
+#include <libssh/libssh.h>
 
 #define LINE_BUFFER_LEN 1024
 #define FILE_PATH_LEN 4096
@@ -29,6 +30,7 @@
 #define CONF_BBSD "conf/bbsd.conf"
 #define CONF_MENU "var/menu_merged.conf"
 #define CONF_BBSNET "conf/bbsnet.conf"
+#define SSH_HOST_KEYFILE "conf/ssh_host_rsa_key"
 
 #define LOG_FILE_INFO "log/bbsd.log"
 #define LOG_FILE_ERROR "log/error.log"
@@ -76,6 +78,11 @@ extern char hostaddr_server[IP_ADDR_LEN];
 extern char hostaddr_client[IP_ADDR_LEN];
 extern int port_server;
 extern int port_client;
+
+// SSHv2
+extern int SSH_v2;
+extern ssh_session SSH_session;
+extern ssh_channel SSH_channel;
 
 extern const char *get_time_str(char *string, size_t length);
 

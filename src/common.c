@@ -48,6 +48,11 @@ char hostaddr_client[50];
 int port_server;
 int port_client;
 
+// SSHv2
+int SSH_v2 = 0;
+ssh_session SSH_session;
+ssh_channel SSH_channel;
+
 // Global declaration for system
 volatile int SYS_server_exit = 0;
 volatile int SYS_child_process_count = 0;
