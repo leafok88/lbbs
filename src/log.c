@@ -71,7 +71,7 @@ inline static void log_head(char *buf, size_t len, int log_level, const char *ap
 	}
 	else // if (log_level == LOG_LEVEL_ERROR)
 	{
-		snprintf(buf, len, "[%s] [%d] [ERROR] [%s : %d] ", s_time, getpid(), app_file, app_line);
+		snprintf(buf, len, "[%s] [%d] [ERROR] [%s:%d] ", s_time, getpid(), app_file, app_line);
 	}
 }
 
