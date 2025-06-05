@@ -296,12 +296,12 @@ int net_server(const char *hostaddr, in_port_t port[])
 		{
 			if (events[i].data.fd == socket_server[0] || events[i].data.fd == socket_server[1])
 			{
-				SSH_v2 = (events[i].data.fd == socket_server[1]);
+				SSH_v2 = (events[i].data.fd == socket_server[1] ? 1 : 0);
 
 				while (!SYS_server_exit) // Accept all incoming connections until error
 				{
 					addrlen = sizeof(sin);
-					socket_client = accept(events[i].data.fd, (struct sockaddr *)&sin, &addrlen);
+					socket_client = accept(socket_server[SSH_v2], (struct sockaddr *)&sin, &addrlen);
 					if (socket_client < 0)
 					{
 						if (errno == EAGAIN || errno == EWOULDBLOCK)
