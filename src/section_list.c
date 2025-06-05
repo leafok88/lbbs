@@ -48,7 +48,7 @@ union semun
 #define ARTICLE_BLOCK_SHM_COUNT_LIMIT 200 // limited by length (8-bit) of proj_id in ftok(path, proj_id)
 #define ARTICLE_BLOCK_PER_POOL (ARTICLE_BLOCK_PER_SHM * ARTICLE_BLOCK_SHM_COUNT_LIMIT)
 
-#define CALCULATE_PAGE_THRESHOLD 100 // Adjust to tune performance of move topic
+#define CALCULATE_PAGE_THRESHOLD 100 // Adjust to tune performance of moving topic between sections
 
 #define SID_STR_LEN 5 // 32-bit + NULL
 
