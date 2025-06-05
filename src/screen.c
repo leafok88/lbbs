@@ -547,6 +547,7 @@ int show_bottom(const char *msg)
 	int msg_len;
 	int len;
 	int len_username;
+	char str_tm_online[LINE_BUFFER_LEN];
 
 	get_time_str(str_time, sizeof(str_time));
 
@@ -564,13 +565,23 @@ int show_bottom(const char *msg)
 
 	time_online = time(0) - BBS_login_tm;
 	tm_online = gmtime(&time_online);
+	if (tm_online->tm_mday > 1)
+	{
+		snprintf(str_tm_online, sizeof(str_tm_online),
+				"\033[36m%2d\033[33m天\033[36m%2d\033[33m时",
+				tm_online->tm_mday - 1, tm_online->tm_hour);
+	}
+	else
+	{
+		snprintf(str_tm_online, sizeof(str_tm_online),
+				"\033[36m%2d\033[33m时\033[36m%2d\033[33m分",
+				tm_online->tm_hour, tm_online->tm_min);
+	}
 
 	moveto(SCREEN_ROWS, 0);
 	clrtoeol();
-	prints("\033[1;44;33m时间[\033[36m%s\033[33m]%s%*s \033[33m帐号[\033[36m%s\033[33m]"
-		   "[\033[36m%1d\033[33m天\033[36m%2d\033[33m时\033[36m%2d\033[33m分]\033[m",
-		   str_time, msg_f, 35 - msg_len - len_username, "", BBS_username,
-		   tm_online->tm_mday - 1, tm_online->tm_hour, tm_online->tm_min);
+	prints("\033[1;44;33m时间[\033[36m%s\033[33m]%s%*s \033[33m帐号[\033[36m%s\033[33m][%s\033[33m]\033[m",
+		   str_time, msg_f, 38 - msg_len - len_username, "", BBS_username, str_tm_online);
 
 	return 0;
 }
