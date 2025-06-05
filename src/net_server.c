@@ -40,7 +40,6 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <systemd/sd-daemon.h>
-#include <libssh/server.h>
 
 struct process_sockaddr_t
 {
@@ -51,12 +50,11 @@ typedef struct process_sockaddr_t PROCESS_SOCKADDR;
 
 static PROCESS_SOCKADDR process_sockaddr_pool[MAX_CLIENT_LIMIT];
 
-int net_server(const char *hostaddr, in_port_t port)
+int net_server(const char *hostaddr, in_port_t port[])
 {
-	ssh_bind sshbind;
-	unsigned int namelen;
+	unsigned int addrlen;
 	int ret;
-	int flags;
+	int flags[2];
 	struct sockaddr_in sin;
 	struct epoll_event ev, events[MAX_EVENTS];
 	int nfds, epollfd;
@@ -80,50 +78,6 @@ int net_server(const char *hostaddr, in_port_t port)
 		ssh_bind_free(sshbind);
 		return -1;
 	}
-	
-	socket_server = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-
-	if (socket_server < 0)
-	{
-		log_error("Create socket failed\n");
-		return -1;
-	}
-
-	sin.sin_family = AF_INET;
-	sin.sin_addr.s_addr = (hostaddr[0] != '\0' ? inet_addr(hostaddr) : INADDR_ANY);
-	sin.sin_port = htons(port);
-
-	// Reuse address and port
-	flags = 1;
-	if (setsockopt(socket_server, SOL_SOCKET, SO_REUSEADDR, &flags, sizeof(flags)) < 0)
-	{
-		log_error("setsockopt SO_REUSEADDR error (%d)\n", errno);
-	}
-	if (setsockopt(socket_server, SOL_SOCKET, SO_REUSEPORT, &flags, sizeof(flags)) < 0)
-	{
-		log_error("setsockopt SO_REUSEPORT error (%d)\n", errno);
-	}
-
-	if (bind(socket_server, (struct sockaddr *)&sin, sizeof(sin)) < 0)
-	{
-		log_error("Bind address %s:%u failed (%d)\n",
-				  inet_ntoa(sin.sin_addr), ntohs(sin.sin_port), errno);
-		return -1;
-	}
-
-	if (listen(socket_server, 10) < 0)
-	{
-		log_error("Socket listen failed (%d)\n", errno);
-		return -1;
-	}
-
-	strncpy(hostaddr_server, inet_ntoa(sin.sin_addr), sizeof(hostaddr_server) - 1);
-	hostaddr_server[sizeof(hostaddr_server) - 1] = '\0';
-
-	port_server = ntohs(sin.sin_port);
-	namelen = sizeof(sin);
-
-	log_common("Listening at %s:%d\n", hostaddr_server, port_server);
 
 	epollfd = epoll_create1(0);
 	if (epollfd < 0)
@@ -132,26 +86,68 @@ int net_server(const char *hostaddr, in_port_t port)
 		return -1;
 	}
 
-	ev.events = EPOLLIN;
-	ev.data.fd = socket_server;
-	if (epoll_ctl(epollfd, EPOLL_CTL_ADD, socket_server, &ev) == -1)
+	// Server socket
+	for (i = 0; i < 2; i++)
 	{
-		log_error("epoll_ctl(socket_server) error (%d)\n", errno);
-		if (close(epollfd) < 0)
-		{
-			log_error("close(epoll) error (%d)\n");
-		}
-		return -1;
-	}
+		socket_server[i] = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 
-	flags = fcntl(socket_server, F_GETFL, 0);
-	fcntl(socket_server, F_SETFL, flags | O_NONBLOCK);
+		if (socket_server[i] < 0)
+		{
+			log_error("Create socket_server error (%d)\n", errno);
+			return -1;
+		}
+
+		sin.sin_family = AF_INET;
+		sin.sin_addr.s_addr = (hostaddr[0] != '\0' ? inet_addr(hostaddr) : INADDR_ANY);
+		sin.sin_port = htons(port[i]);
+
+		// Reuse address and port
+		flags[i] = 1;
+		if (setsockopt(socket_server[i], SOL_SOCKET, SO_REUSEADDR, &flags[i], sizeof(flags[i])) < 0)
+		{
+			log_error("setsockopt SO_REUSEADDR error (%d)\n", errno);
+		}
+		if (setsockopt(socket_server[i], SOL_SOCKET, SO_REUSEPORT, &flags[i], sizeof(flags[i])) < 0)
+		{
+			log_error("setsockopt SO_REUSEPORT error (%d)\n", errno);
+		}
+
+		if (bind(socket_server[i], (struct sockaddr *)&sin, sizeof(sin)) < 0)
+		{
+			log_error("Bind address %s:%u error (%d)\n",
+					  inet_ntoa(sin.sin_addr), ntohs(sin.sin_port), errno);
+			return -1;
+		}
+
+		if (listen(socket_server[i], 10) < 0)
+		{
+			log_error("Telnet socket listen error (%d)\n", errno);
+			return -1;
+		}
+
+		log_common("Listening at %s:%u\n", inet_ntoa(sin.sin_addr), ntohs(sin.sin_port));
+
+		ev.events = EPOLLIN;
+		ev.data.fd = socket_server[i];
+		if (epoll_ctl(epollfd, EPOLL_CTL_ADD, socket_server[i], &ev) == -1)
+		{
+			log_error("epoll_ctl(socket_server[%d]) error (%d)\n", i, errno);
+			if (close(epollfd) < 0)
+			{
+				log_error("close(epoll) error (%d)\n");
+			}
+			return -1;
+		}
+
+		flags[i] = fcntl(socket_server[i], F_GETFL, 0);
+		fcntl(socket_server[i], F_SETFL, flags[i] | O_NONBLOCK);
+	}
 
 	// Startup complete
 	sd_notifyf(0, "READY=1\n"
-				  "STATUS=Listening at %s:%d\n"
+				  "STATUS=Listening at %s:%d (Telnet) and %s:%d (SSH2)\n"
 				  "MAINPID=%d",
-			   hostaddr_server, port_server, getpid());
+			   hostaddr, port[0], hostaddr, port[1], getpid());
 
 	while (!SYS_server_exit || SYS_child_process_count > 0)
 	{
@@ -298,11 +294,14 @@ int net_server(const char *hostaddr, in_port_t port)
 
 		for (int i = 0; i < nfds; i++)
 		{
-			if (events[i].data.fd == socket_server)
+			if (events[i].data.fd == socket_server[0] || events[i].data.fd == socket_server[1])
 			{
+				SSH_v2 = (events[i].data.fd == socket_server[1]);
+
 				while (!SYS_server_exit) // Accept all incoming connections until error
 				{
-					socket_client = accept(socket_server, (struct sockaddr *)&sin, &namelen);
+					addrlen = sizeof(sin);
+					socket_client = accept(events[i].data.fd, (struct sockaddr *)&sin, &addrlen);
 					if (socket_client < 0)
 					{
 						if (errno == EAGAIN || errno == EWOULDBLOCK)
@@ -345,7 +344,7 @@ int net_server(const char *hostaddr, in_port_t port)
 
 						if (j < BBS_max_client_per_ip)
 						{
-							if ((pid = fork_server(sshbind)) < 0)
+							if ((pid = fork_server()) < 0)
 							{
 								log_error("fork_server() error\n");
 							}
@@ -391,11 +390,14 @@ int net_server(const char *hostaddr, in_port_t port)
 		log_error("close(epoll) error (%d)\n");
 	}
 
-	fcntl(socket_server, F_SETFL, flags);
-
-	if (close(socket_server) == -1)
+	for (i = 0; i < 2; i++)
 	{
-		log_error("Close server socket failed\n");
+		fcntl(socket_server[i], F_SETFL, flags[i]);
+
+		if (close(socket_server[i]) == -1)
+		{
+			log_error("Close server socket failed\n");
+		}
 	}
 
 	ssh_bind_free(sshbind);

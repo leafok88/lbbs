@@ -130,11 +130,11 @@ int load_conf(const char *conf_file)
 		}
 		else if (strcasecmp(p, "bbs_port") == 0)
 		{
-			BBS_port = (in_port_t)atoi(q);
+			BBS_port[0] = (in_port_t)atoi(q);
 		}
-		else if (strcasecmp(p, "bbs_ssh") == 0)
+		else if (strcasecmp(p, "bbs_ssh_port") == 0)
 		{
-			SSH_v2 = (strcasecmp(q, "v2") == 0 ? 1 : 0);
+			BBS_port[1] = (in_port_t)atoi(q);
 		}
 		else if (strcasecmp(p, "bbs_max_client") == 0)
 		{

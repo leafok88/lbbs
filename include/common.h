@@ -19,6 +19,7 @@
 
 #include <stddef.h>
 #include <libssh/libssh.h>
+#include <libssh/server.h>
 
 #define LINE_BUFFER_LEN 1024
 #define FILE_PATH_LEN 4096
@@ -56,8 +57,6 @@
 // File loader
 extern const char *data_files_load_startup[];
 extern int data_files_load_startup_count;
-extern const char *data_files_load_on_timeval[];
-extern int data_files_load_timeval_count;
 
 // Screen
 #define SCREEN_ROWS 24
@@ -72,15 +71,14 @@ extern int data_files_load_timeval_count;
 // User
 #define BBS_MAX_USER_LIMIT 100000
 
-extern int socket_server;
+extern int socket_server[2];
 extern int socket_client;
-extern char hostaddr_server[IP_ADDR_LEN];
 extern char hostaddr_client[IP_ADDR_LEN];
-extern int port_server;
 extern int port_client;
 
 // SSHv2
 extern int SSH_v2;
+extern ssh_bind sshbind;
 extern ssh_session SSH_session;
 extern ssh_channel SSH_channel;
 

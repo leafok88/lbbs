@@ -36,20 +36,15 @@ const char *data_files_load_startup[] = {
 	VAR_BBS_TOP};
 int data_files_load_startup_count = 9; // Count of data_files_load_startup[]
 
-const char *data_files_load_timeval[] = {
-	VAR_BBS_TOP};
-int data_files_load_timeval_count = 1; // Count of data_files_load_timeval[]
-
 // Global declaration for sockets
-int socket_server;
+int socket_server[2];
 int socket_client;
-char hostaddr_server[50];
-char hostaddr_client[50];
-int port_server;
+char hostaddr_client[IP_ADDR_LEN];
 int port_client;
 
 // SSHv2
 int SSH_v2 = 0;
+ssh_bind sshbind;
 ssh_session SSH_session;
 ssh_channel SSH_channel;
 

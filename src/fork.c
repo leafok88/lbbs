@@ -106,7 +106,7 @@ static ssh_channel new_session_channel(ssh_session session, void *userdata)
 	return SSH_channel;
 }
 
-int fork_server(ssh_bind sshbind)
+int fork_server(void)
 {
 	ssh_event event;
 	int pid;
@@ -139,7 +139,8 @@ int fork_server(ssh_bind sshbind)
 	}
 
 	// Child process
-	if (close(socket_server) == -1)
+
+	if (close(socket_server[0]) == -1 || close(socket_server[1]) == -1)
 	{
 		log_error("Close server socket failed\n");
 	}

@@ -7,7 +7,7 @@ bbs_name MyBBS
 bbs_server localhost
 # bbs_address 0.0.0.0
 bbs_port 23
-bbs_ssh v2 # enable SSH2
+bbs_ssh_port 22
 bbs_max_client 1000 # Keep it as low as possible for better performance
 bbs_max_client_per_ip 2
 bbs_max_user 10000

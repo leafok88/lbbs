@@ -311,6 +311,7 @@ int igetch(int timeout)
 						}
 						else if (ret == 0)
 						{
+							out = 0;
 							break; // Check whether channel is still open
 						}
 					}
@@ -791,7 +792,7 @@ int igetch(int timeout)
 	// for debug
 	// if (out != KEY_TIMEOUT && out != KEY_NULL)
 	// {
-	// 	log_common ("Debug: -->[0x %x]\n", out);
+	// 	log_common("Debug: -->[0x %x]\n", out);
 	// }
 
 	return out;

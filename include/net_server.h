@@ -19,6 +19,6 @@
 
 #include <netinet/in.h>
 
-extern int net_server(const char *hostaddr, in_port_t port);
+extern int net_server(const char *hostaddr, in_port_t port[]);
 
 #endif //_NET_SERVER_H_
