@@ -324,7 +324,7 @@ int net_server(const char *hostaddr, in_port_t port[])
 
 					port_client = ntohs(sin.sin_port);
 
-					log_common("Accept connection from %s:%d\n", hostaddr_client, port_client);
+					log_common("Accept %sconnection from %s:%d\n", (SSH_v2 ? "" : "SSH2 "), hostaddr_client, port_client);
 
 					if (SYS_child_process_count - 1 < BBS_max_client)
 					{
