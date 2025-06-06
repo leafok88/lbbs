@@ -8,7 +8,7 @@
 #define BUF_SIZE 2048
 #endif
 
-#define SSH_HOST_KEYFILE "../conf/ssh_host_rsa_key"
+#define SSH_HOST_RSA_KEYFILE "../conf/ssh_host_rsa_key"
 
 #define USER "test"
 #define PASSWORD "123456"
@@ -100,7 +100,7 @@ int ssh_server(const char *hostaddr, unsigned int port)
 	char host[128] = "";
 	int i, r;
 
-	int ssh_log_level = SSH_LOG_FUNCTIONS;
+	int ssh_log_level = SSH_LOG_PROTOCOL;
 
 	ssh_init();
 
@@ -108,8 +108,9 @@ int ssh_server(const char *hostaddr, unsigned int port)
 
 	if (ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_BINDADDR, hostaddr) < 0 ||
 		ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_BINDPORT, &port) < 0 ||
-		ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_HOSTKEY, SSH_HOST_KEYFILE) < 0 ||
+		ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_HOSTKEY, SSH_HOST_RSA_KEYFILE) < 0 ||
 		ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_HOSTKEY_ALGORITHMS, "ssh-rsa,rsa-sha2-512,rsa-sha2-256,ecdsa-sha2-nistp256") < 0 ||
+		ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_PUBKEY_ACCEPTED_KEY_TYPES, "ssh-rsa,rsa-sha2-512,rsa-sha2-256,ecdsa-sha2-nistp256") < 0 ||
 		ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_KEY_EXCHANGE, "curve25519-sha256@libssh.org,ecdh-sha2-nistp256,ecdh-sha2-nistp384,ecdh-sha2-nistp521,diffie-hellman-group-exchange-sha256,diffie-hellman-group16-sha512,diffie-hellman-group18-sha512,diffie-hellman-group14-sha256,diffie-hellman-group14-sha1") < 0 ||
 		ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_HMAC_C_S, "umac-64-etm@openssh.com,umac-128-etm@openssh.com,hmac-sha2-256-etm@openssh.com,hmac-sha2-512-etm@openssh.com,hmac-sha1-etm@openssh.com,umac-64@openssh.com,umac-128@openssh.com,hmac-sha2-256,hmac-sha2-512,hmac-sha1") < 0 ||
 		ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_HMAC_S_C, "umac-64-etm@openssh.com,umac-128-etm@openssh.com,hmac-sha2-256-etm@openssh.com,hmac-sha2-512-etm@openssh.com,hmac-sha1-etm@openssh.com,umac-64@openssh.com,umac-128@openssh.com,hmac-sha2-256,hmac-sha2-512,hmac-sha1") < 0 ||
