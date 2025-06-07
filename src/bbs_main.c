@@ -20,6 +20,7 @@
 #include "user_priv.h"
 #include "common.h"
 #include "database.h"
+#include "article_view_log.h"
 #include "log.h"
 #include "io.h"
 #include "screen.h"
@@ -306,7 +307,12 @@ int bbs_main()
 		goto cleanup;
 	}
 
-	// Load article_view_log
+	// Load article view log
+	if (article_view_log_load(BBS_priv.uid, &BBS_article_view_log, 0) < 0)
+	{
+		log_error("article_view_log_load() error\n");
+		goto cleanup;
+	}
 
 	clearscr();
 
@@ -319,7 +325,16 @@ int bbs_main()
 	// Logout
 	bbs_logout();
 
+	// Save incremental article view log
+	if (article_view_log_save_inc(&BBS_article_view_log) < 0)
+	{
+		log_error("article_view_log_save_inc() error\n");
+	}
+
 cleanup:
+	// Unload article view log
+	article_view_log_unload(&BBS_article_view_log);
+
 	// Detach menu in shared memory
 	detach_menu_shm(p_bbs_menu);
 	free(p_bbs_menu);

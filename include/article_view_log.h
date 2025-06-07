@@ -19,10 +19,11 @@
 
 #include <stdint.h>
 
-#define MAX_AID_INC_CNT 100000
+#define MAX_AID_INC_CNT 1000
 
 struct article_view_log_t
 {
+	int uid;
 	int32_t *aid_base;
 	int aid_base_cnt;
 	int32_t aid_inc[MAX_AID_INC_CNT];
@@ -30,12 +31,14 @@ struct article_view_log_t
 };
 typedef struct article_view_log_t ARTICLE_VIEW_LOG;
 
+extern ARTICLE_VIEW_LOG BBS_article_view_log;
+
 // Load baseline view log from DB
 extern int article_view_log_load(int uid, ARTICLE_VIEW_LOG *p_view_log, int keep_inc);
 // Clear data
 extern int article_view_log_unload(ARTICLE_VIEW_LOG *p_view_log);
 // Save incremental view log to DB
-extern int article_view_log_save_inc(int uid, const ARTICLE_VIEW_LOG *p_view_log);
+extern int article_view_log_save_inc(const ARTICLE_VIEW_LOG *p_view_log);
 // Merge incremental view log to baseline, without DB read / write
 extern int article_view_log_merge_inc(ARTICLE_VIEW_LOG *p_view_log);
 

@@ -21,6 +21,7 @@
 #include "io.h"
 #include "screen.h"
 #include "log.h"
+#include "article_view_log.h"
 #include "str_process.h"
 #include <time.h>
 #include <sys/param.h>
@@ -49,6 +50,7 @@ static int section_list_draw_items(int page_id, ARTICLE *p_articles[], int artic
 	int len;
 	int i;
 	char article_flag;
+	int is_viewed;
 	time_t tm_now;
 
 	time(&tm_now);
@@ -57,13 +59,20 @@ static int section_list_draw_items(int page_id, ARTICLE *p_articles[], int artic
 
 	for (i = 0; i < article_count; i++)
 	{
-		article_flag = ' ';
+		is_viewed = article_view_log_is_viewed(p_articles[i]->aid, &BBS_article_view_log);
+		if (is_viewed < 0)
+		{
+			log_error("article_view_log_is_viewed(aid=%d) error\n", p_articles[i]->aid);
+			is_viewed = 0;
+		}
+
+		article_flag = (is_viewed ? ' ' : 'N');
 
 		if (p_articles[i]->excerption)
 		{
-			article_flag = 'm';
+			article_flag = (is_viewed ? 'm' : 'M');
 		}
-		else if (p_articles[i]->lock)
+		else if (p_articles[i]->lock && is_viewed)
 		{
 			article_flag = 'x';
 		}
@@ -424,6 +433,12 @@ int section_list_display(const char *sname)
 				{
 					log_error("article_cache_unload(aid=%d, cid=%d) error\n", p_articles[selected_index]->aid, p_articles[selected_index]->cid);
 					break;
+				}
+
+				// Update article_view_log
+				if (article_view_log_set_viewed(p_articles[selected_index]->aid, &BBS_article_view_log) < 0)
+				{
+					log_error("article_view_log_set_viewed(aid=%d) error\n", p_articles[selected_index]->aid);
 				}
 
 				switch (ret)

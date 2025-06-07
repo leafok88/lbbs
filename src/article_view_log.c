@@ -24,6 +24,8 @@
 #define _POSIX_C_SOURCE 200809L
 #include <string.h>
 
+ARTICLE_VIEW_LOG BBS_article_view_log;
+
 int article_view_log_load(int uid, ARTICLE_VIEW_LOG *p_view_log, int keep_inc)
 {
 	MYSQL *db;
@@ -36,6 +38,8 @@ int article_view_log_load(int uid, ARTICLE_VIEW_LOG *p_view_log, int keep_inc)
 		log_error("article_view_log_load() error: NULL pointer\n");
 		return -1;
 	}
+
+	p_view_log->uid = uid;
 
 	if (uid == 0)
 	{
@@ -89,6 +93,8 @@ int article_view_log_load(int uid, ARTICLE_VIEW_LOG *p_view_log, int keep_inc)
 
 	mysql_close(db);
 
+	log_common("Loaded %d view_article_log records for uid=%d\n", p_view_log->aid_base_cnt, uid);
+
 	if (!keep_inc)
 	{
 		p_view_log->aid_inc_cnt = 0;
@@ -115,17 +121,23 @@ int article_view_log_unload(ARTICLE_VIEW_LOG *p_view_log)
 	return 0;
 }
 
-int article_view_log_save_inc(int uid, const ARTICLE_VIEW_LOG *p_view_log)
+int article_view_log_save_inc(const ARTICLE_VIEW_LOG *p_view_log)
 {
 	MYSQL *db;
 	char sql[SQL_BUFFER_LEN];
 	char tuple_tmp[LINE_BUFFER_LEN];
 	int i;
+	int affected_record = 0;
 
 	if (p_view_log == NULL)
 	{
 		log_error("article_view_log_save_inc() error: NULL pointer\n");
 		return -1;
+	}
+
+	if (p_view_log->uid <= 0)
+	{
+		return 0;
 	}
 
 	if ((db = db_open()) == NULL)
@@ -135,33 +147,35 @@ int article_view_log_save_inc(int uid, const ARTICLE_VIEW_LOG *p_view_log)
 	}
 
 	snprintf(sql, sizeof(sql),
-			 "INSERT INTO view_article_log(AID, UID, dt) ");
+			 "INSERT IGNORE INTO view_article_log(AID, UID, dt) VALUES ");
 
 	for (i = 0; i < p_view_log->aid_inc_cnt; i++)
 	{
 		snprintf(tuple_tmp, sizeof(tuple_tmp),
 				 "(%d, %d, NOW())",
-				 p_view_log->aid_inc[i], uid);
+				 p_view_log->aid_inc[i], p_view_log->uid);
 		strncat(sql, tuple_tmp, sizeof(sql) - 1 - strnlen(sql, sizeof(sql)));
 
-		if (i % 100 == 0) // Insert 100 records per query
+		if ((i + 1) % 100 == 0 || (i + 1) == p_view_log->aid_inc_cnt) // Insert 100 records per query
 		{
-			strncat(sql, " ON DUPLICATE KEY UPDATE 0 + 0", sizeof(sql) - 1 - strnlen(sql, sizeof(sql)));
-
 			if (mysql_query(db, sql) != 0)
 			{
 				log_error("Add view_article_log error: %s\n", mysql_error(db));
 				return -3;
 			}
 
+			affected_record += (int)mysql_affected_rows(db);
+
 			snprintf(sql, sizeof(sql),
-					 "INSERT INTO view_article_log(AID, UID, dt) ");
+					 "INSERT IGNORE INTO view_article_log(AID, UID, dt) VALUES ");
 		}
 		else
 		{
 			strncat(sql, ", ", sizeof(sql) - 1 - strnlen(sql, sizeof(sql)));
 		}
 	}
+
+	log_common("Saved %d view_article_log records for uid=%d\n", affected_record, p_view_log->uid);
 
 	mysql_close(db);
 
@@ -325,6 +339,13 @@ int article_view_log_set_viewed(int32_t aid, ARTICLE_VIEW_LOG *p_view_log)
 	// Merge if Inc is full
 	if (p_view_log->aid_inc_cnt >= MAX_AID_INC_CNT)
 	{
+		// Save incremental article view log
+		if (article_view_log_save_inc(p_view_log) < 0)
+		{
+			log_error("article_view_log_save_inc() error\n");
+			return -2;
+		}
+
 		article_view_log_merge_inc(p_view_log);
 
 		p_view_log->aid_inc[(p_view_log->aid_inc_cnt)++] = aid;
