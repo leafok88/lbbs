@@ -1,0 +1,340 @@
+/***************************************************************************
+					 article_view_log.c  -  description
+							 -------------------
+	Copyright            : (C) 2004-2025 by Leaflet
+	Email                : leaflet@leafok.com
+ ***************************************************************************/
+
+/***************************************************************************
+ *                                                                         *
+ *   This program is free software; you can redistribute it and/or modify  *
+ *   it under the terms of the GNU General Public License as published by  *
+ *   the Free Software Foundation; either version 3 of the License, or     *
+ *   (at your option) any later version.                                   *
+ *                                                                         *
+ ***************************************************************************/
+
+#include "article_view_log.h"
+#include "log.h"
+#include "common.h"
+#include "database.h"
+#include <stdlib.h>
+
+#define _XOPEN_SOURCE 500
+#define _POSIX_C_SOURCE 200809L
+#include <string.h>
+
+int article_view_log_load(int uid, ARTICLE_VIEW_LOG *p_view_log, int keep_inc)
+{
+	MYSQL *db;
+	MYSQL_RES *rs;
+	MYSQL_ROW row;
+	char sql[SQL_BUFFER_LEN];
+
+	if (p_view_log == NULL)
+	{
+		log_error("article_view_log_load() error: NULL pointer\n");
+		return -1;
+	}
+
+	if ((db = db_open()) == NULL)
+	{
+		log_error("article_view_log_load() error: Unable to open DB\n");
+		return -2;
+	}
+
+	snprintf(sql, sizeof(sql),
+			 "SELECT AID FROM view_article_log WHERE UID = %d "
+			 "ORDER BY AID",
+			 uid);
+	if (mysql_query(db, sql) != 0)
+	{
+		log_error("Query view_article_log error: %s\n", mysql_error(db));
+		return -3;
+	}
+	if ((rs = mysql_store_result(db)) == NULL)
+	{
+		log_error("Get view_article_log data failed\n");
+		return -3;
+	}
+
+	p_view_log->aid_base_cnt = 0;
+	p_view_log->aid_base = malloc(sizeof(int32_t) * mysql_num_rows(rs));
+	if (p_view_log->aid_base == NULL)
+	{
+		log_error("malloc(INT32 * %d) error: OOM\n", mysql_num_rows(rs));
+		mysql_free_result(rs);
+		mysql_close(db);
+		return -4;
+	}
+
+	while ((row = mysql_fetch_row(rs)))
+	{
+		p_view_log->aid_base[(p_view_log->aid_base_cnt)++] = atoi(row[0]);
+	}
+	mysql_free_result(rs);
+
+	mysql_close(db);
+
+	if (!keep_inc)
+	{
+		p_view_log->aid_inc_cnt = 0;
+	}
+
+	return 0;
+}
+
+int article_view_log_unload(int uid, ARTICLE_VIEW_LOG *p_view_log)
+{
+	if (p_view_log == NULL)
+	{
+		log_error("article_view_log_unload() error: NULL pointer\n");
+		return -1;
+	}
+
+	if (p_view_log->aid_base != NULL)
+	{
+		free(p_view_log->aid_base);
+		p_view_log->aid_base = NULL;
+		p_view_log->aid_base_cnt = 0;
+	}
+
+	return 0;
+}
+
+int article_view_log_save_inc(int uid, const ARTICLE_VIEW_LOG *p_view_log)
+{
+	MYSQL *db;
+	char sql[SQL_BUFFER_LEN];
+	char tuple_tmp[LINE_BUFFER_LEN];
+	int i;
+
+	if (p_view_log == NULL)
+	{
+		log_error("article_view_log_save_inc() error: NULL pointer\n");
+		return -1;
+	}
+
+	if ((db = db_open()) == NULL)
+	{
+		log_error("article_view_log_load() error: Unable to open DB\n");
+		return -2;
+	}
+
+	snprintf(sql, sizeof(sql),
+			 "INSERT INTO view_article_log(AID, UID, dt) ");
+
+	for (i = 0; i < p_view_log->aid_inc_cnt; i++)
+	{
+		snprintf(tuple_tmp, sizeof(tuple_tmp),
+				 "(%d, %d, NOW())",
+				 p_view_log->aid_inc[i], uid);
+		strncat(sql, tuple_tmp, sizeof(sql) - 1 - strnlen(sql, sizeof(sql)));
+
+		if (i % 100 == 0) // Insert 100 records per query
+		{
+			strncat(sql, " ON DUPLICATE KEY UPDATE 0 + 0", sizeof(sql) - 1 - strnlen(sql, sizeof(sql)));
+
+			if (mysql_query(db, sql) != 0)
+			{
+				log_error("Add view_article_log error: %s\n", mysql_error(db));
+				return -3;
+			}
+
+			snprintf(sql, sizeof(sql),
+					 "INSERT INTO view_article_log(AID, UID, dt) ");
+		}
+		else
+		{
+			strncat(sql, ", ", sizeof(sql) - 1 - strnlen(sql, sizeof(sql)));
+		}
+	}
+
+	mysql_close(db);
+
+	return 0;
+}
+
+int article_view_log_merge_inc(ARTICLE_VIEW_LOG *p_view_log)
+{
+	int32_t *aid_new;
+	int aid_new_cnt;
+	int i, j, k;
+
+	if (p_view_log == NULL)
+	{
+		log_error("article_view_log_merge_inc() error: NULL pointer\n");
+		return -1;
+	}
+
+	if (p_view_log->aid_inc_cnt == 0) // Nothing to be merged
+	{
+		return 0;
+	}
+
+	aid_new_cnt = p_view_log->aid_base_cnt + p_view_log->aid_inc_cnt;
+
+	aid_new = malloc(sizeof(int32_t) * (size_t)aid_new_cnt);
+	if (aid_new == NULL)
+	{
+		log_error("malloc(INT32 * %d) error: OOM\n", aid_new_cnt);
+		return -2;
+	}
+
+	for (i = 0, j = 0, k = 0; i < p_view_log->aid_base_cnt && j < p_view_log->aid_inc_cnt;)
+	{
+		if (p_view_log->aid_base[i] <= p_view_log->aid_inc[j])
+		{
+			if (p_view_log->aid_base[i] == p_view_log->aid_inc[j])
+			{
+				log_error("Duplicate aid = %d found in both Base (offset = %d) and Inc (offset = %d)\n",
+						  p_view_log->aid_base[i], i, j);
+				j++; // Skip duplicate one in Inc
+			}
+
+			aid_new[k++] = p_view_log->aid_base[i++];
+		}
+		else if (p_view_log->aid_base[i] > p_view_log->aid_inc[j])
+		{
+			aid_new[k++] = p_view_log->aid_inc[j++];
+		}
+	}
+
+	memcpy(aid_new + k, p_view_log->aid_base + i, sizeof(int32_t) * (size_t)(p_view_log->aid_base_cnt - i));
+	k += (p_view_log->aid_base_cnt - i);
+	memcpy(aid_new + k, p_view_log->aid_inc + j, sizeof(int32_t) * (size_t)(p_view_log->aid_inc_cnt - j));
+	k += (p_view_log->aid_inc_cnt - j);
+
+	free(p_view_log->aid_base);
+	p_view_log->aid_base = aid_new;
+	p_view_log->aid_base_cnt = k;
+
+	p_view_log->aid_inc_cnt = 0;
+
+	return 0;
+}
+
+int article_view_log_is_viewed(int32_t aid, const ARTICLE_VIEW_LOG *p_view_log)
+{
+	int left;
+	int right;
+	int mid;
+	int i;
+
+	if (p_view_log == NULL)
+	{
+		log_error("article_view_log_is_viewed() error: NULL pointer\n");
+		return -1;
+	}
+
+	for (i = 0; i < 2; i++)
+	{
+		left = 0;
+		right = (i == 0 ? p_view_log->aid_base_cnt : p_view_log->aid_inc_cnt) - 1;
+
+		if (right < 0)
+		{
+			continue;
+		}
+
+		while (left < right)
+		{
+			mid = (left + right) / 2;
+			if (aid < (i == 0 ? p_view_log->aid_base[mid] : p_view_log->aid_inc[mid]))
+			{
+				right = mid;
+			}
+			else if (aid > (i == 0 ? p_view_log->aid_base[mid] : p_view_log->aid_inc[mid]))
+			{
+				left = mid + 1;
+			}
+			else // if (aid == p_view_log->aid_base[mid])
+			{
+				return 1;
+			}
+		}
+
+		if (aid == (i == 0 ? p_view_log->aid_base[left] : p_view_log->aid_inc[left])) // Found
+		{
+			return 1;
+		}
+	}
+
+	return 0;
+}
+
+int article_view_log_set_viewed(int32_t aid, ARTICLE_VIEW_LOG *p_view_log)
+{
+	int left;
+	int right;
+	int mid;
+	int i;
+
+	if (p_view_log == NULL)
+	{
+		log_error("article_view_log_set_viewed() error: NULL pointer\n");
+		return -1;
+	}
+
+	for (i = 0; i < 2; i++)
+	{
+		left = 0;
+		right = (i == 0 ? p_view_log->aid_base_cnt : p_view_log->aid_inc_cnt) - 1;
+
+		if (right < 0)
+		{
+			continue;
+		}
+
+		while (left < right)
+		{
+			mid = (left + right) / 2;
+			if (aid < (i == 0 ? p_view_log->aid_base[mid] : p_view_log->aid_inc[mid]))
+			{
+				right = mid;
+			}
+			else if (aid > (i == 0 ? p_view_log->aid_base[mid] : p_view_log->aid_inc[mid]))
+			{
+				left = mid + 1;
+			}
+			else // if (aid == p_view_log->aid_base[mid])
+			{
+				return 0; // Already set
+			}
+		}
+
+		if (aid == (i == 0 ? p_view_log->aid_base[left] : p_view_log->aid_inc[left])) // Found
+		{
+			return 0; // Already set
+		}
+	}
+
+	// Merge if Inc is full
+	if (p_view_log->aid_inc_cnt >= MAX_AID_INC_CNT)
+	{
+		article_view_log_merge_inc(p_view_log);
+
+		p_view_log->aid_inc[(p_view_log->aid_inc_cnt)++] = aid;
+
+		return 1; // Set complete
+	}
+
+	if (right < 0)
+	{
+		right = 0;
+	}
+	else if (aid > p_view_log->aid_inc[left])
+	{
+		right = left + 1;
+	}
+
+	for (i = p_view_log->aid_inc_cnt - 1; i >= right; i--)
+	{
+		p_view_log->aid_inc[i + 1] = p_view_log->aid_inc[i];
+	}
+
+	p_view_log->aid_inc[right] = aid;
+	(p_view_log->aid_inc_cnt)++;
+
+	return 1; // Set complete
+}
