@@ -34,6 +34,10 @@ Quick Installation
 ==================
 To install LBBS quickly, please do the following steps:
 
+0) Prerequisite
+
+   Follow README.md under https://github.com/leafok88/leafok_bbs to initialize the database structure shared by both web version and telnet version. It is highly recommended to finish the configuration steps of web version first and make sure those features could work properly.
+
 1) Extract the source files from a tarball or export from GitHub
 
    Run the following command to set up the autoconf/automake environment,
