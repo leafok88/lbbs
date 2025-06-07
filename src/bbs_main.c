@@ -40,7 +40,7 @@ int bbs_info()
 	return iflush();
 }
 
-int bbs_welcome(MYSQL *db)
+int bbs_welcome(void)
 {
 	char sql[SQL_BUFFER_LEN];
 
@@ -50,8 +50,15 @@ int bbs_welcome(MYSQL *db)
 	u_int32_t max_u_online = 0;
 	u_int32_t u_login_count = 0;
 
+	MYSQL *db;
 	MYSQL_RES *rs;
 	MYSQL_ROW row;
+
+	db = db_open();
+	if (db == NULL)
+	{
+		return -1;
+	}
 
 	snprintf(sql, sizeof(sql),
 			 "SELECT COUNT(*) AS cc FROM "
@@ -61,11 +68,13 @@ int bbs_welcome(MYSQL *db)
 	if (mysql_query(db, sql) != 0)
 	{
 		log_error("Query user_online error: %s\n", mysql_error(db));
+		mysql_close(db);
 		return -2;
 	}
 	if ((rs = mysql_store_result(db)) == NULL)
 	{
 		log_error("Get user_online data failed\n");
+		mysql_close(db);
 		return -2;
 	}
 	if ((row = mysql_fetch_row(rs)))
@@ -82,11 +91,13 @@ int bbs_welcome(MYSQL *db)
 	if (mysql_query(db, sql) != 0)
 	{
 		log_error("Query user_online error: %s\n", mysql_error(db));
+		mysql_close(db);
 		return -2;
 	}
 	if ((rs = mysql_store_result(db)) == NULL)
 	{
 		log_error("Get user_online data failed\n");
+		mysql_close(db);
 		return -2;
 	}
 	if ((row = mysql_fetch_row(rs)))
@@ -99,11 +110,13 @@ int bbs_welcome(MYSQL *db)
 	if (mysql_query(db, sql) != 0)
 	{
 		log_error("Query user_list error: %s\n", mysql_error(db));
+		mysql_close(db);
 		return -2;
 	}
 	if ((rs = mysql_store_result(db)) == NULL)
 	{
 		log_error("Get user_list data failed\n");
+		mysql_close(db);
 		return -2;
 	}
 	if ((row = mysql_fetch_row(rs)))
@@ -116,11 +129,13 @@ int bbs_welcome(MYSQL *db)
 	if (mysql_query(db, sql) != 0)
 	{
 		log_error("Query user_login_log error: %s\n", mysql_error(db));
+		mysql_close(db);
 		return -2;
 	}
 	if ((rs = mysql_store_result(db)) == NULL)
 	{
 		log_error("Get user_login_log data failed\n");
+		mysql_close(db);
 		return -2;
 	}
 	if ((row = mysql_fetch_row(rs)))
@@ -128,6 +143,8 @@ int bbs_welcome(MYSQL *db)
 		u_login_count = (u_int32_t)atoi(row[0]);
 	}
 	mysql_free_result(rs);
+
+	mysql_close(db);
 
 	// Log max user_online
 	FILE *fin, *fout;
@@ -170,12 +187,22 @@ int bbs_welcome(MYSQL *db)
 	return 0;
 }
 
-int bbs_logout(MYSQL *db)
+int bbs_logout(void)
 {
-	if (user_online_del(db) < 0)
+	MYSQL *db;
+
+	db = db_open();
+	if (db == NULL)
 	{
 		return -1;
 	}
+
+	if (user_online_del(db) < 0)
+	{
+		return -2;
+	}
+
+	mysql_close(db);
 
 	display_file(DATA_GOODBYE, 1, 1);
 
@@ -254,8 +281,6 @@ int bbs_center()
 
 int bbs_main()
 {
-	MYSQL *db = NULL;
-
 	// Set data pools in shared memory readonly
 	if (set_trie_dict_shm_readonly() < 0)
 	{
@@ -284,15 +309,8 @@ int bbs_main()
 		goto cleanup;
 	}
 
-	db = db_open();
-	if (db == NULL)
-	{
-		prints("无法连接数据库\n");
-		goto cleanup;
-	}
-
 	// Welcome
-	if (bbs_welcome(db) < 0)
+	if (bbs_welcome() < 0)
 	{
 		goto cleanup;
 	}
@@ -304,10 +322,12 @@ int bbs_main()
 		iflush();
 		igetch_t(MAX_DELAY_TIME);
 	}
-	else if (bbs_login(db) < 0)
+	else if (bbs_login() < 0)
 	{
 		goto cleanup;
 	}
+
+	// Load article_view_log
 
 	clearscr();
 
@@ -318,14 +338,9 @@ int bbs_main()
 	bbs_center();
 
 	// Logout
-	bbs_logout(db);
+	bbs_logout();
 
 cleanup:
-	if (db != NULL)
-	{
-		mysql_close(db);
-	}
-
 	// Detach menu in shared memory
 	detach_menu_shm(p_bbs_menu);
 	free(p_bbs_menu);

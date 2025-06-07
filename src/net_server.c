@@ -67,25 +67,17 @@ struct ssl_server_cb_data_t
 static int auth_password(ssh_session session, const char *user,
 						 const char *password, void *userdata)
 {
-	MYSQL *db;
 	struct ssl_server_cb_data_t *p_data = userdata;
 	int ret;
 
-	if ((db = db_open()) == NULL)
-	{
-		return SSH_AUTH_ERROR;
-	}
-
 	if (strcmp(user, "guest") == 0)
 	{
-		ret = load_guest_info(db);
+		ret = load_guest_info();
 	}
 	else
 	{
-		ret = check_user(db, user, password);
+		ret = check_user(user, password);
 	}
-
-	mysql_close(db);
 
 	if (ret == 0)
 	{

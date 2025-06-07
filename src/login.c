@@ -32,7 +32,7 @@
 #include <unistd.h>
 #include <mysql/mysql.h>
 
-int bbs_login(MYSQL *db)
+int bbs_login(void)
 {
 	char username[BBS_username_max_len + 1];
 	char password[BBS_password_max_len + 1];
@@ -52,7 +52,7 @@ int bbs_login(MYSQL *db)
 
 		if (strcmp(username, "guest") == 0)
 		{
-			load_guest_info(db);
+			load_guest_info();
 
 			return 0;
 		}
@@ -74,7 +74,7 @@ int bbs_login(MYSQL *db)
 				continue;
 			}
 
-			ok = (check_user(db, username, password) == 0);
+			ok = (check_user(username, password) == 0);
 			iflush();
 		}
 	}
@@ -91,8 +91,9 @@ int bbs_login(MYSQL *db)
 	return 0;
 }
 
-int check_user(MYSQL *db, const char *username, const char *password)
+int check_user(const char *username, const char *password)
 {
+	MYSQL *db;
 	MYSQL_RES *rs;
 	MYSQL_ROW row;
 	char sql[SQL_BUFFER_LEN];
@@ -102,6 +103,12 @@ int check_user(MYSQL *db, const char *username, const char *password)
 	int i;
 	int ok = 1;
 	char user_tz_env[BBS_user_tz_max_len + 2];
+
+	db = db_open();
+	if (db == NULL)
+	{
+		return -1;
+	}
 
 	// Verify format
 	for (i = 0; ok && username[i] != '\0'; i++)
@@ -137,12 +144,14 @@ int check_user(MYSQL *db, const char *username, const char *password)
 	if (mysql_query(db, "SET autocommit=0") != 0)
 	{
 		log_error("SET autocommit=0 error: %s\n", mysql_error(db));
+		mysql_close(db);
 		return -1;
 	}
 
 	if (mysql_query(db, "BEGIN") != 0)
 	{
 		log_error("Begin transaction error: %s\n", mysql_error(db));
+		mysql_close(db);
 		return -1;
 	}
 
@@ -158,11 +167,13 @@ int check_user(MYSQL *db, const char *username, const char *password)
 	if (mysql_query(db, sql) != 0)
 	{
 		log_error("Query user_list error: %s\n", mysql_error(db));
+		mysql_close(db);
 		return -1;
 	}
 	if ((rs = mysql_store_result(db)) == NULL)
 	{
 		log_error("Get user_list data failed\n");
+		mysql_close(db);
 		return -1;
 	}
 	if ((row = mysql_fetch_row(rs)))
@@ -170,6 +181,7 @@ int check_user(MYSQL *db, const char *username, const char *password)
 		if (atoi(row[0]) >= 2)
 		{
 			mysql_free_result(rs);
+			mysql_close(db);
 
 			prints("\033[1;31m来源存在多次失败登陆尝试，请稍后再试\033[m\r\n");
 
@@ -186,11 +198,13 @@ int check_user(MYSQL *db, const char *username, const char *password)
 	if (mysql_query(db, sql) != 0)
 	{
 		log_error("Query user_list error: %s\n", mysql_error(db));
+		mysql_close(db);
 		return -1;
 	}
 	if ((rs = mysql_store_result(db)) == NULL)
 	{
 		log_error("Get user_list data failed\n");
+		mysql_close(db);
 		return -1;
 	}
 	if ((row = mysql_fetch_row(rs)))
@@ -198,6 +212,7 @@ int check_user(MYSQL *db, const char *username, const char *password)
 		if (atoi(row[0]) >= 5)
 		{
 			mysql_free_result(rs);
+			mysql_close(db);
 
 			prints("\033[1;31m账户存在多次失败登陆尝试，请使用Web方式登录\033[m\r\n");
 
@@ -213,11 +228,13 @@ int check_user(MYSQL *db, const char *username, const char *password)
 	if (mysql_query(db, sql) != 0)
 	{
 		log_error("Query user_list error: %s\n", mysql_error(db));
+		mysql_close(db);
 		return -1;
 	}
 	if ((rs = mysql_store_result(db)) == NULL)
 	{
 		log_error("Get user_list data failed\n");
+		mysql_close(db);
 		return -1;
 	}
 	if ((row = mysql_fetch_row(rs)))
@@ -237,6 +254,7 @@ int check_user(MYSQL *db, const char *username, const char *password)
 		if (mysql_query(db, sql) != 0)
 		{
 			log_error("Insert into user_login_log error: %s\n", mysql_error(db));
+			mysql_close(db);
 			return -1;
 		}
 
@@ -244,12 +262,14 @@ int check_user(MYSQL *db, const char *username, const char *password)
 		if (mysql_query(db, "COMMIT") != 0)
 		{
 			log_error("Commit transaction error: %s\n", mysql_error(db));
+			mysql_close(db);
 			return -1;
 		}
 
 		if (p_login == 0)
 		{
 			mysql_free_result(rs);
+			mysql_close(db);
 
 			prints("\033[1;31m您目前无权登陆...\033[m\r\n");
 			return 1;
@@ -258,6 +278,7 @@ int check_user(MYSQL *db, const char *username, const char *password)
 	else
 	{
 		mysql_free_result(rs);
+		mysql_close(db);
 
 		snprintf(sql, sizeof(sql),
 				 "INSERT INTO user_err_login_log(username, password, login_dt, login_ip) "
@@ -273,10 +294,12 @@ int check_user(MYSQL *db, const char *username, const char *password)
 		if (mysql_query(db, "COMMIT") != 0)
 		{
 			log_error("Commit transaction error: %s\n", mysql_error(db));
+			mysql_close(db);
 			return -1;
 		}
 
 		prints("\033[1;31m错误的用户名或密码...\033[m\r\n");
+		mysql_close(db);
 		return 1;
 	}
 
@@ -284,6 +307,7 @@ int check_user(MYSQL *db, const char *username, const char *password)
 	if (mysql_query(db, "SET autocommit=1") != 0)
 	{
 		log_error("SET autocommit=1 error: %s\n", mysql_error(db));
+		mysql_close(db);
 		return -1;
 	}
 
@@ -295,14 +319,18 @@ int check_user(MYSQL *db, const char *username, const char *password)
 		break;
 	case -1: // Load data error
 		prints("\033[1;31m读取用户数据错误...\033[m\r\n");
+		mysql_close(db);
 		return -1;
 	case -2: // Unused
 		prints("\033[1;31m请通过Web登录更新用户许可协议...\033[m\r\n");
+		mysql_close(db);
 		return 1;
 	case -3: // Dead
 		prints("\033[1;31m很遗憾，您已经永远离开了我们的世界！\033[m\r\n");
+		mysql_close(db);
 		return 1;
 	default:
+		mysql_close(db);
 		return -2;
 	}
 
@@ -313,11 +341,13 @@ int check_user(MYSQL *db, const char *username, const char *password)
 	if (mysql_query(db, sql) != 0)
 	{
 		log_error("Update user_pubinfo error: %s\n", mysql_error(db));
+		mysql_close(db);
 		return -1;
 	}
 
 	if (user_online_add(db) != 0)
 	{
+		mysql_close(db);
 		return -1;
 	}
 
@@ -338,6 +368,8 @@ int check_user(MYSQL *db, const char *username, const char *password)
 
 		tzset();
 	}
+
+	mysql_close(db);
 
 	return 0;
 }
@@ -393,8 +425,16 @@ int load_user_info(MYSQL *db, int BBS_uid)
 	return 0;
 }
 
-int load_guest_info(MYSQL *db)
+int load_guest_info(void)
 {
+	MYSQL *db;
+
+	db = db_open();
+	if (db == NULL)
+	{
+		return -1;
+	}
+
 	strncpy(BBS_username, "guest", sizeof(BBS_username) - 1);
 	BBS_username[sizeof(BBS_username) - 1] = '\0';
 
@@ -410,6 +450,8 @@ int load_guest_info(MYSQL *db)
 
 	BBS_last_access_tm = BBS_login_tm = time(0);
 
+	mysql_close(db);
+	
 	return 0;
 }
 

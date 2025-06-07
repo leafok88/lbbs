@@ -21,15 +21,15 @@
 
 #define BBS_login_retry_times 3
 
-extern void login_fail();
+extern void login_fail(void);
 
-extern int bbs_login(MYSQL *db);
+extern int bbs_login(void);
 
-extern int check_user(MYSQL *db, const char *username, const char *password);
+extern int check_user(const char *username, const char *password);
 
 extern int load_user_info(MYSQL *db, int BBS_uid);
 
-extern int load_guest_info(MYSQL *db);
+extern int load_guest_info(void);
 
 extern int user_online_add(MYSQL *db);
 
