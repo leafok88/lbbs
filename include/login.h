@@ -27,7 +27,7 @@ extern int bbs_login(MYSQL *db);
 
 extern int check_user(MYSQL *db, const char *username, const char *password);
 
-extern int load_user_info(MYSQL *db, long int BBS_uid);
+extern int load_user_info(MYSQL *db, int BBS_uid);
 
 extern int load_guest_info(MYSQL *db);
 

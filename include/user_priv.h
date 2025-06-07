@@ -43,7 +43,7 @@
 
 struct user_priv
 {
-	long int uid;
+	int uid;
 	int level;
 	int g_priv;
 	struct
@@ -93,6 +93,6 @@ inline int is_favor(BBS_user_priv *p_priv, int sid)
 	return is_favor;
 }
 
-extern int load_priv(MYSQL *db, BBS_user_priv *p_priv, long int uid);
+extern int load_priv(MYSQL *db, BBS_user_priv *p_priv, int uid);
 
 #endif //_USER_PRIV_H_

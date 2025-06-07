@@ -103,7 +103,7 @@ int getpriv(BBS_user_priv *p_priv, int sid, int *p_is_favor)
 	return (sid >= 0 ? p_priv->g_priv : S_NONE);
 }
 
-int load_priv(MYSQL *db, BBS_user_priv *p_priv, long int uid)
+int load_priv(MYSQL *db, BBS_user_priv *p_priv, int uid)
 {
 	MYSQL_RES *rs;
 	MYSQL_ROW row;
@@ -121,7 +121,7 @@ int load_priv(MYSQL *db, BBS_user_priv *p_priv, long int uid)
 
 	// Permission
 	snprintf(sql, sizeof(sql),
-			 "SELECT p_post, p_msg FROM user_list WHERE UID = %ld AND verified",
+			 "SELECT p_post, p_msg FROM user_list WHERE UID = %d AND verified",
 			 uid);
 	if (mysql_query(db, sql) != 0)
 	{
@@ -142,7 +142,7 @@ int load_priv(MYSQL *db, BBS_user_priv *p_priv, long int uid)
 
 	// Admin
 	snprintf(sql, sizeof(sql),
-			 "SELECT major FROM admin_config WHERE UID = %ld "
+			 "SELECT major FROM admin_config WHERE UID = %d "
 			 "AND enable AND (NOW() BETWEEN begin_dt AND end_dt)",
 			 uid);
 	if (mysql_query(db, sql) != 0)
@@ -166,7 +166,7 @@ int load_priv(MYSQL *db, BBS_user_priv *p_priv, long int uid)
 	snprintf(sql, sizeof(sql),
 			 "SELECT section_master.SID, major FROM section_master "
 			 "INNER JOIN section_config ON section_master.SID = section_config.SID "
-			 "WHERE UID = %ld AND section_master.enable AND section_config.enable "
+			 "WHERE UID = %d AND section_master.enable AND section_config.enable "
 			 "AND (NOW() BETWEEN begin_dt AND end_dt)",
 			 uid);
 	if (mysql_query(db, sql) != 0)
@@ -224,7 +224,7 @@ int load_priv(MYSQL *db, BBS_user_priv *p_priv, long int uid)
 
 	// Section ban
 	snprintf(sql, sizeof(sql),
-			 "SELECT SID FROM ban_user_list WHERE UID = %ld AND enable "
+			 "SELECT SID FROM ban_user_list WHERE UID = %d AND enable "
 			 "AND (NOW() BETWEEN ban_dt AND unban_dt)",
 			 uid);
 	if (mysql_query(db, sql) != 0)
@@ -246,7 +246,7 @@ int load_priv(MYSQL *db, BBS_user_priv *p_priv, long int uid)
 
 	// User favor section
 	snprintf(sql, sizeof(sql),
-			 "SELECT SID FROM section_favorite WHERE UID = %ld",
+			 "SELECT SID FROM section_favorite WHERE UID = %d",
 			 uid);
 	if (mysql_query(db, sql) != 0)
 	{

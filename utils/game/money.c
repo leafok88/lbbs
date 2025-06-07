@@ -46,7 +46,7 @@ int money_deposit(int money)
 	}
 
 	snprintf(sql, sizeof(sql),
-			 "SELECT game_money FROM user_pubinfo WHERE UID = %ld FOR UPDATE",
+			 "SELECT game_money FROM user_pubinfo WHERE UID = %d FOR UPDATE",
 			 BBS_priv.uid);
 
 	if (mysql_query(db, sql) != 0)
@@ -82,7 +82,7 @@ int money_deposit(int money)
 	}
 
 	snprintf(sql, sizeof(sql),
-			 "UPDATE user_pubinfo SET game_money = %d WHERE UID = %ld",
+			 "UPDATE user_pubinfo SET game_money = %d WHERE UID = %d",
 			 BBS_user_money, BBS_priv.uid);
 
 	if (mysql_query(db, sql) != 0)
@@ -136,7 +136,7 @@ int money_withdraw(int money)
 	}
 
 	snprintf(sql, sizeof(sql),
-			 "SELECT game_money FROM user_pubinfo WHERE UID = %ld FOR UPDATE",
+			 "SELECT game_money FROM user_pubinfo WHERE UID = %d FOR UPDATE",
 			 BBS_priv.uid);
 
 	if (mysql_query(db, sql) != 0)
@@ -167,7 +167,7 @@ int money_withdraw(int money)
 	}
 
 	snprintf(sql, sizeof(sql),
-			 "UPDATE user_pubinfo SET game_money = %d WHERE UID = %ld",
+			 "UPDATE user_pubinfo SET game_money = %d WHERE UID = %d",
 			 BBS_user_money, BBS_priv.uid);
 
 	if (mysql_query(db, sql) != 0)
@@ -202,7 +202,7 @@ int money_refresh(void)
 	}
 
 	snprintf(sql, sizeof(sql),
-			 "SELECT game_money FROM user_pubinfo WHERE UID = %ld FOR UPDATE",
+			 "SELECT game_money FROM user_pubinfo WHERE UID = %d FOR UPDATE",
 			 BBS_priv.uid);
 
 	if (mysql_query(db, sql) != 0)

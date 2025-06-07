@@ -97,7 +97,7 @@ int check_user(MYSQL *db, const char *username, const char *password)
 	MYSQL_ROW row;
 	char sql[SQL_BUFFER_LEN];
 	int ret;
-	long BBS_uid = 0;
+	int BBS_uid = 0;
 	char client_addr[IP_ADDR_LEN];
 	int i;
 	int ok = 1;
@@ -222,7 +222,7 @@ int check_user(MYSQL *db, const char *username, const char *password)
 	}
 	if ((row = mysql_fetch_row(rs)))
 	{
-		BBS_uid = atol(row[0]);
+		BBS_uid = atoi(row[0]);
 		strncpy(BBS_username, row[1], sizeof(BBS_username) - 1);
 		BBS_username[sizeof(BBS_username) - 1] = '\0';
 		int p_login = atoi(row[2]);
@@ -232,7 +232,7 @@ int check_user(MYSQL *db, const char *username, const char *password)
 		// Add user login log
 		snprintf(sql, sizeof(sql),
 				 "INSERT INTO user_login_log(UID, login_dt, login_ip) "
-				 "VALUES(%ld, NOW(), '%s')",
+				 "VALUES(%d, NOW(), '%s')",
 				 BBS_uid, hostaddr_client);
 		if (mysql_query(db, sql) != 0)
 		{
@@ -308,7 +308,7 @@ int check_user(MYSQL *db, const char *username, const char *password)
 
 	snprintf(sql, sizeof(sql),
 			 "UPDATE user_pubinfo SET visit_count = visit_count + 1, "
-			 "last_login_dt = NOW() WHERE UID = %ld",
+			 "last_login_dt = NOW() WHERE UID = %d",
 			 BBS_uid);
 	if (mysql_query(db, sql) != 0)
 	{
@@ -342,7 +342,7 @@ int check_user(MYSQL *db, const char *username, const char *password)
 	return 0;
 }
 
-int load_user_info(MYSQL *db, long int BBS_uid)
+int load_user_info(MYSQL *db, int BBS_uid)
 {
 	MYSQL_RES *rs;
 	MYSQL_ROW row;
@@ -352,7 +352,7 @@ int load_user_info(MYSQL *db, long int BBS_uid)
 
 	snprintf(sql, sizeof(sql),
 			 "SELECT life, UNIX_TIMESTAMP(last_login_dt), user_timezone "
-			 "FROM user_pubinfo WHERE UID = %ld",
+			 "FROM user_pubinfo WHERE UID = %d",
 			 BBS_uid);
 	if (mysql_query(db, sql) != 0)
 	{
@@ -424,7 +424,7 @@ int user_online_add(MYSQL *db)
 
 	snprintf(sql, sizeof(sql),
 			 "INSERT INTO user_online(SID, UID, ip, login_tm, last_tm) "
-			 "VALUES('Telnet_Process_%d', %ld, '%s', NOW(), NOW())",
+			 "VALUES('Telnet_Process_%d', %d, '%s', NOW(), NOW())",
 			 getpid(), BBS_priv.uid, hostaddr_client);
 	if (mysql_query(db, sql) != 0)
 	{

@@ -45,6 +45,6 @@ char BBS_current_section_name[BBS_section_name_max_len + 1];
 
 char *setuserfile(char *buf, size_t len, const char *filename)
 {
-	snprintf(buf, len, "%s/%ld", filename, BBS_priv.uid);
+	snprintf(buf, len, "%s/%d", filename, BBS_priv.uid);
 	return buf;
 }

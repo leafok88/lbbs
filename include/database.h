@@ -19,7 +19,7 @@
 
 #include <mysql/mysql.h>
 
-#define SQL_BUFFER_LEN 2048
+#define SQL_BUFFER_LEN 10240
 
 // Database
 extern char DB_host[256];
