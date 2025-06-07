@@ -64,15 +64,19 @@ To install LBBS quickly, please do the following steps:
    
    /usr/local/lbbs/utils/conf/db_conn.inc.php
 
-7) Generate menu configuration file with section data by running the script
+6) Generate menu configuration file with section data by running the script
 
    sudo -u bbs php /usr/local/lbbs/utils/bin/gen_section_menu.php
 
-6) Startup
+7) Create or copy SSH2 RSA certificate into /usr/local/lbbs/conf
+
+   ssh-keygen -t rsa -C "Your Server Name" -f ssh_host_rsa_key
+
+8) Startup
 
    sudo /usr/local/lbbs/bin/bbsd
 
-7) Set up systemd
+9) Set up systemd
 
    Create your own /usr/lib/systemd/system/lbbs.service from the sample at conf/lbbs.service.default, and make any change if necessary. Please note that the startup argument "-f" with bbsd should be used in systemd notify mode.
 
