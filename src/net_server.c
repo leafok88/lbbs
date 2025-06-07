@@ -56,7 +56,7 @@ typedef struct process_sockaddr_t PROCESS_SOCKADDR;
 
 static PROCESS_SOCKADDR process_sockaddr_pool[MAX_CLIENT_LIMIT];
 
-#define SSH_AUTH_MAX_DURATION 60 // seconds
+#define SSH_AUTH_MAX_DURATION (60 * 1000) // milliseconds
 
 struct ssl_server_cb_data_t
 {
@@ -185,9 +185,9 @@ static int fork_server(void)
 		event = ssh_event_new();
 		ssh_event_add_session(event, SSH_session);
 
-		for (i = 0; i < SSH_AUTH_MAX_DURATION && !SYS_server_exit && !cb_data.error && SSH_channel == NULL; i++)
+		for (i = 0; i < SSH_AUTH_MAX_DURATION && !SYS_server_exit && !cb_data.error && SSH_channel == NULL; i += 100)
 		{
-			ret = ssh_event_dopoll(event, 1000); // 1 second
+			ret = ssh_event_dopoll(event, 100); // 0.1 second
 			if (ret == SSH_ERROR)
 			{
 				log_error("ssh_event_dopoll() error: %s\n", ssh_get_error(SSH_session));
