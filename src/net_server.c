@@ -129,7 +129,7 @@ static ssh_channel new_session_channel(ssh_session session, void *userdata)
 	return SSH_channel;
 }
 
-int fork_server(void)
+static int fork_server(void)
 {
 	ssh_event event;
 	int pid;
