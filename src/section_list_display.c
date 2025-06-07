@@ -21,6 +21,7 @@
 #include "io.h"
 #include "screen.h"
 #include "log.h"
+#include "user_priv.h"
 #include "article_view_log.h"
 #include "str_process.h"
 #include <time.h>
@@ -59,11 +60,18 @@ static int section_list_draw_items(int page_id, ARTICLE *p_articles[], int artic
 
 	for (i = 0; i < article_count; i++)
 	{
-		is_viewed = article_view_log_is_viewed(p_articles[i]->aid, &BBS_article_view_log);
-		if (is_viewed < 0)
+		if (p_articles[i]->uid == BBS_priv.uid)
 		{
-			log_error("article_view_log_is_viewed(aid=%d) error\n", p_articles[i]->aid);
-			is_viewed = 0;
+			is_viewed = 1;
+		}
+		else
+		{
+			is_viewed = article_view_log_is_viewed(p_articles[i]->aid, &BBS_article_view_log);
+			if (is_viewed < 0)
+			{
+				log_error("article_view_log_is_viewed(aid=%d) error\n", p_articles[i]->aid);
+				is_viewed = 0;
+			}
 		}
 
 		article_flag = (is_viewed ? ' ' : 'N');
