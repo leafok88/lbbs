@@ -45,7 +45,6 @@
 #define DATA_ACTIVE_BOARD "data/active_board.txt"
 #define DATA_READ_HELP "data/read_help.txt"
 
-#define VAR_MAX_USER_ONLINE "var/max_user_online.dat"
 #define VAR_BBS_TOP "var/bbs_top.txt"
 
 #define VAR_ARTICLE_BLOCK_SHM "var/article_block_shm.~"
