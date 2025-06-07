@@ -1,6 +1,6 @@
 # Config item name is case-insensitive
-# Config item value should not include space
-# Comment after value is optional
+# Config item value should NOT contain any space
+# Optional comment after item value is allowed
 
 bbs_id LBBS-devel
 bbs_name MyBBS
