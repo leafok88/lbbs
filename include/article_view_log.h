@@ -33,7 +33,7 @@ typedef struct article_view_log_t ARTICLE_VIEW_LOG;
 // Load baseline view log from DB
 extern int article_view_log_load(int uid, ARTICLE_VIEW_LOG *p_view_log, int keep_inc);
 // Clear data
-extern int article_view_log_unload(int uid, ARTICLE_VIEW_LOG *p_view_log);
+extern int article_view_log_unload(ARTICLE_VIEW_LOG *p_view_log);
 // Save incremental view log to DB
 extern int article_view_log_save_inc(int uid, const ARTICLE_VIEW_LOG *p_view_log);
 // Merge incremental view log to baseline, without DB read / write

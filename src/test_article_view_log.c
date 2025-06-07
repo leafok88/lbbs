@@ -23,9 +23,7 @@ int main(int argc, char *argv[])
 	int32_t aid;
 	int i;
 
-	view_log.aid_base = NULL;
-	view_log.aid_base_cnt = 0;
-	view_log.aid_inc_cnt = 0;
+	article_view_log_load(0, &view_log, 0);
 
 	for (i = MAX_AID_INC_CNT * 3; i > 0; i--)
 	{
@@ -49,5 +47,7 @@ int main(int argc, char *argv[])
 
 	printf("Base cnt = %d, Inc cnt = %d\n", view_log.aid_base_cnt, view_log.aid_inc_cnt);
 
+	article_view_log_unload(&view_log);
+	
 	return 0;
 }

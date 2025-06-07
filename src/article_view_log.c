@@ -37,6 +37,19 @@ int article_view_log_load(int uid, ARTICLE_VIEW_LOG *p_view_log, int keep_inc)
 		return -1;
 	}
 
+	if (uid == 0)
+	{
+		p_view_log->aid_base_cnt = 0;
+		p_view_log->aid_base = NULL;
+
+		if (!keep_inc)
+		{
+			p_view_log->aid_inc_cnt = 0;
+		}
+
+		return 0;
+	}
+
 	if ((db = db_open()) == NULL)
 	{
 		log_error("article_view_log_load() error: Unable to open DB\n");
@@ -84,7 +97,7 @@ int article_view_log_load(int uid, ARTICLE_VIEW_LOG *p_view_log, int keep_inc)
 	return 0;
 }
 
-int article_view_log_unload(int uid, ARTICLE_VIEW_LOG *p_view_log)
+int article_view_log_unload(ARTICLE_VIEW_LOG *p_view_log)
 {
 	if (p_view_log == NULL)
 	{
