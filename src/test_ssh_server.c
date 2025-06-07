@@ -1,3 +1,5 @@
+// This test was written base on libssh example/proxy.c
+
 #include "log.h"
 #include <stdio.h>
 #include <libssh/libssh.h>
