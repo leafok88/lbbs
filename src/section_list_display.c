@@ -434,7 +434,7 @@ int section_list_display(const char *sname)
 					break;
 				}
 
-				ret = display_data(cache.p_data, cache.line_total, cache.line_offsets, 1, 0,
+				ret = display_data(cache.p_data, cache.line_total, cache.line_offsets, 0,
 								   display_article_key_handler, DATA_READ_HELP);
 
 				if (article_cache_unload(&cache) < 0)

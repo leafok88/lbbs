@@ -151,7 +151,7 @@ int bbs_welcome(void)
 	u_anonymous++;
 
 	// Display logo
-	display_file(DATA_WELCOME, 1, 2);
+	display_file(DATA_WELCOME, 2);
 
 	// Display welcome message
 	prints("\r\033[1;35mª∂”≠π‚¡Ÿ\033[33m °æ %s °ø \033[35mBBS\r\n"
@@ -184,7 +184,7 @@ int bbs_logout(void)
 
 	mysql_close(db);
 
-	display_file(DATA_GOODBYE, 1, 1);
+	display_file(DATA_GOODBYE, 1);
 
 	log_common("User logout\n");
 
@@ -317,7 +317,7 @@ int bbs_main()
 	clearscr();
 
 	// BBS Top 10
-	display_file(VAR_BBS_TOP, 1, 1);
+	display_file(VAR_BBS_TOP, 1);
 
 	// Main
 	bbs_center();

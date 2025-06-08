@@ -59,7 +59,7 @@ int bbs_login(void)
 
 		if (strcmp(username, "new") == 0)
 		{
-			display_file(DATA_REGISTER, 1, 1);
+			display_file(DATA_REGISTER, 1);
 
 			return 0;
 		}
@@ -81,7 +81,7 @@ int bbs_login(void)
 
 	if (!ok)
 	{
-		display_file(DATA_LOGIN_ERROR, 1, 1);
+		display_file(DATA_LOGIN_ERROR, 1);
 		return -1;
 	}
 
