@@ -32,10 +32,25 @@ struct editor_data_t
 };
 typedef struct editor_data_t EDITOR_DATA;
 
+struct editor_ctx_t
+{
+	int reach_begin;
+	int reach_end;
+	long line_cursor;
+	char msg[MSG_EXT_MAX_LEN];
+};
+typedef struct editor_ctx_t EDITOR_CTX;
+
 extern EDITOR_DATA *editor_data_load(const char *p_data);
 extern long editor_data_save(const EDITOR_DATA *p_editor_data, char *p_data, size_t buf_len);
 extern void editor_data_cleanup(EDITOR_DATA *p_editor_data);
 
 extern int editor_display(EDITOR_DATA *p_editor_data);
+
+extern int editor_data_insert(EDITOR_DATA *p_editor_data, long display_line, long offset,
+							  const char *str, int str_len, long *p_last_updated_line);
+
+extern int editor_data_delete(EDITOR_DATA *p_editor_data, long display_line, long offset,
+							  long *p_last_updated_line);
 
 #endif //_EDITOR_H_
