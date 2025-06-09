@@ -624,6 +624,24 @@ int igetch(int timeout)
 				in_ascii = 0;
 				switch (tmp[4])
 				{
+				case 65:
+					out = KEY_CTRL_UP;
+					break;
+				case 66:
+					out = KEY_CTRL_DOWN;
+					break;
+				case 67:
+					out = KEY_CTRL_RIGHT;
+					break;
+				case 68:
+					out = KEY_CTRL_LEFT;
+					break;
+				case 70:
+					out = KEY_CTRL_END;
+					break;
+				case 72:
+					out = KEY_CTRL_HOME;
+					break;
 				case 80:
 					out = KEY_CTRL_F1;
 					break;

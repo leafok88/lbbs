@@ -84,6 +84,13 @@
 #define KEY_CTRL_F11 0x0229
 #define KEY_CTRL_F12 0x022a
 
+#define KEY_CTRL_UP 0x0230
+#define KEY_CTRL_DOWN 0x0231
+#define KEY_CTRL_RIGHT 0x0232
+#define KEY_CTRL_LEFT 0x0233
+#define KEY_CTRL_HOME 0x0234
+#define KEY_CTRL_END 0x0235
+
 #endif // EXPAND_KEY
 
 #define Ctrl(C) ((C) - 'A' + 1)
