@@ -24,10 +24,10 @@
 
 struct display_ctx_t
 {
-	int reach_begin; // of data
-	int reach_end; // of data
-   long line_top; // current screen
-   long line_bottom; // current screen
+   int reach_begin;
+   int reach_end;
+   long line_top;
+   long line_bottom;
    char msg[MSG_EXT_MAX_LEN];
 };
 typedef struct display_ctx_t DISPLAY_CTX;
