@@ -239,18 +239,19 @@ int display_data(const void *p_data, long display_line_total, const long *p_line
 	char buffer[LINE_BUFFER_LEN];
 	DISPLAY_CTX ctx;
 	int ch = 0;
-	int input_ok, screen_current_line;
-	const int screen_begin_line = 1;
-	int screen_end_line = SCREEN_ROWS - 1;
-	const int screen_line_total = screen_end_line - screen_begin_line + 1;
+	int input_ok;
+	int screen_current_row;
+	const int screen_begin_row = 1;
+	int screen_end_row = SCREEN_ROWS - 1;
+	const int screen_row_total = screen_end_row - screen_begin_row + 1;
 	long int line_current = 0;
 	long int len;
 	long int percentile;
 	int loop;
 	int eol, display_len;
 
-	clrline(screen_begin_line, SCREEN_ROWS);
-	screen_current_line = screen_begin_line;
+	clrline(screen_begin_row, SCREEN_ROWS);
+	screen_current_row = screen_begin_row;
 
 	// update msg_ext with extended key handler
 	if (key_handler(&ch, &ctx) != 0)
@@ -261,7 +262,7 @@ int display_data(const void *p_data, long display_line_total, const long *p_line
 	loop = 1;
 	while (!SYS_server_exit && loop)
 	{
-		if (eof_exit > 0 && line_current >= display_line_total && display_line_total <= screen_line_total)
+		if (eof_exit > 0 && line_current >= display_line_total && display_line_total <= screen_row_total)
 		{
 			if (eof_exit == 1)
 			{
@@ -276,13 +277,13 @@ int display_data(const void *p_data, long display_line_total, const long *p_line
 			break;
 		}
 
-		if (line_current >= display_line_total || screen_current_line > screen_end_line)
+		if (line_current >= display_line_total || screen_current_row > screen_end_row)
 		{
-			ctx.reach_begin = (line_current < screen_current_line ? 1 : 0);
+			ctx.reach_begin = (line_current < screen_current_row ? 1 : 0);
 
-			if (line_current - (screen_current_line - screen_begin_line) + screen_line_total < display_line_total)
+			if (line_current - (screen_current_row - screen_begin_row) + screen_row_total < display_line_total)
 			{
-				percentile = (line_current - (screen_current_line - screen_begin_line) + screen_line_total) * 100 / display_line_total;
+				percentile = (line_current - (screen_current_row - screen_begin_row) + screen_row_total) * 100 / display_line_total;
 				ctx.reach_end = 0;
 			}
 			else
@@ -291,8 +292,8 @@ int display_data(const void *p_data, long display_line_total, const long *p_line
 				ctx.reach_end = 1;
 			}
 
-			ctx.line_top = line_current - (screen_current_line - screen_begin_line) + 1;
-			ctx.line_bottom = MIN(line_current - (screen_current_line - screen_begin_line) + screen_line_total, display_line_total);
+			ctx.line_top = line_current - (screen_current_row - screen_begin_row) + 1;
+			ctx.line_bottom = MIN(line_current - (screen_current_row - screen_begin_row) + screen_row_total, display_line_total);
 
 			snprintf(buffer, sizeof(buffer),
 					 "\033[1;44;33mµÚ\033[32m%ld\033[33m-\033[32m%ld\033[33mÐÐ (\033[32m%ld%%\033[33m) %s",
@@ -331,78 +332,78 @@ int display_data(const void *p_data, long display_line_total, const long *p_line
 				case KEY_TIMEOUT:
 					goto cleanup;
 				case KEY_HOME:
-					if (line_current - screen_current_line < 0) // Reach begin
+					if (line_current - screen_current_row < 0) // Reach begin
 					{
 						break;
 					}
 					line_current = 0;
-					screen_current_line = screen_begin_line;
-					screen_end_line = SCREEN_ROWS - 1;
-					clrline(screen_begin_line, SCREEN_ROWS);
+					screen_current_row = screen_begin_row;
+					screen_end_row = SCREEN_ROWS - 1;
+					clrline(screen_begin_row, SCREEN_ROWS);
 					break;
 				case KEY_END:
-					if (display_line_total < screen_line_total)
+					if (display_line_total < screen_row_total)
 					{
 						break;
 					}
-					line_current = display_line_total - screen_line_total;
-					screen_current_line = screen_begin_line;
-					screen_end_line = SCREEN_ROWS - 1;
-					clrline(screen_begin_line, SCREEN_ROWS);
+					line_current = display_line_total - screen_row_total;
+					screen_current_row = screen_begin_row;
+					screen_end_row = SCREEN_ROWS - 1;
+					clrline(screen_begin_row, SCREEN_ROWS);
 					break;
 				case KEY_UP:
-					if (line_current - screen_current_line < 0) // Reach begin
+					if (line_current - screen_current_row < 0) // Reach begin
 					{
 						break;
 					}
-					line_current -= screen_current_line;
-					screen_current_line = screen_begin_line;
+					line_current -= screen_current_row;
+					screen_current_row = screen_begin_row;
 					// screen_end_line = screen_begin_line;
 					// prints("\033[T"); // Scroll down 1 line
-					screen_end_line = SCREEN_ROWS - 1; // Legacy Fterm only works with this line
+					screen_end_row = SCREEN_ROWS - 1; // Legacy Fterm only works with this line
 					break;
 				case CR:
 					igetch_reset();
 				case KEY_SPACE:
 				case KEY_DOWN:
-					if (line_current + (screen_line_total - (screen_current_line - screen_begin_line)) >= display_line_total) // Reach end
+					if (line_current + (screen_row_total - (screen_current_row - screen_begin_row)) >= display_line_total) // Reach end
 					{
 						break;
 					}
-					line_current += (screen_line_total - (screen_current_line - screen_begin_line));
-					screen_current_line = screen_line_total;
-					screen_end_line = SCREEN_ROWS - 1;
+					line_current += (screen_row_total - (screen_current_row - screen_begin_row));
+					screen_current_row = screen_row_total;
+					screen_end_row = SCREEN_ROWS - 1;
 					moveto(SCREEN_ROWS, 0);
 					clrtoeol();
 					prints("\033[S"); // Scroll up 1 line
 					break;
 				case KEY_PGUP:
-					if (line_current - screen_current_line < 0) // Reach begin
+					if (line_current - screen_current_row < 0) // Reach begin
 					{
 						break;
 					}
-					line_current -= ((screen_line_total - 1) + (screen_current_line - screen_begin_line));
+					line_current -= ((screen_row_total - 1) + (screen_current_row - screen_begin_row));
 					if (line_current < 0)
 					{
 						line_current = 0;
 					}
-					screen_current_line = screen_begin_line;
-					screen_end_line = SCREEN_ROWS - 1;
-					clrline(screen_begin_line, SCREEN_ROWS);
+					screen_current_row = screen_begin_row;
+					screen_end_row = SCREEN_ROWS - 1;
+					clrline(screen_begin_row, SCREEN_ROWS);
 					break;
 				case KEY_PGDN:
-					if (line_current + screen_line_total - (screen_current_line - screen_begin_line) >= display_line_total) // Reach end
+					if (line_current + screen_row_total - (screen_current_row - screen_begin_row) >= display_line_total) // Reach end
 					{
 						break;
 					}
-					line_current += (screen_line_total - 1) - (screen_current_line - screen_begin_line);
-					if (line_current + screen_line_total > display_line_total) // No enough lines to display
+					line_current += (screen_row_total - 1) - (screen_current_row - screen_begin_row);
+					if (line_current + screen_row_total > display_line_total) // No enough lines to display
 					{
-						line_current = display_line_total - screen_line_total;
+						line_current = display_line_total - screen_row_total;
 					}
-					screen_current_line = screen_begin_line;
-					screen_end_line = SCREEN_ROWS - 1;
-					clrline(screen_begin_line, SCREEN_ROWS);
+					screen_current_row = screen_begin_row;
+					screen_end_row = SCREEN_ROWS - 1;
+					clrline(screen_begin_row, SCREEN_ROWS);
 					break;
 				case KEY_ESC:
 				case KEY_LEFT:
@@ -419,10 +420,10 @@ int display_data(const void *p_data, long display_line_total, const long *p_line
 					show_help = 1;
 				case KEY_F5:
 					// Refresh after display help information
-					line_current -= (screen_current_line - screen_begin_line);
-					screen_current_line = screen_begin_line;
-					screen_end_line = SCREEN_ROWS - 1;
-					clrline(screen_begin_line, SCREEN_ROWS);
+					line_current -= (screen_current_row - screen_begin_row);
+					screen_current_row = screen_begin_row;
+					screen_end_row = SCREEN_ROWS - 1;
+					clrline(screen_begin_row, SCREEN_ROWS);
 					break;
 				case KEY_F2: // For test only
 					EDITOR_DATA *p_editor_data;
@@ -448,10 +449,10 @@ int display_data(const void *p_data, long display_line_total, const long *p_line
 					// p_data_new = NULL;
 
 					// Refresh after display editor
-					line_current -= (screen_current_line - screen_begin_line);
-					screen_current_line = screen_begin_line;
-					screen_end_line = SCREEN_ROWS - 1;
-					clrline(screen_begin_line, SCREEN_ROWS);
+					line_current -= (screen_current_row - screen_begin_row);
+					screen_current_row = screen_begin_row;
+					screen_end_row = SCREEN_ROWS - 1;
+					clrline(screen_begin_row, SCREEN_ROWS);
 					break;
 				case 0: // Refresh bottom line
 					break;
@@ -483,11 +484,11 @@ int display_data(const void *p_data, long display_line_total, const long *p_line
 		memcpy(buffer, (const char *)p_data + p_line_offsets[line_current], (size_t)len);
 		buffer[len] = '\0';
 
-		moveto(screen_current_line, 0);
+		moveto(screen_current_row, 0);
 		clrtoeol();
 		prints("%s", buffer);
 		line_current++;
-		screen_current_line++;
+		screen_current_row++;
 	}
 
 cleanup:
