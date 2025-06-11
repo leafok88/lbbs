@@ -744,16 +744,20 @@ int editor_display(EDITOR_DATA *p_editor_data)
 				case Ctrl('C'):
 					loop = 0;
 					break;
+				case Ctrl('S'): // Start of line
 				case KEY_CTRL_LEFT:
 					col_pos = 1;
 					break;
+				case Ctrl('E'): // End of line
 				case KEY_CTRL_RIGHT:
 					col_pos = MAX(1, p_editor_data->display_line_lengths[line_current - screen_current_row + row_pos]);
 					break;
+				case Ctrl('T'): // Top of screen
 				case KEY_CTRL_UP:
 					row_pos = screen_begin_row;
 					col_pos = MIN(col_pos, MAX(1, p_editor_data->display_line_lengths[line_current - screen_current_row + row_pos]));
 					break;
+				case Ctrl('B'): // Bottom of screen
 				case KEY_CTRL_DOWN:
 					row_pos = SCREEN_ROWS - 1;
 					col_pos = MIN(col_pos, MAX(1, p_editor_data->display_line_lengths[line_current - screen_current_row + row_pos]));
