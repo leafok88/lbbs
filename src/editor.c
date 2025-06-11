@@ -425,13 +425,46 @@ int editor_data_delete(EDITOR_DATA *p_editor_data, long display_line, long offse
 	if (offset_data_line + str_len > len_data_line ||
 		(offset_data_line + str_len == len_data_line && p_data_line[offset_data_line] == '\n'))
 	{
-		log_error("Nothing to be delete\n");
-		return 0;
-	}
+		if (display_line + 1 >= p_editor_data->display_line_total) // No additional display line (data line)
+		{
+			log_common("Debug: No additional display line: %ld + 1 >= %ld\n", display_line, p_editor_data->display_line_total);
+			return 0;
+		}
 
-	memmove(p_data_line + offset_data_line, p_data_line + offset_data_line + str_len, (size_t)(len_data_line - offset_data_line - str_len));
-	p_data_line[len_data_line - str_len] = '\0';
-	len_data_line -= str_len;
+		len_data_line = 0; // Next data line
+		last_display_line = p_editor_data->display_line_total - 1;
+		for (i = display_line + 1; i < p_editor_data->display_line_total; i++)
+		{
+			len_data_line += p_editor_data->display_line_lengths[i];
+
+			if (p_editor_data->display_line_lengths[i] > 0 &&
+				p_editor_data->p_display_lines[i][p_editor_data->display_line_lengths[i] - 1] == '\n') // reach end of current data line
+			{
+				last_display_line = i;
+				break;
+			}
+		}
+
+		if (offset_data_line + len_data_line + 1 > MAX_EDITOR_DATA_LINE_LENGTH) // No enough buffer to merge current data line with next data line
+		{
+			log_common("Debug: No enough buffer to merge with next data line: %ld > %ld\n",
+					   offset_data_line + len_data_line + 1, MAX_EDITOR_DATA_LINE_LENGTH);
+			return 0;
+		}
+
+		// Append next data line to current one
+		memcpy(p_data_line + offset_data_line, p_editor_data->p_display_lines[display_line + 1], (size_t)len_data_line);
+		p_data_line[offset_data_line + len_data_line] = '\0';
+
+		// Recycle next data line
+		// TODO: free(p_editor_data->p_display_lines[display_line + 1]);
+	}
+	else
+	{
+		memmove(p_data_line + offset_data_line, p_data_line + offset_data_line + str_len, (size_t)(len_data_line - offset_data_line - str_len));
+		p_data_line[len_data_line - str_len] = '\0';
+		len_data_line -= str_len;
+	}
 
 	// Set p_data_line to head of current display line
 	p_data_line = p_editor_data->p_display_lines[display_line];
@@ -472,7 +505,7 @@ int editor_data_delete(EDITOR_DATA *p_editor_data, long display_line, long offse
 		*p_last_updated_line = p_editor_data->display_line_total - 1;
 	}
 
-	return 0;
+	return str_len;
 }
 
 static int editor_display_key_handler(int *p_key, EDITOR_CTX *p_ctx)
@@ -639,20 +672,48 @@ int editor_display(EDITOR_DATA *p_editor_data)
 						continue;
 					}
 				}
-				else if (ch == KEY_DEL) // Del
+				else if (ch == KEY_DEL || ch == BACKSPACE) // Del
 				{
-					last_updated_line = line_current;
+					if (ch == BACKSPACE)
+					{
+						col_pos--;
+						if (col_pos < 1 && line_current - screen_current_row + row_pos >= 0)
+						{
+							row_pos--;
+							col_pos = MAX(1, p_editor_data->display_line_lengths[line_current - screen_current_row + row_pos]);
+						}
+					}
 
-					if (editor_data_delete(p_editor_data, line_current - screen_current_row + row_pos, col_pos - 1,
-										   &last_updated_line) < 0)
+					if ((str_len = editor_data_delete(p_editor_data, line_current - screen_current_row + row_pos, col_pos - 1,
+													  &last_updated_line)) < 0)
 					{
 						log_error("editor_data_delete() error\n");
 					}
 					else
 					{
+						if (ch == BACKSPACE)
+						{
+							for (i = 1; i < str_len; i++)
+							{
+								col_pos--;
+								if (col_pos < 1 && line_current - screen_current_row + row_pos >= 0)
+								{
+									row_pos--;
+									col_pos = MAX(1, p_editor_data->display_line_lengths[line_current - screen_current_row + row_pos]);
+								}
+							}
+						}
+
 						screen_end_row = MIN(SCREEN_ROWS - 1, screen_current_row + (int)(last_updated_line - line_current));
 						line_current -= (screen_current_row - row_pos);
 						screen_current_row = (int)row_pos;
+
+						if (screen_current_row < screen_begin_row) // row_pos <= 0
+						{
+							screen_current_row = screen_begin_row;
+							row_pos = screen_begin_row;
+							screen_end_row = SCREEN_ROWS - 1;
+						}
 					}
 
 					continue;
