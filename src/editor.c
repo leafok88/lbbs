@@ -169,7 +169,7 @@ int editor_data_insert(EDITOR_DATA *p_editor_data, long *p_display_line, long *p
 	// Get accurate offset of first character of CJK at offset position
 	for (i = 0; i < offset; i++)
 	{
-		if (p_editor_data->p_display_lines[display_line][i] < 0) // GBK
+		if (p_editor_data->p_display_lines[display_line][i] < 0 || p_editor_data->p_display_lines[display_line][i] > 127) // GBK
 		{
 			i++;
 		}
@@ -368,7 +368,7 @@ int editor_data_delete(EDITOR_DATA *p_editor_data, long display_line, long offse
 	// Get accurate offset of first character of CJK at offset position
 	for (i = 0; i < offset; i++)
 	{
-		if (p_editor_data->p_display_lines[display_line][i] < 0) // GBK
+		if (p_editor_data->p_display_lines[display_line][i] < 0 || p_editor_data->p_display_lines[display_line][i] > 127) // GBK
 		{
 			i++;
 		}
@@ -417,8 +417,10 @@ int editor_data_delete(EDITOR_DATA *p_editor_data, long display_line, long offse
 	}
 	else
 	{
-		log_error("Some strange character at display_line %ld, offset %ld\n", display_line, offset);
-		return -2;
+		log_error("Some strange character at display_line %ld, offset %ld: %d %d %d %d\n",
+				  display_line, offset, p_data_line[offset_data_line], p_data_line[offset_data_line + 1],
+				  p_data_line[offset_data_line + 2], p_data_line[offset_data_line + 3]);
+		str_len = 1;
 	}
 
 	// Current display line is (almost) empty
