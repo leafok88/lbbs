@@ -22,6 +22,7 @@
 #include "str_process.h"
 #include <stdlib.h>
 #include <sys/param.h>
+#include <strings.h>
 
 #define _POSIX_C_SOURCE 200809L
 #include <string.h>
@@ -29,6 +30,7 @@
 EDITOR_DATA *editor_data_load(const char *p_data)
 {
 	EDITOR_DATA *p_editor_data;
+	char *p_data_line = NULL;
 	long line_offsets[MAX_EDITOR_DATA_LINES];
 	long current_data_line_length = 0;
 	long i, j;
@@ -64,8 +66,8 @@ EDITOR_DATA *editor_data_load(const char *p_data)
 			}
 
 			// Allocate new data line
-			p_editor_data->p_data_lines[p_editor_data->data_line_total] = malloc(MAX_EDITOR_DATA_LINE_LENGTH);
-			if (p_editor_data->p_data_lines[p_editor_data->data_line_total] == NULL)
+			p_data_line = malloc(MAX_EDITOR_DATA_LINE_LENGTH);
+			if (p_data_line == NULL)
 			{
 				log_error("malloc(MAX_EDITOR_DATA_LINE_LENGTH * %d) error: OOM\n", i);
 				// Cleanup
@@ -76,9 +78,10 @@ EDITOR_DATA *editor_data_load(const char *p_data)
 				free(p_editor_data);
 				return NULL;
 			}
-
-			p_editor_data->p_display_lines[i] = p_editor_data->p_data_lines[p_editor_data->data_line_total];
+			p_editor_data->p_data_lines[p_editor_data->data_line_total] = p_data_line;
 			(p_editor_data->data_line_total)++;
+
+			p_editor_data->p_display_lines[i] = p_data_line;
 			current_data_line_length = 0;
 		}
 		else
@@ -88,8 +91,11 @@ EDITOR_DATA *editor_data_load(const char *p_data)
 
 		memcpy(p_editor_data->p_display_lines[i], p_data + line_offsets[i], (size_t)p_editor_data->display_line_lengths[i]);
 		current_data_line_length += p_editor_data->display_line_lengths[i];
-		p_editor_data->p_data_lines[p_editor_data->data_line_total - 1][current_data_line_length] = '\0';
+		p_data_line[current_data_line_length] = '\0';
 	}
+
+	bzero(p_editor_data->p_data_lines + p_editor_data->data_line_total, MAX_EDITOR_DATA_LINES - (size_t)p_editor_data->data_line_total);
+	bzero(p_editor_data->p_display_lines + p_editor_data->display_line_total, MAX_EDITOR_DATA_LINES - (size_t)p_editor_data->display_line_total);
 
 	return p_editor_data;
 }
@@ -146,21 +152,12 @@ int editor_data_insert(EDITOR_DATA *p_editor_data, long *p_display_line, long *p
 {
 	long display_line = *p_display_line;
 	long offset = *p_offset;
-	int done = 0;
-	int len;
-	int display_len;
-	int eol;
-	char *p_data_line;
+	char *p_data_line = NULL;
 	long len_data_line;
 	long offset_data_line;
 	long last_display_line; // of data line
-	char buf_insert[MAX_EDITOR_DATA_LINE_LENGTH];
-	long len_insert;
-	int display_len_insert;
-	char buf_catenate[MAX_EDITOR_DATA_LINE_LENGTH];
-	long len_catenate;
-	long len_transfer;
-//	long line_offsets[MAX_EDITOR_DATA_LINES];
+	long line_offsets[MAX_EDITOR_DATA_LINE_LENGTH + 1];
+	long split_line_total;
 	long i, j;
 
 	if (p_editor_data == NULL || p_last_updated_line == NULL)
@@ -168,10 +165,6 @@ int editor_data_insert(EDITOR_DATA *p_editor_data, long *p_display_line, long *p
 		log_error("editor_data_op() error: NULL pointer\n");
 		return -1;
 	}
-
-	memcpy(buf_insert, str, (size_t)str_len);
-	buf_insert[str_len] = '\0';
-	len_insert = str_len;
 
 	// Get accurate offset of first character of CJK at offset position
 	for (i = 0; i < offset; i++)
@@ -225,57 +218,23 @@ int editor_data_insert(EDITOR_DATA *p_editor_data, long *p_display_line, long *p
 		}
 
 		// Allocate new data line
-		p_editor_data->p_data_lines[p_editor_data->data_line_total] = malloc(MAX_EDITOR_DATA_LINE_LENGTH);
-		if (p_editor_data->p_data_lines[p_editor_data->data_line_total] == NULL)
+		p_data_line = malloc(MAX_EDITOR_DATA_LINE_LENGTH);
+		if (p_data_line == NULL)
 		{
 			log_error("malloc(MAX_EDITOR_DATA_LINE_LENGTH) error: OOM\n");
 			return -2;
 		}
-
-		if (last_display_line > display_line)
-		{
-			// Copy rest part of current data line (since next display line) to new data line
-			memcpy(p_editor_data->p_data_lines[p_editor_data->data_line_total],
-				   p_editor_data->p_display_lines[display_line + 1],
-				   (size_t)(len_data_line - (p_editor_data->p_display_lines[display_line + 1] - p_data_line)));
-			p_editor_data->p_data_lines[p_editor_data->data_line_total]
-									   [len_data_line - (p_editor_data->p_display_lines[display_line + 1] - p_data_line)] = '\0';
-
-			// Relocate rest display lines (since next one) of current data line
-			p_data_line = p_editor_data->p_display_lines[display_line + 1];
-			for (i = display_line + 1; i <= last_display_line; i++)
-			{
-				p_editor_data->p_display_lines[i] =
-					p_editor_data->p_data_lines[p_editor_data->data_line_total] +
-					(p_editor_data->p_display_lines[i] - p_data_line);
-			}
-		}
-		else // last_display_line == display_line
-		{
-			// Insert blank display line pointing to new data line
-			for (i = p_editor_data->display_line_total; i > display_line + 1; i--)
-			{
-				p_editor_data->p_display_lines[i] = p_editor_data->p_display_lines[i - 1];
-				p_editor_data->display_line_lengths[i] = p_editor_data->display_line_lengths[i - 1];
-			}
-			p_editor_data->p_display_lines[display_line + 1] = p_editor_data->p_data_lines[p_editor_data->data_line_total];
-			p_editor_data->display_line_lengths[display_line + 1] = 0;
-
-			(p_editor_data->display_line_total)++;
-			last_display_line++;
-		}
-
-		*p_last_updated_line = p_editor_data->display_line_total;
+		p_editor_data->p_data_lines[p_editor_data->data_line_total] = p_data_line;
 		(p_editor_data->data_line_total)++;
 
 		if (offset_data_line + str_len + 2 < MAX_EDITOR_DATA_LINE_LENGTH)
 		{
-			// Copy rest part of current display line to insert buffer
-			memcpy(buf_insert,
+			// Copy rest part of current data line to new data line
+			memcpy(p_data_line,
 				   p_editor_data->p_display_lines[display_line] + offset,
-				   (size_t)(p_editor_data->display_line_lengths[display_line] - offset));
-			len_insert = (p_editor_data->display_line_lengths[display_line] - offset);
-			buf_insert[len_insert] = '\0';
+				   (size_t)(len_data_line - offset_data_line));
+
+			p_data_line[len_data_line - offset_data_line] = '\0';
 
 			// Append str to current display line
 			memcpy(p_editor_data->p_display_lines[display_line] + offset, str, (size_t)str_len);
@@ -285,170 +244,98 @@ int editor_data_insert(EDITOR_DATA *p_editor_data, long *p_display_line, long *p
 			p_editor_data->p_display_lines[display_line][offset + str_len + 1] = '\0';
 			p_editor_data->display_line_lengths[display_line] = offset + str_len + 1;
 
-			if (!done)
-			{
-				*p_display_line = display_line;
-				*p_offset = offset + str_len;
-				done = 1;
-			}
+			*p_display_line = display_line;
+			*p_offset = offset + str_len;
 		}
 		else
 		{
-			// Append rest part of current display line to insert buffer
-			memcpy(buf_insert + len_insert,
+			// Copy str to new data line
+			memcpy(p_data_line, str, (size_t)str_len);
+
+			// Copy rest part of current data line to new data line
+			memcpy(p_data_line + str_len,
 				   p_editor_data->p_display_lines[display_line] + offset,
-				   (size_t)(p_editor_data->display_line_lengths[display_line] - offset));
-			len_insert += (p_editor_data->display_line_lengths[display_line] - offset);
-			buf_insert[len_insert] = '\0';
+				   (size_t)(len_data_line - offset_data_line));
+
+			p_data_line[str_len + len_data_line - offset_data_line] = '\0';
 
 			// Add line ending to current display line (data line)
 			p_editor_data->p_display_lines[display_line][offset] = '\n';
 			p_editor_data->p_display_lines[display_line][offset + 1] = '\0';
 			p_editor_data->display_line_lengths[display_line] = offset + 1;
+
+			*p_display_line = display_line + 1;
+			*p_offset = str_len;
 		}
 
+		split_line_total = last_display_line - display_line + 3;
+
+		// Set start display_line for spliting new data line
 		display_line++;
-		offset = 0;
+
+		*p_last_updated_line = p_editor_data->display_line_total;
+	}
+	else // insert str into current data line at offset_data_line
+	{
+		log_error("Insert %d chars into display_line = %d, offset = %d\n", str_len, display_line, offset);
+
+		memmove(p_data_line + offset_data_line + str_len, p_data_line + offset_data_line, (size_t)(len_data_line - offset_data_line));
+		memcpy(p_data_line + offset_data_line, str, (size_t)str_len);
+		p_data_line[len_data_line + str_len] = '\0';
+
+		// Set p_data_line to head of current display line
+		p_data_line = p_editor_data->p_display_lines[display_line];
+		split_line_total = last_display_line - display_line + 3;
+
+		*p_display_line = display_line;
+		*p_offset = offset + str_len;
 	}
 
-	for (i = display_line; len_insert > 0 && i <= last_display_line; i++)
+	// Split current data line since beginning of current display line
+	split_line_total = split_data_lines(p_data_line, SCREEN_COLS, line_offsets, split_line_total);
+	log_error("Debug: split data line, display_line = %ld, j = %ld\n", display_line, split_line_total);
+
+	for (i = 0; i < split_line_total; i++)
 	{
-		len = split_line(buf_insert, SCREEN_COLS, &eol, &display_len_insert);
-		if (len != len_insert)
+		if (display_line + i > last_display_line)
 		{
-			log_error("buf_insert is truncated at display_line(%ld): len(%d) != len_insert(%d), buf_insert: %s\n",
-					  i, len, len_insert, buf_insert);
-			return -3;
-		}
-
-		memcpy(buf_catenate, p_editor_data->p_display_lines[i], (size_t)p_editor_data->display_line_lengths[i]);
-		buf_catenate[p_editor_data->display_line_lengths[i]] = '\0';
-
-		len = split_line(buf_catenate, SCREEN_COLS - display_len_insert, &eol, &display_len);
-		if (len < offset) // offset out of current display line
-		{
-			if (i < last_display_line)
+			// Insert blank display line after last_display_line
+			if (p_editor_data->display_line_total >= MAX_EDITOR_DATA_LINES)
 			{
-				p_editor_data->p_display_lines[i + 1] = p_editor_data->p_display_lines[i] + offset;
-				p_editor_data->display_line_lengths[i + 1] += (p_editor_data->display_line_lengths[i] - offset);
-				p_editor_data->display_line_lengths[i] = offset;
+				log_error("display_line_total over limit %d >= %d\n", p_editor_data->display_line_total, MAX_EDITOR_DATA_LINES);
+				return -3;
 			}
-			else // i == last_display_line
+			for (j = p_editor_data->display_line_total; j > last_display_line + 1; j--)
 			{
-				memcpy(buf_insert + len_insert, p_editor_data->p_display_lines[i] + offset, (size_t)(p_editor_data->display_line_lengths[i] - offset));
-				len_insert += (p_editor_data->display_line_lengths[i] - offset);
-
-				p_editor_data->display_line_lengths[i] = offset;
+				p_editor_data->p_display_lines[j] = p_editor_data->p_display_lines[j - 1];
+				p_editor_data->display_line_lengths[j] = p_editor_data->display_line_lengths[j - 1];
 			}
-
-			offset = 0;
-
-			continue;
+			last_display_line++;
+			(p_editor_data->display_line_total)++;
 		}
 
-		// move \n to next display line if current line is full
-		if (len > 0 && buf_catenate[len - 1] == '\n' && display_len + display_len_insert >= SCREEN_COLS)
+		p_editor_data->display_line_lengths[display_line + i] = line_offsets[i + 1] - line_offsets[i];
+		p_editor_data->p_display_lines[display_line + i] =
+			(i == 0
+				 ? p_data_line
+				 : (p_editor_data->p_display_lines[display_line + i - 1] + p_editor_data->display_line_lengths[display_line + i - 1]));
+
+		if (p_editor_data->display_line_lengths[display_line + i] > 0 &&
+			p_editor_data->p_display_lines[display_line + i][p_editor_data->display_line_lengths[display_line + i] - 1] == '\n')
 		{
-			log_error("Debug: len=%d\n", len);
-			len--;
+			log_error("Debug: reach end of data line, i = %ld, j = %ld\n", i, split_line_total);
+			break;
 		}
-
-		// if current display line is not longer enough for the result
-		if (i < last_display_line && p_editor_data->display_line_lengths[i] < len_insert + len)
-		{
-			// try transfering len_transfer bytes from next display line of current data line
-			len_transfer = len_insert + len - p_editor_data->display_line_lengths[i];
-			for (j = 0; j < len_transfer;)
-			{
-				if (p_editor_data->p_display_lines[i + 1][j] >= 0 && p_editor_data->p_display_lines[i + 1][j] <= 127)
-				{
-					j++;
-				}
-				else if (p_editor_data->p_display_lines[i + 1][j + 1] < 0 || p_editor_data->p_display_lines[i + 1][j + 1] > 127) // GBK
-				{
-					j += 2;
-				}
-			}
-
-			p_editor_data->display_line_lengths[i] += j;
-			p_editor_data->display_line_lengths[i + 1] -= j;
-			p_editor_data->p_display_lines[i + 1] += j;
-
-			log_error("Transfer %d bytes from display_line %d to %d, display_line_length -> %d\n",
-					  j, i + 1, i, p_editor_data->display_line_lengths[i]);
-		}
-
-		memcpy(buf_catenate, buf_insert, (size_t)len_insert);
-		memcpy(buf_catenate + len_insert, p_editor_data->p_display_lines[i] + offset, (size_t)(len - offset));
-		len_catenate = len_insert + len - offset;
-		buf_catenate[len_catenate] = '\0';
-
-		if (!done)
-		{
-			*p_display_line = i;
-			*p_offset = offset + (buf_insert[len_insert - 1] == '\n' ? len_insert - 1 : len_insert);
-			done = 1;
-		}
-
-		log_error("Debug: i = %d, len = %d, offset = %d, display_line_lengths[i] = %ld, len_insert = %d, len_catenate = %d\n",
-				  i, len, offset, p_editor_data->display_line_lengths[i], len_insert, len_catenate);
-
-		len_insert = p_editor_data->display_line_lengths[i] - len;
-		if (len_insert > 0)
-		{
-			memcpy(buf_insert, p_editor_data->p_display_lines[i] + len, (size_t)len_insert);
-			buf_insert[len_insert] = '\0';
-		}
-
-		memcpy(p_editor_data->p_display_lines[i] + offset, buf_catenate, (size_t)len_catenate);
-		p_editor_data->display_line_lengths[i] = offset + len_catenate;
-
-		offset = 0;
 	}
 
-	*p_last_updated_line = MAX(i, *p_last_updated_line);
+	*p_last_updated_line = MAX(display_line + split_line_total - 1, *p_last_updated_line);
 
-	if (len_insert > 0)
+	if (*p_offset > p_editor_data->display_line_lengths[*p_display_line] ||
+		(*p_offset > 0 && *p_offset == p_editor_data->display_line_lengths[*p_display_line] &&
+		 p_editor_data->p_display_lines[*p_display_line][*p_offset - 1] == '\n'))
 	{
-		if (p_editor_data->display_line_total >= MAX_EDITOR_DATA_LINES)
-		{
-			log_error("Append line error, display_line_total(%ld) reach limit(%d)\n",
-					  p_editor_data->display_line_total, MAX_EDITOR_DATA_LINES);
-			return -2;
-		}
-
-		// Prepare one blank display line after last_display_line
-		for (i = p_editor_data->display_line_total; i > last_display_line + 1; i--)
-		{
-			p_editor_data->p_display_lines[i] = p_editor_data->p_display_lines[i - 1];
-			p_editor_data->display_line_lengths[i] = p_editor_data->display_line_lengths[i - 1];
-		}
-		p_editor_data->p_display_lines[last_display_line + 1] =
-			p_editor_data->p_display_lines[last_display_line] + p_editor_data->display_line_lengths[last_display_line];
-		p_editor_data->display_line_lengths[last_display_line + 1] = 0;
-
-		(p_editor_data->display_line_total)++;
-		last_display_line++;
-
-		// Fill data into blank display line
-		memcpy(p_editor_data->p_display_lines[last_display_line], buf_insert, (size_t)len_insert);
-		p_editor_data->p_display_lines[last_display_line][len_insert] = '\0';
-		p_editor_data->display_line_lengths[last_display_line] = len_insert;
-
-		if (!done)
-		{
-			*p_display_line = last_display_line;
-			*p_offset = offset + (buf_insert[len_insert - 1] == '\n' ? len_insert - 1 : len_insert);
-			done = 1;
-		}
-
-		*p_last_updated_line = MAX(last_display_line, *p_last_updated_line);
-	}
-
-	if (done && *p_offset >= SCREEN_COLS)
-	{
+		*p_offset -= p_editor_data->display_line_lengths[*p_display_line];
 		(*p_display_line)++;
-		*p_offset = 0;
 
 		if (*p_display_line >= p_editor_data->display_line_total)
 		{
@@ -456,7 +343,7 @@ int editor_data_insert(EDITOR_DATA *p_editor_data, long *p_display_line, long *p
 		}
 	}
 
-	return done;
+	return 0;
 }
 
 int editor_data_delete(EDITOR_DATA *p_editor_data, long display_line, long offset,

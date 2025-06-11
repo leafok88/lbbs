@@ -36,13 +36,6 @@ int split_line(const char *buffer, int max_display_len, int *p_eol, int *p_displ
 			continue;
 		}
 
-		if (c == '\n')
-		{
-			i++;
-			*p_eol = 1;
-			break;
-		}
-
 		if (c == '\033' && buffer[i + 1] == '[') // Skip control sequence
 		{
 			i += 2;
@@ -69,6 +62,14 @@ int split_line(const char *buffer, int max_display_len, int *p_eol, int *p_displ
 				break;
 			}
 			(*p_display_len)++;
+
+			 // \n is regarded as 1 character wide in terminal editor, which is different from Web version
+			if (c == '\n')
+			{
+				i++;
+				*p_eol = 1;
+				break;
+			}
 		}
 	}
 
