@@ -227,7 +227,7 @@ int editor_data_insert(EDITOR_DATA *p_editor_data, long *p_display_line, long *p
 		p_editor_data->p_data_lines[p_editor_data->data_line_total] = p_data_line;
 		(p_editor_data->data_line_total)++;
 
-		if (offset_data_line + str_len + 2 < MAX_EDITOR_DATA_LINE_LENGTH)
+		if (offset_data_line + str_len + 1 < MAX_EDITOR_DATA_LINE_LENGTH)
 		{
 			// Copy rest part of current data line to new data line
 			memcpy(p_data_line,
