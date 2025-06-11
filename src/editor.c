@@ -27,6 +27,8 @@
 #define _POSIX_C_SOURCE 200809L
 #include <string.h>
 
+#define EDITOR_ESC_DISPLAY_STR "\033[32m*\033[m"
+
 EDITOR_DATA *editor_data_load(const char *p_data)
 {
 	EDITOR_DATA *p_editor_data;
@@ -546,7 +548,8 @@ int editor_display(EDITOR_DATA *p_editor_data)
 	int scroll_rows;
 	long last_updated_line = 0;
 	int key_insert = 1;
-	int i;
+	int i, j;
+	char *p_str;
 
 	screen_current_row = screen_begin_row;
 	clrline(screen_begin_row, SCREEN_ROWS);
@@ -607,7 +610,8 @@ int editor_display(EDITOR_DATA *p_editor_data)
 					str_len = 0;
 				}
 
-				if ((ch >= 32 && ch < 127) || (ch > 127 && ch <= 255 && str_len == 2) || ch == CR) // printable character or GBK
+				if ((ch >= 32 && ch < 127) || (ch > 127 && ch <= 255 && str_len == 2) || // Printable character or GBK
+					ch == CR || ch == KEY_ESC)											 // Special character
 				{
 					if (str_len == 0)
 					{
@@ -868,8 +872,6 @@ int editor_display(EDITOR_DATA *p_editor_data)
 					col_pos = MIN(col_pos, MAX(1, p_editor_data->display_line_lengths[line_current - screen_current_row + row_pos]));
 					clrline(screen_begin_row, SCREEN_ROWS);
 					break;
-				case KEY_ESC:
-					break;
 				case KEY_F1:
 					if (!show_help) // Not reentrant
 					{
@@ -915,8 +917,23 @@ int editor_display(EDITOR_DATA *p_editor_data)
 			len = 0;
 		}
 
-		memcpy(buffer, (const char *)p_editor_data->p_display_lines[line_current], (size_t)len);
-		buffer[len] = '\0';
+		// memcpy(buffer, p_editor_data->p_display_lines[line_current], (size_t)len);
+		// Replace '\033' with '*'
+		p_str = p_editor_data->p_display_lines[line_current];
+		for (i = 0, j = 0; i < len; i++)
+		{
+			if (p_str[i] == '\033')
+			{
+				memcpy(buffer + j, EDITOR_ESC_DISPLAY_STR, sizeof(EDITOR_ESC_DISPLAY_STR) - 1);
+				j += (int)(sizeof(EDITOR_ESC_DISPLAY_STR) - 1);
+			}
+			else
+			{
+				buffer[j] = p_str[i];
+				j++;
+			}
+		}
+		buffer[j] = '\0';
 
 		moveto(screen_current_row, 0);
 		clrtoeol();
