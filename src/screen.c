@@ -315,17 +315,16 @@ int display_data(const void *p_data, long display_line_total, const long *p_line
 			iflush();
 
 			input_ok = 0;
+			ch = igetch_t(MAX_DELAY_TIME);
 			while (!SYS_server_exit && !input_ok)
 			{
-				ch = igetch_t(MAX_DELAY_TIME);
-				input_ok = 1;
-
 				// extended key handler
 				if (key_handler(&ch, &ctx) != 0)
 				{
 					goto cleanup;
 				}
 
+				input_ok = 1;
 				switch (ch)
 				{
 				case KEY_NULL:
@@ -462,6 +461,10 @@ int display_data(const void *p_data, long display_line_total, const long *p_line
 				}
 
 				BBS_last_access_tm = time(0);
+				if (!input_ok)
+				{
+					ch = igetch_t(MAX_DELAY_TIME);
+				}
 			}
 
 			continue;

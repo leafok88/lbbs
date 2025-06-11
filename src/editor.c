@@ -588,11 +588,9 @@ int editor_display(EDITOR_DATA *p_editor_data)
 			iflush();
 
 			input_ok = 0;
+			ch = igetch_t(MAX_DELAY_TIME);
 			while (!SYS_server_exit && !input_ok)
 			{
-				ch = igetch_t(MAX_DELAY_TIME);
-				input_ok = 1;
-
 				// extended key handler
 				if (editor_display_key_handler(&ch, &ctx) != 0)
 				{
@@ -670,9 +668,15 @@ int editor_display(EDITOR_DATA *p_editor_data)
 							row_pos += (display_line_out - display_line_in);
 						}
 						col_pos = offset_out + 1;
-
-						continue;
 					}
+
+					// Check whether there is additional input
+					ch = igetch(0);
+					if (ch == KEY_TIMEOUT)
+					{
+						input_ok = 1;
+					}
+					continue;
 				}
 				else if (ch == KEY_DEL || ch == BACKSPACE) // Del
 				{
@@ -718,9 +722,16 @@ int editor_display(EDITOR_DATA *p_editor_data)
 						}
 					}
 
+					// Check whether there is additional input
+					ch = igetch(0);
+					if (ch == KEY_TIMEOUT)
+					{
+						input_ok = 1;
+					}
 					continue;
 				}
 
+				input_ok = 1;
 				switch (ch)
 				{
 				case KEY_NULL:
@@ -883,6 +894,10 @@ int editor_display(EDITOR_DATA *p_editor_data)
 				}
 
 				BBS_last_access_tm = time(0);
+				if (!input_ok)
+				{
+					ch = igetch_t(MAX_DELAY_TIME);
+				}
 			}
 
 			continue;
