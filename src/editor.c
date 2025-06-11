@@ -208,7 +208,7 @@ int editor_data_insert(EDITOR_DATA *p_editor_data, long *p_display_line, long *p
 	}
 
 	// Split current data line if over-length
-	if (len_data_line + str_len + 1 > MAX_EDITOR_DATA_LINE_LENGTH)
+	if (len_data_line + str_len + 1 > MAX_EDITOR_DATA_LINE_LENGTH || str[0] == CR)
 	{
 		if (p_editor_data->display_line_total >= MAX_EDITOR_DATA_LINES || p_editor_data->data_line_total >= MAX_EDITOR_DATA_LINES)
 		{
@@ -227,7 +227,32 @@ int editor_data_insert(EDITOR_DATA *p_editor_data, long *p_display_line, long *p
 		p_editor_data->p_data_lines[p_editor_data->data_line_total] = p_data_line;
 		(p_editor_data->data_line_total)++;
 
-		if (offset_data_line + str_len + 1 < MAX_EDITOR_DATA_LINE_LENGTH)
+		if (offset_data_line + str_len + 1 >= MAX_EDITOR_DATA_LINE_LENGTH || str[0] == CR)
+		{
+			if (str[0] == CR)
+			{
+				str_len = 0;
+			}
+
+			// Copy str to new data line
+			memcpy(p_data_line, str, (size_t)str_len);
+
+			// Copy rest part of current data line to new data line
+			memcpy(p_data_line + str_len,
+				   p_editor_data->p_display_lines[display_line] + offset,
+				   (size_t)(len_data_line - offset_data_line));
+
+			p_data_line[str_len + len_data_line - offset_data_line] = '\0';
+
+			// Add line ending to current display line (data line)
+			p_editor_data->p_display_lines[display_line][offset] = '\n';
+			p_editor_data->p_display_lines[display_line][offset + 1] = '\0';
+			p_editor_data->display_line_lengths[display_line] = offset + 1;
+
+			*p_display_line = display_line + 1;
+			*p_offset = str_len;
+		}
+		else
 		{
 			// Copy rest part of current data line to new data line
 			memcpy(p_data_line,
@@ -247,26 +272,6 @@ int editor_data_insert(EDITOR_DATA *p_editor_data, long *p_display_line, long *p
 			*p_display_line = display_line;
 			*p_offset = offset + str_len;
 		}
-		else
-		{
-			// Copy str to new data line
-			memcpy(p_data_line, str, (size_t)str_len);
-
-			// Copy rest part of current data line to new data line
-			memcpy(p_data_line + str_len,
-				   p_editor_data->p_display_lines[display_line] + offset,
-				   (size_t)(len_data_line - offset_data_line));
-
-			p_data_line[str_len + len_data_line - offset_data_line] = '\0';
-
-			// Add line ending to current display line (data line)
-			p_editor_data->p_display_lines[display_line][offset] = '\n';
-			p_editor_data->p_display_lines[display_line][offset + 1] = '\0';
-			p_editor_data->display_line_lengths[display_line] = offset + 1;
-
-			*p_display_line = display_line + 1;
-			*p_offset = str_len;
-		}
 
 		split_line_total = last_display_line - display_line + 3;
 
@@ -277,8 +282,6 @@ int editor_data_insert(EDITOR_DATA *p_editor_data, long *p_display_line, long *p
 	}
 	else // insert str into current data line at offset_data_line
 	{
-		log_error("Insert %d chars into display_line = %d, offset = %d\n", str_len, display_line, offset);
-
 		memmove(p_data_line + offset_data_line + str_len, p_data_line + offset_data_line, (size_t)(len_data_line - offset_data_line));
 		memcpy(p_data_line + offset_data_line, str, (size_t)str_len);
 		p_data_line[len_data_line + str_len] = '\0';
@@ -293,7 +296,6 @@ int editor_data_insert(EDITOR_DATA *p_editor_data, long *p_display_line, long *p
 
 	// Split current data line since beginning of current display line
 	split_line_total = split_data_lines(p_data_line, SCREEN_COLS, line_offsets, split_line_total);
-	log_error("Debug: split data line, display_line = %ld, j = %ld\n", display_line, split_line_total);
 
 	for (i = 0; i < split_line_total; i++)
 	{
@@ -323,7 +325,6 @@ int editor_data_insert(EDITOR_DATA *p_editor_data, long *p_display_line, long *p
 		if (p_editor_data->display_line_lengths[display_line + i] > 0 &&
 			p_editor_data->p_display_lines[display_line + i][p_editor_data->display_line_lengths[display_line + i] - 1] == '\n')
 		{
-			log_error("Debug: reach end of data line, i = %ld, j = %ld\n", i, split_line_total);
 			break;
 		}
 	}
@@ -450,7 +451,7 @@ int editor_display(EDITOR_DATA *p_editor_data)
 					str_len = 0;
 				}
 
-				if ((ch >= 32 && ch < 127) || (ch > 127 && ch <= 255 && str_len == 2)) // printable character or GBK
+				if ((ch >= 32 && ch < 127) || (ch > 127 && ch <= 255 && str_len == 2) || ch == CR) // printable character or GBK
 				{
 					if (str_len == 0)
 					{
@@ -599,8 +600,6 @@ int editor_display(EDITOR_DATA *p_editor_data)
 					// prints("\033[T"); // Scroll down 1 line
 					screen_end_row = SCREEN_ROWS - 1; // Legacy Fterm only works with this line
 					col_pos = MIN(col_pos, MAX(1, p_editor_data->display_line_lengths[line_current - screen_current_row + row_pos]));
-					break;
-				case CR:
 					break;
 				case KEY_SPACE:
 					break;
