@@ -510,7 +510,7 @@ int editor_display(EDITOR_DATA *p_editor_data)
 	long display_line_out, offset_out;
 	int scroll_rows;
 	long last_updated_line = 0;
-	int insert = 1;
+	int key_insert = 1;
 	int i;
 
 	screen_current_row = screen_begin_row;
@@ -531,10 +531,11 @@ int editor_display(EDITOR_DATA *p_editor_data)
 
 			snprintf(buffer, sizeof(buffer),
 					 "\033[1;44;33m[\033[32m%ld\033[33m;\033[32m%ld\033[33m] "
-					 "第\033[32m%ld\033[33m/\033[32m%ld\033[33m行 "
+					 "第\033[32m%ld\033[33m/\033[32m%ld\033[33m行 [\033[32m%s\033[33m] "
 					 "%s",
 					 row_pos, col_pos,
 					 ctx.line_cursor, p_editor_data->display_line_total,
+					 key_insert ? "插入" : "改写",
 					 ctx.msg);
 
 			len = split_line(buffer, SCREEN_COLS, &eol, &display_len);
@@ -586,6 +587,15 @@ int editor_display(EDITOR_DATA *p_editor_data)
 					offset_in = col_pos - 1;
 					display_line_out = display_line_in;
 					offset_out = offset_in;
+
+					if (!key_insert) // overwrite
+					{
+						if (editor_data_delete(p_editor_data, display_line_in, offset_in,
+											   &last_updated_line) < 0)
+						{
+							log_error("editor_data_delete() error\n");
+						}
+					}
 
 					if (editor_data_insert(p_editor_data, &display_line_out, &offset_out,
 										   input_str, str_len, &last_updated_line) < 0)
@@ -671,7 +681,7 @@ int editor_display(EDITOR_DATA *p_editor_data)
 					col_pos = MIN(col_pos, MAX(1, p_editor_data->display_line_lengths[line_current - screen_current_row + row_pos]));
 					break;
 				case KEY_INS:
-					insert = !insert;
+					key_insert = !key_insert;
 					break;
 				case KEY_HOME:
 					row_pos = 1;
