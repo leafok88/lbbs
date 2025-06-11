@@ -534,6 +534,9 @@ int igetch(int timeout)
 				case 49:
 					out = KEY_HOME;
 					break;
+				case 50:
+					out = KEY_INS;
+					break;
 				case 51:
 					out = KEY_DEL;
 					break;
