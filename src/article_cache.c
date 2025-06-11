@@ -111,7 +111,7 @@ int article_cache_generate(const char *cache_dir, const ARTICLE *p_article, cons
 			 p_article->username, p_article->nickname, p_section->sname, p_section->stitle, p_article->title, BBS_name, str_sub_dt);
 
 	snprintf(footer, sizeof(footer),
-			 "--\n%s※ 来源: %s http://%s [FROM: %s]\033[m\n\n",
+			 "\n--\n%s※ 来源: %s http://%s [FROM: %s]\033[m\n\n",
 			 BBS_article_footer_color[p_article->aid % BBS_article_footer_color_count],
 			 BBS_name, BBS_server, sub_ip);
 
