@@ -17,6 +17,7 @@
 #include "section_list_display.h"
 #include "section_list_loader.h"
 #include "article_cache.h"
+#include "article_post.h"
 #include "common.h"
 #include "io.h"
 #include "screen.h"
@@ -39,6 +40,8 @@ enum select_cmd_t
 	CHANGE_PAGE = 2,
 	REFRESH_SCREEN = 3,
 	CHANGE_NAME_DISPLAY = 4,
+	POST_ARTICLE = 5,
+	EDIT_ARTICLE = 6,
 };
 
 static int section_list_draw_items(int page_id, ARTICLE *p_articles[], int article_count, int display_nickname)
@@ -193,6 +196,10 @@ static enum select_cmd_t section_list_select(int total_page, int item_count, int
 				return VIEW_ARTICLE;
 			}
 			break;
+		case Ctrl('P'):
+			return POST_ARTICLE;
+		case 'E':
+			return EDIT_ARTICLE;
 		case KEY_HOME:
 			*p_page_id = 0;
 		case KEY_PGUP:
@@ -289,6 +296,8 @@ static int display_article_key_handler(int *p_key, DISPLAY_CTX *p_ctx)
 		}
 		*p_key = 0;
 		break;
+	case 'r': // Reply article
+		return 1;
 	case KEY_UP:
 	case KEY_PGUP:
 	case KEY_HOME:
@@ -534,6 +543,13 @@ int section_list_display(const char *sname)
 						loop = 1;
 					}
 					break;
+				case 'r': // Reply article
+					if (article_post(p_section, p_articles[selected_index], ARTICLE_POST_REPLY) < 0)
+					{
+						log_error("article_post(aid=%d, REPLY) error\n", p_articles[selected_index]->aid);
+					}
+					loop = 1;
+					break;
 				}
 			} while (loop);
 
@@ -548,6 +564,32 @@ int section_list_display(const char *sname)
 			break;
 		case CHANGE_NAME_DISPLAY:
 			display_nickname = !display_nickname;
+			if (section_list_draw_screen(sname, stitle, master_list, display_nickname) < 0)
+			{
+				log_error("section_list_draw_screen() error\n");
+				return -2;
+			}
+			break;
+		case POST_ARTICLE:
+			if (article_post(p_section, NULL, ARTICLE_POST_NEW) < 0)
+			{
+				log_error("article_post(sid=%d, NEW) error\n", p_section->sid);
+			}
+			if (section_list_draw_screen(sname, stitle, master_list, display_nickname) < 0)
+			{
+				log_error("section_list_draw_screen() error\n");
+				return -2;
+			}
+			break;
+		case EDIT_ARTICLE:
+			if (p_articles[selected_index]->uid != BBS_priv.uid)
+			{
+				break;
+			}
+			if (article_post(p_section, p_articles[selected_index], ARTICLE_POST_EDIT) < 0)
+			{
+				log_error("article_post(aid=%d, EDIT) error\n", p_articles[selected_index]->aid);
+			}
 			if (section_list_draw_screen(sname, stitle, master_list, display_nickname) < 0)
 			{
 				log_error("section_list_draw_screen() error\n");
