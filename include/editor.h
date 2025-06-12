@@ -39,6 +39,9 @@ struct editor_ctx_t
 };
 typedef struct editor_ctx_t EDITOR_CTX;
 
+extern int editor_memory_pool_init(void);
+extern void editor_memory_pool_cleanup(void);
+
 extern EDITOR_DATA *editor_data_load(const char *p_data);
 extern long editor_data_save(const EDITOR_DATA *p_editor_data, char *p_data, size_t buf_len);
 extern void editor_data_cleanup(EDITOR_DATA *p_editor_data);

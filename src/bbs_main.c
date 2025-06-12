@@ -28,6 +28,7 @@
 #include "bbs_cmd.h"
 #include "section_list.h"
 #include "trie_dict.h"
+#include "editor.h"
 #include <unistd.h>
 #include <time.h>
 #include <string.h>
@@ -314,6 +315,13 @@ int bbs_main()
 		goto cleanup;
 	}
 
+	// Init editor memory pool
+	if (editor_memory_pool_init() < 0)
+	{
+		log_error("editor_memory_pool_init() error\n");
+		goto cleanup;
+	}
+
 	clearscr();
 
 	// BBS Top 10
@@ -332,6 +340,9 @@ int bbs_main()
 	}
 
 cleanup:
+	// Cleanup editor memory pool
+	editor_memory_pool_cleanup();
+	
 	// Unload article view log
 	article_view_log_unload(&BBS_article_view_log);
 

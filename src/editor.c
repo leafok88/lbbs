@@ -20,6 +20,7 @@
 #include "log.h"
 #include "common.h"
 #include "str_process.h"
+#include "memory_pool.h"
 #include <stdlib.h>
 #include <sys/param.h>
 #include <strings.h>
@@ -28,6 +29,51 @@
 #include <string.h>
 
 #define EDITOR_ESC_DISPLAY_STR "\033[32m*\033[m"
+#define EDITOR_MEM_POOL_LINE_PER_CHUNK 1000
+#define EDITOR_MEM_POOL_CHUNK_LIMIT (MAX_EDITOR_DATA_LINES / EDITOR_MEM_POOL_LINE_PER_CHUNK + 1)
+
+static MEMORY_POOL *p_mp_data_line;
+static MEMORY_POOL *p_mp_editor_data;
+
+int editor_memory_pool_init(void)
+{
+	if (p_mp_data_line != NULL || p_mp_editor_data != NULL)
+	{
+		log_error("Editor mem pool already initialized\n");
+		return -1;
+	}
+
+	p_mp_data_line = memory_pool_init(MAX_EDITOR_DATA_LINE_LENGTH, EDITOR_MEM_POOL_LINE_PER_CHUNK, EDITOR_MEM_POOL_CHUNK_LIMIT);
+	if (p_mp_data_line == NULL)
+	{
+		log_error("Memory pool init error\n");
+		return -2;
+	}
+
+	p_mp_editor_data = memory_pool_init(sizeof(EDITOR_DATA), 1, 1);
+	if (p_mp_data_line == NULL)
+	{
+		log_error("Memory pool init error\n");
+		return -3;
+	}
+
+	return 0;
+}
+
+void editor_memory_pool_cleanup(void)
+{
+	if (p_mp_data_line != NULL)
+	{
+		memory_pool_cleanup(p_mp_data_line);
+		p_mp_data_line = NULL;
+	}
+
+	if (p_mp_editor_data != NULL)
+	{
+		memory_pool_cleanup(p_mp_editor_data);
+		p_mp_editor_data = NULL;
+	}
+}
 
 EDITOR_DATA *editor_data_load(const char *p_data)
 {
@@ -43,10 +89,10 @@ EDITOR_DATA *editor_data_load(const char *p_data)
 		return NULL;
 	}
 
-	p_editor_data = malloc(sizeof(EDITOR_DATA));
+	p_editor_data = memory_pool_alloc(p_mp_editor_data);
 	if (p_editor_data == NULL)
 	{
-		log_error("malloc(EDITOR_DATA) error: OOM\n");
+		log_error("memory_pool_alloc() error\n");
 		return NULL;
 	}
 
@@ -61,10 +107,10 @@ EDITOR_DATA *editor_data_load(const char *p_data)
 			(p_editor_data->display_line_lengths[i - 1] > 0 && p_data[line_offsets[i - 1] + p_editor_data->display_line_lengths[i - 1] - 1] == '\n'))
 		{
 			// Allocate new data line
-			p_data_line = malloc(MAX_EDITOR_DATA_LINE_LENGTH);
+			p_data_line = memory_pool_alloc(p_mp_data_line);
 			if (p_data_line == NULL)
 			{
-				log_error("malloc(MAX_EDITOR_DATA_LINE_LENGTH * %d) error: OOM\n", i);
+				log_error("memory_pool_alloc() error: i = %d\n", i);
 				// Cleanup
 				editor_data_cleanup(p_editor_data);
 				return NULL;
@@ -137,17 +183,17 @@ void editor_data_cleanup(EDITOR_DATA *p_editor_data)
 		if (p_editor_data->display_line_lengths[i] > 0 &&
 			p_editor_data->p_display_lines[i][p_editor_data->display_line_lengths[i] - 1] == '\n')
 		{
-			free(p_data_line);
+			memory_pool_free(p_mp_data_line, p_data_line);
 			p_data_line = NULL;
 		}
 	}
 
 	if (p_data_line != NULL)
 	{
-		free(p_data_line);
+		memory_pool_free(p_mp_data_line, p_data_line);
 	}
 
-	free(p_editor_data);
+	memory_pool_free(p_mp_editor_data, p_editor_data);
 }
 
 int editor_data_insert(EDITOR_DATA *p_editor_data, long *p_display_line, long *p_offset,
@@ -224,10 +270,10 @@ int editor_data_insert(EDITOR_DATA *p_editor_data, long *p_display_line, long *p
 		}
 
 		// Allocate new data line
-		p_data_line = malloc(MAX_EDITOR_DATA_LINE_LENGTH);
+		p_data_line = memory_pool_alloc(p_mp_data_line);
 		if (p_data_line == NULL)
 		{
-			log_error("malloc(MAX_EDITOR_DATA_LINE_LENGTH) error: OOM\n");
+			log_error("memory_pool_alloc() error\n");
 			return -2;
 		}
 
@@ -473,7 +519,7 @@ int editor_data_delete(EDITOR_DATA *p_editor_data, long display_line, long offse
 		p_data_line[offset_data_line + len_data_line] = '\0';
 
 		// Recycle next data line
-		free(p_editor_data->p_display_lines[display_line + 1]);
+		memory_pool_free(p_mp_data_line, p_editor_data->p_display_lines[display_line + 1]);
 	}
 	else
 	{
