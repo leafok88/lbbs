@@ -162,6 +162,9 @@ int editor_data_insert(EDITOR_DATA *p_editor_data, long *p_display_line, long *p
 	long line_offsets[MAX_EDITOR_DATA_LINE_LENGTH + 1];
 	long split_line_total;
 	long i, j;
+	int len;
+	int eol;
+	int display_len;
 
 	if (p_editor_data == NULL || p_last_updated_line == NULL)
 	{
@@ -215,8 +218,8 @@ int editor_data_insert(EDITOR_DATA *p_editor_data, long *p_display_line, long *p
 	{
 		if (p_editor_data->display_line_total >= MAX_EDITOR_DATA_LINES)
 		{
-			log_error("Split line error, display_line_total(%ld) reach limit(%d)\n",
-					  p_editor_data->display_line_total, MAX_EDITOR_DATA_LINES);
+			// log_error("Split line error, display_line_total(%ld) reach limit(%d)\n",
+			// 		  p_editor_data->display_line_total, MAX_EDITOR_DATA_LINES);
 			return -2;
 		}
 
@@ -305,8 +308,20 @@ int editor_data_insert(EDITOR_DATA *p_editor_data, long *p_display_line, long *p
 			// Insert blank display line after last_display_line
 			if (p_editor_data->display_line_total >= MAX_EDITOR_DATA_LINES)
 			{
-				log_error("display_line_total over limit %d >= %d\n", p_editor_data->display_line_total, MAX_EDITOR_DATA_LINES);
-				return -3;
+				// log_error("display_line_total over limit %d >= %d\n", p_editor_data->display_line_total, MAX_EDITOR_DATA_LINES);
+				// Terminate prior display line with \n, to avoid error on cleanup
+				if (display_line + i - 1 >= 0 && p_editor_data->display_line_lengths[display_line + i - 1] > 0)
+				{
+					len = split_line(p_editor_data->p_display_lines[display_line + i - 1], SCREEN_COLS - 1, &eol, &display_len);
+					p_editor_data->p_display_lines[display_line + i - 1][len] = '\n';
+					p_editor_data->p_display_lines[display_line + i - 1][len + 1] = '\0';
+					p_editor_data->display_line_lengths[display_line + i - 1] = len + 1;
+				}
+				if (*p_offset >= p_editor_data->display_line_lengths[*p_display_line])
+				{
+					*p_offset = p_editor_data->display_line_lengths[*p_display_line] - 1;
+				}
+				break;
 			}
 			for (j = p_editor_data->display_line_total; j > last_display_line + 1; j--)
 			{
@@ -335,11 +350,14 @@ int editor_data_insert(EDITOR_DATA *p_editor_data, long *p_display_line, long *p
 	if (*p_offset >= p_editor_data->display_line_lengths[*p_display_line])
 	{
 		*p_offset -= p_editor_data->display_line_lengths[*p_display_line];
-		(*p_display_line)++;
 
-		if (*p_display_line >= p_editor_data->display_line_total)
+		if (*p_display_line + 1 >= p_editor_data->display_line_total)
 		{
 			log_error("*p_display_line(%d) >= display_line_total(%d)\n", *p_display_line, p_editor_data->display_line_total);
+		}
+		else
+		{
+			(*p_display_line)++;
 		}
 	}
 
