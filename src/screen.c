@@ -424,35 +424,6 @@ int display_data(const void *p_data, long display_line_total, const long *p_line
 					output_end_row = SCREEN_ROWS - 1;
 					clrline(output_current_row, SCREEN_ROWS);
 					break;
-				case KEY_F2: // For test only
-					EDITOR_DATA *p_editor_data;
-					size_t data_new_len = strlen(p_data) + LINE_BUFFER_LEN;
-
-					char *p_data_new = malloc(data_new_len);
-					if (p_data_new == NULL)
-					{
-						break;
-					}
-					p_editor_data = editor_data_load(p_data);
-					if (p_editor_data == NULL)
-					{
-						free(p_data_new);
-						break;
-					}
-
-					editor_display(p_editor_data);
-					editor_data_save(p_editor_data, p_data_new, data_new_len);
-					editor_data_cleanup(p_editor_data);
-					p_editor_data = NULL;
-					free(p_data_new);
-					p_data_new = NULL;
-
-					// Refresh after display editor
-					line_current -= (output_current_row - screen_begin_row);
-					output_current_row = screen_begin_row;
-					output_end_row = SCREEN_ROWS - 1;
-					clrline(output_current_row, SCREEN_ROWS);
-					break;
 				case 0: // Refresh bottom line
 					break;
 				default:

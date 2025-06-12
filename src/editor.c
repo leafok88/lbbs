@@ -576,7 +576,7 @@ static int editor_display_key_handler(int *p_key, EDITOR_CTX *p_ctx)
 	{
 	case 0: // Set msg
 		snprintf(p_ctx->msg, sizeof(p_ctx->msg),
-				 "| ÍË³ö[\033[32mCtrl-C\033[33m] | °ïÖú[\033[32mh\033[33m] |");
+				 "| ÍË³ö[\033[32mCtrl-W\033[33m] | °ïÖú[\033[32mh\033[33m] |");
 		break;
 	}
 
@@ -801,7 +801,7 @@ int editor_display(EDITOR_DATA *p_editor_data)
 				case KEY_NULL:
 				case KEY_TIMEOUT:
 					goto cleanup;
-				case Ctrl('C'):
+				case Ctrl('W'):
 					loop = 0;
 					break;
 				case Ctrl('S'): // Start of line
