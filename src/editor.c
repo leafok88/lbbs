@@ -35,7 +35,7 @@ EDITOR_DATA *editor_data_load(const char *p_data)
 	char *p_data_line = NULL;
 	long line_offsets[MAX_EDITOR_DATA_LINES];
 	long current_data_line_length = 0;
-	long i, j;
+	long i;
 
 	if (p_data == NULL)
 	{
@@ -50,7 +50,6 @@ EDITOR_DATA *editor_data_load(const char *p_data)
 		return NULL;
 	}
 
-	p_editor_data->data_line_total = 0;
 	p_editor_data->display_line_total = split_data_lines(p_data, SCREEN_COLS, line_offsets, MAX_EDITOR_DATA_LINES);
 
 	for (i = 0; i < p_editor_data->display_line_total; i++)
@@ -61,27 +60,15 @@ EDITOR_DATA *editor_data_load(const char *p_data)
 			current_data_line_length + p_editor_data->display_line_lengths[i] + 1 > MAX_EDITOR_DATA_LINE_LENGTH ||
 			(p_editor_data->display_line_lengths[i - 1] > 0 && p_data[line_offsets[i - 1] + p_editor_data->display_line_lengths[i - 1] - 1] == '\n'))
 		{
-			if (p_editor_data->data_line_total >= MAX_EDITOR_DATA_LINES)
-			{
-				log_error("Append line error, data_line_total(%ld) reach limit(%d)\n", p_editor_data->data_line_total, MAX_EDITOR_DATA_LINES);
-				return NULL;
-			}
-
 			// Allocate new data line
 			p_data_line = malloc(MAX_EDITOR_DATA_LINE_LENGTH);
 			if (p_data_line == NULL)
 			{
 				log_error("malloc(MAX_EDITOR_DATA_LINE_LENGTH * %d) error: OOM\n", i);
 				// Cleanup
-				for (j = p_editor_data->data_line_total - 1; j >= 0; j--)
-				{
-					free(p_editor_data->p_data_lines[j]);
-				}
-				free(p_editor_data);
+				editor_data_cleanup(p_editor_data);
 				return NULL;
 			}
-			p_editor_data->p_data_lines[p_editor_data->data_line_total] = p_data_line;
-			(p_editor_data->data_line_total)++;
 
 			p_editor_data->p_display_lines[i] = p_data_line;
 			current_data_line_length = 0;
@@ -96,7 +83,6 @@ EDITOR_DATA *editor_data_load(const char *p_data)
 		p_data_line[current_data_line_length] = '\0';
 	}
 
-	bzero(p_editor_data->p_data_lines + p_editor_data->data_line_total, MAX_EDITOR_DATA_LINES - (size_t)p_editor_data->data_line_total);
 	bzero(p_editor_data->p_display_lines + p_editor_data->display_line_total, MAX_EDITOR_DATA_LINES - (size_t)p_editor_data->display_line_total);
 
 	return p_editor_data;
@@ -133,6 +119,7 @@ long editor_data_save(const EDITOR_DATA *p_editor_data, char *p_data, size_t buf
 
 void editor_data_cleanup(EDITOR_DATA *p_editor_data)
 {
+	char *p_data_line = NULL;
 	long i;
 
 	if (p_editor_data == NULL)
@@ -140,10 +127,24 @@ void editor_data_cleanup(EDITOR_DATA *p_editor_data)
 		return;
 	}
 
-	for (i = p_editor_data->data_line_total - 1; i >= 0; i--)
+	for (i = 0; i < p_editor_data->display_line_total; i++)
 	{
-		free(p_editor_data->p_data_lines[i]);
-		p_editor_data->p_data_lines[i] = NULL;
+		if (p_data_line == NULL)
+		{
+			p_data_line = p_editor_data->p_display_lines[i];
+		}
+
+		if (p_editor_data->display_line_lengths[i] > 0 &&
+			p_editor_data->p_display_lines[i][p_editor_data->display_line_lengths[i] - 1] == '\n')
+		{
+			free(p_data_line);
+			p_data_line = NULL;
+		}
+	}
+
+	if (p_data_line != NULL)
+	{
+		free(p_data_line);
 	}
 
 	free(p_editor_data);
@@ -212,10 +213,10 @@ int editor_data_insert(EDITOR_DATA *p_editor_data, long *p_display_line, long *p
 	// Split current data line if over-length
 	if (len_data_line + str_len + 1 > MAX_EDITOR_DATA_LINE_LENGTH || str[0] == CR)
 	{
-		if (p_editor_data->display_line_total >= MAX_EDITOR_DATA_LINES || p_editor_data->data_line_total >= MAX_EDITOR_DATA_LINES)
+		if (p_editor_data->display_line_total >= MAX_EDITOR_DATA_LINES)
 		{
-			log_error("Split line error, display_line_total(%ld) or data_line_total(%ld) reach limit(%d)\n",
-					  p_editor_data->display_line_total, p_editor_data->data_line_total, MAX_EDITOR_DATA_LINES);
+			log_error("Split line error, display_line_total(%ld) reach limit(%d)\n",
+					  p_editor_data->display_line_total, MAX_EDITOR_DATA_LINES);
 			return -2;
 		}
 
@@ -226,8 +227,6 @@ int editor_data_insert(EDITOR_DATA *p_editor_data, long *p_display_line, long *p
 			log_error("malloc(MAX_EDITOR_DATA_LINE_LENGTH) error: OOM\n");
 			return -2;
 		}
-		p_editor_data->p_data_lines[p_editor_data->data_line_total] = p_data_line;
-		(p_editor_data->data_line_total)++;
 
 		if (offset_data_line + str_len + 1 >= MAX_EDITOR_DATA_LINE_LENGTH || str[0] == CR)
 		{
@@ -333,9 +332,7 @@ int editor_data_insert(EDITOR_DATA *p_editor_data, long *p_display_line, long *p
 
 	*p_last_updated_line = MAX(display_line + MIN(i, split_line_total - 1), *p_last_updated_line);
 
-	if (*p_offset > p_editor_data->display_line_lengths[*p_display_line] ||
-		(*p_offset > 0 && *p_offset == p_editor_data->display_line_lengths[*p_display_line] &&
-		 p_editor_data->p_display_lines[*p_display_line][*p_offset - 1] == '\n'))
+	if (*p_offset >= p_editor_data->display_line_lengths[*p_display_line])
 	{
 		*p_offset -= p_editor_data->display_line_lengths[*p_display_line];
 		(*p_display_line)++;
@@ -431,7 +428,6 @@ int editor_data_delete(EDITOR_DATA *p_editor_data, long display_line, long offse
 	{
 		if (display_line + 1 >= p_editor_data->display_line_total) // No additional display line (data line)
 		{
-			log_common("Debug: No additional display line: %ld + 1 >= %ld\n", display_line, p_editor_data->display_line_total);
 			return 0;
 		}
 
@@ -451,8 +447,6 @@ int editor_data_delete(EDITOR_DATA *p_editor_data, long display_line, long offse
 
 		if (offset_data_line + len_data_line + 1 > MAX_EDITOR_DATA_LINE_LENGTH) // No enough buffer to merge current data line with next data line
 		{
-			log_common("Debug: No enough buffer to merge with next data line: %ld > %ld\n",
-					   offset_data_line + len_data_line + 1, MAX_EDITOR_DATA_LINE_LENGTH);
 			return 0;
 		}
 
@@ -461,7 +455,7 @@ int editor_data_delete(EDITOR_DATA *p_editor_data, long display_line, long offse
 		p_data_line[offset_data_line + len_data_line] = '\0';
 
 		// Recycle next data line
-		// TODO: free(p_editor_data->p_display_lines[display_line + 1]);
+		free(p_editor_data->p_display_lines[display_line + 1]);
 	}
 	else
 	{
@@ -534,10 +528,10 @@ int editor_display(EDITOR_DATA *p_editor_data)
 	char input_str[4];
 	int str_len = 0;
 	int input_ok;
-	int screen_current_row;
 	const int screen_begin_row = 1;
-	int screen_end_row = SCREEN_ROWS - 1;
-	const int screen_row_total = screen_end_row - screen_begin_row + 1;
+	const int screen_row_total = SCREEN_ROWS - screen_begin_row;
+	int output_current_row = screen_begin_row;
+	int output_end_row = SCREEN_ROWS - 1;
 	long int line_current = 0;
 	long int len;
 	int loop;
@@ -551,8 +545,7 @@ int editor_display(EDITOR_DATA *p_editor_data)
 	int i, j;
 	char *p_str;
 
-	screen_current_row = screen_begin_row;
-	clrline(screen_begin_row, SCREEN_ROWS);
+	clrline(output_current_row, SCREEN_ROWS);
 
 	// update msg_ext with extended key handler
 	if (editor_display_key_handler(&ch, &ctx) != 0)
@@ -563,9 +556,9 @@ int editor_display(EDITOR_DATA *p_editor_data)
 	loop = 1;
 	while (!SYS_server_exit && loop)
 	{
-		if (line_current >= p_editor_data->display_line_total || screen_current_row > screen_end_row)
+		if (line_current >= p_editor_data->display_line_total || output_current_row > output_end_row)
 		{
-			ctx.line_cursor = line_current - screen_current_row + row_pos + 1;
+			ctx.line_cursor = line_current - output_current_row + row_pos + 1;
 
 			snprintf(buffer, sizeof(buffer),
 					 "\033[1;44;33m[\033[32m%ld\033[33m;\033[32m%ld\033[33m] "
@@ -591,9 +584,11 @@ int editor_display(EDITOR_DATA *p_editor_data)
 			iflush();
 
 			input_ok = 0;
-			ch = igetch_t(MAX_DELAY_TIME);
 			while (!SYS_server_exit && !input_ok)
 			{
+				ch = igetch_t(MAX_DELAY_TIME);
+				input_ok = 1;
+
 				// extended key handler
 				if (editor_display_key_handler(&ch, &ctx) != 0)
 				{
@@ -620,7 +615,7 @@ int editor_display(EDITOR_DATA *p_editor_data)
 					}
 
 					last_updated_line = line_current;
-					display_line_in = line_current - screen_current_row + row_pos;
+					display_line_in = line_current - output_current_row + row_pos;
 					offset_in = col_pos - 1;
 					display_line_out = display_line_in;
 					offset_out = offset_in;
@@ -637,18 +632,18 @@ int editor_display(EDITOR_DATA *p_editor_data)
 					if (editor_data_insert(p_editor_data, &display_line_out, &offset_out,
 										   input_str, str_len, &last_updated_line) < 0)
 					{
-						log_error("editor_data_insert(%s) error\n", input_str);
+						log_error("editor_data_insert(str_len=%d) error\n", str_len);
 						str_len = 0;
 					}
 					else
 					{
 						str_len = 0;
 
-						screen_end_row = MIN(SCREEN_ROWS - 1, screen_current_row + (int)(last_updated_line - line_current));
-						line_current -= (screen_current_row - row_pos);
-						screen_current_row = (int)row_pos;
+						output_end_row = MIN(SCREEN_ROWS - 1, output_current_row + (int)(last_updated_line - line_current));
+						line_current -= (output_current_row - row_pos);
+						output_current_row = (int)row_pos;
 
-						scroll_rows = MAX(0, (int)(display_line_out - display_line_in) - (screen_end_row - screen_current_row));
+						scroll_rows = MAX(0, (int)(display_line_out - display_line_in) - (output_end_row - output_current_row));
 
 						if (scroll_rows > 0)
 						{
@@ -659,13 +654,13 @@ int editor_display(EDITOR_DATA *p_editor_data)
 								prints("\033[S"); // Scroll up 1 line
 							}
 
-							screen_current_row -= scroll_rows;
-							if (screen_current_row < screen_begin_row)
+							output_current_row -= scroll_rows;
+							if (output_current_row < screen_begin_row)
 							{
-								line_current += (screen_begin_row - screen_current_row);
-								screen_current_row = screen_begin_row;
+								line_current += (screen_begin_row - output_current_row);
+								output_current_row = screen_begin_row;
 							}
-							row_pos = screen_end_row;
+							row_pos = output_end_row;
 						}
 						else // if (scroll_lines == 0)
 						{
@@ -674,12 +669,6 @@ int editor_display(EDITOR_DATA *p_editor_data)
 						col_pos = offset_out + 1;
 					}
 
-					// Check whether there is additional input
-					ch = igetch(0);
-					if (ch == KEY_TIMEOUT)
-					{
-						input_ok = 1;
-					}
 					continue;
 				}
 				else if (ch == KEY_DEL || ch == BACKSPACE) // Del
@@ -687,14 +676,14 @@ int editor_display(EDITOR_DATA *p_editor_data)
 					if (ch == BACKSPACE)
 					{
 						col_pos--;
-						if (col_pos < 1 && line_current - screen_current_row + row_pos >= 0)
+						if (col_pos < 1 && line_current - output_current_row + row_pos >= 0)
 						{
 							row_pos--;
-							col_pos = MAX(1, p_editor_data->display_line_lengths[line_current - screen_current_row + row_pos]);
+							col_pos = MAX(1, p_editor_data->display_line_lengths[line_current - output_current_row + row_pos]);
 						}
 					}
 
-					if ((str_len = editor_data_delete(p_editor_data, line_current - screen_current_row + row_pos, col_pos - 1,
+					if ((str_len = editor_data_delete(p_editor_data, line_current - output_current_row + row_pos, col_pos - 1,
 													  &last_updated_line)) < 0)
 					{
 						log_error("editor_data_delete() error\n");
@@ -706,36 +695,43 @@ int editor_display(EDITOR_DATA *p_editor_data)
 							for (i = 1; i < str_len; i++)
 							{
 								col_pos--;
-								if (col_pos < 1 && line_current - screen_current_row + row_pos >= 0)
+								if (col_pos < 1 && line_current - output_current_row + row_pos >= 0)
 								{
 									row_pos--;
-									col_pos = MAX(1, p_editor_data->display_line_lengths[line_current - screen_current_row + row_pos]);
+									col_pos = MAX(1, p_editor_data->display_line_lengths[line_current - output_current_row + row_pos]);
 								}
 							}
 						}
 
-						screen_end_row = MIN(SCREEN_ROWS - 1, screen_current_row + (int)(last_updated_line - line_current));
-						line_current -= (screen_current_row - row_pos);
-						screen_current_row = (int)row_pos;
+						output_end_row = MIN(SCREEN_ROWS - 1, output_current_row + (int)(last_updated_line - line_current));
+						line_current -= (output_current_row - row_pos);
+						output_current_row = (int)row_pos;
 
-						if (screen_current_row < screen_begin_row) // row_pos <= 0
+						if (output_current_row < screen_begin_row) // row_pos <= 0
 						{
-							screen_current_row = screen_begin_row;
+							output_current_row = screen_begin_row;
 							row_pos = screen_begin_row;
-							screen_end_row = SCREEN_ROWS - 1;
+							output_end_row = SCREEN_ROWS - 1;
+						}
+
+						// Exceed end
+						if (line_current + (screen_row_total - output_current_row) >= p_editor_data->display_line_total &&
+							p_editor_data->display_line_total > screen_row_total)
+						{
+							scroll_rows = (int)((line_current - (output_current_row - screen_begin_row)) -
+												(p_editor_data->display_line_total - screen_row_total));
+
+							line_current = p_editor_data->display_line_total - screen_row_total;
+							row_pos += scroll_rows;
+							output_current_row = screen_begin_row;
+							output_end_row = SCREEN_ROWS - 1;
+							clrline(output_current_row, SCREEN_ROWS);
 						}
 					}
 
-					// Check whether there is additional input
-					ch = igetch(0);
-					if (ch == KEY_TIMEOUT)
-					{
-						input_ok = 1;
-					}
 					continue;
 				}
 
-				input_ok = 1;
 				switch (ch)
 				{
 				case KEY_NULL:
@@ -750,17 +746,17 @@ int editor_display(EDITOR_DATA *p_editor_data)
 					break;
 				case Ctrl('E'): // End of line
 				case KEY_CTRL_RIGHT:
-					col_pos = MAX(1, p_editor_data->display_line_lengths[line_current - screen_current_row + row_pos]);
+					col_pos = MAX(1, p_editor_data->display_line_lengths[line_current - output_current_row + row_pos]);
 					break;
 				case Ctrl('T'): // Top of screen
 				case KEY_CTRL_UP:
 					row_pos = screen_begin_row;
-					col_pos = MIN(col_pos, MAX(1, p_editor_data->display_line_lengths[line_current - screen_current_row + row_pos]));
+					col_pos = MIN(col_pos, MAX(1, p_editor_data->display_line_lengths[line_current - output_current_row + row_pos]));
 					break;
 				case Ctrl('B'): // Bottom of screen
 				case KEY_CTRL_DOWN:
 					row_pos = SCREEN_ROWS - 1;
-					col_pos = MIN(col_pos, MAX(1, p_editor_data->display_line_lengths[line_current - screen_current_row + row_pos]));
+					col_pos = MIN(col_pos, MAX(1, p_editor_data->display_line_lengths[line_current - output_current_row + row_pos]));
 					break;
 				case KEY_INS:
 					key_insert = !key_insert;
@@ -768,28 +764,28 @@ int editor_display(EDITOR_DATA *p_editor_data)
 				case KEY_HOME:
 					row_pos = 1;
 					col_pos = 1;
-					if (line_current - screen_current_row < 0) // Reach begin
+					if (line_current - output_current_row < 0) // Reach begin
 					{
 						break;
 					}
 					line_current = 0;
-					screen_current_row = screen_begin_row;
-					screen_end_row = SCREEN_ROWS - 1;
-					clrline(screen_begin_row, SCREEN_ROWS);
+					output_current_row = screen_begin_row;
+					output_end_row = SCREEN_ROWS - 1;
+					clrline(output_current_row, SCREEN_ROWS);
 					break;
 				case KEY_END:
 					if (p_editor_data->display_line_total < screen_row_total)
 					{
 						row_pos = p_editor_data->display_line_total;
-						col_pos = MAX(1, p_editor_data->display_line_lengths[line_current - screen_current_row + row_pos]);
+						col_pos = MAX(1, p_editor_data->display_line_lengths[line_current - output_current_row + row_pos]);
 						break;
 					}
 					line_current = p_editor_data->display_line_total - screen_row_total;
-					screen_current_row = screen_begin_row;
-					screen_end_row = SCREEN_ROWS - 1;
-					row_pos = screen_row_total;
-					col_pos = MAX(1, p_editor_data->display_line_lengths[line_current - screen_current_row + row_pos]);
-					clrline(screen_begin_row, SCREEN_ROWS);
+					output_current_row = screen_begin_row;
+					output_end_row = SCREEN_ROWS - 1;
+					row_pos = SCREEN_ROWS - 1;
+					col_pos = MAX(1, p_editor_data->display_line_lengths[line_current - output_current_row + row_pos]);
+					clrline(output_current_row, SCREEN_ROWS);
 					break;
 				case KEY_LEFT:
 					if (col_pos > 1)
@@ -802,25 +798,25 @@ int editor_display(EDITOR_DATA *p_editor_data)
 					if (row_pos > screen_begin_row)
 					{
 						row_pos--;
-						col_pos = MIN(col_pos, MAX(1, p_editor_data->display_line_lengths[line_current - screen_current_row + row_pos]));
+						col_pos = MIN(col_pos, MAX(1, p_editor_data->display_line_lengths[line_current - output_current_row + row_pos]));
 						break;
 					}
-					if (line_current - screen_current_row < 0) // Reach begin
+					if (line_current - output_current_row < 0) // Reach begin
 					{
 						col_pos = 1;
 						break;
 					}
-					line_current -= screen_current_row;
-					screen_current_row = screen_begin_row;
+					line_current -= output_current_row;
+					output_current_row = screen_begin_row;
 					// screen_end_line = begin_line;
 					// prints("\033[T"); // Scroll down 1 line
-					screen_end_row = SCREEN_ROWS - 1; // Legacy Fterm only works with this line
-					col_pos = MIN(col_pos, MAX(1, p_editor_data->display_line_lengths[line_current - screen_current_row + row_pos]));
+					output_end_row = SCREEN_ROWS - 1; // Legacy Fterm only works with this line
+					col_pos = MIN(col_pos, MAX(1, p_editor_data->display_line_lengths[line_current - output_current_row + row_pos]));
 					break;
 				case KEY_SPACE:
 					break;
 				case KEY_RIGHT:
-					if (col_pos < p_editor_data->display_line_lengths[line_current - screen_current_row + row_pos])
+					if (col_pos < p_editor_data->display_line_lengths[line_current - output_current_row + row_pos])
 					{
 						col_pos++;
 						break;
@@ -830,51 +826,51 @@ int editor_display(EDITOR_DATA *p_editor_data)
 					if (row_pos < MIN(screen_row_total, p_editor_data->display_line_total))
 					{
 						row_pos++;
-						col_pos = MIN(col_pos, MAX(1, p_editor_data->display_line_lengths[line_current - screen_current_row + row_pos]));
+						col_pos = MIN(col_pos, MAX(1, p_editor_data->display_line_lengths[line_current - output_current_row + row_pos]));
 						break;
 					}
-					if (line_current + (screen_row_total - (screen_current_row - screen_begin_row)) >= p_editor_data->display_line_total) // Reach end
+					if (line_current + (screen_row_total - (output_current_row - screen_begin_row)) >= p_editor_data->display_line_total) // Reach end
 					{
-						col_pos = MAX(1, p_editor_data->display_line_lengths[line_current - screen_current_row + row_pos]);
+						col_pos = MAX(1, p_editor_data->display_line_lengths[line_current - output_current_row + row_pos]);
 						break;
 					}
-					line_current += (screen_row_total - (screen_current_row - screen_begin_row));
-					screen_current_row = screen_row_total;
-					screen_end_row = SCREEN_ROWS - 1;
-					col_pos = MIN(col_pos, MAX(1, p_editor_data->display_line_lengths[line_current - screen_current_row + row_pos]));
+					line_current += (screen_row_total - (output_current_row - screen_begin_row));
+					output_current_row = screen_row_total;
+					output_end_row = SCREEN_ROWS - 1;
+					col_pos = MIN(col_pos, MAX(1, p_editor_data->display_line_lengths[line_current - output_current_row + row_pos]));
 					moveto(SCREEN_ROWS, 0);
 					clrtoeol();
 					prints("\033[S"); // Scroll up 1 line
 					break;
 				case KEY_PGUP:
-					if (line_current - screen_current_row < 0) // Reach begin
+					if (line_current - output_current_row < 0) // Reach begin
 					{
 						break;
 					}
-					line_current -= ((screen_row_total - 1) + (screen_current_row - screen_begin_row));
+					line_current -= ((screen_row_total - 1) + (output_current_row - screen_begin_row));
 					if (line_current < 0)
 					{
 						line_current = 0;
 					}
-					screen_current_row = screen_begin_row;
-					screen_end_row = SCREEN_ROWS - 1;
-					col_pos = MIN(col_pos, MAX(1, p_editor_data->display_line_lengths[line_current - screen_current_row + row_pos]));
-					clrline(screen_begin_row, SCREEN_ROWS);
+					output_current_row = screen_begin_row;
+					output_end_row = SCREEN_ROWS - 1;
+					col_pos = MIN(col_pos, MAX(1, p_editor_data->display_line_lengths[line_current - output_current_row + row_pos]));
+					clrline(output_current_row, SCREEN_ROWS);
 					break;
 				case KEY_PGDN:
-					if (line_current + screen_row_total - (screen_current_row - screen_begin_row) >= p_editor_data->display_line_total) // Reach end
+					if (line_current + screen_row_total - (output_current_row - screen_begin_row) >= p_editor_data->display_line_total) // Reach end
 					{
 						break;
 					}
-					line_current += (screen_row_total - 1) - (screen_current_row - screen_begin_row);
+					line_current += (screen_row_total - 1) - (output_current_row - screen_begin_row);
 					if (line_current + screen_row_total > p_editor_data->display_line_total) // No enough lines to display
 					{
 						line_current = p_editor_data->display_line_total - screen_row_total;
 					}
-					screen_current_row = screen_begin_row;
-					screen_end_row = SCREEN_ROWS - 1;
-					col_pos = MIN(col_pos, MAX(1, p_editor_data->display_line_lengths[line_current - screen_current_row + row_pos]));
-					clrline(screen_begin_row, SCREEN_ROWS);
+					output_current_row = screen_begin_row;
+					output_end_row = SCREEN_ROWS - 1;
+					col_pos = MIN(col_pos, MAX(1, p_editor_data->display_line_lengths[line_current - output_current_row + row_pos]));
+					clrline(output_current_row, SCREEN_ROWS);
 					break;
 				case KEY_F1:
 					if (!show_help) // Not reentrant
@@ -887,10 +883,10 @@ int editor_display(EDITOR_DATA *p_editor_data)
 					show_help = 1;
 				case KEY_F5:
 					// Refresh after display help information
-					line_current -= (screen_current_row - screen_begin_row);
-					screen_current_row = screen_begin_row;
-					screen_end_row = SCREEN_ROWS - 1;
-					clrline(screen_begin_row, SCREEN_ROWS);
+					line_current -= (output_current_row - screen_begin_row);
+					output_current_row = screen_begin_row;
+					output_end_row = SCREEN_ROWS - 1;
+					clrline(output_current_row, SCREEN_ROWS);
 					break;
 				case 0: // Refresh bottom line
 					break;
@@ -900,9 +896,10 @@ int editor_display(EDITOR_DATA *p_editor_data)
 				}
 
 				BBS_last_access_tm = time(0);
-				if (!input_ok)
+
+				if (input_ok)
 				{
-					ch = igetch_t(MAX_DELAY_TIME);
+					break;
 				}
 			}
 
@@ -939,11 +936,11 @@ int editor_display(EDITOR_DATA *p_editor_data)
 		}
 		buffer[j] = '\0';
 
-		moveto(screen_current_row, 0);
+		moveto(output_current_row, 0);
 		clrtoeol();
 		prints("%s", buffer);
 		line_current++;
-		screen_current_row++;
+		output_current_row++;
 	}
 
 cleanup:

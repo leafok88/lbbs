@@ -24,8 +24,6 @@
 
 struct editor_data_t
 {
-	char *p_data_lines[MAX_EDITOR_DATA_LINES];
-	long data_line_total;
 	char *p_display_lines[MAX_EDITOR_DATA_LINES];
 	long display_line_lengths[MAX_EDITOR_DATA_LINES];
 	long display_line_total;
