@@ -126,6 +126,15 @@ EDITOR_DATA *editor_data_load(const char *p_data)
 
 		memcpy(p_editor_data->p_display_lines[i], p_data + line_offsets[i], (size_t)p_editor_data->display_line_lengths[i]);
 		current_data_line_length += p_editor_data->display_line_lengths[i];
+
+		// Trim \n from last line
+		if (i + 1 == p_editor_data->display_line_total && 
+			p_editor_data->display_line_lengths[i] > 0 && 
+			p_editor_data->p_display_lines[i][p_editor_data->display_line_lengths[i] - 1] == '\n')
+		{
+			p_editor_data->display_line_lengths[i]--;
+			current_data_line_length--;
+		}
 		p_data_line[current_data_line_length] = '\0';
 	}
 
