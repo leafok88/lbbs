@@ -544,7 +544,7 @@ int section_list_display(const char *sname)
 					}
 					break;
 				case 'r': // Reply article
-					if (article_post(p_section, p_articles[selected_index], ARTICLE_POST_REPLY) < 0)
+					if (article_reply(p_section, p_articles[selected_index]) < 0)
 					{
 						log_error("article_post(aid=%d, REPLY) error\n", p_articles[selected_index]->aid);
 					}
@@ -571,7 +571,7 @@ int section_list_display(const char *sname)
 			}
 			break;
 		case POST_ARTICLE:
-			if (article_post(p_section, NULL, ARTICLE_POST_NEW) < 0)
+			if (article_post(p_section) < 0)
 			{
 				log_error("article_post(sid=%d, NEW) error\n", p_section->sid);
 			}
@@ -586,7 +586,7 @@ int section_list_display(const char *sname)
 			{
 				break;
 			}
-			if (article_post(p_section, p_articles[selected_index], ARTICLE_POST_EDIT) < 0)
+			if (article_modify(p_section, p_articles[selected_index]) < 0)
 			{
 				log_error("article_post(aid=%d, EDIT) error\n", p_articles[selected_index]->aid);
 			}

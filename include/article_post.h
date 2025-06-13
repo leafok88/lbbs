@@ -19,14 +19,8 @@
 
 #include "section_list.h"
 
-enum article_post_type_t
-{
-	ARTICLE_POST_NEW = 0,
-	ARTICLE_POST_EDIT = 1,
-	ARTICLE_POST_REPLY = 2,
-};
-typedef enum article_post_type_t ARTICLE_POST_TYPE;
-
-extern int article_post(SECTION_LIST *p_section, ARTICLE *p_article, ARTICLE_POST_TYPE type);
+extern int article_post(SECTION_LIST *p_section);
+extern int article_modify(SECTION_LIST *p_section, ARTICLE *p_article);
+extern int article_reply(SECTION_LIST *p_section, ARTICLE *p_article);
 
 #endif //_ARTICLE_POST_H_
