@@ -91,7 +91,7 @@ int outc(char c)
 	return ret;
 }
 
-int iflush()
+int iflush(void)
 {
 	int flags;
 	struct epoll_event ev, events[MAX_EVENTS];
