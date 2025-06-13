@@ -395,14 +395,9 @@ int editor_data_insert(EDITOR_DATA *p_editor_data, long *p_display_line, long *p
 
 	if (*p_offset >= p_editor_data->display_line_lengths[*p_display_line])
 	{
-		*p_offset -= p_editor_data->display_line_lengths[*p_display_line];
-
-		if (*p_display_line + 1 >= p_editor_data->display_line_total)
+		if (*p_display_line + 1 < p_editor_data->display_line_total)
 		{
-			log_error("*p_display_line(%d) >= display_line_total(%d)\n", *p_display_line, p_editor_data->display_line_total);
-		}
-		else
-		{
+			*p_offset -= p_editor_data->display_line_lengths[*p_display_line];
 			(*p_display_line)++;
 		}
 	}
@@ -469,6 +464,11 @@ int editor_data_delete(EDITOR_DATA *p_editor_data, long display_line, long offse
 		}
 	}
 
+	if (offset_data_line >= len_data_line) // end-of-line
+	{
+		return 0;
+	}
+
 	// Check str to be deleted
 	if (p_data_line[offset_data_line] > 0 && p_data_line[offset_data_line] < 127)
 	{
@@ -480,9 +480,8 @@ int editor_data_delete(EDITOR_DATA *p_editor_data, long display_line, long offse
 	}
 	else
 	{
-		log_error("Some strange character at display_line %ld, offset %ld: %d %d %d %d\n",
-				  display_line, offset, p_data_line[offset_data_line], p_data_line[offset_data_line + 1],
-				  p_data_line[offset_data_line + 2], p_data_line[offset_data_line + 3]);
+		log_error("Some strange character at display_line %ld, offset %ld: %d %d\n",
+				  display_line, offset, p_data_line[offset_data_line], p_data_line[offset_data_line + 1]);
 		str_len = 1;
 	}
 
@@ -552,19 +551,18 @@ int editor_data_delete(EDITOR_DATA *p_editor_data, long display_line, long offse
 
 	*p_last_updated_line = display_line + MIN(i, split_line_total - 1);
 
-	if (display_line + i < last_display_line)
+	if (*p_last_updated_line < last_display_line)
 	{
 		// Remove redundant display line after last_display_line
 		for (j = last_display_line + 1; j < p_editor_data->display_line_total; j++)
 		{
-			p_editor_data->p_display_lines[j - (last_display_line - (display_line + i))] = p_editor_data->p_display_lines[j];
-			p_editor_data->display_line_lengths[j - (last_display_line - (display_line + i))] = p_editor_data->display_line_lengths[j];
+			p_editor_data->p_display_lines[j - (last_display_line - *p_last_updated_line)] = p_editor_data->p_display_lines[j];
+			p_editor_data->display_line_lengths[j - (last_display_line - *p_last_updated_line)] = p_editor_data->display_line_lengths[j];
 		}
 
-		(p_editor_data->display_line_total) -= (last_display_line - (display_line + i));
-		last_display_line = display_line + i;
-
-		*p_last_updated_line = p_editor_data->display_line_total - 1;
+		j = p_editor_data->display_line_total;
+		(p_editor_data->display_line_total) -= (last_display_line - *p_last_updated_line);
+		*p_last_updated_line = MAX(j - 1, *p_last_updated_line);
 	}
 
 	return str_len;
@@ -739,6 +737,12 @@ int editor_display(EDITOR_DATA *p_editor_data)
 				{
 					if (ch == BACKSPACE)
 					{
+						if (line_current - output_current_row + row_pos <= 0 && col_pos <= 1) // Forbidden
+						{
+							input_ok = 0;
+							continue;
+						}
+
 						col_pos--;
 						if (col_pos < 1 && line_current - output_current_row + row_pos >= 0)
 						{
@@ -789,8 +793,9 @@ int editor_display(EDITOR_DATA *p_editor_data)
 							row_pos += scroll_rows;
 							output_current_row = screen_begin_row;
 							output_end_row = SCREEN_ROWS - 1;
-							clrline(output_current_row, SCREEN_ROWS);
 						}
+
+						clrline(output_current_row, output_end_row);
 					}
 
 					continue;
@@ -819,8 +824,23 @@ int editor_display(EDITOR_DATA *p_editor_data)
 					break;
 				case Ctrl('B'): // Bottom of screen
 				case KEY_CTRL_DOWN:
-					row_pos = SCREEN_ROWS - 1;
-					col_pos = MIN(col_pos, MAX(1, p_editor_data->display_line_lengths[line_current - output_current_row + row_pos]));
+					if (p_editor_data->display_line_total < screen_row_total)
+					{
+						row_pos = p_editor_data->display_line_total;
+					}
+					else
+					{
+						row_pos = SCREEN_ROWS - 1;
+					}
+					if (line_current + (screen_row_total - (output_current_row - screen_begin_row)) >= p_editor_data->display_line_total) // Reach end
+					{
+						// last display line does NOT have \n in the end
+						col_pos = MIN(col_pos, p_editor_data->display_line_lengths[line_current - output_current_row + row_pos] + 1);
+					}
+					else
+					{
+						col_pos = MIN(col_pos, MAX(1, p_editor_data->display_line_lengths[line_current - output_current_row + row_pos]));
+					}
 					break;
 				case KEY_INS:
 					key_insert = !key_insert;
@@ -841,14 +861,14 @@ int editor_display(EDITOR_DATA *p_editor_data)
 					if (p_editor_data->display_line_total < screen_row_total)
 					{
 						row_pos = p_editor_data->display_line_total;
-						col_pos = MAX(1, p_editor_data->display_line_lengths[line_current - output_current_row + row_pos]);
+						col_pos = p_editor_data->display_line_lengths[line_current - output_current_row + row_pos] + 1;
 						break;
 					}
 					line_current = p_editor_data->display_line_total - screen_row_total;
 					output_current_row = screen_begin_row;
 					output_end_row = SCREEN_ROWS - 1;
 					row_pos = SCREEN_ROWS - 1;
-					col_pos = MAX(1, p_editor_data->display_line_lengths[line_current - output_current_row + row_pos]);
+					col_pos = p_editor_data->display_line_lengths[line_current - output_current_row + row_pos] + 1;
 					clrline(output_current_row, SCREEN_ROWS);
 					break;
 				case KEY_LEFT:
@@ -895,7 +915,8 @@ int editor_display(EDITOR_DATA *p_editor_data)
 					}
 					if (line_current + (screen_row_total - (output_current_row - screen_begin_row)) >= p_editor_data->display_line_total) // Reach end
 					{
-						col_pos = MAX(1, p_editor_data->display_line_lengths[line_current - output_current_row + row_pos]);
+						// last display line does NOT have \n in the end
+						col_pos = p_editor_data->display_line_lengths[line_current - output_current_row + row_pos] + 1;
 						break;
 					}
 					line_current += (screen_row_total - (output_current_row - screen_begin_row));
