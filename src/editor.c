@@ -128,8 +128,8 @@ EDITOR_DATA *editor_data_load(const char *p_data)
 		current_data_line_length += p_editor_data->display_line_lengths[i];
 
 		// Trim \n from last line
-		if (i + 1 == p_editor_data->display_line_total && 
-			p_editor_data->display_line_lengths[i] > 0 && 
+		if (i + 1 == p_editor_data->display_line_total &&
+			p_editor_data->display_line_lengths[i] > 0 &&
 			p_editor_data->p_display_lines[i][p_editor_data->display_line_lengths[i] - 1] == '\n')
 		{
 			p_editor_data->display_line_lengths[i]--;
@@ -408,6 +408,13 @@ int editor_data_insert(EDITOR_DATA *p_editor_data, long *p_display_line, long *p
 		{
 			*p_offset -= p_editor_data->display_line_lengths[*p_display_line];
 			(*p_display_line)++;
+		}
+		else if (*p_display_line + 1 >= MAX_EDITOR_DATA_LINES)
+		{
+			len = split_line(p_editor_data->p_display_lines[*p_display_line], SCREEN_COLS - 1, &eol, &display_len);
+			p_editor_data->p_display_lines[*p_display_line][len] = '\0';
+			p_editor_data->display_line_lengths[*p_display_line] = len;
+			*p_offset = len;
 		}
 	}
 
