@@ -150,6 +150,11 @@ int article_post(SECTION_LIST *p_section)
 				break;
 			}
 		}
+
+		if (toupper(ch) != 'T')
+		{
+			break;
+		}
 	}
 
 	// editor_data_save(p_editor_data, p_data_new, data_new_len);
@@ -176,12 +181,14 @@ int article_modify(SECTION_LIST *p_section, ARTICLE *p_article)
 		log_error("article_cache_load(aid=%d, cid=%d) error\n", p_article->aid, p_article->cid);
 		return -2;
 	}
+
 	p_editor_data = editor_data_load(cache.p_data);
 	if (p_editor_data == NULL)
 	{
 		log_error("editor_data_load(aid=%d, cid=%d) error\n", p_article->aid, p_article->cid);
 		return -2;
 	}
+
 	if (article_cache_unload(&cache) < 0)
 	{
 		log_error("article_cache_unload(aid=%d, cid=%d) error\n", p_article->aid, p_article->cid);
@@ -191,6 +198,7 @@ int article_modify(SECTION_LIST *p_section, ARTICLE *p_article)
 	editor_display(p_editor_data);
 
 	// editor_data_save(p_editor_data, p_data_new, data_new_len);
+	log_common("Debug: modify article\n");
 
 	editor_data_cleanup(p_editor_data);
 
@@ -212,12 +220,14 @@ int article_reply(SECTION_LIST *p_section, ARTICLE *p_article)
 		log_error("article_cache_load(aid=%d, cid=%d) error\n", p_article->aid, p_article->cid);
 		return -2;
 	}
+
 	p_editor_data = editor_data_load(cache.p_data);
 	if (p_editor_data == NULL)
 	{
 		log_error("editor_data_load(aid=%d, cid=%d) error\n", p_article->aid, p_article->cid);
 		return -2;
 	}
+
 	if (article_cache_unload(&cache) < 0)
 	{
 		log_error("article_cache_unload(aid=%d, cid=%d) error\n", p_article->aid, p_article->cid);
@@ -227,6 +237,7 @@ int article_reply(SECTION_LIST *p_section, ARTICLE *p_article)
 	editor_display(p_editor_data);
 
 	// editor_data_save(p_editor_data, p_data_new, data_new_len);
+	log_common("Debug: reply article\n");
 
 	editor_data_cleanup(p_editor_data);
 
