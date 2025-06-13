@@ -54,7 +54,7 @@ int article_post(SECTION_LIST *p_section)
 		moveto(21, 1);
 		prints("·¢±íÎÄÕÂÓÚ %s[%s] ÌÖÂÛÇø", p_section->stitle, p_section->sname);
 		moveto(22, 1);
-		prints("ÎÄÕÂ±êÌâ: %s", (title[0] == '\0' ? "[ÎŞ]" : title));
+		prints("±êÌâ: %s", (title[0] == '\0' ? "[ÎŞ]" : title));
 		moveto(23, 1);
 		prints("Ê¹ÓÃµÚ [1;32m%d[m ¸öÇ©Ãû", sign_id);
 
