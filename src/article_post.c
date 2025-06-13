@@ -54,16 +54,16 @@ int article_post(SECTION_LIST *p_section)
 		moveto(21, 1);
 		prints("·¢±íÎÄÕÂÓÚ %s[%s] ÌÖÂÛÇø", p_section->stitle, p_section->sname);
 		moveto(22, 1);
-		prints("Ê¹ÓÃ±êÌâ: %s", (title[0] == '\0' ? "[ÕıÔÚÉè¶¨Ö÷Ìâ]" : title));
+		prints("ÎÄÕÂ±êÌâ: %s", (title[0] == '\0' ? "[ÎŞ]" : title));
 		moveto(23, 1);
-		prints("Ê¹ÓÃµÚ %d ¸öÇ©Ãû", sign_id);
+		prints("Ê¹ÓÃµÚ [1;32m%d[m ¸öÇ©Ãû", sign_id);
 
 		if (toupper(ch) != 'T')
 		{
-			prints("    °´[1;32m0[0;37m~[1;32m3[0;37mÑ¡Ç©Ãûµµ[m");
+			prints("    °´[1;32m0[m~[1;32m3[mÑ¡Ç©Ãûµµ(0±íÊ¾²»Ê¹ÓÃ)");
 
 			moveto(24, 1);
-			prints("[1;32mT[0;37m¸Ä±êÌâ, [1;32mC[0;37mÈ¡Ïû, [1;32mEnter[0;37m¼ÌĞø: [m");
+			prints("[1;32mT[m¸Ä±êÌâ, [1;32mC[mÈ¡Ïû, [1;32mEnter[m¼ÌĞø: ");
 			iflush();
 			ch = 0;
 		}
@@ -85,16 +85,12 @@ int article_post(SECTION_LIST *p_section)
 					;
 				*q = '\0';
 				len = q - p;
-
 				if (*p != '\0')
 				{
 					memcpy(title, p, (size_t)len + 1);
 					memcpy(title_input, title, (size_t)len + 1);
 				}
-				if (title[0] != '\0') // title is valid
-				{
-					ch = 0;
-				}
+				ch = 0;
 				break;
 			case 'C':
 				clearscr();
@@ -115,7 +111,7 @@ int article_post(SECTION_LIST *p_section)
 			break;
 		}
 
-		if (ch != CR)
+		if (ch != CR || title[0] == '\0')
 		{
 			continue;
 		}
