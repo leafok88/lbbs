@@ -228,6 +228,7 @@ int lml_plain(const char *str_in, char *str_out, int buf_len)
 					return j;
 				}
 				memcpy(str_out + j, str_in + i, (size_t)(k - i + 1));
+				j += (k - i + 1);
 				i = k;
 				continue;
 			}
