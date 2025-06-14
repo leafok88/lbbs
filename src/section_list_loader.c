@@ -16,6 +16,7 @@
 
 #include "section_list_loader.h"
 #include "article_cache.h"
+#include "bbs.h"
 #include "log.h"
 #include "database.h"
 #include "menu.h"
@@ -29,8 +30,6 @@
 
 #define _POSIX_C_SOURCE 200809L
 #include <string.h>
-
-#define SECTION_LIST_LOAD_INTERVAL 10 // second
 
 int section_list_loader_pid;
 int last_article_op_log_mid;
@@ -726,7 +725,7 @@ int section_list_loader_launch(void)
 			continue;
 		}
 
-		for (i = 0; i < SECTION_LIST_LOAD_INTERVAL && !SYS_server_exit && !SYS_section_list_reload; i++)
+		for (i = 0; i < BBS_section_list_load_interval && !SYS_server_exit && !SYS_section_list_reload; i++)
 		{
 			sleep(1);
 		}

@@ -35,6 +35,8 @@
 #define BBS_address_max_len 50
 #define BBS_start_dt_max_len 50
 
+#define BBS_section_list_load_interval 10 // second
+
 extern char BBS_id[BBS_id_max_len + 1];
 extern char BBS_name[BBS_name_max_len + 1];
 extern char BBS_server[BBS_server_max_len + 1];
@@ -50,7 +52,9 @@ extern char BBS_start_dt[BBS_start_dt_max_len + 1];
 #define BBS_user_off_line 900 // 15 minutes
 
 extern char BBS_username[BBS_username_max_len + 1];
+extern char BBS_nickname[BBS_nickname_max_len + 1];
 extern char BBS_user_tz[BBS_user_tz_max_len + 1];
+extern int BBS_user_exp;
 
 extern time_t BBS_login_tm;
 extern time_t BBS_last_access_tm;

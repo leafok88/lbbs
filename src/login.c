@@ -383,7 +383,7 @@ int load_user_info(MYSQL *db, int BBS_uid)
 	time_t last_login_dt;
 
 	snprintf(sql, sizeof(sql),
-			 "SELECT life, UNIX_TIMESTAMP(last_login_dt), user_timezone "
+			 "SELECT life, UNIX_TIMESTAMP(last_login_dt), user_timezone, exp, nickname "
 			 "FROM user_pubinfo WHERE UID = %d",
 			 BBS_uid);
 	if (mysql_query(db, sql) != 0)
@@ -403,6 +403,11 @@ int load_user_info(MYSQL *db, int BBS_uid)
 
 		strncpy(BBS_user_tz, row[2], sizeof(BBS_user_tz) - 1);
 		BBS_user_tz[sizeof(BBS_user_tz) - 1] = '\0';
+
+		BBS_user_exp = atoi(row[3]);
+
+		strncpy(BBS_nickname, row[4], sizeof(BBS_nickname));
+		BBS_nickname[sizeof(BBS_nickname) - 1] = '\0';
 	}
 	else
 	{
@@ -437,6 +442,11 @@ int load_guest_info(void)
 
 	strncpy(BBS_username, "guest", sizeof(BBS_username) - 1);
 	BBS_username[sizeof(BBS_username) - 1] = '\0';
+
+	BBS_user_exp = 0;
+
+	strncpy(BBS_nickname, "Guest", sizeof(BBS_nickname));
+	BBS_nickname[sizeof(BBS_nickname) - 1] = '\0';
 
 	if (load_priv(db, &BBS_priv, 0) != 0)
 	{

@@ -36,7 +36,9 @@ int BBS_max_user = BBS_MAX_USER_LIMIT;
 char BBS_start_dt[BBS_start_dt_max_len + 1] = "2000Äê 1ÔÂ 1ÈÕ";
 
 char BBS_username[BBS_username_max_len + 1];
+char BBS_nickname[BBS_nickname_max_len + 1];
 char BBS_user_tz[BBS_user_tz_max_len + 1];
+int BBS_user_exp;
 
 time_t BBS_login_tm;
 time_t BBS_last_access_tm;

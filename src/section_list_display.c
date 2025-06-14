@@ -141,7 +141,7 @@ static int section_list_draw_screen(const char *sname, const char *stitle, const
 	moveto(2, 0);
 	prints("返回[\033[1;32m←\033[0;37m,\033[1;32mESC\033[0;37m] 选择[\033[1;32m↑\033[0;37m,\033[1;32m↓\033[0;37m] "
 		   "阅读[\033[1;32m→\033[0;37m,\033[1;32mENTER\033[0;37m] 发表[\033[1;32mCtrl-P\033[0;37m] "
-		   "修改[\033[1;32mCtrl-E\033[0;37m] %s[\033[1;32mn\033[0;37m]\033[m",
+		   "修改[\033[1;32mE\033[0;37m] %s[\033[1;32mn\033[0;37m]\033[m",
 		   (display_nickname ? "显示用户名" : "显示昵称"));
 	moveto(3, 0);
 	if (display_nickname)
@@ -353,6 +353,7 @@ int section_list_display(const char *sname)
 	int ret;
 	int loop;
 	int direction;
+	ARTICLE article_new;
 
 	p_section = section_list_find_by_name(sname);
 	if (p_section == NULL)
@@ -545,7 +546,7 @@ int section_list_display(const char *sname)
 					}
 					break;
 				case 'r': // Reply article
-					if (article_reply(p_section, p_articles[selected_index]) < 0)
+					if (article_reply(p_section, p_articles[selected_index], &article_new) < 0)
 					{
 						log_error("article_post(aid=%d, REPLY) error\n", p_articles[selected_index]->aid);
 					}
@@ -572,9 +573,19 @@ int section_list_display(const char *sname)
 			}
 			break;
 		case POST_ARTICLE:
-			if (article_post(p_section) < 0)
+			ret = article_post(p_section, &article_new);
+			if (ret < 0)
 			{
 				log_error("article_post(sid=%d, NEW) error\n", p_section->sid);
+			}
+			else if (ret > 0) // New article posted
+			{
+				ret = query_section_articles(p_section, page_id, p_articles, &article_count, &page_count);
+				if (ret < 0)
+				{
+					log_error("query_section_articles(sid=%d, page_id=%d) error\n", p_section->sid, page_id);
+					return -3;
+				}
 			}
 			if (section_list_draw_screen(sname, stitle, master_list, display_nickname) < 0)
 			{
@@ -587,7 +598,7 @@ int section_list_display(const char *sname)
 			{
 				break;
 			}
-			if (article_modify(p_section, p_articles[selected_index]) < 0)
+			if (article_modify(p_section, p_articles[selected_index], &article_new) < 0)
 			{
 				log_error("article_post(aid=%d, EDIT) error\n", p_articles[selected_index]->aid);
 			}

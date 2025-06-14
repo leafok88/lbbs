@@ -19,8 +19,8 @@
 
 #include "section_list.h"
 
-extern int article_post(SECTION_LIST *p_section);
-extern int article_modify(SECTION_LIST *p_section, ARTICLE *p_article);
-extern int article_reply(SECTION_LIST *p_section, ARTICLE *p_article);
+extern int article_post(const SECTION_LIST *p_section, ARTICLE *p_article_new);
+extern int article_modify(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTICLE *p_article_new);
+extern int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTICLE *p_article_new);
 
 #endif //_ARTICLE_POST_H_

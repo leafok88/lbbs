@@ -60,6 +60,8 @@ inline static int article_cache_path(char *file_path, size_t buf_len, const char
 int article_cache_generate(const char *cache_dir, const ARTICLE *p_article, const SECTION_LIST *p_section,
 						   const char *content, const char *sub_ip, int overwrite)
 {
+	static char *content_f; // static buffer in large size
+
 	char data_file[FILE_PATH_LEN];
 	int fd;
 	ARTICLE_CACHE cache;
@@ -68,7 +70,6 @@ int article_cache_generate(const char *cache_dir, const ARTICLE *p_article, cons
 	char header[ARTICLE_HEADER_MAX_LEN];
 	size_t header_len;
 	long header_line_cnt;
-	char content_f[ARTICLE_CONTENT_MAX_LEN];
 	char footer[ARTICLE_FOOTER_MAX_LEN];
 	size_t footer_len;
 	long footer_line_cnt;
@@ -77,6 +78,12 @@ int article_cache_generate(const char *cache_dir, const ARTICLE *p_article, cons
 	if (cache_dir == NULL || p_article == NULL || content == NULL)
 	{
 		log_error("article_cache_generate() NULL pointer error\n");
+		return -1;
+	}
+
+	if (content_f == NULL && (content_f = malloc(ARTICLE_CONTENT_MAX_LEN)) == NULL)
+	{
+		log_error("malloc(content_f) error: OOM\n");
 		return -1;
 	}
 
