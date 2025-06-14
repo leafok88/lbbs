@@ -63,7 +63,7 @@ int split_line(const char *buffer, int max_display_len, int *p_eol, int *p_displ
 			}
 			(*p_display_len)++;
 
-			 // \n is regarded as 1 character wide in terminal editor, which is different from Web version
+			// \n is regarded as 1 character wide in terminal editor, which is different from Web version
 			if (c == '\n')
 			{
 				i++;
@@ -102,4 +102,38 @@ long split_data_lines(const char *p_buf, int max_display_len, long *p_line_offse
 	} while (p_buf[0] != '\0');
 
 	return line_cnt;
+}
+
+int ctrl_seq_filter(char *buffer)
+{
+	int i;
+	int j;
+	char c;
+
+	for (i = 0, j = 0; buffer[i] != '\0'; i++)
+	{
+		c = buffer[i];
+
+		if (c == '\r' || c == '\7') // skip
+		{
+			continue;
+		}
+
+		if (c == '\033' && buffer[i + 1] == '[') // Skip control sequence
+		{
+			i += 2;
+			while (buffer[i] != '\0' && buffer[i] != 'm')
+			{
+				i++;
+			}
+			continue;
+		}
+
+		buffer[j] = buffer[i];
+		j++;
+	}
+
+	buffer[j] = '\0';
+
+	return j;
 }

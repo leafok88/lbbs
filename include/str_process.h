@@ -25,4 +25,6 @@ extern int split_line(const char *buffer, int max_display_len, int *p_eol, int *
 
 extern long split_data_lines(const char *p_buf, int max_display_len, long *p_line_offsets, long line_offsets_count);
 
+extern int ctrl_seq_filter(char *buffer);
+
 #endif //_STR_PROCESS_H_

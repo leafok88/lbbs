@@ -331,8 +331,13 @@ int article_reply(SECTION_LIST *p_section, ARTICLE *p_article)
 		len = lml_plain(row[1], content_f, ARTICLE_CONTENT_MAX_LEN);
 		content_f[len] = '\0';
 
+		// Remove control sequence
+		len = ctrl_seq_filter(content_f);
+
+		len = snprintf(content, sizeof(content), "\n\n【 在 %s (%s) 的大作中提到: 】\n", p_article->username, p_article->nickname);
+
 		quote_content_lines = split_data_lines(content_f, ARTICLE_QUOTE_LINE_MAX_LEN, line_offsets, ARTICLE_QUOTE_MAX_LINES + 1);
-		for (i = 0, len = 0; i < quote_content_lines; i++)
+		for (i = 0; i < quote_content_lines; i++)
 		{
 			memcpy(content + len, ": ", 2); // quote line prefix
 			len += 2;
