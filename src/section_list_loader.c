@@ -450,19 +450,24 @@ int apply_article_op_log_from_db(int op_count_limit)
 			break;
 		case 'D': // Delete article
 		case 'X': // Delete article by Admin
-			p_article->visible = 0;
-			if (p_article->tid == 0)
+			if (section_list_set_article_visible(p_section, atoi(row[1]), 0) < 0)
 			{
-				// Set articles in the topic to be invisible
-				do
-				{
-					p_article = p_article->p_topic_next;
-					p_article->visible = 0;
-				} while (p_article->tid != 0);
+				log_error("section_list_set_article_visible(sid=%d, aid=%d, visible=0) error\n", p_section->sid, atoi(row[1]));
+			}
+			if (section_list_calculate_page(p_section, atoi(row[1])) < 0)
+			{
+				log_error("section_list_calculate_page(aid=%d) error\n", atoi(row[1]));
 			}
 			break;
 		case 'S': // Restore article
-			p_article->visible = 1;
+			if (section_list_set_article_visible(p_section, atoi(row[1]), 1) < 0)
+			{
+				log_error("section_list_set_article_visible(sid=%d, aid=%d, visible=1) error\n", p_section->sid, atoi(row[1]));
+			}
+			if (section_list_calculate_page(p_section, atoi(row[1])) < 0)
+			{
+				log_error("section_list_calculate_page(aid=%d) error\n", atoi(row[1]));
+			}
 			break;
 		case 'L': // Lock article
 			p_article->lock = 1;
