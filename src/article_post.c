@@ -976,7 +976,8 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 			 "INSERT INTO bbs(SID, TID, UID, username, nickname, title, CID, transship, "
 			 "sub_dt, sub_ip, reply_note, exp, last_reply_dt, icon, length) "
 			 "VALUES(%d, %d, %d, '%s', '%s', '%s', %d, 0, NOW(), '%s', 1, %d, NOW(), 1, %ld)",
-			 p_section->sid, p_article->aid, BBS_priv.uid, BBS_username, nickname_f, title_f,
+			 p_section->sid, (p_article->tid == 0 ? p_article->aid : p_article->tid),
+			 BBS_priv.uid, BBS_username, nickname_f, title_f,
 			 p_article_new->cid, hostaddr_client, BBS_user_exp, len_content);
 
 	if (mysql_query(db, sql) != 0)
