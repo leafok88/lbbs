@@ -975,8 +975,8 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 	snprintf(sql, sizeof(sql),
 			 "INSERT INTO bbs(SID, TID, UID, username, nickname, title, CID, transship, "
 			 "sub_dt, sub_ip, reply_note, exp, last_reply_dt, icon, length) "
-			 "VALUES(%d, 0, %d, '%s', '%s', '%s', %d, 0, NOW(), '%s', 1, %d, NOW(), 1, %ld)",
-			 p_section->sid, BBS_priv.uid, BBS_username, nickname_f, title_f,
+			 "VALUES(%d, %d, %d, '%s', '%s', '%s', %d, 0, NOW(), '%s', 1, %d, NOW(), 1, %ld)",
+			 p_section->sid, p_article->aid, BBS_priv.uid, BBS_username, nickname_f, title_f,
 			 p_article_new->cid, hostaddr_client, BBS_user_exp, len_content);
 
 	if (mysql_query(db, sql) != 0)
