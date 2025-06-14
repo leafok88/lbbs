@@ -149,7 +149,7 @@ void memory_pool_free(MEMORY_POOL *p_pool, void *p_node)
 	}
 
 	// For test and debug
-	memory_pool_check_node(p_pool, p_node);
+	// memory_pool_check_node(p_pool, p_node);
 
 	memcpy(p_node, &(p_pool->p_free), sizeof(p_pool->p_free));
 	p_pool->p_free = p_node;
