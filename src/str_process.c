@@ -92,7 +92,7 @@ long split_data_lines(const char *p_buf, int max_display_len, long *p_line_offse
 		// Exceed max_line_cnt
 		if (line_cnt + 1 >= line_offsets_count)
 		{
-			log_error("Line count %d reaches limit %d\n", line_cnt + 1, line_offsets_count);
+			// log_error("Line count %d reaches limit %d\n", line_cnt + 1, line_offsets_count);
 			return line_cnt;
 		}
 

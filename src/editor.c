@@ -227,6 +227,14 @@ int editor_data_insert(EDITOR_DATA *p_editor_data, long *p_display_line, long *p
 		return -1;
 	}
 
+	// Validate str
+	if ((str_len == 1 && str[0] <= 0) ||
+		(str_len == 2 && (str[0] >= 0 || str[1] >= 0)))
+	{
+		log_error("Invalid input str, len=%d\n", str_len);
+		return -2;
+	}
+
 	// Get accurate offset of first character of CJK at offset position
 	for (i = 0; i < offset; i++)
 	{
@@ -678,15 +686,16 @@ int editor_display(EDITOR_DATA *p_editor_data)
 					input_str[str_len] = (char)(ch - 256);
 					str_len++;
 				}
-				else
+				else if (str_len > 0)
 				{
+					log_error("Received %d character over 127 followed by character less than 127\n", str_len);
 					str_len = 0;
 				}
 
 				if ((ch >= 32 && ch < 127) || (ch > 127 && ch <= 255 && str_len == 2) || // Printable character or GBK
 					ch == CR || ch == KEY_ESC)											 // Special character
 				{
-					if (str_len == 0)
+					if (str_len == 0) // ch >= 32 && ch < 127
 					{
 						input_str[0] = (char)ch;
 						str_len = 1;
@@ -711,12 +720,9 @@ int editor_display(EDITOR_DATA *p_editor_data)
 										   input_str, str_len, &last_updated_line) < 0)
 					{
 						log_error("editor_data_insert(str_len=%d) error\n", str_len);
-						str_len = 0;
 					}
 					else
 					{
-						str_len = 0;
-
 						output_end_row = MIN(SCREEN_ROWS - 1, output_current_row + (int)(last_updated_line - line_current));
 						line_current -= (output_current_row - row_pos);
 						output_current_row = (int)row_pos;
@@ -747,6 +753,7 @@ int editor_display(EDITOR_DATA *p_editor_data)
 						col_pos = offset_out + 1;
 					}
 
+					str_len = 0;
 					continue;
 				}
 				else if (ch == KEY_DEL || ch == BACKSPACE) // Del
@@ -814,6 +821,7 @@ int editor_display(EDITOR_DATA *p_editor_data)
 						clrline(output_current_row, output_end_row);
 					}
 
+					str_len = 0;
 					continue;
 				}
 
