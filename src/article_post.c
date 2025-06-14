@@ -63,6 +63,16 @@ int article_post(const SECTION_LIST *p_section, ARTICLE *p_article_new)
 		log_error("NULL pointer error\n");
 	}
 
+	if (!checkpriv(&BBS_priv, p_section->sid, S_POST))
+	{
+		clearscr();
+		moveto(1, 1);
+		prints("您没有权限在本版块发表文章\n");
+		press_any_key();
+
+		return 0;
+	}
+
 	p_article_new->title[0] = '\0';
 	title_input[0] = '\0';
 	p_article_new->transship = 0;
@@ -410,6 +420,16 @@ int article_modify(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTI
 		return 0;
 	}
 
+	if (!checkpriv(&BBS_priv, p_section->sid, S_POST))
+	{
+		clearscr();
+		moveto(1, 1);
+		prints("您没有权限在本版块发表文章\n");
+		press_any_key();
+
+		return 0;
+	}
+
 	db = db_open();
 	if (db == NULL)
 	{
@@ -653,6 +673,16 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 	if (p_section == NULL || p_article == NULL)
 	{
 		log_error("NULL pointer error\n");
+	}
+
+	if (!checkpriv(&BBS_priv, p_section->sid, S_POST))
+	{
+		clearscr();
+		moveto(1, 1);
+		prints("您没有权限在本版块发表文章\n");
+		press_any_key();
+
+		return 0;
 	}
 
 	if (p_article->lock) // Reply is not allowed
@@ -993,8 +1023,16 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 	snprintf(sql, sizeof(sql),
 			 "UPDATE bbs SET reply_count = reply_count + 1, "
 			 "last_reply_dt = NOW(), last_reply_UID=%d, last_reply_username = '%s', "
-			 "last_reply_nickname = '%s' WHERE Aid = %d",
-			 BBS_priv.uid, BBS_username, nickname_f, p_article->aid);
+			 "last_reply_nickname = '%s' WHERE AID = %d",
+			 BBS_priv.uid, BBS_username, nickname_f,
+			 (p_article->tid == 0 ? p_article->aid : p_article->tid));
+
+	if (mysql_query(db, sql) != 0)
+	{
+		log_error("Update topic article error: %s\n", mysql_error(db));
+		ret = -1;
+		goto cleanup;
+	}
 
 	// Link content to article
 	snprintf(sql, sizeof(sql),
