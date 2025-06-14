@@ -237,6 +237,10 @@ static enum select_cmd_t section_list_select(int total_page, int item_count, int
 					(*p_page_id)++;
 					*p_selected_index = 0;
 				}
+				else // end of last page
+				{
+					return CHANGE_PAGE; // force refresh pages
+				}
 			}
 			else
 			{
