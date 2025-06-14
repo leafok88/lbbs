@@ -75,7 +75,6 @@ static int lml_tag_quote_level = 0;
 
 static int lml_tag_quote_filter(const char *tag_name, const char *tag_param_buf, char *tag_output_buf, size_t tag_output_buf_len)
 {
-
 	if (strcasecmp(tag_name, "quote") == 0)
 	{
 		if (lml_tag_quote_level <= LML_TAG_QUOTE_MAX_LEVEL)
@@ -104,7 +103,7 @@ const static char *LML_tag_def[][3] = {
 	{"/bold", "\033[22m", NULL},
 	{"b", "\033[1m", ""},
 	{"/b", "\033[22m", NULL},
-	{"italic", "\033[5m", ""}, // use blink instead
+	{"italic", "\033[5m", ""},	 // use blink instead
 	{"/italic", "\033[m", NULL}, // \033[25m does not work in Fterm
 	{"i", "\033[5m", ""},
 	{"/i", "\033[m", NULL},
