@@ -108,18 +108,15 @@ int ctrl_seq_filter(char *buffer)
 {
 	int i;
 	int j;
-	char c;
 
 	for (i = 0, j = 0; buffer[i] != '\0'; i++)
 	{
-		c = buffer[i];
-
-		if (c == '\r' || c == '\7') // skip
+		if (buffer[i] == '\r' || buffer[i] == '\7') // skip
 		{
 			continue;
 		}
 
-		if (c == '\033' && buffer[i + 1] == '[') // Skip control sequence
+		if (buffer[i] == '\033' && buffer[i + 1] == '[') // Skip control sequence
 		{
 			i += 2;
 			while (buffer[i] != '\0' && buffer[i] != 'm')
