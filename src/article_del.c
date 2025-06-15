@@ -20,6 +20,7 @@
 #include "io.h"
 #include "screen.h"
 #include "user_priv.h"
+#include <ctype.h>
 #include <stdlib.h>
 
 int article_del(const SECTION_LIST *p_section, const ARTICLE *p_article)
