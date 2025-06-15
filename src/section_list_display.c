@@ -18,6 +18,7 @@
 #include "section_list_loader.h"
 #include "article_cache.h"
 #include "article_post.h"
+#include "article_del.h"
 #include "common.h"
 #include "io.h"
 #include "screen.h"
@@ -42,6 +43,7 @@ enum select_cmd_t
 	CHANGE_NAME_DISPLAY = 4,
 	POST_ARTICLE = 5,
 	EDIT_ARTICLE = 6,
+	DELETE_ARTICLE = 7,
 };
 
 static int section_list_draw_items(int page_id, ARTICLE *p_articles[], int article_count, int display_nickname)
@@ -141,7 +143,7 @@ static int section_list_draw_screen(const char *sname, const char *stitle, const
 	moveto(2, 0);
 	prints("返回[\033[1;32m←\033[0;37m,\033[1;32mESC\033[0;37m] 选择[\033[1;32m↑\033[0;37m,\033[1;32m↓\033[0;37m] "
 		   "阅读[\033[1;32m→\033[0;37m,\033[1;32mENTER\033[0;37m] 发表[\033[1;32mCtrl-P\033[0;37m] "
-		   "修改[\033[1;32mE\033[0;37m] %s[\033[1;32mn\033[0;37m]\033[m",
+		   "修改[\033[1;32mE\033[0;37m] 删除[\033[1;32md\033[0;37m] %s[\033[1;32mn\033[0;37m]\033[m",
 		   (display_nickname ? "显示用户名" : "显示昵称"));
 	moveto(3, 0);
 	if (display_nickname)
@@ -201,6 +203,8 @@ static enum select_cmd_t section_list_select(int total_page, int item_count, int
 			return POST_ARTICLE;
 		case 'E':
 			return EDIT_ARTICLE;
+		case 'd':
+			return DELETE_ARTICLE;
 		case KEY_HOME:
 			*p_page_id = 0;
 		case KEY_PGUP:
@@ -580,7 +584,7 @@ int section_list_display(const char *sname)
 			ret = article_post(p_section, &article_new);
 			if (ret < 0)
 			{
-				log_error("article_post(sid=%d, NEW) error\n", p_section->sid);
+				log_error("article_post(sid=%d) error\n", p_section->sid);
 			}
 			else if (ret > 0) // New article posted
 			{
@@ -598,13 +602,30 @@ int section_list_display(const char *sname)
 			}
 			break;
 		case EDIT_ARTICLE:
-			if (p_articles[selected_index]->uid != BBS_priv.uid)
+			if (!checkpriv(&BBS_priv, p_section->sid, S_POST) ||
+				p_articles[selected_index]->uid != BBS_priv.uid)
 			{
-				break;
+				break; // No permission
 			}
 			if (article_modify(p_section, p_articles[selected_index], &article_new) < 0)
 			{
-				log_error("article_post(aid=%d, EDIT) error\n", p_articles[selected_index]->aid);
+				log_error("article_modify(aid=%d) error\n", p_articles[selected_index]->aid);
+			}
+			if (section_list_draw_screen(sname, stitle, master_list, display_nickname) < 0)
+			{
+				log_error("section_list_draw_screen() error\n");
+				return -2;
+			}
+			break;
+		case DELETE_ARTICLE:
+			if (!checkpriv(&BBS_priv, p_section->sid, S_POST) ||
+				(!checkpriv(&BBS_priv, p_section->sid, S_MAN_S) && p_articles[selected_index]->uid != BBS_priv.uid))
+			{
+				break; // No permission
+			}
+			if (article_del(p_section, p_articles[selected_index]) < 0)
+			{
+				log_error("article_del(aid=%d) error\n", p_articles[selected_index]->aid);
 			}
 			if (section_list_draw_screen(sname, stitle, master_list, display_nickname) < 0)
 			{
