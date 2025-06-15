@@ -378,6 +378,9 @@ int article_post(const SECTION_LIST *p_section, ARTICLE *p_article_new)
 		goto cleanup;
 	}
 
+	mysql_close(db);
+	db = NULL;
+
 	clearscr();
 	moveto(1, 1);
 	prints("发送完成，新文章通常会在%d秒后可见", BBS_section_list_load_interval);
@@ -653,6 +656,9 @@ int article_modify(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTI
 		goto cleanup;
 	}
 
+	mysql_close(db);
+	db = NULL;
+
 	clearscr();
 	moveto(1, 1);
 	prints("修改完成，新内容通常会在%d秒后可见", BBS_section_list_load_interval);
@@ -756,6 +762,9 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 
 	if (topic_locked) // Reply is not allowed
 	{
+		mysql_close(db);
+		db = NULL;
+		
 		clearscr();
 		moveto(1, 1);
 		prints("该主题谢绝回复");
@@ -1149,6 +1158,9 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 		ret = -1;
 		goto cleanup;
 	}
+
+	mysql_close(db);
+	db = NULL;
 
 	clearscr();
 	moveto(1, 1);
