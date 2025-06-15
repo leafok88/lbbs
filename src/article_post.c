@@ -253,22 +253,6 @@ int article_post(const SECTION_LIST *p_section, ARTICLE *p_article_new)
 		rs = NULL;
 	}
 
-	content_f = malloc((size_t)len_content * 2 + 1);
-	if (content_f == NULL)
-	{
-		log_error("malloc(content_f) error: OOM\n");
-		ret = -1;
-		goto cleanup;
-	}
-
-	sql_content = malloc(SQL_BUFFER_LEN + (size_t)len_content * 2 + 1);
-	if (sql_content == NULL)
-	{
-		log_error("malloc(sql_content) error: OOM\n");
-		ret = -1;
-		goto cleanup;
-	}
-
 	// Begin transaction
 	if (mysql_query(db, "SET autocommit=0") != 0)
 	{
@@ -285,16 +269,38 @@ int article_post(const SECTION_LIST *p_section, ARTICLE *p_article_new)
 	}
 
 	// Secure SQL parameters
+	content_f = malloc((size_t)len_content * 2 + 1);
+	if (content_f == NULL)
+	{
+		log_error("malloc(content_f) error: OOM\n");
+		ret = -1;
+		goto cleanup;
+	}
+
 	mysql_real_escape_string(db, nickname_f, BBS_nickname, (unsigned long)strnlen(BBS_nickname, sizeof(BBS_nickname)));
 	mysql_real_escape_string(db, title_f, p_article_new->title, strnlen(p_article_new->title, sizeof(p_article_new->title)));
 	mysql_real_escape_string(db, content_f, content, (unsigned long)len_content);
 
+	free(content);
+	content = NULL;
+
 	// Add content
-	snprintf(sql, SQL_BUFFER_LEN + (size_t)len_content * 2 + 1,
+	sql_content = malloc(SQL_BUFFER_LEN + (size_t)len_content * 2 + 1);
+	if (sql_content == NULL)
+	{
+		log_error("malloc(sql_content) error: OOM\n");
+		ret = -1;
+		goto cleanup;
+	}
+
+	snprintf(sql_content, SQL_BUFFER_LEN + (size_t)len_content * 2 + 1,
 			 "INSERT INTO bbs_content(AID, content) values(0, '%s')",
 			 content_f);
 
-	if (mysql_query(db, sql) != 0)
+	free(content_f);
+	content_f = NULL;
+
+	if (mysql_query(db, sql_content) != 0)
 	{
 		log_error("Add article content error: %s\n", mysql_error(db));
 		ret = -1;
@@ -302,6 +308,9 @@ int article_post(const SECTION_LIST *p_section, ARTICLE *p_article_new)
 	}
 
 	p_article_new->cid = (int32_t)mysql_insert_id(db);
+
+	free(sql_content);
+	sql_content = NULL;
 
 	// Add article
 	snprintf(sql, sizeof(sql),
@@ -458,13 +467,30 @@ int article_modify(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTI
 
 	if ((row = mysql_fetch_row(rs)))
 	{
-		p_editor_data = editor_data_load(row[1]);
+		content = malloc(ARTICLE_CONTENT_MAX_LEN);
+		if (content == NULL)
+		{
+			log_error("malloc(content) error: OOM\n");
+			ret = -1;
+			goto cleanup;
+		}
+
+		strncpy(content, row[1], ARTICLE_CONTENT_MAX_LEN - 1);
+		content[ARTICLE_CONTENT_MAX_LEN - 1] = '\0';
+
+		// Remove control sequence
+		len_content = ctrl_seq_filter(content);
+
+		p_editor_data = editor_data_load(content);
 		if (p_editor_data == NULL)
 		{
 			log_error("editor_data_load(aid=%d, cid=%d) error\n", p_article->aid, atoi(row[0]));
 			ret = -3;
 			goto cleanup;
 		}
+
+		free(content);
+		content = NULL;
 	}
 	mysql_free_result(rs);
 	rs = NULL;
@@ -530,22 +556,6 @@ int article_modify(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTI
 							"\n--\n※ 作者已于 %s 修改本文※\n",
 							str_modify_dt);
 
-	content_f = malloc((size_t)len_content * 2 + 1);
-	if (content_f == NULL)
-	{
-		log_error("malloc(content_f) error: OOM\n");
-		ret = -1;
-		goto cleanup;
-	}
-
-	sql_content = malloc(SQL_BUFFER_LEN + (size_t)len_content * 2 + 1);
-	if (sql_content == NULL)
-	{
-		log_error("malloc(sql_content) error: OOM\n");
-		ret = -1;
-		goto cleanup;
-	}
-
 	db = db_open();
 	if (db == NULL)
 	{
@@ -570,14 +580,36 @@ int article_modify(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTI
 	}
 
 	// Secure SQL parameters
+	content_f = malloc((size_t)len_content * 2 + 1);
+	if (content_f == NULL)
+	{
+		log_error("malloc(content_f) error: OOM\n");
+		ret = -1;
+		goto cleanup;
+	}
+
 	mysql_real_escape_string(db, content_f, content, (unsigned long)len_content);
 
+	free(content);
+	content = NULL;
+
 	// Add content
-	snprintf(sql, SQL_BUFFER_LEN + (size_t)len_content * 2 + 1,
+	sql_content = malloc(SQL_BUFFER_LEN + (size_t)len_content * 2 + 1);
+	if (sql_content == NULL)
+	{
+		log_error("malloc(sql_content) error: OOM\n");
+		ret = -1;
+		goto cleanup;
+	}
+
+	snprintf(sql_content, SQL_BUFFER_LEN + (size_t)len_content * 2 + 1,
 			 "INSERT INTO bbs_content(AID, content) values(%d, '%s')",
 			 p_article->aid, content_f);
 
-	if (mysql_query(db, sql) != 0)
+	free(content_f);
+	content_f = NULL;
+
+	if (mysql_query(db, sql_content) != 0)
 	{
 		log_error("Add article content error: %s\n", mysql_error(db));
 		ret = -1;
@@ -585,6 +617,9 @@ int article_modify(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTI
 	}
 
 	p_article_new->cid = (int32_t)mysql_insert_id(db);
+
+	free(sql_content);
+	sql_content = NULL;
 
 	// Update article
 	snprintf(sql, sizeof(sql),
@@ -633,6 +668,7 @@ int article_modify(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTI
 	ret = 1; // Success
 
 cleanup:
+	mysql_free_result(rs);
 	mysql_close(db);
 
 	// Cleanup buffers
@@ -951,22 +987,6 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 		rs = NULL;
 	}
 
-	content_f = malloc((size_t)len_content * 2 + 1);
-	if (content_f == NULL)
-	{
-		log_error("malloc(content_f) error: OOM\n");
-		ret = -1;
-		goto cleanup;
-	}
-
-	sql_content = malloc(SQL_BUFFER_LEN + (size_t)len_content * 2 + 1);
-	if (sql_content == NULL)
-	{
-		log_error("malloc(sql_content) error: OOM\n");
-		ret = -1;
-		goto cleanup;
-	}
-
 	// Begin transaction
 	if (mysql_query(db, "SET autocommit=0") != 0)
 	{
@@ -983,16 +1003,38 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 	}
 
 	// Secure SQL parameters
+	content_f = malloc((size_t)len_content * 2 + 1);
+	if (content_f == NULL)
+	{
+		log_error("malloc(content_f) error: OOM\n");
+		ret = -1;
+		goto cleanup;
+	}
+
 	mysql_real_escape_string(db, nickname_f, BBS_nickname, (unsigned long)strnlen(BBS_nickname, sizeof(BBS_nickname)));
 	mysql_real_escape_string(db, title_f, p_article_new->title, strnlen(p_article_new->title, sizeof(p_article_new->title)));
 	mysql_real_escape_string(db, content_f, content, (unsigned long)len_content);
 
+	free(content);
+	content = NULL;
+
 	// Add content
-	snprintf(sql, SQL_BUFFER_LEN + (size_t)len_content * 2 + 1,
+	sql_content = malloc(SQL_BUFFER_LEN + (size_t)len_content * 2 + 1);
+	if (sql_content == NULL)
+	{
+		log_error("malloc(sql_content) error: OOM\n");
+		ret = -1;
+		goto cleanup;
+	}
+
+	snprintf(sql_content, SQL_BUFFER_LEN + (size_t)len_content * 2 + 1,
 			 "INSERT INTO bbs_content(AID, content) values(0, '%s')",
 			 content_f);
 
-	if (mysql_query(db, sql) != 0)
+	free(content_f);
+	content_f = NULL;
+
+	if (mysql_query(db, sql_content) != 0)
 	{
 		log_error("Add article content error: %s\n", mysql_error(db));
 		ret = -1;
@@ -1000,6 +1042,9 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 	}
 
 	p_article_new->cid = (int32_t)mysql_insert_id(db);
+
+	free(sql_content);
+	sql_content = NULL;
 
 	// Add article
 	snprintf(sql, sizeof(sql),
