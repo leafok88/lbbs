@@ -764,7 +764,7 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 	{
 		mysql_close(db);
 		db = NULL;
-		
+
 		clearscr();
 		moveto(1, 1);
 		prints("该主题谢绝回复");
@@ -828,6 +828,11 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 			len += 2;
 			memcpy(content + len, content_f + line_offsets[i], (size_t)(line_offsets[i + 1] - line_offsets[i]));
 			len += (line_offsets[i + 1] - line_offsets[i]);
+			if (content[len - 1] != '\n') // Appennd \n if not exist
+			{
+				content[len] = '\n';
+				len++;
+			}
 		}
 		if (content[len - 1] != '\n') // Appennd \n if not exist
 		{
