@@ -59,6 +59,9 @@ int article_del(const SECTION_LIST *p_section, const ARTICLE *p_article)
 	{
 		switch (toupper(ch))
 		{
+		case KEY_NULL:
+		case KEY_TIMEOUT:
+			goto cleanup;
 		case CR:
 			igetch_reset();
 		case KEY_ESC:
@@ -71,6 +74,11 @@ int article_del(const SECTION_LIST *p_section, const ARTICLE *p_article)
 		}
 
 		break;
+	}
+
+	if (SYS_server_exit) // Do not save data on shutdown
+	{
+		goto cleanup;
 	}
 
 	db = db_open();

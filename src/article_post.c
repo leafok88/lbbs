@@ -110,6 +110,9 @@ int article_post(const SECTION_LIST *p_section, ARTICLE *p_article_new)
 		{
 			switch (toupper(ch))
 			{
+			case KEY_NULL:
+			case KEY_TIMEOUT:
+				goto cleanup;
 			case CR:
 				igetch_reset();
 				break;
@@ -173,6 +176,9 @@ int article_post(const SECTION_LIST *p_section, ARTICLE *p_article_new)
 			{
 				switch (toupper(ch))
 				{
+				case KEY_NULL:
+				case KEY_TIMEOUT:
+					goto cleanup;
 				case CR:
 					igetch_reset();
 				case 'S':
@@ -199,6 +205,11 @@ int article_post(const SECTION_LIST *p_section, ARTICLE *p_article_new)
 		{
 			break;
 		}
+	}
+
+	if (SYS_server_exit) // Do not save data on shutdown
+	{
+		goto cleanup;
 	}
 
 	content = malloc(ARTICLE_CONTENT_MAX_LEN);
@@ -506,6 +517,9 @@ int article_modify(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTI
 		{
 			switch (toupper(ch))
 			{
+			case KEY_NULL:
+			case KEY_TIMEOUT:
+				goto cleanup;
 			case CR:
 				igetch_reset();
 			case 'S':
@@ -524,6 +538,11 @@ int article_modify(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTI
 
 			break;
 		}
+	}
+
+	if (SYS_server_exit) // Do not save data on shutdown
+	{
+		goto cleanup;
 	}
 
 	// Allocate buffers in big size
@@ -886,6 +905,9 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 		{
 			switch (toupper(ch))
 			{
+			case KEY_NULL:
+			case KEY_TIMEOUT:
+				goto cleanup;
 			case CR:
 				igetch_reset();
 				break;
@@ -943,6 +965,9 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 			{
 				switch (toupper(ch))
 				{
+				case KEY_NULL:
+				case KEY_TIMEOUT:
+					goto cleanup;
 				case CR:
 					igetch_reset();
 				case 'S':
@@ -969,6 +994,11 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 		{
 			break;
 		}
+	}
+
+	if (SYS_server_exit) // Do not save data on shutdown
+	{
+		goto cleanup;
 	}
 
 	content = malloc(ARTICLE_CONTENT_MAX_LEN);
