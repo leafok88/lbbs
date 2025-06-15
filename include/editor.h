@@ -51,7 +51,7 @@ extern int editor_display(EDITOR_DATA *p_editor_data);
 extern int editor_data_insert(EDITOR_DATA *p_editor_data, long *p_display_line, long *p_offset,
 							  const char *str, int str_len, long *p_last_updated_line);
 
-extern int editor_data_delete(EDITOR_DATA *p_editor_data, long display_line, long offset,
+extern int editor_data_delete(EDITOR_DATA *p_editor_data, long *p_display_line, long *p_offset,
 							  long *p_last_updated_line);
 
 #endif //_EDITOR_H_

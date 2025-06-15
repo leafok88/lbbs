@@ -238,7 +238,7 @@ int editor_data_insert(EDITOR_DATA *p_editor_data, long *p_display_line, long *p
 	// Get accurate offset of first character of CJK at offset position
 	for (i = 0; i < offset; i++)
 	{
-		if (p_editor_data->p_display_lines[display_line][i] < 0 || p_editor_data->p_display_lines[display_line][i] > 127) // GBK
+		if (p_editor_data->p_display_lines[display_line][i] < 0) // GBK
 		{
 			i++;
 		}
@@ -435,9 +435,11 @@ int editor_data_insert(EDITOR_DATA *p_editor_data, long *p_display_line, long *p
 	return 0;
 }
 
-int editor_data_delete(EDITOR_DATA *p_editor_data, long display_line, long offset,
+int editor_data_delete(EDITOR_DATA *p_editor_data, long *p_display_line, long *p_offset,
 					   long *p_last_updated_line)
 {
+	long display_line = *p_display_line;
+	long offset = *p_offset;
 	char *p_data_line = NULL;
 	long len_data_line;
 	long offset_data_line;
@@ -456,7 +458,7 @@ int editor_data_delete(EDITOR_DATA *p_editor_data, long display_line, long offse
 	// Get accurate offset of first character of CJK at offset position
 	for (i = 0; i < offset; i++)
 	{
-		if (p_editor_data->p_display_lines[display_line][i] < 0 || p_editor_data->p_display_lines[display_line][i] > 127) // GBK
+		if (p_editor_data->p_display_lines[display_line][i] < 0) // GBK
 		{
 			i++;
 		}
@@ -504,7 +506,7 @@ int editor_data_delete(EDITOR_DATA *p_editor_data, long display_line, long offse
 	{
 		str_len = 1;
 	}
-	else if (p_data_line[offset_data_line + 1] < 0 || p_data_line[offset_data_line] > 127) // GBK
+	else if (p_data_line[offset_data_line + 1] < 0) // GBK
 	{
 		str_len = 2;
 	}
@@ -594,6 +596,9 @@ int editor_data_delete(EDITOR_DATA *p_editor_data, long display_line, long offse
 		(p_editor_data->display_line_total) -= (last_display_line - *p_last_updated_line);
 		*p_last_updated_line = MAX(j - 1, *p_last_updated_line);
 	}
+
+	// Return real offset
+	*p_offset = offset;
 
 	return str_len;
 }
@@ -715,7 +720,7 @@ int editor_display(EDITOR_DATA *p_editor_data)
 
 					if (!key_insert) // overwrite
 					{
-						if (editor_data_delete(p_editor_data, display_line_in, offset_in,
+						if (editor_data_delete(p_editor_data, &display_line_out, &offset_out,
 											   &last_updated_line) < 0)
 						{
 							log_error("editor_data_delete() error\n");
@@ -756,7 +761,7 @@ int editor_display(EDITOR_DATA *p_editor_data)
 						{
 							row_pos += (display_line_out - display_line_in);
 						}
-						col_pos = offset_out + 1;
+						col_pos = offset_out + 1; // Set col_pos to accurate pos
 					}
 
 					str_len = 0;
@@ -773,6 +778,12 @@ int editor_display(EDITOR_DATA *p_editor_data)
 						}
 
 						col_pos--;
+						if (col_pos > 1 &&
+							p_editor_data->p_display_lines[line_current - output_current_row + row_pos][col_pos - 1] < 0) // GBK
+						{
+							col_pos--;
+						}
+
 						if (col_pos < 1 && line_current - output_current_row + row_pos >= 0)
 						{
 							row_pos--;
@@ -780,25 +791,19 @@ int editor_display(EDITOR_DATA *p_editor_data)
 						}
 					}
 
-					if ((str_len = editor_data_delete(p_editor_data, line_current - output_current_row + row_pos, col_pos - 1,
+					display_line_in = line_current - output_current_row + row_pos;
+					offset_in = col_pos - 1;
+					display_line_out = display_line_in;
+					offset_out = offset_in;
+
+					if ((str_len = editor_data_delete(p_editor_data, &display_line_out, &offset_out,
 													  &last_updated_line)) < 0)
 					{
 						log_error("editor_data_delete() error\n");
 					}
 					else
 					{
-						if (ch == BACKSPACE)
-						{
-							for (i = 1; i < str_len; i++)
-							{
-								col_pos--;
-								if (col_pos < 1 && line_current - output_current_row + row_pos >= 0)
-								{
-									row_pos--;
-									col_pos = MAX(1, p_editor_data->display_line_lengths[line_current - output_current_row + row_pos]);
-								}
-							}
-						}
+						col_pos = offset_out + 1; // Set col_pos to accurate pos
 
 						output_end_row = MIN(SCREEN_ROWS - 1, output_current_row + (int)(last_updated_line - line_current));
 						line_current -= (output_current_row - row_pos);
@@ -845,7 +850,7 @@ int editor_display(EDITOR_DATA *p_editor_data)
 					break;
 				case Ctrl('E'): // End of line
 				case KEY_CTRL_RIGHT:
-					if (line_current + (screen_row_total - (output_current_row - screen_begin_row)) >= p_editor_data->display_line_total) // Reach end
+					if (line_current - output_current_row + row_pos == p_editor_data->display_line_total - 1) // row_pos at end line
 					{
 						// last display line does NOT have \n in the end
 						col_pos = p_editor_data->display_line_lengths[line_current - output_current_row + row_pos] + 1;
@@ -911,6 +916,12 @@ int editor_display(EDITOR_DATA *p_editor_data)
 					if (col_pos > 1)
 					{
 						col_pos--;
+						if (col_pos > 1 &&
+							p_editor_data->p_display_lines[line_current - output_current_row + row_pos][col_pos - 1] < 0 &&
+							p_editor_data->p_display_lines[line_current - output_current_row + row_pos][col_pos - 2] < 0) // GBK
+						{
+							col_pos--;
+						}
 						break;
 					}
 					col_pos = SCREEN_COLS; // continue to KEY_UP
@@ -938,6 +949,11 @@ int editor_display(EDITOR_DATA *p_editor_data)
 				case KEY_RIGHT:
 					if (col_pos < p_editor_data->display_line_lengths[line_current - output_current_row + row_pos])
 					{
+						if (p_editor_data->p_display_lines[line_current - output_current_row + row_pos][col_pos - 1] < 0 &&
+							p_editor_data->p_display_lines[line_current - output_current_row + row_pos][col_pos] < 0) // GBK
+						{
+							col_pos++;
+						}
 						col_pos++;
 						break;
 					}
@@ -949,7 +965,7 @@ int editor_display(EDITOR_DATA *p_editor_data)
 						col_pos = MIN(col_pos, MAX(1, p_editor_data->display_line_lengths[line_current - output_current_row + row_pos]));
 						break;
 					}
-					if (line_current + (screen_row_total - (output_current_row - screen_begin_row)) >= p_editor_data->display_line_total) // Reach end
+					if (line_current - output_current_row + row_pos == p_editor_data->display_line_total - 1) // row_pos at end line
 					{
 						// last display line does NOT have \n in the end
 						col_pos = p_editor_data->display_line_lengths[line_current - output_current_row + row_pos] + 1;
