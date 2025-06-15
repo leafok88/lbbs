@@ -79,7 +79,7 @@ EDITOR_DATA *editor_data_load(const char *p_data)
 {
 	EDITOR_DATA *p_editor_data;
 	char *p_data_line = NULL;
-	long line_offsets[MAX_EDITOR_DATA_LINES];
+	long line_offsets[MAX_EDITOR_DATA_LINES + 1];
 	long current_data_line_length = 0;
 	long i;
 
@@ -96,7 +96,7 @@ EDITOR_DATA *editor_data_load(const char *p_data)
 		return NULL;
 	}
 
-	p_editor_data->display_line_total = split_data_lines(p_data, SCREEN_COLS, line_offsets, MAX_EDITOR_DATA_LINES);
+	p_editor_data->display_line_total = split_data_lines(p_data, SCREEN_COLS, line_offsets, MAX_EDITOR_DATA_LINES + 1);
 
 	for (i = 0; i < p_editor_data->display_line_total; i++)
 	{
@@ -417,12 +417,18 @@ int editor_data_insert(EDITOR_DATA *p_editor_data, long *p_display_line, long *p
 			*p_offset -= p_editor_data->display_line_lengths[*p_display_line];
 			(*p_display_line)++;
 		}
-		else if (*p_display_line + 1 >= MAX_EDITOR_DATA_LINES)
+	}
+
+	// Prevent the last display line from being over-length
+	if (p_editor_data->display_line_total == MAX_EDITOR_DATA_LINES)
+	{
+		len = split_line(p_editor_data->p_display_lines[p_editor_data->display_line_total - 1], SCREEN_COLS - 1, &eol, &display_len);
+		p_editor_data->p_display_lines[p_editor_data->display_line_total - 1][len] = '\0';
+		p_editor_data->display_line_lengths[p_editor_data->display_line_total - 1] = len;
+		if (*p_display_line + 1 >= p_editor_data->display_line_total)
 		{
-			len = split_line(p_editor_data->p_display_lines[*p_display_line], SCREEN_COLS - 1, &eol, &display_len);
-			p_editor_data->p_display_lines[*p_display_line][len] = '\0';
-			p_editor_data->display_line_lengths[*p_display_line] = len;
-			*p_offset = len;
+			*p_offset = MIN(*p_offset, len);
+			*p_display_line = p_editor_data->display_line_total - 1;
 		}
 	}
 
@@ -839,6 +845,12 @@ int editor_display(EDITOR_DATA *p_editor_data)
 					break;
 				case Ctrl('E'): // End of line
 				case KEY_CTRL_RIGHT:
+					if (line_current + (screen_row_total - (output_current_row - screen_begin_row)) >= p_editor_data->display_line_total) // Reach end
+					{
+						// last display line does NOT have \n in the end
+						col_pos = p_editor_data->display_line_lengths[line_current - output_current_row + row_pos] + 1;
+						break;
+					}
 					col_pos = MAX(1, p_editor_data->display_line_lengths[line_current - output_current_row + row_pos]);
 					break;
 				case Ctrl('T'): // Top of screen
