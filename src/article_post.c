@@ -705,6 +705,7 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 	long quote_content_lines;
 	long i;
 	long ret = 0;
+	int topic_locked = 0;
 
 	if (p_section == NULL || p_article == NULL)
 	{
@@ -721,16 +722,6 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 		return 0;
 	}
 
-	if (p_article->lock) // Reply is not allowed
-	{
-		clearscr();
-		moveto(1, 1);
-		prints("该文章谢绝回复");
-		press_any_key();
-
-		return 0;
-	}
-
 	p_article_new->title[0] = '\0';
 	snprintf(title_input, sizeof(title_input), "Re: %s", p_article->title);
 	len = split_line(title_input, TITLE_INPUT_MAX_LEN, &eol, &display_len);
@@ -741,6 +732,41 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 	{
 		log_error("db_open() error: %s\n", mysql_error(db));
 		return -1;
+	}
+
+	snprintf(sql, sizeof(sql),
+			 "SELECT `lock` FROM bbs WHERE AID = %d",
+			 (p_article->tid == 0 ? p_article->aid : p_article->tid));
+
+	if (mysql_query(db, sql) != 0)
+	{
+		log_error("Query article status error: %s\n", mysql_error(db));
+		return -2;
+	}
+	if ((rs = mysql_store_result(db)) == NULL)
+	{
+		log_error("Get article status data failed\n");
+		return -2;
+	}
+
+	if ((row = mysql_fetch_row(rs)))
+	{
+		if (atoi(row[0]) != 0)
+		{
+			topic_locked = 1;
+		}
+	}
+	mysql_free_result(rs);
+	rs = NULL;
+
+	if (topic_locked) // Reply is not allowed
+	{
+		clearscr();
+		moveto(1, 1);
+		prints("该主题谢绝回复");
+		press_any_key();
+
+		goto cleanup;
 	}
 
 	snprintf(sql, sizeof(sql),
