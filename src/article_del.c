@@ -40,6 +40,16 @@ int article_del(const SECTION_LIST *p_section, const ARTICLE *p_article)
 		log_error("NULL pointer error\n");
 	}
 
+	if (p_article->excerption) // Delete is not allowed
+	{
+		clearscr();
+		moveto(1, 1);
+		prints("该文章无法被删除，请联系版主。");
+		press_any_key();
+
+		return 0;
+	}
+
 	clearscr();
 	moveto(1, 1);
 	prints("真的要删除文章？(Y)是, (N)否 [N]: ");
@@ -53,7 +63,7 @@ int article_del(const SECTION_LIST *p_section, const ARTICLE *p_article)
 			igetch_reset();
 		case KEY_ESC:
 		case 'N':
-			goto cleanup;
+			return 0;
 		case 'Y':
 			break;
 		default: // Invalid selection
