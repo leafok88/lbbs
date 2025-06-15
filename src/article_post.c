@@ -81,7 +81,8 @@ int article_post(const SECTION_LIST *p_section, ARTICLE *p_article_new)
 	if (p_editor_data == NULL)
 	{
 		log_error("editor_data_load() error\n");
-		return -2;
+		ret = -1;
+		goto cleanup;
 	}
 
 	// Set title and sign
@@ -212,7 +213,7 @@ int article_post(const SECTION_LIST *p_section, ARTICLE *p_article_new)
 	if (len_content < 0)
 	{
 		log_error("editor_data_save() error\n");
-		ret = -2;
+		ret = -1;
 		goto cleanup;
 	}
 
@@ -429,21 +430,12 @@ int article_modify(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTI
 		return 0;
 	}
 
-	if (!checkpriv(&BBS_priv, p_section->sid, S_POST))
-	{
-		clearscr();
-		moveto(1, 1);
-		prints("您没有权限在本版块发表文章\n");
-		press_any_key();
-
-		return 0;
-	}
-
 	db = db_open();
 	if (db == NULL)
 	{
 		log_error("db_open() error: %s\n", mysql_error(db));
-		return -1;
+		ret = -1;
+		goto cleanup;
 	}
 
 	snprintf(sql, sizeof(sql),
@@ -455,13 +447,13 @@ int article_modify(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTI
 	if (mysql_query(db, sql) != 0)
 	{
 		log_error("Query article content error: %s\n", mysql_error(db));
-		ret = -2;
+		ret = -1;
 		goto cleanup;
 	}
 	if ((rs = mysql_use_result(db)) == NULL)
 	{
 		log_error("Get article content data failed\n");
-		ret = -2;
+		ret = -1;
 		goto cleanup;
 	}
 
@@ -485,7 +477,7 @@ int article_modify(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTI
 		if (p_editor_data == NULL)
 		{
 			log_error("editor_data_load(aid=%d, cid=%d) error\n", p_article->aid, atoi(row[0]));
-			ret = -3;
+			ret = -1;
 			goto cleanup;
 		}
 
@@ -544,7 +536,7 @@ int article_modify(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTI
 	if (len_content < 0)
 	{
 		log_error("editor_data_save() error\n");
-		ret = -2;
+		ret = -1;
 		goto cleanup;
 	}
 
@@ -731,7 +723,8 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 	if (db == NULL)
 	{
 		log_error("db_open() error: %s\n", mysql_error(db));
-		return -1;
+		ret = -1;
+		goto cleanup;
 	}
 
 	snprintf(sql, sizeof(sql),
@@ -741,12 +734,14 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 	if (mysql_query(db, sql) != 0)
 	{
 		log_error("Query article status error: %s\n", mysql_error(db));
-		return -2;
+		ret = -1;
+		goto cleanup;
 	}
 	if ((rs = mysql_store_result(db)) == NULL)
 	{
 		log_error("Get article status data failed\n");
-		return -2;
+		ret = -1;
+		goto cleanup;
 	}
 
 	if ((row = mysql_fetch_row(rs)))
@@ -778,12 +773,14 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 	if (mysql_query(db, sql) != 0)
 	{
 		log_error("Query article content error: %s\n", mysql_error(db));
-		return -2;
+		ret = -1;
+		goto cleanup;
 	}
 	if ((rs = mysql_use_result(db)) == NULL)
 	{
 		log_error("Get article content data failed\n");
-		return -2;
+		ret = -1;
+		goto cleanup;
 	}
 
 	if ((row = mysql_fetch_row(rs)))
@@ -837,7 +834,7 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 		if (p_editor_data == NULL)
 		{
 			log_error("editor_data_load(aid=%d, cid=%d) error\n", p_article->aid, atoi(row[0]));
-			ret = -3;
+			ret = -1;
 			goto cleanup;
 		}
 
@@ -972,7 +969,7 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 	if (len_content < 0)
 	{
 		log_error("editor_data_save() error\n");
-		ret = -2;
+		ret = -1;
 		goto cleanup;
 	}
 
