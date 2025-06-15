@@ -11,7 +11,8 @@ Major release with all fundemantal features
 
 1. Post / modify / reply article with text editor
 2. Delete article by user self or admin
-3. SSH2 secure connection
+3. New / viewed article status display
+4. SSH2 secure connection
 
 
 2025-05-31
