@@ -4,6 +4,16 @@ Copyright (C) 2004-2025 by Leaflet
 
 Email : leaflet@leafok.com
 
+
+2025-06-15
+=================
+Major release with all fundemantal features
+
+1. Post / modify / reply article with text editor
+2. Delete article by user self or admin
+3. SSH2 secure connection
+
+
 2025-05-31
 =================
 Initial release with major features ready
