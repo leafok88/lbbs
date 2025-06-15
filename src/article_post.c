@@ -623,7 +623,7 @@ int article_modify(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTI
 
 	// Update article
 	snprintf(sql, sizeof(sql),
-			 "UPDATE bbs SET CID = %d, length = %ld WHERE AID = %d",
+			 "UPDATE bbs SET CID = %d, length = %ld, excerption = 0 WHERE AID = %d", // Set excerption = 0 explictly in case of rare condition
 			 p_article_new->cid, len_content, p_article->aid);
 
 	if (mysql_query(db, sql) != 0)

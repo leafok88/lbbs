@@ -514,6 +514,8 @@ int apply_article_op_log_from_db(int op_count_limit)
 				ret = -4;
 			}
 			mysql_free_result(rs2);
+
+			p_article->excerption = 0; // Set excerption = 0 implicitly in case of rare condition
 			break;
 		case 'T': // Move article
 			snprintf(sql, sizeof(sql),
