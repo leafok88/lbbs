@@ -93,11 +93,11 @@ int bbs_login(void)
 
 int check_user(const char *username, const char *password)
 {
-	MYSQL *db;
-	MYSQL_RES *rs;
+	MYSQL *db = NULL;
+	MYSQL_RES *rs = NULL;
 	MYSQL_ROW row;
 	char sql[SQL_BUFFER_LEN];
-	int ret;
+	int ret = 0;
 	int BBS_uid = 0;
 	char client_addr[IP_ADDR_LEN];
 	int i;
@@ -107,7 +107,8 @@ int check_user(const char *username, const char *password)
 	db = db_open();
 	if (db == NULL)
 	{
-		return -1;
+		ret = -1;
+		goto cleanup;
 	}
 
 	// Verify format
@@ -137,22 +138,23 @@ int check_user(const char *username, const char *password)
 	if (!ok)
 	{
 		prints("\033[1;31m用户名或密码格式错误...\033[m\r\n");
-		return 1;
+		ret = 1;
+		goto cleanup;
 	}
 
 	// Begin transaction
 	if (mysql_query(db, "SET autocommit=0") != 0)
 	{
 		log_error("SET autocommit=0 error: %s\n", mysql_error(db));
-		mysql_close(db);
-		return -1;
+		ret = -1;
+		goto cleanup;
 	}
 
 	if (mysql_query(db, "BEGIN") != 0)
 	{
 		log_error("Begin transaction error: %s\n", mysql_error(db));
-		mysql_close(db);
-		return -1;
+		ret = -1;
+		goto cleanup;
 	}
 
 	// Failed login attempts from the same source (subnet /24) during certain time period
@@ -161,34 +163,33 @@ int check_user(const char *username, const char *password)
 
 	snprintf(sql, sizeof(sql),
 			 "SELECT COUNT(*) AS err_count FROM user_err_login_log "
-			 "WHERE login_dt >= SUBDATE(NOW(), INTERVAL 10 MINUTE) "
+			 "WHERE login_dt >= SUBDATE(NOW(), INTERVAL %d MINUTE) "
 			 "AND login_ip LIKE '%s'",
+			 BBS_login_failures_count_interval,
 			 ip_mask(client_addr, 1, '%'));
 	if (mysql_query(db, sql) != 0)
 	{
 		log_error("Query user_list error: %s\n", mysql_error(db));
-		mysql_close(db);
-		return -1;
+		ret = -1;
+		goto cleanup;
 	}
 	if ((rs = mysql_store_result(db)) == NULL)
 	{
 		log_error("Get user_list data failed\n");
-		mysql_close(db);
-		return -1;
+		ret = -1;
+		goto cleanup;
 	}
 	if ((row = mysql_fetch_row(rs)))
 	{
-		if (atoi(row[0]) >= 2)
+		if (atoi(row[0]) > BBS_allowed_login_failures_within_interval)
 		{
-			mysql_free_result(rs);
-			mysql_close(db);
-
 			prints("\033[1;31m来源存在多次失败登陆尝试，请稍后再试\033[m\r\n");
-
-			return 1;
+			ret = 1;
+			goto cleanup;
 		}
 	}
 	mysql_free_result(rs);
+	rs = NULL;
 
 	// Failed login attempts against the current username during certain time period
 	snprintf(sql, sizeof(sql),
@@ -198,28 +199,26 @@ int check_user(const char *username, const char *password)
 	if (mysql_query(db, sql) != 0)
 	{
 		log_error("Query user_list error: %s\n", mysql_error(db));
-		mysql_close(db);
-		return -1;
+		ret = -1;
+		goto cleanup;
 	}
 	if ((rs = mysql_store_result(db)) == NULL)
 	{
 		log_error("Get user_list data failed\n");
-		mysql_close(db);
-		return -1;
+		ret = -1;
+		goto cleanup;
 	}
 	if ((row = mysql_fetch_row(rs)))
 	{
 		if (atoi(row[0]) >= 5)
 		{
-			mysql_free_result(rs);
-			mysql_close(db);
-
 			prints("\033[1;31m账户存在多次失败登陆尝试，请使用Web方式登录\033[m\r\n");
-
-			return 1;
+			ret = 1;
+			goto cleanup;
 		}
 	}
 	mysql_free_result(rs);
+	rs = NULL;
 
 	snprintf(sql, sizeof(sql),
 			 "SELECT UID, username, p_login FROM user_list "
@@ -228,14 +227,14 @@ int check_user(const char *username, const char *password)
 	if (mysql_query(db, sql) != 0)
 	{
 		log_error("Query user_list error: %s\n", mysql_error(db));
-		mysql_close(db);
-		return -1;
+		ret = -1;
+		goto cleanup;
 	}
 	if ((rs = mysql_store_result(db)) == NULL)
 	{
 		log_error("Get user_list data failed\n");
-		mysql_close(db);
-		return -1;
+		ret = -1;
+		goto cleanup;
 	}
 	if ((row = mysql_fetch_row(rs)))
 	{
@@ -245,6 +244,7 @@ int check_user(const char *username, const char *password)
 		int p_login = atoi(row[2]);
 
 		mysql_free_result(rs);
+		rs = NULL;
 
 		// Add user login log
 		snprintf(sql, sizeof(sql),
@@ -254,31 +254,29 @@ int check_user(const char *username, const char *password)
 		if (mysql_query(db, sql) != 0)
 		{
 			log_error("Insert into user_login_log error: %s\n", mysql_error(db));
-			mysql_close(db);
-			return -1;
+			ret = -1;
+			goto cleanup;
 		}
 
 		// Commit transaction
 		if (mysql_query(db, "COMMIT") != 0)
 		{
 			log_error("Commit transaction error: %s\n", mysql_error(db));
-			mysql_close(db);
-			return -1;
+			ret = -1;
+			goto cleanup;
 		}
 
 		if (p_login == 0)
 		{
-			mysql_free_result(rs);
-			mysql_close(db);
-
 			prints("\033[1;31m您目前无权登陆...\033[m\r\n");
-			return 1;
+			ret = 1;
+			goto cleanup;
 		}
 	}
 	else
 	{
 		mysql_free_result(rs);
-		mysql_close(db);
+		rs = NULL;
 
 		snprintf(sql, sizeof(sql),
 				 "INSERT INTO user_err_login_log(username, password, login_dt, login_ip) "
@@ -287,28 +285,29 @@ int check_user(const char *username, const char *password)
 		if (mysql_query(db, sql) != 0)
 		{
 			log_error("Insert into user_err_login_log error: %s\n", mysql_error(db));
-			return -1;
+			ret = -1;
+			goto cleanup;
 		}
 
 		// Commit transaction
 		if (mysql_query(db, "COMMIT") != 0)
 		{
 			log_error("Commit transaction error: %s\n", mysql_error(db));
-			mysql_close(db);
-			return -1;
+			ret = -1;
+			goto cleanup;
 		}
 
 		prints("\033[1;31m错误的用户名或密码...\033[m\r\n");
-		mysql_close(db);
-		return 1;
+		ret = 1;
+		goto cleanup;
 	}
 
 	// Set AUTOCOMMIT = 1
 	if (mysql_query(db, "SET autocommit=1") != 0)
 	{
 		log_error("SET autocommit=1 error: %s\n", mysql_error(db));
-		mysql_close(db);
-		return -1;
+		ret = -1;
+		goto cleanup;
 	}
 
 	ret = load_user_info(db, BBS_uid);
@@ -319,19 +318,19 @@ int check_user(const char *username, const char *password)
 		break;
 	case -1: // Load data error
 		prints("\033[1;31m读取用户数据错误...\033[m\r\n");
-		mysql_close(db);
-		return -1;
+		ret = -1;
+		goto cleanup;
 	case -2: // Unused
 		prints("\033[1;31m请通过Web登录更新用户许可协议...\033[m\r\n");
-		mysql_close(db);
-		return 1;
+		ret = 1;
+		goto cleanup;
 	case -3: // Dead
 		prints("\033[1;31m很遗憾，您已经永远离开了我们的世界！\033[m\r\n");
-		mysql_close(db);
-		return 1;
+		ret = 1;
+		goto cleanup;
 	default:
-		mysql_close(db);
-		return -2;
+		ret = -2;
+		goto cleanup;
 	}
 
 	snprintf(sql, sizeof(sql),
@@ -341,14 +340,14 @@ int check_user(const char *username, const char *password)
 	if (mysql_query(db, sql) != 0)
 	{
 		log_error("Update user_pubinfo error: %s\n", mysql_error(db));
-		mysql_close(db);
-		return -1;
+		ret = -1;
+		goto cleanup;
 	}
 
 	if (user_online_add(db) != 0)
 	{
-		mysql_close(db);
-		return -1;
+		ret = -1;
+		goto cleanup;
 	}
 
 	BBS_last_access_tm = BBS_login_tm = time(0);
@@ -369,18 +368,21 @@ int check_user(const char *username, const char *password)
 		tzset();
 	}
 
+cleanup:
+	mysql_free_result(rs);
 	mysql_close(db);
 
-	return 0;
+	return ret;
 }
 
 int load_user_info(MYSQL *db, int BBS_uid)
 {
-	MYSQL_RES *rs;
+	MYSQL_RES *rs = NULL;
 	MYSQL_ROW row;
 	char sql[SQL_BUFFER_LEN];
 	int life;
 	time_t last_login_dt;
+	int ret = 0;
 
 	snprintf(sql, sizeof(sql),
 			 "SELECT life, UNIX_TIMESTAMP(last_login_dt), user_timezone, exp, nickname "
@@ -389,12 +391,14 @@ int load_user_info(MYSQL *db, int BBS_uid)
 	if (mysql_query(db, sql) != 0)
 	{
 		log_error("Query user_pubinfo error: %s\n", mysql_error(db));
-		return -1;
+		ret = -1;
+		goto cleanup;
 	}
 	if ((rs = mysql_store_result(db)) == NULL)
 	{
 		log_error("Get user_pubinfo data failed\n");
-		return -1;
+		ret = -1;
+		goto cleanup;
 	}
 	if ((row = mysql_fetch_row(rs)))
 	{
@@ -411,33 +415,41 @@ int load_user_info(MYSQL *db, int BBS_uid)
 	}
 	else
 	{
-		mysql_free_result(rs);
-		return -1; // Data not found
+		ret = -1; // Data not found
+		goto cleanup;
 	}
 	mysql_free_result(rs);
+	rs = NULL;
 
 	if (life != 333 && life != 365 && life != 666 && life != 999 && // Not immortal
 		time(0) - last_login_dt > 60 * 60 * 24 * life)
 	{
-		return -3; // Dead
+		ret = -3; // Dead
+		goto cleanup;
 	}
 
 	if (load_priv(db, &BBS_priv, BBS_uid) != 0)
 	{
-		return -1;
+		ret = -1;
+		goto cleanup;
 	}
 
-	return 0;
+cleanup:
+	mysql_free_result(rs);
+
+	return ret;
 }
 
 int load_guest_info(void)
 {
-	MYSQL *db;
+	MYSQL *db = NULL;
+	int ret = 0;
 
 	db = db_open();
 	if (db == NULL)
 	{
-		return -1;
+		ret = -1;
+		goto cleanup;
 	}
 
 	strncpy(BBS_username, "guest", sizeof(BBS_username) - 1);
@@ -450,19 +462,22 @@ int load_guest_info(void)
 
 	if (load_priv(db, &BBS_priv, 0) != 0)
 	{
-		return -1;
+		ret = -1;
+		goto cleanup;
 	}
 
 	if (user_online_add(db) != 0)
 	{
-		return -1;
+		ret = -1;
+		goto cleanup;
 	}
 
 	BBS_last_access_tm = BBS_login_tm = time(0);
 
+cleanup:
 	mysql_close(db);
-	
-	return 0;
+
+	return ret;
 }
 
 int user_online_add(MYSQL *db)
