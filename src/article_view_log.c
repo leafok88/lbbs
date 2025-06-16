@@ -123,7 +123,7 @@ int article_view_log_unload(ARTICLE_VIEW_LOG *p_view_log)
 
 int article_view_log_save_inc(const ARTICLE_VIEW_LOG *p_view_log)
 {
-	MYSQL *db;
+	MYSQL *db = NULL;
 	char sql[SQL_BUFFER_LEN];
 	char tuple_tmp[LINE_BUFFER_LEN];
 	int i;
@@ -161,6 +161,7 @@ int article_view_log_save_inc(const ARTICLE_VIEW_LOG *p_view_log)
 			if (mysql_query(db, sql) != 0)
 			{
 				log_error("Add view_article_log error: %s\n", mysql_error(db));
+				mysql_close(db);
 				return -3;
 			}
 
