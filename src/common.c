@@ -21,6 +21,7 @@
 #include "menu.h"
 #include <string.h>
 #include <time.h>
+#include <signal.h>
 #include <sys/types.h>
 
 // File loader
@@ -89,6 +90,7 @@ void sig_hup_handler(int i)
 void sig_term_handler(int i)
 {
 	SYS_server_exit = 1;
+	signal(SIGTERM, SIG_IGN);
 }
 
 void sig_chld_handler(int i)
