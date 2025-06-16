@@ -485,7 +485,7 @@ int article_modify(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTI
 		content[ARTICLE_CONTENT_MAX_LEN - 1] = '\0';
 
 		// Remove control sequence
-		len_content = ctrl_seq_filter(content);
+		len_content = str_filter(content, 0);
 
 		p_editor_data = editor_data_load(content);
 		if (p_editor_data == NULL)
@@ -741,7 +741,7 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 
 	p_article_new->title[0] = '\0';
 	snprintf(title_input, sizeof(title_input), "Re: %s", p_article->title);
-	len = split_line(title_input, TITLE_INPUT_MAX_LEN, &eol, &display_len);
+	len = split_line(title_input, TITLE_INPUT_MAX_LEN, &eol, &display_len, 0);
 	title_input[len] = '\0';
 
 	db = db_open();
@@ -834,13 +834,13 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 		content_f[len] = '\0';
 
 		// Remove control sequence
-		len = ctrl_seq_filter(content_f);
+		len = str_filter(content_f, 0);
 
 		len = snprintf(content, ARTICLE_CONTENT_MAX_LEN,
 					   "\n\n【 在 %s (%s) 的大作中提到: 】\n",
 					   p_article->username, p_article->nickname);
 
-		quote_content_lines = split_data_lines(content_f, ARTICLE_QUOTE_LINE_MAX_LEN, line_offsets, ARTICLE_QUOTE_MAX_LINES + 1);
+		quote_content_lines = split_data_lines(content_f, ARTICLE_QUOTE_LINE_MAX_LEN, line_offsets, ARTICLE_QUOTE_MAX_LINES + 1, 0);
 		for (i = 0; i < quote_content_lines; i++)
 		{
 			memcpy(content + len, ": ", 2); // quote line prefix

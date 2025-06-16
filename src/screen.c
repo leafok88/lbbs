@@ -301,7 +301,7 @@ int display_data(const void *p_data, long display_line_total, const long *p_line
 					 percentile,
 					 ctx.msg);
 
-			len = split_line(buffer, SCREEN_COLS, &eol, &display_len);
+			len = split_line(buffer, SCREEN_COLS, &eol, &display_len, 1);
 			for (; display_len < SCREEN_COLS; display_len++)
 			{
 				buffer[len++] = ' ';
@@ -518,17 +518,17 @@ int show_top(const char *str_left, const char *str_middle, const char *str_right
 
 	strncpy(str_left_f, str_left, sizeof(str_left_f) - 1);
 	str_left_f[sizeof(str_left_f) - 1] = '\0';
-	len = split_line(str_left_f, STR_TOP_LEFT_MAX_LEN, &eol, &str_left_len);
+	len = split_line(str_left_f, STR_TOP_LEFT_MAX_LEN, &eol, &str_left_len, 1);
 	str_left_f[len] = '\0';
 
 	strncpy(str_middle_f, str_middle, sizeof(str_middle_f) - 1);
 	str_middle_f[sizeof(str_middle_f) - 1] = '\0';
-	len = split_line(str_middle, STR_TOP_MIDDLE_MAX_LEN, &eol, &str_middle_len);
+	len = split_line(str_middle, STR_TOP_MIDDLE_MAX_LEN, &eol, &str_middle_len, 1);
 	str_middle_f[len] = '\0';
 
 	strncpy(str_right_f, str_right, sizeof(str_right_f) - 1);
 	str_right_f[sizeof(str_right_f) - 1] = '\0';
-	len = split_line(str_right, STR_TOP_RIGHT_MAX_LEN, &eol, &str_right_len);
+	len = split_line(str_right, STR_TOP_RIGHT_MAX_LEN, &eol, &str_right_len, 1);
 	str_right_f[len] = '\0';
 
 	moveto(1, 0);
@@ -559,7 +559,7 @@ int show_bottom(const char *msg)
 	{
 		strncpy(msg_f, msg, sizeof(msg_f) - 1);
 		msg_f[sizeof(msg_f) - 1] = '\0';
-		len = split_line(msg_f, 23, &eol, &msg_len);
+		len = split_line(msg_f, 23, &eol, &msg_len, 1);
 		msg_f[len] = '\0';
 	}
 

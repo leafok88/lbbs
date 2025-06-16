@@ -104,7 +104,7 @@ static int section_list_draw_items(int page_id, ARTICLE *p_articles[], int artic
 		title_f[sizeof(title_f) - 1] = '\0';
 		strncat(title_f, (p_articles[i]->transship ? "[зЊди]" : ""), sizeof(title_f) - 1 - strnlen(title_f, sizeof(title_f)));
 		strncat(title_f, p_articles[i]->title, sizeof(title_f) - 1 - strnlen(title_f, sizeof(title_f)));
-		len = split_line(title_f, 47 - (display_nickname ? 8 : 0), &eol, &title_f_len);
+		len = split_line(title_f, 47 - (display_nickname ? 8 : 0), &eol, &title_f_len, 1);
 		if (title_f[len] != '\0')
 		{
 			title_f[len] = '\0';

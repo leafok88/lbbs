@@ -20,7 +20,7 @@
 #include <stdio.h>
 #include <string.h>
 
-int split_line(const char *buffer, int max_display_len, int *p_eol, int *p_display_len)
+int split_line(const char *buffer, int max_display_len, int *p_eol, int *p_display_len, int skip_ctrl_seq)
 {
 	int i;
 	*p_eol = 0;
@@ -36,7 +36,7 @@ int split_line(const char *buffer, int max_display_len, int *p_eol, int *p_displ
 			continue;
 		}
 
-		if (c == '\033' && buffer[i + 1] == '[') // Skip control sequence
+		if (skip_ctrl_seq && c == '\033' && buffer[i + 1] == '[') // Skip control sequence
 		{
 			i += 2;
 			while (buffer[i] != '\0' && buffer[i] != 'm')
@@ -76,7 +76,7 @@ int split_line(const char *buffer, int max_display_len, int *p_eol, int *p_displ
 	return i;
 }
 
-long split_data_lines(const char *p_buf, int max_display_len, long *p_line_offsets, long line_offsets_count)
+long split_data_lines(const char *p_buf, int max_display_len, long *p_line_offsets, long line_offsets_count, int skip_ctrl_seq)
 {
 	int line_cnt = 0;
 	int len;
@@ -87,7 +87,7 @@ long split_data_lines(const char *p_buf, int max_display_len, long *p_line_offse
 
 	do
 	{
-		len = split_line(p_buf, max_display_len, &end_of_line, &display_len);
+		len = split_line(p_buf, max_display_len, &end_of_line, &display_len, skip_ctrl_seq);
 
 		// Exceed max_line_cnt
 		if (line_cnt + 1 >= line_offsets_count)
@@ -104,7 +104,7 @@ long split_data_lines(const char *p_buf, int max_display_len, long *p_line_offse
 	return line_cnt;
 }
 
-int ctrl_seq_filter(char *buffer)
+int str_filter(char *buffer, int skip_ctrl_seq)
 {
 	int i;
 	int j;
@@ -116,7 +116,7 @@ int ctrl_seq_filter(char *buffer)
 			continue;
 		}
 
-		if (buffer[i] == '\033' && buffer[i + 1] == '[') // Skip control sequence
+		if (skip_ctrl_seq && buffer[i] == '\033' && buffer[i + 1] == '[') // Skip control sequence
 		{
 			i += 2;
 			while (buffer[i] != '\0' && buffer[i] != 'm')

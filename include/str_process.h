@@ -21,10 +21,10 @@
 
 #define MAX_SPLIT_FILE_LINES 65536
 
-extern int split_line(const char *buffer, int max_display_len, int *p_eol, int *p_display_len);
+extern int split_line(const char *buffer, int max_display_len, int *p_eol, int *p_display_len, int skip_ctrl_seq);
 
-extern long split_data_lines(const char *p_buf, int max_display_len, long *p_line_offsets, long line_offsets_count);
+extern long split_data_lines(const char *p_buf, int max_display_len, long *p_line_offsets, long line_offsets_count, int skip_ctrl_seq);
 
-extern int ctrl_seq_filter(char *buffer);
+extern int str_filter(char *buffer, int skip_ctrl_seq);
 
 #endif //_STR_PROCESS_H_

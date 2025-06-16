@@ -96,7 +96,7 @@ EDITOR_DATA *editor_data_load(const char *p_data)
 		return NULL;
 	}
 
-	p_editor_data->display_line_total = split_data_lines(p_data, SCREEN_COLS, line_offsets, MAX_EDITOR_DATA_LINES + 1);
+	p_editor_data->display_line_total = split_data_lines(p_data, SCREEN_COLS, line_offsets, MAX_EDITOR_DATA_LINES + 1, 0);
 
 	for (i = 0; i < p_editor_data->display_line_total; i++)
 	{
@@ -362,7 +362,7 @@ int editor_data_insert(EDITOR_DATA *p_editor_data, long *p_display_line, long *p
 	}
 
 	// Split current data line since beginning of current display line
-	split_line_total = split_data_lines(p_data_line, SCREEN_COLS, line_offsets, split_line_total);
+	split_line_total = split_data_lines(p_data_line, SCREEN_COLS, line_offsets, split_line_total, 0);
 
 	for (i = 0; i < split_line_total; i++)
 	{
@@ -375,7 +375,7 @@ int editor_data_insert(EDITOR_DATA *p_editor_data, long *p_display_line, long *p
 				// Terminate prior display line with \n, to avoid error on cleanup
 				if (display_line + i - 1 >= 0 && p_editor_data->display_line_lengths[display_line + i - 1] > 0)
 				{
-					len = split_line(p_editor_data->p_display_lines[display_line + i - 1], SCREEN_COLS - 1, &eol, &display_len);
+					len = split_line(p_editor_data->p_display_lines[display_line + i - 1], SCREEN_COLS - 1, &eol, &display_len, 0);
 					p_editor_data->p_display_lines[display_line + i - 1][len] = '\n';
 					p_editor_data->p_display_lines[display_line + i - 1][len + 1] = '\0';
 					p_editor_data->display_line_lengths[display_line + i - 1] = len + 1;
@@ -422,7 +422,7 @@ int editor_data_insert(EDITOR_DATA *p_editor_data, long *p_display_line, long *p
 	// Prevent the last display line from being over-length
 	if (p_editor_data->display_line_total == MAX_EDITOR_DATA_LINES)
 	{
-		len = split_line(p_editor_data->p_display_lines[p_editor_data->display_line_total - 1], SCREEN_COLS - 1, &eol, &display_len);
+		len = split_line(p_editor_data->p_display_lines[p_editor_data->display_line_total - 1], SCREEN_COLS - 1, &eol, &display_len, 0);
 		p_editor_data->p_display_lines[p_editor_data->display_line_total - 1][len] = '\0';
 		p_editor_data->display_line_lengths[p_editor_data->display_line_total - 1] = len;
 		if (*p_display_line + 1 >= p_editor_data->display_line_total)
@@ -564,7 +564,7 @@ int editor_data_delete(EDITOR_DATA *p_editor_data, long *p_display_line, long *p
 	split_line_total = last_display_line - display_line + 2;
 
 	// Split current data line since beginning of current display line
-	split_line_total = split_data_lines(p_data_line, SCREEN_COLS, line_offsets, split_line_total);
+	split_line_total = split_data_lines(p_data_line, SCREEN_COLS, line_offsets, split_line_total, 0);
 
 	for (i = 0; i < split_line_total; i++)
 	{
@@ -610,6 +610,9 @@ static int editor_display_key_handler(int *p_key, EDITOR_CTX *p_ctx)
 	case 0: // Set msg
 		snprintf(p_ctx->msg, sizeof(p_ctx->msg),
 				 "| ÕÀ≥ˆ[\033[32mCtrl-W\033[33m] | ∞Ô÷˙[\033[32mh\033[33m] |");
+		break;
+	case KEY_CSI:
+		*p_key = KEY_ESC;
 		break;
 	}
 
@@ -663,10 +666,10 @@ int editor_display(EDITOR_DATA *p_editor_data)
 					 "%s",
 					 row_pos, col_pos,
 					 ctx.line_cursor, p_editor_data->display_line_total,
-					 key_insert ? "≤Â»Î" : "∏ƒ–¥",
+					 key_insert ? "≤Â»Î" : "ÃÊªª",
 					 ctx.msg);
 
-			len = split_line(buffer, SCREEN_COLS, &eol, &display_len);
+			len = split_line(buffer, SCREEN_COLS, &eol, &display_len, 1);
 			for (; display_len < SCREEN_COLS; display_len++)
 			{
 				buffer[len++] = ' ';
