@@ -4,6 +4,7 @@ Copyright (C) 2004-2025 by Leaflet
 
 Email : leaflet@leafok.com
 
+Demo site : bbs.fenglin.info (Telnet 2323 / SSH2 2322)
 
 Introduction
 =================
