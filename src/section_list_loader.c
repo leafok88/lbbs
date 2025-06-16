@@ -36,20 +36,21 @@ int last_article_op_log_mid;
 
 int load_section_config_from_db(void)
 {
-	MYSQL *db;
-	MYSQL_RES *rs, *rs2;
+	MYSQL *db = NULL;
+	MYSQL_RES *rs = NULL, *rs2 = NULL;
 	MYSQL_ROW row, row2;
 	char sql[SQL_BUFFER_LEN];
 	int32_t sid;
 	char master_list[(BBS_username_max_len + 1) * 3 + 1];
 	SECTION_LIST *p_section;
-	int ret;
+	int ret = 0;
 
 	db = db_open();
 	if (db == NULL)
 	{
 		log_error("db_open() error: %s\n", mysql_error(db));
-		return -2;
+		ret = -1;
+		goto cleanup;
 	}
 
 	snprintf(sql, sizeof(sql),
@@ -61,12 +62,14 @@ int load_section_config_from_db(void)
 	if (mysql_query(db, sql) != 0)
 	{
 		log_error("Query section_list error: %s\n", mysql_error(db));
-		return -3;
+		ret = -2;
+		goto cleanup;
 	}
 	if ((rs = mysql_store_result(db)) == NULL)
 	{
 		log_error("Get section_list data failed\n");
-		return -3;
+		ret = -2;
+		goto cleanup;
 	}
 
 	ret = 0;
@@ -102,6 +105,7 @@ int load_section_config_from_db(void)
 			strncat(master_list, " ", sizeof(master_list) - 1 - strnlen(master_list, sizeof(master_list)));
 		}
 		mysql_free_result(rs2);
+		rs2 = NULL;
 
 		p_section = section_list_find_by_sid(sid);
 
@@ -151,8 +155,9 @@ int load_section_config_from_db(void)
 			break;
 		}
 	}
-	mysql_free_result(rs);
 
+cleanup:
+	mysql_free_result(rs);
 	mysql_close(db);
 
 	return ret;
@@ -160,8 +165,8 @@ int load_section_config_from_db(void)
 
 int append_articles_from_db(int32_t start_aid, int global_lock, int article_count_limit)
 {
-	MYSQL *db;
-	MYSQL_RES *rs;
+	MYSQL *db = NULL;
+	MYSQL_RES *rs = NULL;
 	MYSQL_ROW row;
 	char sql[SQL_BUFFER_LEN];
 	ARTICLE article;
@@ -177,7 +182,8 @@ int append_articles_from_db(int32_t start_aid, int global_lock, int article_coun
 	if (db == NULL)
 	{
 		log_error("db_open() error: %s\n", mysql_error(db));
-		return -2;
+		ret = -1;
+		goto cleanup;
 	}
 
 	snprintf(sql, sizeof(sql),
@@ -191,22 +197,21 @@ int append_articles_from_db(int32_t start_aid, int global_lock, int article_coun
 	if (mysql_query(db, sql) != 0)
 	{
 		log_error("Query article list error: %s\n", mysql_error(db));
-		return -3;
+		ret = -2;
+		goto cleanup;
 	}
 	if ((rs = mysql_use_result(db)) == NULL)
 	{
 		log_error("Get article list data failed\n");
-		return -3;
+		ret = -2;
+		goto cleanup;
 	}
 
 	// acquire global lock
-	if (global_lock)
+	if (global_lock && (ret = section_list_rw_lock(NULL)) < 0)
 	{
-		if ((ret = section_list_rw_lock(NULL)) < 0)
-		{
-			log_error("section_list_rw_lock(sid = 0) error\n");
-			goto cleanup;
-		}
+		log_error("section_list_rw_lock(sid = 0) error\n");
+		goto cleanup;
 	}
 
 	while ((row = mysql_fetch_row(rs)))
@@ -310,17 +315,13 @@ int append_articles_from_db(int32_t start_aid, int global_lock, int article_coun
 	}
 
 	// release global lock
-	if (global_lock)
+	if (global_lock && (ret = section_list_rw_unlock(NULL)) < 0)
 	{
-		if ((ret = section_list_rw_unlock(NULL)) < 0)
-		{
-			log_error("section_list_rw_unlock(sid=0) error\n");
-		}
+		log_error("section_list_rw_unlock(sid=0) error\n");
 	}
 
 cleanup:
 	mysql_free_result(rs);
-
 	mysql_close(db);
 
 	return (ret < 0 ? ret : article_count);
@@ -328,16 +329,18 @@ cleanup:
 
 int set_last_article_op_log_from_db(void)
 {
-	MYSQL *db;
-	MYSQL_RES *rs;
+	MYSQL *db = NULL;
+	MYSQL_RES *rs = NULL;
 	MYSQL_ROW row;
 	char sql[SQL_BUFFER_LEN];
+	int ret = 0;
 
 	db = db_open();
 	if (db == NULL)
 	{
 		log_error("db_open() error: %s\n", mysql_error(db));
-		return -1;
+		ret = -1;
+		goto cleanup;
 	}
 
 	snprintf(sql, sizeof(sql),
@@ -346,12 +349,14 @@ int set_last_article_op_log_from_db(void)
 	if (mysql_query(db, sql) != 0)
 	{
 		log_error("Query article op error: %s\n", mysql_error(db));
-		return -2;
+		ret = -2;
+		goto cleanup;
 	}
 	if ((rs = mysql_store_result(db)) == NULL)
 	{
 		log_error("Get article op data failed\n");
-		return -2;
+		ret = -2;
+		goto cleanup;
 	}
 
 	if ((row = mysql_fetch_row(rs)))
@@ -359,17 +364,17 @@ int set_last_article_op_log_from_db(void)
 		last_article_op_log_mid = atoi(row[0]);
 	}
 
+cleanup:
 	mysql_free_result(rs);
-
 	mysql_close(db);
 
-	return last_article_op_log_mid;
+	return (ret < 0 ? ret : last_article_op_log_mid);
 }
 
 int apply_article_op_log_from_db(int op_count_limit)
 {
-	MYSQL *db;
-	MYSQL_RES *rs, *rs2;
+	MYSQL *db = NULL;
+	MYSQL_RES *rs = NULL, *rs2 = NULL;
 	MYSQL_ROW row, row2;
 	char sql[SQL_BUFFER_LEN];
 	ARTICLE *p_article;
@@ -385,7 +390,8 @@ int apply_article_op_log_from_db(int op_count_limit)
 	if (db == NULL)
 	{
 		log_error("db_open() error: %s\n", mysql_error(db));
-		return -3;
+		ret = -1;
+		goto cleanup;
 	}
 
 	snprintf(sql, sizeof(sql),
@@ -397,12 +403,14 @@ int apply_article_op_log_from_db(int op_count_limit)
 	if (mysql_query(db, sql) != 0)
 	{
 		log_error("Query article log error: %s\n", mysql_error(db));
-		return -3;
+		ret = -2;
+		goto cleanup;
 	}
 	if ((rs = mysql_store_result(db)) == NULL)
 	{
 		log_error("Get article log data failed\n");
-		return -3;
+		ret = -2;
+		goto cleanup;
 	}
 
 	while ((row = mysql_fetch_row(rs)))
@@ -514,6 +522,7 @@ int apply_article_op_log_from_db(int op_count_limit)
 				ret = -4;
 			}
 			mysql_free_result(rs2);
+			rs2 = NULL;
 
 			p_article->excerption = 0; // Set excerption = 0 implicitly in case of rare condition
 			break;
@@ -544,6 +553,7 @@ int apply_article_op_log_from_db(int op_count_limit)
 				ret = -4;
 			}
 			mysql_free_result(rs2);
+			rs2 = NULL;
 
 			if (sid_dest > 0 && sid_dest != p_article->sid)
 			{
@@ -613,8 +623,9 @@ int apply_article_op_log_from_db(int op_count_limit)
 		}
 	}
 
+cleanup:
+	mysql_free_result(rs2);
 	mysql_free_result(rs);
-
 	mysql_close(db);
 
 	return (ret < 0 ? ret : op_count);
