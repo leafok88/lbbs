@@ -609,7 +609,7 @@ static int editor_display_key_handler(int *p_key, EDITOR_CTX *p_ctx)
 	{
 	case 0: // Set msg
 		snprintf(p_ctx->msg, sizeof(p_ctx->msg),
-				 "| ÍË³ö[\033[32mCtrl-W\033[33m] | °ïÖú[\033[32mh\033[33m] |");
+				 "| ÍË³ö[\033[32mCtrl-W\033[33m] |");
 		break;
 	case KEY_CSI:
 		*p_key = KEY_ESC;
@@ -683,12 +683,11 @@ int editor_display(EDITOR_DATA *p_editor_data)
 			moveto((int)row_pos, (int)col_pos);
 			iflush();
 
+			str_len = 0;
 			input_ok = 0;
+			ch = igetch_t(MAX_DELAY_TIME);
 			while (!SYS_server_exit && !input_ok)
 			{
-				ch = igetch_t(MAX_DELAY_TIME);
-				input_ok = 1;
-
 				// extended key handler
 				if (editor_display_key_handler(&ch, &ctx) != 0)
 				{
@@ -709,6 +708,8 @@ int editor_display(EDITOR_DATA *p_editor_data)
 				if ((ch >= 32 && ch < 127) || (ch > 127 && ch <= 255 && str_len == 2) || // Printable character or GBK
 					ch == CR || ch == KEY_ESC)											 // Special character
 				{
+					BBS_last_access_tm = time(0);
+
 					if (str_len == 0) // ch >= 32 && ch < 127
 					{
 						input_str[0] = (char)ch;
@@ -767,16 +768,29 @@ int editor_display(EDITOR_DATA *p_editor_data)
 						col_pos = offset_out + 1; // Set col_pos to accurate pos
 					}
 
+					if (display_line_out != display_line_in) // Output on line change
+					{
+						break;
+					}
+
+					ch = igetch(0);
+					if (ch == KEY_NULL || ch == KEY_TIMEOUT) // Output if no futher input
+					{
+						break;
+					}
+
 					str_len = 0;
 					continue;
 				}
 				else if (ch == KEY_DEL || ch == BACKSPACE) // Del
 				{
+					BBS_last_access_tm = time(0);
+
 					if (ch == BACKSPACE)
 					{
 						if (line_current - output_current_row + row_pos <= 0 && col_pos <= 1) // Forbidden
 						{
-							input_ok = 0;
+							ch = igetch_t(MAX_DELAY_TIME);
 							continue;
 						}
 
@@ -835,10 +849,22 @@ int editor_display(EDITOR_DATA *p_editor_data)
 						clrline(output_current_row, output_end_row);
 					}
 
+					if (display_line_out != display_line_in) // Output on line change
+					{
+						break;
+					}
+
+					ch = igetch(0);
+					if (ch == KEY_NULL || ch == KEY_TIMEOUT) // Output if no futher input
+					{
+						break;
+					}
+
 					str_len = 0;
 					continue;
 				}
 
+				input_ok = 1;
 				switch (ch)
 				{
 				case KEY_NULL:
@@ -1041,6 +1067,8 @@ int editor_display(EDITOR_DATA *p_editor_data)
 				{
 					break;
 				}
+
+				ch = igetch_t(MAX_DELAY_TIME);
 			}
 
 			continue;
