@@ -44,6 +44,7 @@ enum select_cmd_t
 	POST_ARTICLE = 5,
 	EDIT_ARTICLE = 6,
 	DELETE_ARTICLE = 7,
+	SHOW_HELP = 8,
 };
 
 static int section_list_draw_items(int page_id, ARTICLE *p_articles[], int article_count, int display_nickname)
@@ -143,7 +144,7 @@ static int section_list_draw_screen(const char *sname, const char *stitle, const
 	moveto(2, 0);
 	prints("返回[\033[1;32m←\033[0;37m,\033[1;32mESC\033[0;37m] 选择[\033[1;32m↑\033[0;37m,\033[1;32m↓\033[0;37m] "
 		   "阅读[\033[1;32m→\033[0;37m,\033[1;32mENTER\033[0;37m] 发表[\033[1;32mCtrl-P\033[0;37m] "
-		   "修改[\033[1;32mE\033[0;37m] 删除[\033[1;32md\033[0;37m] %s[\033[1;32mn\033[0;37m]\033[m",
+		   "%s[\033[1;32mn\033[0;37m] 帮助[\033[1;32mh\033[0;37m]\033[m",
 		   (display_nickname ? "显示用户名" : "显示昵称"));
 	moveto(3, 0);
 	if (display_nickname)
@@ -193,6 +194,7 @@ static enum select_cmd_t section_list_select(int total_page, int item_count, int
 			return CHANGE_NAME_DISPLAY;
 		case CR:
 			igetch_reset();
+		case 'r':
 		case KEY_RIGHT:
 			if (item_count > 0)
 			{
@@ -207,8 +209,10 @@ static enum select_cmd_t section_list_select(int total_page, int item_count, int
 			return DELETE_ARTICLE;
 		case KEY_HOME:
 			*p_page_id = 0;
+		case 'P':
 		case KEY_PGUP:
 			*p_selected_index = 0;
+		case 'k':
 		case KEY_UP:
 			if (*p_selected_index <= 0)
 			{
@@ -223,16 +227,19 @@ static enum select_cmd_t section_list_select(int total_page, int item_count, int
 				(*p_selected_index)--;
 			}
 			break;
+		case '$':
 		case KEY_END:
 			if (total_page > 0)
 			{
 				*p_page_id = total_page - 1;
 			}
+		case 'N':
 		case KEY_PGDN:
 			if (item_count > 0)
 			{
 				*p_selected_index = item_count - 1;
 			}
+		case 'j':
 		case KEY_DOWN:
 			if (*p_selected_index + 1 >= item_count) // next page
 			{
@@ -251,6 +258,8 @@ static enum select_cmd_t section_list_select(int total_page, int item_count, int
 				(*p_selected_index)++;
 			}
 			break;
+		case 'h':
+			return SHOW_HELP;
 		default:
 		}
 
@@ -287,6 +296,7 @@ static int display_article_key_handler(int *p_key, DISPLAY_CTX *p_ctx)
 	switch (*p_key)
 	{
 	case 'p':
+	case Ctrl('X'):
 		section_topic_view_mode = !section_topic_view_mode;
 	case 0: // Set msg
 		if (section_topic_view_mode)
@@ -323,6 +333,16 @@ static int display_article_key_handler(int *p_key, DISPLAY_CTX *p_ctx)
 			return 1;
 		}
 		break;
+	case 'k':
+		if (section_topic_view_mode)
+		{
+			*p_key = KEY_PGUP;
+		}
+		else
+		{
+			*p_key = KEY_UP;
+		}
+		return 1;
 	case KEY_DOWN:
 	case KEY_PGDN:
 	case KEY_END:
@@ -339,6 +359,16 @@ static int display_article_key_handler(int *p_key, DISPLAY_CTX *p_ctx)
 			return 1;
 		}
 		break;
+	case 'j':
+		if (section_topic_view_mode)
+		{
+			*p_key = KEY_PGDN;
+		}
+		else
+		{
+			*p_key = KEY_DOWN;
+		}
+		return 1;
 	}
 
 	return 0;
@@ -627,6 +657,15 @@ int section_list_display(const char *sname)
 			{
 				log_error("article_del(aid=%d) error\n", p_articles[selected_index]->aid);
 			}
+			if (section_list_draw_screen(sname, stitle, master_list, display_nickname) < 0)
+			{
+				log_error("section_list_draw_screen() error\n");
+				return -2;
+			}
+			break;
+		case SHOW_HELP:
+			// Display help information
+			display_file(DATA_READ_HELP, 1);
 			if (section_list_draw_screen(sname, stitle, master_list, display_nickname) < 0)
 			{
 				log_error("section_list_draw_screen() error\n");
