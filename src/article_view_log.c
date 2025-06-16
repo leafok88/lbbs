@@ -14,14 +14,14 @@
  *                                                                         *
  ***************************************************************************/
 
+#define _XOPEN_SOURCE 500
+#define _POSIX_C_SOURCE 200809L
+
 #include "article_view_log.h"
 #include "log.h"
 #include "common.h"
 #include "database.h"
 #include <stdlib.h>
-
-#define _XOPEN_SOURCE 500
-#define _POSIX_C_SOURCE 200809L
 #include <string.h>
 
 ARTICLE_VIEW_LOG BBS_article_view_log;

@@ -14,6 +14,8 @@
  *                                                                         *
  ***************************************************************************/
 
+#define _POSIX_C_SOURCE 200809L
+
 #include "section_list_display.h"
 #include "section_list_loader.h"
 #include "article_cache.h"
@@ -26,10 +28,9 @@
 #include "user_priv.h"
 #include "article_view_log.h"
 #include "str_process.h"
+#include <string.h>
 #include <time.h>
 #include <sys/param.h>
-#define _POSIX_C_SOURCE 200809L
-#include <string.h>
 
 static int section_topic_view_mode = 0;
 static int section_topic_view_tid = -1;

@@ -14,6 +14,8 @@
  *                                                                         *
  ***************************************************************************/
 
+#define _POSIX_C_SOURCE 200809L
+
 #include "init.h"
 #include "database.h"
 #include "bbs.h"
@@ -21,12 +23,13 @@
 #include "log.h"
 #include "io.h"
 #include <string.h>
+#include <strings.h>
 #include <stdlib.h>
 #include <signal.h>
+#include <unistd.h>
 #include <sys/param.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <unistd.h>
 
 #define CONF_DELIM_WITH_SPACE " \t\r\n"
 

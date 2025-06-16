@@ -14,6 +14,8 @@
  *                                                                         *
  ***************************************************************************/
 
+#define _POSIX_C_SOURCE 200809L
+
 #include "bbs.h"
 #include "bbs_cmd.h"
 #include "common.h"
@@ -27,9 +29,9 @@
 #include <errno.h>
 #include <signal.h>
 #include <string.h>
-#include <sys/types.h>
 #include <time.h>
 #include <unistd.h>
+#include <sys/types.h>
 
 int list_section(void *param)
 {

@@ -14,6 +14,8 @@
  *                                                                         *
  ***************************************************************************/
 
+#define _POSIX_C_SOURCE 200809L
+
 #include "bbs.h"
 #include "common.h"
 #include "log.h"
@@ -252,7 +254,7 @@ int bbsnet_connect(int n)
 		return -2;
 	}
 
-	bzero(&sin, sizeof(sin));
+	memset(&sin, 0, sizeof(sin));
 	sin.sin_family = AF_INET;
 	sin.sin_addr = *(struct in_addr *)p_host->h_addr_list[0];
 	sin.sin_port = htons(bbsnet_conf[n].port);

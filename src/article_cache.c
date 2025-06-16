@@ -14,6 +14,8 @@
  *                                                                         *
  ***************************************************************************/
 
+#define _POSIX_C_SOURCE 200809L
+
 #include "article_cache.h"
 #include "log.h"
 #include "lml.h"
@@ -24,9 +26,8 @@
 #include <unistd.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
-#include <strings.h>
-#define _POSIX_C_SOURCE 200809L
 #include <string.h>
+#include <time.h>
 
 #define ARTICLE_HEADER_MAX_LEN 4096
 #define ARTICLE_CONTENT_MAX_LEN 1024 * 1024 * 4 // 4MB
@@ -108,7 +109,7 @@ int article_cache_generate(const char *cache_dir, const ARTICLE *p_article, cons
 		return -2;
 	}
 
-	bzero(&cache, sizeof(cache));
+	memset(&cache, 0, sizeof(cache));
 
 	// Generate article header / footer
 	localtime_r(&(p_article->sub_dt), &tm_sub_dt);
@@ -256,7 +257,7 @@ int article_cache_load(ARTICLE_CACHE *p_cache, const char *cache_dir, const ARTI
 		return -3;
 	}
 
-	bzero(p_cache, sizeof(*p_cache));
+	memset(p_cache, 0, sizeof(*p_cache));
 	memcpy((void *)p_cache, p_mmap, (size_t)(((ARTICLE_CACHE *)p_mmap)->mmap_len - ((ARTICLE_CACHE *)p_mmap)->data_len));
 
 	p_cache->p_mmap = p_mmap;

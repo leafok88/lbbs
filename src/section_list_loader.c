@@ -14,6 +14,8 @@
  *                                                                         *
  ***************************************************************************/
 
+#define _POSIX_C_SOURCE 200809L
+
 #include "section_list_loader.h"
 #include "article_cache.h"
 #include "bbs.h"
@@ -25,11 +27,9 @@
 #include <errno.h>
 #include <signal.h>
 #include <stdlib.h>
+#include <string.h>
 #include <strings.h>
 #include <unistd.h>
-
-#define _POSIX_C_SOURCE 200809L
-#include <string.h>
 
 int section_list_loader_pid;
 int last_article_op_log_mid;
@@ -211,7 +211,7 @@ int append_articles_from_db(int32_t start_aid, int global_lock, int article_coun
 
 	while ((row = mysql_fetch_row(rs)))
 	{
-		bzero(&article, sizeof(ARTICLE));
+		memset(&article, 0, sizeof(ARTICLE));
 
 		// copy data of article
 		i = 0;

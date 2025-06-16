@@ -14,6 +14,8 @@
  *                                                                         *
  ***************************************************************************/
 
+#define _POSIX_C_SOURCE 200809L
+
 #include "bbs.h"
 #include "bbs_cmd.h"
 #include "user_priv.h"

@@ -20,7 +20,7 @@ lib_LTLIBRARIES = libbbs.la
 
 libbbs_la_SOURCES = bbs_net.c
 
-AM_CFLAGS = -Wall -Werror -Wno-unused-parameter -Wformat -Wconversion -Wdeprecated -finline-functions
+AM_CFLAGS = -std=c17 -Wall -Werror -Wno-unused-parameter -Wformat -Wconversion -Wdeprecated -finline-functions
 AM_CPPFLAGS = -I../include
 LIBS = -L/usr/lib64/mysql/ -lmysqlclient -lsystemd -lssh -lz -ldl
 

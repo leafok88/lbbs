@@ -14,6 +14,8 @@
  *                                                                         *
  ***************************************************************************/
 
+#define _POSIX_C_SOURCE 200809L
+
 #include "screen.h"
 #include "bbs.h"
 #include "common.h"
@@ -24,6 +26,7 @@
 #include "file_loader.h"
 #include <fcntl.h>
 #include <ctype.h>
+#include <string.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -31,9 +34,6 @@
 #include <sys/stat.h>
 #include <sys/param.h>
 #include <sys/shm.h>
-
-#define _POSIX_C_SOURCE 200809L
-#include <string.h>
 
 #define ACTIVE_BOARD_HEIGHT 8
 

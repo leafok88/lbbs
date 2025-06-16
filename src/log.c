@@ -14,16 +14,16 @@
  *                                                                         *
  ***************************************************************************/
 
+#define _POSIX_C_SOURCE 200809L
+
 #include "log.h"
 #include "io.h"
 #include "common.h"
 #include <stdarg.h>
-#include <sys/types.h>
+#include <string.h>
 #include <time.h>
 #include <unistd.h>
-
-#define _POSIX_C_SOURCE 200809L
-#include <string.h>
+#include <sys/types.h>
 
 #define STR_LOG_TIME_MAX_LEN 50
 

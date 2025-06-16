@@ -14,6 +14,8 @@
  *                                                                         *
  ***************************************************************************/
 
+#define _POSIX_C_SOURCE 200809L
+
 #include "editor.h"
 #include "bbs.h"
 #include "io.h"
@@ -24,8 +26,6 @@
 #include <stdlib.h>
 #include <sys/param.h>
 #include <strings.h>
-
-#define _POSIX_C_SOURCE 200809L
 #include <string.h>
 
 #define EDITOR_ESC_DISPLAY_STR "\033[32m*\033[m"
@@ -138,7 +138,7 @@ EDITOR_DATA *editor_data_load(const char *p_data)
 		p_data_line[current_data_line_length] = '\0';
 	}
 
-	bzero(p_editor_data->p_display_lines + p_editor_data->display_line_total, MAX_EDITOR_DATA_LINES - (size_t)p_editor_data->display_line_total);
+	memset(p_editor_data->p_display_lines + p_editor_data->display_line_total, 0, MAX_EDITOR_DATA_LINES - (size_t)p_editor_data->display_line_total);
 
 	return p_editor_data;
 }
