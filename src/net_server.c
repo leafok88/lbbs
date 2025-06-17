@@ -354,8 +354,6 @@ int net_server(const char *hostaddr, in_port_t port[])
 	{
 		if (SYS_server_exit && !sd_notify_stopping)
 		{
-			signal(SIGHUP, SIG_IGN);
-
 			sd_notify(0, "STOPPING=1");
 			sd_notify_stopping = 1;
 		}

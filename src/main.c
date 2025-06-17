@@ -14,6 +14,8 @@
  *                                                                         *
  ***************************************************************************/
 
+#define _POSIX_C_SOURCE 200809L
+
 #include "bbs.h"
 #include "init.h"
 #include "common.h"
@@ -58,6 +60,7 @@ int main(int argc, char *argv[])
 	FILE *fp;
 	int ret;
 	int last_aid;
+	struct sigaction act = {0};
 
 	// Parse args
 	for (int i = 1; i < argc; i++)
@@ -253,9 +256,24 @@ int main(int argc, char *argv[])
 	log_common("Initially load %d articles, last_aid = %d\n", article_block_article_count(), article_block_last_aid());
 
 	// Set signal handler
-	signal(SIGHUP, sig_hup_handler);
-	signal(SIGCHLD, sig_chld_handler);
-	signal(SIGTERM, sig_term_handler);
+	act.sa_handler = sig_hup_handler;
+	if (sigaction(SIGHUP, &act, NULL) == -1)
+	{
+		log_error("set signal action of SIGHUP error: %d\n", errno);
+		goto cleanup;
+	}
+	act.sa_handler = sig_chld_handler;
+	if (sigaction(SIGCHLD, &act, NULL) == -1)
+	{
+		log_error("set signal action of SIGCHLD error: %d\n", errno);
+		goto cleanup;
+	}
+	act.sa_handler = sig_term_handler;
+	if (sigaction(SIGTERM, &act, NULL) == -1)
+	{
+		log_error("set signal action of SIGTERM error: %d\n", errno);
+		goto cleanup;
+	}
 
 	// Launch section_list_loader process
 	if (section_list_loader_launch() < 0)
