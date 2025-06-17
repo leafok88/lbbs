@@ -682,7 +682,7 @@ int section_list_loader_launch(void)
 			}
 			else
 			{
-				log_error("Reload section config successfully\n");
+				log_common("Reload section config successfully\n");
 			}
 		}
 
