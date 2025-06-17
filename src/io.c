@@ -353,10 +353,12 @@ int igetch(int timeout)
 		}
 
 		// For debug
-		// for (int j = pos; j < len; j++)
-		// {
-		// 	log_common("Debug: <--[%u]\n", (buf[j] + 256) % 256);
-		// }
+#ifdef _DEBUG
+		for (int j = pos; j < len; j++)
+		{
+			log_common("Debug: <--[%u]\n", (buf[j] + 256) % 256);
+		}
+#endif
 	}
 
 	fcntl(STDIN_FILENO, F_SETFL, flags);
@@ -811,10 +813,12 @@ int igetch(int timeout)
 	}
 
 	// for debug
-	// if (out != KEY_TIMEOUT && out != KEY_NULL)
-	// {
-	// 	log_common("Debug: -->[0x %x]\n", out);
-	// }
+#ifdef _DEBUG
+	if (out != KEY_TIMEOUT && out != KEY_NULL)
+	{
+		log_common("Debug: -->[0x %x]\n", out);
+	}
+#endif
 
 	return out;
 }

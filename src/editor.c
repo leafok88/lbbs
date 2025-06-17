@@ -279,8 +279,11 @@ int editor_data_insert(EDITOR_DATA *p_editor_data, long *p_display_line, long *p
 	{
 		if (p_editor_data->display_line_total >= MAX_EDITOR_DATA_LINES)
 		{
-			// log_error("Split line error, display_line_total(%ld) reach limit(%d)\n",
-			// 		  p_editor_data->display_line_total, MAX_EDITOR_DATA_LINES);
+#ifdef _DEBUG
+			log_error("Split line error, display_line_total(%ld) reach limit(%d)\n",
+					  p_editor_data->display_line_total, MAX_EDITOR_DATA_LINES);
+#endif
+
 			return -2;
 		}
 
@@ -369,7 +372,10 @@ int editor_data_insert(EDITOR_DATA *p_editor_data, long *p_display_line, long *p
 			// Insert blank display line after last_display_line
 			if (p_editor_data->display_line_total >= MAX_EDITOR_DATA_LINES)
 			{
-				// log_error("display_line_total over limit %d >= %d\n", p_editor_data->display_line_total, MAX_EDITOR_DATA_LINES);
+#ifdef _DEBUG
+				log_error("display_line_total over limit %d >= %d\n", p_editor_data->display_line_total, MAX_EDITOR_DATA_LINES);
+#endif
+
 				// Terminate prior display line with \n, to avoid error on cleanup
 				if (display_line + i - 1 >= 0 && p_editor_data->display_line_lengths[display_line + i - 1] > 0)
 				{
