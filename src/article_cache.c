@@ -14,8 +14,6 @@
  *                                                                         *
  ***************************************************************************/
 
-#define _POSIX_C_SOURCE 200809L
-
 #include "article_cache.h"
 #include "log.h"
 #include "lml.h"

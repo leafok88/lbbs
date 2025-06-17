@@ -14,8 +14,6 @@
  *                                                                         *
  ***************************************************************************/
 
-#define _POSIX_C_SOURCE 200112L
-
 #include "common.h"
 #include "log.h"
 #include "menu.h"

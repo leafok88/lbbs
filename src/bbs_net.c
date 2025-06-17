@@ -14,8 +14,6 @@
  *                                                                         *
  ***************************************************************************/
 
-#define _POSIX_C_SOURCE 200809L
-
 #include "bbs.h"
 #include "common.h"
 #include "log.h"

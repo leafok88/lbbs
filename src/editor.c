@@ -14,8 +14,6 @@
  *                                                                         *
  ***************************************************************************/
 
-#define _POSIX_C_SOURCE 200809L
-
 #include "editor.h"
 #include "bbs.h"
 #include "io.h"

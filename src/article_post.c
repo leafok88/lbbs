@@ -14,8 +14,6 @@
  *                                                                         *
  ***************************************************************************/
 
-#define _POSIX_C_SOURCE 200809L
-
 #include "article_post.h"
 #include "article_cache.h"
 #include "editor.h"

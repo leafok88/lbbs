@@ -14,8 +14,6 @@
  *                                                                         *
  ***************************************************************************/
 
-#define _POSIX_C_SOURCE 200112L
-
 #include "login.h"
 #include "bbs.h"
 #include "user_priv.h"

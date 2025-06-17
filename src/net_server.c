@@ -14,10 +14,6 @@
  *                                                                         *
  ***************************************************************************/
 
-#define _XOPEN_SOURCE 500
-#define _POSIX_C_SOURCE 200809L
-#define _GNU_SOURCE
-
 #include "net_server.h"
 #include "common.h"
 #include "bbs_main.h"
@@ -36,16 +32,17 @@
 #include <signal.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <sys/syscall.h>
-#include <sys/socket.h>
-#include <sys/wait.h>
-#include <sys/epoll.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
-#include <systemd/sd-daemon.h>
 #include <libssh/libssh.h>
 #include <libssh/server.h>
 #include <libssh/callbacks.h>
+#include <sys/epoll.h>
+#include <sys/syscall.h>
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <systemd/sd-daemon.h>
 
 struct process_sockaddr_t
 {

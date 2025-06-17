@@ -8,6 +8,7 @@ AC_CONFIG_SRCDIR([src/])
 AC_CONFIG_MACRO_DIRS([m4])
 AM_INIT_AUTOMAKE([foreign])
 
+AC_USE_SYSTEM_EXTENSIONS
 # Checks for programs.
 AC_PROG_GCC_TRADITIONAL
 LT_INIT
@@ -23,8 +24,13 @@ AC_CHECK_LIB([mysqlclient], [mysql_connect])
 AC_CHECK_LIB([z], [unzip])
 AC_CHECK_LIB([ssh], [ssh_init])
 
+AC_HEADER_STAT
+AC_CHECK_INCLUDES_DEFAULT
+AC_PROG_EGREP
+
+AC_HEADER_RESOLV
 AC_HEADER_SYS_WAIT
-AC_CHECK_HEADERS([arpa/inet.h dflcn.h fcntl.h libssh/libssh.h libssh/server.h memory.h mysql/mysql.h netdb.h netinet/in.h signal.h \
+AC_CHECK_HEADERS([arpa/inet.h dflcn.h fcntl.h libssh/libssh.h libssh/server.h memory.h mysql/mysql.h net/if.h netdb.h netinet/in.h signal.h \
 					stdint.h stdlib.h string.h strings.h sys/epoll.h sys/ioctl.h sys/ipc.h sys/mman.h sys/param.h sys/socket.h \
 					sys/time.h sys/types.h sys/sem.h sys/shm.h sys/stat.h sys/syscall.h sys/wait.h systemd/sd-daemon.h unistd.h])
 
@@ -39,6 +45,8 @@ AC_STRUCT_TM
 AC_FUNC_FORK
 AC_FUNC_MALLOC
 AC_FUNC_SELECT_ARGTYPES
+AC_FUNC_MMAP
+AC_FUNC_MKTIME
 
 AC_DEFINE_UNQUOTED([RETSIGTYPE],[$ac_cv_type_signal],[Define as the return type of signal handlers
 		    (`int' or `void').])

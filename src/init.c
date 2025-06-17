@@ -14,8 +14,6 @@
  *                                                                         *
  ***************************************************************************/
 
-#define _POSIX_C_SOURCE 200809L
-
 #include "init.h"
 #include "database.h"
 #include "bbs.h"
