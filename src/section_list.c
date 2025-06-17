@@ -14,8 +14,6 @@
  *                                                                         *
  ***************************************************************************/
 
-#define _GNU_SOURCE
-
 #include "section_list.h"
 #include "log.h"
 #include "trie_dict.h"

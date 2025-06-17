@@ -14,8 +14,6 @@
  *                                                                         *
  ***************************************************************************/
 
-#define _POSIX_C_SOURCE 200809L
-
 #include "section_list_display.h"
 #include "section_list_loader.h"
 #include "article_cache.h"

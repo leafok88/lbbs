@@ -2,8 +2,6 @@
 
 /* Writed by Birdman From 140.116.102.125 ´´ÒâÍÛ¹þ¹þ*/
 
-#define _POSIX_C_SOURCE 200112L
-
 #include "bbs.h"
 #include "common.h"
 #include "io.h"
