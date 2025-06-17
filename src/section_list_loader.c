@@ -847,14 +847,14 @@ int query_section_articles(SECTION_LIST *p_section, int page_id, ARTICLE *p_arti
 	return ret;
 }
 
-int locate_article_in_section(SECTION_LIST *p_section, const ARTICLE *p_article_cur, int direction,
+int locate_article_in_section(SECTION_LIST *p_section, const ARTICLE *p_article_cur, int direction, int step,
 							  int *p_page_id, int *p_visible_offset, int *p_article_count)
 {
 	const ARTICLE *p_article = NULL;
 	ARTICLE *p_tmp;
 	int32_t aid = 0;
-	int page_id;
-	int offset;
+	int page_id = 0;
+	int offset = 0;
 	int ret = 0;
 	int i;
 
@@ -877,21 +877,25 @@ int locate_article_in_section(SECTION_LIST *p_section, const ARTICLE *p_article_
 	}
 	else if (direction == 1)
 	{
-		p_article = p_article_cur;
-		do
+		for (p_article = p_article_cur; step > 0 && p_article->p_topic_next->aid > p_article_cur->aid; p_article = p_article->p_topic_next)
 		{
-			p_article = p_article->p_topic_next;
-		} while (p_article != p_article_cur && p_article->visible == 0);
+			if (p_article->visible)
+			{
+				step--;
+			}
+		}
 
 		aid = (p_article->aid > p_article_cur->aid ? p_article->aid : 0);
 	}
 	else if (direction == -1)
 	{
-		p_article = p_article_cur;
-		do
+		for (p_article = p_article_cur; step > 0 && p_article->p_topic_prior->aid < p_article_cur->aid; p_article = p_article->p_topic_prior)
 		{
-			p_article = p_article->p_topic_prior;
-		} while (p_article != p_article_cur && p_article->visible == 0);
+			if (p_article->visible)
+			{
+				step--;
+			}
+		}
 
 		aid = (p_article->aid < p_article_cur->aid ? p_article->aid : 0);
 	}

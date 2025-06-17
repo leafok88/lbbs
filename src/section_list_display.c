@@ -45,6 +45,8 @@ enum select_cmd_t
 	POST_ARTICLE = 5,
 	EDIT_ARTICLE = 6,
 	DELETE_ARTICLE = 7,
+	FIRST_TOPIC_ARTICLE = 8,
+	LAST_TOPIC_ARTICLE = 9,
 };
 
 static int section_list_draw_items(int page_id, ARTICLE *p_articles[], int article_count, int display_nickname)
@@ -260,6 +262,10 @@ static enum select_cmd_t section_list_select(int total_page, int item_count, int
 				(*p_selected_index)++;
 			}
 			break;
+		case '=':
+			return FIRST_TOPIC_ARTICLE;
+		case '\\':
+			return LAST_TOPIC_ARTICLE;
 		case 'h':
 			return SHOW_HELP;
 		default:
@@ -322,6 +328,10 @@ static int display_article_key_handler(int *p_key, DISPLAY_CTX *p_ctx)
 		*p_key = 0;
 		break;
 	case 'r': // Reply article
+		return 1;
+	case '=': // First topic article
+		return 1;
+	case '\\': // Last topic article
 		return 1;
 	case KEY_UP:
 	case KEY_PGUP:
@@ -398,6 +408,7 @@ int section_list_display(const char *sname)
 	int loop;
 	int direction;
 	ARTICLE article_new;
+	int page_id_cur;
 
 	p_section = section_list_find_by_name(sname);
 	if (p_section == NULL)
@@ -571,14 +582,15 @@ int section_list_display(const char *sname)
 				case KEY_PGUP:
 				case KEY_PGDN:
 					direction = (ret == KEY_PGUP ? -1 : 1);
-					ret = locate_article_in_section(p_section, p_articles[selected_index], direction, &page_id, &selected_index, &page_count);
+					ret = locate_article_in_section(p_section, p_articles[selected_index], direction, 1,
+													&page_id, &selected_index, &article_count);
 					if (ret < 0)
 					{
-						log_error("locate_article_in_section(sid=%d, aid=%d, direction=%d) error\n",
+						log_error("locate_article_in_section(sid=%d, aid=%d, direction=%d, step=1) error\n",
 								  p_section->sid, p_articles[selected_index]->aid, direction);
 						return -3;
 					}
-					else if (ret > 0)
+					else if (ret > 0) // found
 					{
 						ret = query_section_articles(p_section, page_id, p_articles, &article_count, &page_count);
 						if (ret < 0)
@@ -595,6 +607,32 @@ int section_list_display(const char *sname)
 						log_error("article_post(aid=%d, REPLY) error\n", p_articles[selected_index]->aid);
 					}
 					loop = 1;
+					break;
+				case '=':  // First topic article
+				case '\\': // Last topic article
+					page_id_cur = page_id;
+					direction = (ret == '=' ? -1 : 1);
+					ret = locate_article_in_section(p_section, p_articles[selected_index], direction, BBS_article_limit_per_section,
+													&page_id, &selected_index, &article_count);
+					if (ret < 0)
+					{
+						log_error("locate_article_in_section(sid=%d, aid=%d, direction=%d, step=%d) error\n",
+								  p_section->sid, p_articles[selected_index]->aid, direction, BBS_article_limit_per_section);
+						return -3;
+					}
+					else if (ret > 0) // found
+					{
+						if (page_id != page_id_cur) // page changed
+						{
+							ret = query_section_articles(p_section, page_id, p_articles, &article_count, &page_count);
+							if (ret < 0)
+							{
+								log_error("query_section_articles(sid=%d, page_id=%d) error\n", p_section->sid, page_id);
+								return -3;
+							}
+						}
+						loop = 1;
+					}
 					break;
 				}
 			} while (loop);
@@ -668,6 +706,28 @@ int section_list_display(const char *sname)
 			{
 				log_error("section_list_draw_screen() error\n");
 				return -2;
+			}
+			break;
+		case FIRST_TOPIC_ARTICLE:
+		case LAST_TOPIC_ARTICLE:
+			page_id_cur = page_id;
+			direction = (ret == FIRST_TOPIC_ARTICLE ? -1 : 1);
+			ret = locate_article_in_section(p_section, p_articles[selected_index], direction, BBS_article_limit_per_section,
+											&page_id, &selected_index, &article_count);
+			if (ret < 0)
+			{
+				log_error("locate_article_in_section(sid=%d, aid=%d, direction=%d, step=%d) error\n",
+						  p_section->sid, p_articles[selected_index]->aid, direction, BBS_article_limit_per_section);
+				return -3;
+			}
+			else if (ret > 0 && page_id != page_id_cur) // found and page changed
+			{
+				ret = query_section_articles(p_section, page_id, p_articles, &article_count, &page_count);
+				if (ret < 0)
+				{
+					log_error("query_section_articles(sid=%d, page_id=%d) error\n", p_section->sid, page_id);
+					return -3;
+				}
 			}
 			break;
 		case SHOW_HELP:

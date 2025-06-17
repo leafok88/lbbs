@@ -56,7 +56,7 @@ extern int query_section_articles(SECTION_LIST *p_section, int page_id, ARTICLE 
 // Return on success : found (1)
 //                   : not found (0)
 //           failure : error number (< 0)
-extern int locate_article_in_section(SECTION_LIST *p_section, const ARTICLE *p_article_cur, int direction,
+extern int locate_article_in_section(SECTION_LIST *p_section, const ARTICLE *p_article_cur, int direction, int step,
 									 int *p_page_id, int *p_visible_offset, int *p_article_count);
 
 #endif //_SECTION_LIST_LOADER_H_
