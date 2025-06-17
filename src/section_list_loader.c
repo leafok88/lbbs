@@ -885,7 +885,7 @@ int locate_article_in_section(SECTION_LIST *p_section, const ARTICLE *p_article_
 			}
 		}
 
-		aid = (p_article->aid > p_article_cur->aid ? p_article->aid : 0);
+		aid = (p_article->aid > p_article_cur->aid && p_article->visible ? p_article->aid : 0);
 	}
 	else if (direction == -1)
 	{
@@ -897,7 +897,7 @@ int locate_article_in_section(SECTION_LIST *p_section, const ARTICLE *p_article_
 			}
 		}
 
-		aid = (p_article->aid < p_article_cur->aid ? p_article->aid : 0);
+		aid = (p_article->aid < p_article_cur->aid && p_article->visible ? p_article->aid : 0);
 	}
 
 	p_article = NULL;
@@ -910,7 +910,7 @@ int locate_article_in_section(SECTION_LIST *p_section, const ARTICLE *p_article_
 			*p_article_count = (page_id == p_section->page_count - 1 ? p_section->last_page_visible_article_count : BBS_article_limit_per_page);
 
 			p_article = p_section->p_page_first_article[page_id];
-			for (i = 0; i < *p_article_count;)
+			for (i = 0; i < *p_article_count && p_article != NULL;)
 			{
 				if (p_article->visible)
 				{
@@ -925,6 +925,7 @@ int locate_article_in_section(SECTION_LIST *p_section, const ARTICLE *p_article_
 					{
 						log_error("Visible article (aid=%d) not found in page %d\n", aid, page_id);
 						p_article = NULL;
+						break;
 					}
 				}
 				p_article = p_article->p_next;
