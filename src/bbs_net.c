@@ -408,7 +408,7 @@ int bbsnet_connect(int n)
 		goto cleanup;
 	}
 
-	BBS_last_access_tm = t_used = time(0);
+	BBS_last_access_tm = t_used = time(NULL);
 	loop = 1;
 
 	while (loop && !SYS_server_exit)
@@ -433,7 +433,7 @@ int bbsnet_connect(int n)
 		}
 		else if (nfds == 0) // timeout
 		{
-			if (time(0) - BBS_last_access_tm >= MAX_DELAY_TIME)
+			if (time(NULL) - BBS_last_access_tm >= MAX_DELAY_TIME)
 			{
 				break;
 			}
@@ -500,7 +500,7 @@ int bbsnet_connect(int n)
 					else
 					{
 						input_buf_len += ret;
-						BBS_last_access_tm = time(0);
+						BBS_last_access_tm = time(NULL);
 						continue;
 					}
 				}
@@ -668,7 +668,7 @@ cleanup:
 		log_error("Close socket failed\n");
 	}
 
-	t_used = time(0) - t_used;
+	t_used = time(NULL) - t_used;
 	tm_used = gmtime(&t_used);
 
 	log_common("BBSNET disconnect, %d days %d hours %d minutes %d seconds used\n",
@@ -734,7 +734,7 @@ int bbs_net()
 
 	load_bbsnet_conf(CONF_BBSNET);
 
-	BBS_last_access_tm = time(0);
+	BBS_last_access_tm = time(NULL);
 
 	clearscr();
 	bbsnet_refresh();
@@ -751,7 +751,7 @@ int bbs_net()
 		case Ctrl('C'): // user cancel
 			goto cleanup;
 		case KEY_TIMEOUT:
-			if (time(0) - BBS_last_access_tm >= MAX_DELAY_TIME)
+			if (time(NULL) - BBS_last_access_tm >= MAX_DELAY_TIME)
 			{
 				goto cleanup;
 			}
@@ -800,7 +800,7 @@ int bbs_net()
 			bbsnet_selchange();
 			break;
 		}
-		BBS_last_access_tm = time(0);
+		BBS_last_access_tm = time(NULL);
 	}
 
 cleanup:

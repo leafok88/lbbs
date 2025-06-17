@@ -822,12 +822,12 @@ int igetch(int timeout)
 int igetch_t(int sec)
 {
 	int ch;
-	time_t t_begin = time(0);
+	time_t t_begin = time(NULL);
 
 	do
 	{
 		ch = igetch(100);
-	} while (!SYS_server_exit && ch == KEY_TIMEOUT && (time(0) - t_begin < sec));
+	} while (!SYS_server_exit && ch == KEY_TIMEOUT && (time(NULL) - t_begin < sec));
 
 	return ch;
 }

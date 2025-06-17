@@ -1,7 +1,7 @@
 EXTRA_DIST = makedist.sh
 SUBDIRS=game
 
-AM_CFLAGS = -Wall -Werror -Wno-unused-parameter -Wformat -Wconversion -Wdeprecated -finline-functions
+AM_CFLAGS = -std=c17 -Wall -Werror -Wno-unused-parameter -Wformat -Wconversion -Wdeprecated -finline-functions
 
 CLEANFILES=@EXTRA_CLEAN@
 

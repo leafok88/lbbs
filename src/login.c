@@ -350,7 +350,7 @@ int check_user(const char *username, const char *password)
 		goto cleanup;
 	}
 
-	BBS_last_access_tm = BBS_login_tm = time(0);
+	BBS_last_access_tm = BBS_login_tm = time(NULL);
 
 	// Set user tz to process env
 	if (BBS_user_tz[0] != '\0')
@@ -422,7 +422,7 @@ int load_user_info(MYSQL *db, int BBS_uid)
 	rs = NULL;
 
 	if (life != 333 && life != 365 && life != 666 && life != 999 && // Not immortal
-		time(0) - last_login_dt > 60 * 60 * 24 * life)
+		time(NULL) - last_login_dt > 60 * 60 * 24 * life)
 	{
 		ret = -3; // Dead
 		goto cleanup;
@@ -472,7 +472,7 @@ int load_guest_info(void)
 		goto cleanup;
 	}
 
-	BBS_last_access_tm = BBS_login_tm = time(0);
+	BBS_last_access_tm = BBS_login_tm = time(NULL);
 
 cleanup:
 	mysql_close(db);

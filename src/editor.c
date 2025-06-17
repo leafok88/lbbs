@@ -708,7 +708,7 @@ int editor_display(EDITOR_DATA *p_editor_data)
 				if ((ch >= 32 && ch < 127) || (ch > 127 && ch <= 255 && str_len == 2) || // Printable character or GBK
 					ch == CR || ch == KEY_ESC)											 // Special character
 				{
-					BBS_last_access_tm = time(0);
+					BBS_last_access_tm = time(NULL);
 
 					if (str_len == 0) // ch >= 32 && ch < 127
 					{
@@ -784,7 +784,7 @@ int editor_display(EDITOR_DATA *p_editor_data)
 				}
 				else if (ch == KEY_DEL || ch == BACKSPACE) // Del
 				{
-					BBS_last_access_tm = time(0);
+					BBS_last_access_tm = time(NULL);
 
 					if (ch == BACKSPACE)
 					{
@@ -1061,7 +1061,7 @@ int editor_display(EDITOR_DATA *p_editor_data)
 					break;
 				}
 
-				BBS_last_access_tm = time(0);
+				BBS_last_access_tm = time(NULL);
 
 				if (input_ok)
 				{

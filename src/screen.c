@@ -431,7 +431,7 @@ int display_data(const void *p_data, long display_line_total, const long *p_line
 					break;
 				}
 
-				BBS_last_access_tm = time(0);
+				BBS_last_access_tm = time(NULL);
 			}
 
 			continue;
@@ -565,7 +565,7 @@ int show_bottom(const char *msg)
 
 	len_username = (int)strnlen(BBS_username, sizeof(BBS_username));
 
-	time_online = time(0) - BBS_login_tm;
+	time_online = time(NULL) - BBS_login_tm;
 	tm_online = gmtime(&time_online);
 	if (tm_online->tm_mday > 1)
 	{
@@ -612,10 +612,10 @@ int show_active_board()
 		}
 	}
 
-	if (time(0) - t_last_show >= 10)
+	if (time(NULL) - t_last_show >= 10)
 	{
 		line_last = line_current;
-		t_last_show = time(0);
+		t_last_show = time(NULL);
 	}
 	else
 	{

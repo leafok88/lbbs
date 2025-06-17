@@ -197,7 +197,7 @@ int bbs_center()
 	int ch;
 	time_t t_last_action;
 
-	BBS_last_access_tm = t_last_action = time(0);
+	BBS_last_access_tm = t_last_action = time(NULL);
 
 	clearscr();
 
@@ -211,9 +211,9 @@ int bbs_center()
 	{
 		ch = igetch(100);
 
-		if (p_bbs_menu->choose_step == 0 && time(0) - t_last_action >= 10)
+		if (p_bbs_menu->choose_step == 0 && time(NULL) - t_last_action >= 10)
 		{
-			t_last_action = time(0);
+			t_last_action = time(NULL);
 
 			show_active_board();
 			show_bottom("");
@@ -226,7 +226,7 @@ int bbs_center()
 		case KEY_NULL: // broken pipe
 			return 0;
 		case KEY_TIMEOUT:
-			if (time(0) - BBS_last_access_tm >= MAX_DELAY_TIME)
+			if (time(NULL) - BBS_last_access_tm >= MAX_DELAY_TIME)
 			{
 				return 0;
 			}
@@ -239,7 +239,7 @@ int bbs_center()
 			case EXITBBS:
 				return 0;
 			case REDRAW:
-				t_last_action = time(0);
+				t_last_action = time(NULL);
 				clearscr();
 				show_top("", BBS_name, "");
 				show_active_board();
@@ -254,7 +254,7 @@ int bbs_center()
 			iflush();
 		}
 
-		BBS_last_access_tm = time(0);
+		BBS_last_access_tm = time(NULL);
 	}
 
 	return 0;

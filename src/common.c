@@ -89,12 +89,7 @@ void sig_hup_handler(int i)
 
 void sig_term_handler(int i)
 {
-	struct sigaction act = {0};
-
 	SYS_server_exit = 1;
-
-	act.sa_handler = SIG_IGN;
-	sigaction(SIGTERM, &act, NULL);
 }
 
 void sig_chld_handler(int i)
