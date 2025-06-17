@@ -40,12 +40,11 @@ enum select_cmd_t
 	EXIT_SECTION = 0,
 	VIEW_ARTICLE = 1,
 	CHANGE_PAGE = 2,
-	REFRESH_SCREEN = 3,
+	SHOW_HELP = 3,
 	CHANGE_NAME_DISPLAY = 4,
 	POST_ARTICLE = 5,
 	EDIT_ARTICLE = 6,
 	DELETE_ARTICLE = 7,
-	SHOW_HELP = 8,
 };
 
 static int section_list_draw_items(int page_id, ARTICLE *p_articles[], int article_count, int display_nickname)
@@ -165,8 +164,7 @@ static enum select_cmd_t section_list_select(int total_page, int item_count, int
 	int old_page_id = *p_page_id;
 	int old_selected_index = *p_selected_index;
 	int ch;
-
-	BBS_last_access_tm = time(0);
+	time_t last_refresh_tm = time(NULL);
 
 	if (item_count > 0 && *p_selected_index >= 0)
 	{
@@ -181,17 +179,19 @@ static enum select_cmd_t section_list_select(int total_page, int item_count, int
 
 		switch (ch)
 		{
-		case KEY_NULL: // broken pipe
 		case KEY_ESC:
 		case KEY_LEFT:
+			BBS_last_access_tm = time(NULL);
+		case KEY_NULL:			 // broken pipe
 			return EXIT_SECTION; // exit section
 		case KEY_TIMEOUT:
-			if (time(0) - BBS_last_access_tm >= MAX_DELAY_TIME)
+			if (time(NULL) - BBS_last_access_tm >= MAX_DELAY_TIME)
 			{
 				return EXIT_SECTION; // exit section
 			}
 			continue;
 		case 'n':
+			BBS_last_access_tm = time(NULL);
 			return CHANGE_NAME_DISPLAY;
 		case CR:
 			igetch_reset();
@@ -199,6 +199,7 @@ static enum select_cmd_t section_list_select(int total_page, int item_count, int
 		case KEY_RIGHT:
 			if (item_count > 0)
 			{
+				BBS_last_access_tm = time(NULL);
 				return VIEW_ARTICLE;
 			}
 			break;
@@ -286,7 +287,11 @@ static enum select_cmd_t section_list_select(int total_page, int item_count, int
 			old_selected_index = *p_selected_index;
 		}
 
-		BBS_last_access_tm = time(0);
+		BBS_last_access_tm = time(NULL);
+		if (BBS_last_access_tm - last_refresh_tm >= BBS_section_list_load_interval)
+		{
+			return CHANGE_PAGE; // force section list refresh
+		}
 	}
 
 	return EXIT_SECTION;
@@ -596,13 +601,6 @@ int section_list_display(const char *sname)
 
 			// Update current topic
 			section_topic_view_tid = (p_articles[selected_index]->tid == 0 ? p_articles[selected_index]->aid : p_articles[selected_index]->tid);
-		case REFRESH_SCREEN:
-			if (section_list_draw_screen(sname, stitle, master_list, display_nickname) < 0)
-			{
-				log_error("section_list_draw_screen() error\n");
-				return -2;
-			}
-			break;
 		case CHANGE_NAME_DISPLAY:
 			display_nickname = !display_nickname;
 			if (section_list_draw_screen(sname, stitle, master_list, display_nickname) < 0)
@@ -612,8 +610,7 @@ int section_list_display(const char *sname)
 			}
 			break;
 		case POST_ARTICLE:
-			ret = article_post(p_section, &article_new);
-			if (ret < 0)
+			if ((ret = article_post(p_section, &article_new)) < 0)
 			{
 				log_error("article_post(sid=%d) error\n", p_section->sid);
 			}
@@ -654,9 +651,18 @@ int section_list_display(const char *sname)
 			{
 				break; // No permission
 			}
-			if (article_del(p_section, p_articles[selected_index]) < 0)
+			if ((ret = article_del(p_section, p_articles[selected_index])) < 0)
 			{
 				log_error("article_del(aid=%d) error\n", p_articles[selected_index]->aid);
+			}
+			else if (ret > 0) // Article deleted
+			{
+				ret = query_section_articles(p_section, page_id, p_articles, &article_count, &page_count);
+				if (ret < 0)
+				{
+					log_error("query_section_articles(sid=%d, page_id=%d) error\n", p_section->sid, page_id);
+					return -3;
+				}
 			}
 			if (section_list_draw_screen(sname, stitle, master_list, display_nickname) < 0)
 			{
