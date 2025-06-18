@@ -176,7 +176,9 @@ int iflush(void)
 						}
 						else
 						{
+#ifdef _DEBUG
 							log_error("write(STDOUT) error (%d)\n", errno);
+#endif
 							retry = 0;
 							break;
 						}
@@ -333,7 +335,9 @@ int igetch(int timeout)
 						}
 						else
 						{
+#ifdef _DEBUG
 							log_error("read(STDIN) error (%d)\n", errno);
+#endif
 							loop = 0;
 							break;
 						}
