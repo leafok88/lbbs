@@ -79,7 +79,7 @@ int main(int argc, char *argv[])
 						app_help();
 						return 0;
 					case 'v':
-						puts(APP_NAME_VER);
+						puts(APP_INFO);
 						return 0;
 					default:
 						arg_error();
@@ -101,7 +101,7 @@ int main(int argc, char *argv[])
 				}
 				if (strcmp(argv[i] + 2, "version") == 0)
 				{
-					puts(APP_NAME_VER);
+					puts(APP_INFO);
 					return 0;
 				}
 				if (strcmp(argv[i] + 2, "display-log") == 0)
@@ -145,7 +145,7 @@ int main(int argc, char *argv[])
 		log_error_redir(STDERR_FILENO);
 	}
 
-	log_common("BBS Server (%s) is staring...\n", APP_NAME_VER);
+	log_common("Starting %s\n", APP_INFO);
 
 	// Load configuration
 	if (load_conf(CONF_BBSD) < 0)
