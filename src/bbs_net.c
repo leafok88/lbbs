@@ -576,7 +576,9 @@ int bbsnet_connect(int n)
 					}
 					else if (ret == 0) // broken pipe
 					{
-						log_common("read(socket) EOF\n");
+#ifdef _DEBUG
+						log_error("read(socket) EOF\n");
+#endif
 						sock_read_wait = 0;
 						loop = 0;
 						break;
@@ -628,7 +630,9 @@ int bbsnet_connect(int n)
 					}
 					else if (ret == 0) // broken pipe
 					{
-						log_common("write(STDOUT) EOF\n");
+#ifdef _DEBUG
+						log_error("write(STDOUT) EOF\n");
+#endif
 						stdout_write_wait = 0;
 						loop = 0;
 						break;
