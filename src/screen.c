@@ -22,6 +22,7 @@
 #include "io.h"
 #include "editor.h"
 #include "file_loader.h"
+#include "login.h"
 #include <fcntl.h>
 #include <ctype.h>
 #include <string.h>
@@ -491,6 +492,11 @@ int display_file(const char *filename, int eof_exit)
 	{
 		log_error("get_file_shm(%s) error\n", filename);
 		return KEY_NULL;
+	}
+
+	if (user_online_update("VIEW_FILE") < 0)
+	{
+		log_error("user_online_update(VIEW_FILE) error\n");
 	}
 
 	ret = display_data(p_data, line_total, p_line_offsets, eof_exit, display_file_key_handler, DATA_READ_HELP);

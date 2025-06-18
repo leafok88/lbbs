@@ -59,7 +59,9 @@ extern int BBS_user_exp;
 extern time_t BBS_login_tm;
 extern time_t BBS_last_access_tm;
 
-extern char BBS_current_section_name[BBS_section_name_max_len + 1];
+#define BBS_current_action_max_len 20
+
+extern char BBS_current_action[BBS_current_action_max_len + 1];
 
 extern char *setuserfile(char *buf, size_t len, const char *filename);
 

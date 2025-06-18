@@ -26,6 +26,7 @@
 #include "user_priv.h"
 #include "article_view_log.h"
 #include "str_process.h"
+#include "login.h"
 #include <string.h>
 #include <time.h>
 #include <sys/param.h>
@@ -466,6 +467,11 @@ int section_list_display(const char *sname)
 		show_bottom(page_info_str);
 		iflush();
 
+		if (user_online_update(sname) < 0)
+		{
+			log_error("user_online_update(%s) error\n", sname);
+		}
+
 		ret = section_list_select(page_count, article_count, &page_id, &selected_index);
 		switch (ret)
 		{
@@ -496,6 +502,11 @@ int section_list_display(const char *sname)
 				{
 					log_error("article_cache_load(aid=%d, cid=%d) error\n", p_articles[selected_index]->aid, p_articles[selected_index]->cid);
 					break;
+				}
+
+				if (user_online_update("VIEW_ARTICLE") < 0)
+				{
+					log_error("user_online_update(VIEW_ARTICLE) error\n");
 				}
 
 				ret = display_data(cache.p_data, cache.line_total, cache.line_offsets, 0,
@@ -600,9 +611,14 @@ int section_list_display(const char *sname)
 					}
 					break;
 				case 'r': // Reply article
+					if (user_online_update("REPLY_ARTICLE") < 0)
+					{
+						log_error("user_online_update(REPLY_ARTICLE) error\n");
+					}
+
 					if (article_reply(p_section, p_articles[selected_index], &article_new) < 0)
 					{
-						log_error("article_post(aid=%d, REPLY) error\n", p_articles[selected_index]->aid);
+						log_error("article_reply(aid=%d) error\n", p_articles[selected_index]->aid);
 					}
 					loop = 1;
 					break;
@@ -646,6 +662,11 @@ int section_list_display(const char *sname)
 			}
 			break;
 		case POST_ARTICLE:
+			if (user_online_update("POST_ARTICLE") < 0)
+			{
+				log_error("user_online_update(POST_ARTICLE) error\n");
+			}
+
 			if ((ret = article_post(p_section, &article_new)) < 0)
 			{
 				log_error("article_post(sid=%d) error\n", p_section->sid);
@@ -671,6 +692,12 @@ int section_list_display(const char *sname)
 			{
 				break; // No permission
 			}
+
+			if (user_online_update("EDIT_ARTICLE") < 0)
+			{
+				log_error("user_online_update() error\n");
+			}
+
 			if (article_modify(p_section, p_articles[selected_index], &article_new) < 0)
 			{
 				log_error("article_modify(aid=%d) error\n", p_articles[selected_index]->aid);

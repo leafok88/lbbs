@@ -515,3 +515,38 @@ int user_online_del(MYSQL *db)
 
 	return 0;
 }
+
+int user_online_update(const char *action)
+{
+	MYSQL *db = NULL;
+	char sql[SQL_BUFFER_LEN];
+
+	if (strcmp(BBS_current_action, action) == 0) // No change
+	{
+		return 0;
+	}
+
+	strncpy(BBS_current_action, action, sizeof(BBS_current_action) - 1);
+	BBS_current_action[sizeof(BBS_current_action) - 1] = '\0';
+
+	db = db_open();
+	if (db == NULL)
+	{
+		log_error("db_open() error: %s\n", mysql_error(db));
+		return -1;
+	}
+
+	snprintf(sql, sizeof(sql),
+			 "UPDATE user_online SET current_action = '%s', last_tm=NOW() "
+			 "WHERE SID = 'Telnet_Process_%d'",
+			 BBS_current_action, getpid());
+	if (mysql_query(db, sql) != 0)
+	{
+		log_error("Update user_online error: %s\n", mysql_error(db));
+		return -2;
+	}
+
+	mysql_close(db);
+
+	return 1;
+}

@@ -221,6 +221,11 @@ int bbs_center()
 			iflush();
 		}
 
+		if (user_online_update("MENU") < 0)
+		{
+			log_error("user_online_update(MENU) error\n");
+		}
+
 		switch (ch)
 		{
 		case KEY_NULL: // broken pipe
@@ -342,7 +347,7 @@ int bbs_main()
 cleanup:
 	// Cleanup editor memory pool
 	editor_memory_pool_cleanup();
-	
+
 	// Unload article view log
 	article_view_log_unload(&BBS_article_view_log);
 
