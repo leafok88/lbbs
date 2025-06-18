@@ -20,6 +20,7 @@
 #include "io.h"
 #include "screen.h"
 #include "menu.h"
+#include "login.h"
 #include <stdio.h>
 #include <stdarg.h>
 #include <errno.h>
@@ -742,6 +743,12 @@ int bbs_net()
 	while (!SYS_server_exit)
 	{
 		ch = igetch(100);
+
+		if (user_online_update("BBS_NET") < 0)
+		{
+			log_error("user_online_update(BBS_NET) error\n");
+		}
+
 		switch (ch)
 		{
 		case KEY_NULL: // broken pipe

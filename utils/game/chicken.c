@@ -7,6 +7,7 @@
 #include "io.h"
 #include "log.h"
 #include "screen.h"
+#include "login.h"
 #include "money.h"
 #include <stdio.h>
 #include <string.h>
@@ -60,6 +61,11 @@ int chicken_main()
 	if (load_chicken() < 0)
 	{
 		return -2;
+	}
+
+	if (user_online_update("CHICKEN") < 0)
+	{
+		log_error("user_online_update(CHICKEN) error\n");
 	}
 
 	show_chicken();
