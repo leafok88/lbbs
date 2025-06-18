@@ -217,6 +217,11 @@ int bbsnet_connect(int n)
 	struct tm *tm_used;
 	int ch;
 
+	if (user_online_update("BBS_NET") < 0)
+	{
+		log_error("user_online_update(BBS_NET) error\n");
+	}
+
 	clearscr();
 
 	moveto(0, 0);
@@ -747,11 +752,6 @@ int bbs_net()
 	while (!SYS_server_exit)
 	{
 		ch = igetch(100);
-
-		if (user_online_update("BBS_NET") < 0)
-		{
-			log_error("user_online_update(BBS_NET) error\n");
-		}
 
 		switch (ch)
 		{
