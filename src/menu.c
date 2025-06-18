@@ -1053,6 +1053,7 @@ int display_menu(MENU_SET *p_menu_set)
 	if (!menu_selectable)
 	{
 		moveto(p_menu->screen_row, p_menu->screen_col);
+		clrtoeol();
 		prints("没有可选项");
 		press_any_key();
 		return -1;
