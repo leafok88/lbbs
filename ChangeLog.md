@@ -7,7 +7,7 @@ Email : leaflet@leafok.com
 
 2025-06-15
 =================
-Major release with all fundemantal features
+Major release with all fundamental features
 
 1. Post / modify / reply article with text editor
 2. Delete article by user self or admin
