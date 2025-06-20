@@ -21,7 +21,6 @@
 #include "trie_dict.h"
 #include "bbs_cmd.h"
 #include <stdint.h>
-#include <sys/shm.h>
 
 #define MAX_MENU_NAME_LENGTH 30
 #define MAX_ITEMS_PER_MENU 256
