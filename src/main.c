@@ -26,26 +26,27 @@
 #include <errno.h>
 #include <libgen.h>
 #include <signal.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 
-void app_help(void)
+static void app_help(void)
 {
-	prints("Usage: bbsd [-fhv] [...]\n\n"
-		   "-f\t--foreground\t\tForce program run in foreground\n"
-		   "-h\t--help\t\t\tDisplay this help message\n"
-		   "-v\t--version\t\tDisplay version information\n"
-		   "\t--display-log\t\tDisplay standard log information\n"
-		   "\t--display-error-log\tDisplay error log information\n"
-		   "\n    If meet any bug, please report to <leaflet@leafok.com>\n\n");
+	fprintf(stderr, "Usage: bbsd [-fhv] [...]\n\n"
+					"-f\t--foreground\t\tForce program run in foreground\n"
+					"-h\t--help\t\t\tDisplay this help message\n"
+					"-v\t--version\t\tDisplay version information\n"
+					"\t--display-log\t\tDisplay standard log information\n"
+					"\t--display-error-log\tDisplay error log information\n"
+					"\n    If meet any bug, please report to <leaflet@leafok.com>\n\n");
 }
 
-void arg_error(void)
+static void arg_error(void)
 {
-	prints("Invalid arguments\n");
+	fprintf(stderr, "Invalid arguments\n");
 	app_help();
 }
 
