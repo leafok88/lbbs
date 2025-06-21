@@ -29,7 +29,7 @@ char DB_timezone[50];
 
 MYSQL *db_open()
 {
-	MYSQL *db;
+	MYSQL *db = NULL;
 	char sql[SQL_BUFFER_LEN];
 
 	db = mysql_init(NULL);
@@ -39,27 +39,29 @@ MYSQL *db_open()
 		return NULL;
 	}
 
-	db = mysql_real_connect(db, DB_host, DB_username, DB_password, DB_database,
-							0, NULL, 0);
-	if (db == NULL)
+	if (mysql_real_connect(db, DB_host, DB_username, DB_password, DB_database,
+						   0, NULL, 0) == NULL)
 	{
-		log_error("mysql_connect() failed\n");
+		log_error("mysql_real_connect() error: %s\n", mysql_error(db));
+		mysql_close(db);
 		return NULL;
 	}
 
 	if (mysql_set_character_set(db, "gb2312") != 0)
 	{
-		log_error("Set character set failed\n");
+		log_error("Set character set error: %s\n", mysql_error(db));
+		mysql_close(db);
 		return NULL;
 	}
 
 	snprintf(sql, sizeof(sql),
-			"SET time_zone = '%s'",
-			DB_timezone);
+			 "SET time_zone = '%s'",
+			 DB_timezone);
 
 	if (mysql_query(db, sql) != 0)
 	{
 		log_error("Set timezone error: %s\n", mysql_error(db));
+		mysql_close(db);
 		return NULL;
 	}
 

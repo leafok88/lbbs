@@ -43,6 +43,8 @@ static const char *BBS_article_footer_color[] = {
 };
 static const int BBS_article_footer_color_count = 7;
 
+static char *content_f; // static buffer in large size
+
 inline static int article_cache_path(char *file_path, size_t buf_len, const char *cache_dir, const ARTICLE *p_article)
 {
 	if (file_path == NULL || cache_dir == NULL || p_article == NULL)
@@ -59,8 +61,6 @@ inline static int article_cache_path(char *file_path, size_t buf_len, const char
 int article_cache_generate(const char *cache_dir, const ARTICLE *p_article, const SECTION_LIST *p_section,
 						   const char *content, const char *sub_ip, int overwrite)
 {
-	static char *content_f; // static buffer in large size
-
 	char data_file[FILE_PATH_LEN];
 	int fd;
 	ARTICLE_CACHE cache;
@@ -206,6 +206,15 @@ int article_cache_generate(const char *cache_dir, const ARTICLE *p_article, cons
 	}
 
 	return 0;
+}
+
+void article_cache_cleanup(void)
+{
+	if (content_f)
+	{
+		free(content_f);
+		content_f = NULL;
+	}
 }
 
 int article_cache_load(ARTICLE_CACHE *p_cache, const char *cache_dir, const ARTICLE *p_article)

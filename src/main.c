@@ -313,5 +313,7 @@ cleanup:
 
 	log_common("Main process exit normally\n");
 
+	log_end();
+
 	return 0;
 }

@@ -153,6 +153,7 @@ int load_section_config_from_db(void)
 	}
 
 cleanup:
+	mysql_free_result(rs2);
 	mysql_free_result(rs);
 	mysql_close(db);
 
@@ -319,6 +320,8 @@ int append_articles_from_db(int32_t start_aid, int global_lock, int article_coun
 cleanup:
 	mysql_free_result(rs);
 	mysql_close(db);
+
+	article_cache_cleanup();
 
 	return (ret < 0 ? ret : article_count);
 }
@@ -746,6 +749,8 @@ int section_list_loader_launch(void)
 	}
 
 	// Child process exit
+
+	article_cache_cleanup();
 
 	// Detach data pools shm
 	detach_section_list_shm();
