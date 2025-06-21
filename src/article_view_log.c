@@ -15,9 +15,9 @@
  ***************************************************************************/
 
 #include "article_view_log.h"
-#include "log.h"
 #include "common.h"
 #include "database.h"
+#include "log.h"
 #include <stdlib.h>
 #include <string.h>
 

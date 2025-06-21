@@ -14,13 +14,13 @@
  *                                                                         *
  ***************************************************************************/
 
-#include "editor.h"
 #include "bbs.h"
+#include "common.h"
+#include "editor.h"
 #include "io.h"
 #include "log.h"
-#include "common.h"
-#include "str_process.h"
 #include "memory_pool.h"
+#include "str_process.h"
 #include <stdlib.h>
 #include <string.h>
 #include <sys/param.h>

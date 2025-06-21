@@ -14,9 +14,9 @@
  *                                                                         *
  ***************************************************************************/
 
+#include "common.h"
 #include "lml.h"
 #include "log.h"
-#include "common.h"
 #include <stdio.h>
 #include <string.h>
 #include <sys/param.h>

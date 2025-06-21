@@ -1,6 +1,6 @@
-#include "money.h"
 #include "database.h"
 #include "log.h"
+#include "money.h"
 #include "user_priv.h"
 #include <stdio.h>
 #include <stdlib.h>

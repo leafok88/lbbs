@@ -14,19 +14,19 @@
  *                                                                         *
  ***************************************************************************/
 
-#include "login.h"
 #include "bbs.h"
-#include "user_priv.h"
 #include "common.h"
-#include "log.h"
-#include "io.h"
-#include "screen.h"
 #include "database.h"
-#include <errno.h>
+#include "io.h"
+#include "log.h"
+#include "login.h"
+#include "screen.h"
+#include "user_priv.h"
 #include <ctype.h>
+#include <errno.h>
+#include <stdlib.h>
 #include <string.h>
 #include <regex.h>
-#include <stdlib.h>
 #include <unistd.h>
 #include <mysql/mysql.h>
 

@@ -14,25 +14,25 @@
  *                                                                         *
  ***************************************************************************/
 
-#include "bbs_main.h"
+#include "article_view_log.h"
 #include "bbs.h"
-#include "login.h"
-#include "user_priv.h"
+#include "bbs_cmd.h"
+#include "bbs_main.h"
 #include "common.h"
 #include "database.h"
-#include "article_view_log.h"
-#include "log.h"
+#include "editor.h"
 #include "io.h"
-#include "screen.h"
+#include "log.h"
+#include "login.h"
 #include "menu.h"
-#include "bbs_cmd.h"
+#include "screen.h"
 #include "section_list.h"
 #include "trie_dict.h"
-#include "editor.h"
-#include <unistd.h>
-#include <time.h>
-#include <string.h>
+#include "user_priv.h"
 #include <stdlib.h>
+#include <string.h>
+#include <time.h>
+#include <unistd.h>
 
 int bbs_info()
 {

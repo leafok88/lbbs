@@ -6,12 +6,12 @@
 #include "common.h"
 #include "io.h"
 #include "log.h"
-#include "screen.h"
 #include "login.h"
 #include "money.h"
+#include "screen.h"
 #include <stdio.h>
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
 #include <unistd.h>
 #include <sys/param.h>

@@ -14,9 +14,9 @@
  *                                                                         *
  ***************************************************************************/
 
-#include "log.h"
-#include "io.h"
 #include "common.h"
+#include "io.h"
+#include "log.h"
 #include <stdarg.h>
 #include <string.h>
 #include <time.h>

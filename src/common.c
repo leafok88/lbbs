@@ -17,9 +17,9 @@
 #include "common.h"
 #include "log.h"
 #include "menu.h"
+#include <signal.h>
 #include <string.h>
 #include <time.h>
-#include <signal.h>
 #include <sys/types.h>
 
 // File loader

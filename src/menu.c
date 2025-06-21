@@ -16,21 +16,21 @@
 
 #include "bbs.h"
 #include "bbs_cmd.h"
-#include "user_priv.h"
 #include "bbs_cmd.h"
-#include "menu.h"
-#include "log.h"
-#include "io.h"
-#include "screen.h"
 #include "common.h"
-#include <string.h>
-#include <stdio.h>
+#include "io.h"
+#include "log.h"
+#include "menu.h"
+#include "screen.h"
+#include "user_priv.h"
 #include <ctype.h>
-#include <stdlib.h>
 #include <errno.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
-#include <sys/shm.h>
 #include <sys/ipc.h>
+#include <sys/shm.h>
 
 #define MENU_SCREEN_PATH_PREFIX "var/MENU_SCR_"
 #define MENU_CONF_DELIM_WITH_SPACE " ,\t\r\n"

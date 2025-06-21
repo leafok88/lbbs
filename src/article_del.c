@@ -16,8 +16,8 @@
 
 #include "article_del.h"
 #include "database.h"
-#include "log.h"
 #include "io.h"
+#include "log.h"
 #include "screen.h"
 #include "user_priv.h"
 #include <ctype.h>

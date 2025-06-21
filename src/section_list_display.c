@@ -14,19 +14,19 @@
  *                                                                         *
  ***************************************************************************/
 
-#include "section_list_display.h"
-#include "section_list_loader.h"
 #include "article_cache.h"
 #include "article_post.h"
+#include "article_view_log.h"
 #include "article_del.h"
 #include "common.h"
 #include "io.h"
-#include "screen.h"
 #include "log.h"
-#include "user_priv.h"
-#include "article_view_log.h"
-#include "str_process.h"
 #include "login.h"
+#include "section_list_display.h"
+#include "section_list_loader.h"
+#include "screen.h"
+#include "str_process.h"
+#include "user_priv.h"
 #include <string.h>
 #include <time.h>
 #include <sys/param.h>

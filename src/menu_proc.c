@@ -17,12 +17,12 @@
 #include "bbs.h"
 #include "bbs_cmd.h"
 #include "common.h"
-#include "log.h"
 #include "io.h"
-#include "screen.h"
+#include "log.h"
 #include "menu.h"
-#include "user_priv.h"
 #include "section_list_display.h"
+#include "screen.h"
+#include "user_priv.h"
 #include <dlfcn.h>
 #include <errno.h>
 #include <signal.h>

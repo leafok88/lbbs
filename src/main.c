@@ -15,22 +15,22 @@
  ***************************************************************************/
 
 #include "bbs.h"
-#include "init.h"
 #include "common.h"
-#include "net_server.h"
-#include "log.h"
-#include "io.h"
-#include "menu.h"
 #include "file_loader.h"
+#include "init.h"
+#include "io.h"
+#include "log.h"
+#include "menu.h"
+#include "net_server.h"
 #include "section_list_loader.h"
 #include <errno.h>
-#include <stdlib.h>
+#include <libgen.h>
 #include <signal.h>
+#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <libgen.h>
-#include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/types.h>
 
 void app_help(void)
 {

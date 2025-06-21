@@ -18,9 +18,9 @@
 
 #include "log.h"
 #include <stdio.h>
+#include <libssh/callbacks.h>
 #include <libssh/libssh.h>
 #include <libssh/server.h>
-#include <libssh/callbacks.h>
 
 #ifndef BUF_SIZE
 #define BUF_SIZE 2048

@@ -17,8 +17,8 @@
 #ifndef _SECTION_LIST_H_
 #define _SECTION_LIST_H_
 
-#include "common.h"
 #include "bbs.h"
+#include "common.h"
 #include <time.h>
 
 #define BBS_article_title_max_len 80

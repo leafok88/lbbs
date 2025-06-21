@@ -15,11 +15,11 @@
  ***************************************************************************/
 
 #include "file_loader.h"
-#include "trie_dict.h"
 #include "log.h"
+#include "trie_dict.h"
+#include <errno.h>
 #include <stdio.h>
 #include <unistd.h>
-#include <errno.h>
 #include <sys/shm.h>
 
 #define TRIE_DICT_SHM_FILE "~trie_dict_shm.dat"

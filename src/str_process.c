@@ -14,9 +14,9 @@
  *                                                                         *
  ***************************************************************************/
 
-#include "str_process.h"
 #include "common.h"
 #include "log.h"
+#include "str_process.h"
 #include <stdio.h>
 #include <string.h>
 

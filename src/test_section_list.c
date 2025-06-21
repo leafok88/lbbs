@@ -14,13 +14,13 @@
  *                                                                         *
  ***************************************************************************/
 
-#include "section_list.h"
-#include "trie_dict.h"
 #include "bbs.h"
 #include "log.h"
+#include "section_list.h"
+#include "trie_dict.h"
+#include <errno.h>
 #include <stdio.h>
 #include <unistd.h>
-#include <errno.h>
 
 #define ARTICLE_BLOCK_SHM_FILE "~article_block_shm.dat"
 #define SECTION_LIST_SHM_FILE "~section_list_shm.dat"

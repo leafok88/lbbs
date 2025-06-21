@@ -14,22 +14,22 @@
  *                                                                         *
  ***************************************************************************/
 
+#include "common.h"
 #include "io.h"
 #include "log.h"
-#include "common.h"
 #include <errno.h>
-#include <stdio.h>
+#include <fcntl.h>
 #include <stdarg.h>
+#include <stdio.h>
 #include <string.h>
 #include <time.h>
-#include <fcntl.h>
 #include <unistd.h>
-#include <sys/select.h>
-#include <sys/ioctl.h>
 #include <sys/epoll.h>
+#include <sys/ioctl.h>
+#include <sys/select.h>
+#include <libssh/callbacks.h>
 #include <libssh/libssh.h>
 #include <libssh/server.h>
-#include <libssh/callbacks.h>
 
 static char stdout_buf[BUFSIZ];
 static int stdout_buf_len = 0;

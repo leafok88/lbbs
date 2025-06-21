@@ -14,19 +14,19 @@
  *                                                                         *
  ***************************************************************************/
 
-#include "init.h"
-#include "database.h"
 #include "bbs.h"
 #include "common.h"
-#include "log.h"
+#include "database.h"
+#include "init.h"
 #include "io.h"
-#include <string.h>
-#include <stdlib.h>
+#include "log.h"
 #include <signal.h>
+#include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 #include <sys/param.h>
-#include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/types.h>
 
 #define CONF_DELIM_WITH_SPACE " \t\r\n"
 

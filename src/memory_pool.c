@@ -14,8 +14,8 @@
  *                                                                         *
  ***************************************************************************/
 
-#include "memory_pool.h"
 #include "log.h"
+#include "memory_pool.h"
 #include <stdlib.h>
 #include <string.h>
 

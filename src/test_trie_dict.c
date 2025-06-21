@@ -14,12 +14,12 @@
  *                                                                         *
  ***************************************************************************/
 
-#include "trie_dict.h"
 #include "log.h"
+#include "trie_dict.h"
+#include <errno.h>
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
-#include <errno.h>
 
 #define TEST_VAL ((int64_t)(0xcb429a63a017661f)) // int64_t
 #define TRIE_DICT_SHM_FILE "~trie_dict_shm.dat"

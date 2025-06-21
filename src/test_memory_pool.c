@@ -14,11 +14,11 @@
  *                                                                         *
  ***************************************************************************/
 
-#include "memory_pool.h"
 #include "log.h"
+#include "memory_pool.h"
 #include <stdio.h>
-#include <unistd.h>
 #include <string.h>
+#include <unistd.h>
 
 #define NODE_SIZE 1023
 #define NODE_PER_CHUNK 1000

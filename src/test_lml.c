@@ -16,10 +16,10 @@
 
 #include "lml.h"
 #include "log.h"
+#include <errno.h>
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
-#include <errno.h>
 
 #define STR_OUT_BUF_SIZE 256
 

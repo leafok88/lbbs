@@ -14,16 +14,16 @@
  *                                                                         *
  ***************************************************************************/
 
-#include "trie_dict.h"
 #include "log.h"
+#include "trie_dict.h"
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
-#include <sys/shm.h>
 #include <sys/ipc.h>
+#include <sys/shm.h>
 
 struct trie_node_pool_t
 {

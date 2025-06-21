@@ -15,19 +15,19 @@
  ***************************************************************************/
 
 #include "file_loader.h"
-#include "trie_dict.h"
-#include "str_process.h"
 #include "log.h"
-#include <fcntl.h>
+#include "str_process.h"
+#include "trie_dict.h"
 #include <errno.h>
-#include <unistd.h>
+#include <fcntl.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include <sys/mman.h>
-#include <sys/stat.h>
-#include <sys/shm.h>
+#include <unistd.h>
 #include <sys/ipc.h>
+#include <sys/mman.h>
+#include <sys/shm.h>
+#include <sys/stat.h>
 
 struct shm_header_t
 {

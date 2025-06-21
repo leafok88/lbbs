@@ -17,9 +17,9 @@
 #ifndef _MENU_H_
 #define _MENU_H_
 
+#include "bbs_cmd.h"
 #include "common.h"
 #include "trie_dict.h"
-#include "bbs_cmd.h"
 #include <stdint.h>
 
 #define MAX_MENU_NAME_LENGTH 30

@@ -14,11 +14,11 @@
  *                                                                         *
  ***************************************************************************/
 
-#include "user_priv.h"
 #include "bbs.h"
 #include "common.h"
 #include "database.h"
 #include "log.h"
+#include "user_priv.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <mysql/mysql.h>

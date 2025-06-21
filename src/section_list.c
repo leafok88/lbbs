@@ -14,19 +14,19 @@
  *                                                                         *
  ***************************************************************************/
 
-#include "section_list.h"
 #include "log.h"
+#include "section_list.h"
 #include "trie_dict.h"
-#include <stdio.h>
-#include <string.h>
-#include <signal.h>
-#include <unistd.h>
-#include <stdlib.h>
 #include <errno.h>
+#include <signal.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <sys/ipc.h>
 #include <sys/param.h>
 #include <sys/sem.h>
 #include <sys/shm.h>
-#include <sys/ipc.h>
 
 #ifdef _SEM_SEMUN_UNDEFINED
 union semun

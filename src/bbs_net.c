@@ -16,30 +16,30 @@
 
 #include "bbs.h"
 #include "common.h"
-#include "log.h"
 #include "io.h"
-#include "screen.h"
-#include "menu.h"
+#include "log.h"
 #include "login.h"
-#include <stdio.h>
-#include <stdarg.h>
+#include "menu.h"
+#include "screen.h"
 #include <errno.h>
-#include <string.h>
-#include <stdlib.h>
 #include <fcntl.h>
+#include <netdb.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <time.h>
 #include <unistd.h>
-#include <netdb.h>
-#include <sys/select.h>
-#include <sys/ioctl.h>
-#include <sys/socket.h>
-#include <sys/epoll.h>
-#include <netinet/in.h>
-#include <netinet/ip.h>
 #include <arpa/inet.h>
 #include <libssh/libssh.h>
 #include <libssh/server.h>
 #include <libssh/callbacks.h>
+#include <netinet/in.h>
+#include <netinet/ip.h>
+#include <sys/select.h>
+#include <sys/ioctl.h>
+#include <sys/socket.h>
+#include <sys/epoll.h>
 
 #define MENU_CONF_DELIM " \t\r\n"
 

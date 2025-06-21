@@ -14,15 +14,15 @@
  *                                                                         *
  ***************************************************************************/
 
-#include "article_post.h"
 #include "article_cache.h"
-#include "editor.h"
-#include "screen.h"
+#include "article_post.h"
 #include "bbs.h"
-#include "log.h"
-#include "io.h"
-#include "lml.h"
 #include "database.h"
+#include "editor.h"
+#include "io.h"
+#include "log.h"
+#include "lml.h"
+#include "screen.h"
 #include "user_priv.h"
 #include <ctype.h>
 #include <string.h>

@@ -14,25 +14,25 @@
  *                                                                         *
  ***************************************************************************/
 
-#include "screen.h"
 #include "bbs.h"
 #include "common.h"
-#include "str_process.h"
-#include "log.h"
-#include "io.h"
 #include "editor.h"
 #include "file_loader.h"
+#include "io.h"
+#include "log.h"
 #include "login.h"
-#include <fcntl.h>
+#include "screen.h"
+#include "str_process.h"
 #include <ctype.h>
-#include <string.h>
-#include <unistd.h>
-#include <stdlib.h>
 #include <errno.h>
-#include <sys/types.h>
-#include <sys/stat.h>
+#include <fcntl.h>
+#include <string.h>
+#include <stdlib.h>
+#include <unistd.h>
 #include <sys/param.h>
+#include <sys/stat.h>
 #include <sys/shm.h>
+#include <sys/types.h>
 
 #define ACTIVE_BOARD_HEIGHT 8
 

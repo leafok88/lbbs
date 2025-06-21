@@ -18,8 +18,8 @@
 #define _ARTICLE_CACHE_H_
 
 #include "common.h"
-#include "str_process.h"
 #include "section_list.h"
+#include "str_process.h"
 
 struct article_cache_t
 {

@@ -18,7 +18,6 @@
 #define _LOG_H_
 
 #include <stdio.h>
-#include <stddef.h>
 
 enum{
 	LOG_LEVEL_COMMON = 1,

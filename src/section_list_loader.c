@@ -14,12 +14,12 @@
  *                                                                         *
  ***************************************************************************/
 
-#include "section_list_loader.h"
 #include "article_cache.h"
 #include "bbs.h"
-#include "log.h"
 #include "database.h"
+#include "log.h"
 #include "menu.h"
+#include "section_list_loader.h"
 #include <errno.h>
 #include <signal.h>
 #include <stdio.h>
