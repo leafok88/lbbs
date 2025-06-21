@@ -22,9 +22,8 @@
 #include "str_process.h"
 #include "memory_pool.h"
 #include <stdlib.h>
-#include <sys/param.h>
-#include <strings.h>
 #include <string.h>
+#include <sys/param.h>
 
 #define EDITOR_ESC_DISPLAY_STR "\033[32m*\033[m"
 #define EDITOR_MEM_POOL_LINE_PER_CHUNK 1000

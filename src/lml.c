@@ -19,7 +19,6 @@
 #include "common.h"
 #include <stdio.h>
 #include <string.h>
-#include <strings.h>
 #include <sys/param.h>
 
 #define LML_TAG_PARAM_BUF_LEN 256
