@@ -1,6 +1,7 @@
 [Unit]
 Description=LBBS Server
-After=network-online.target
+Wants=network-online.target
+After=network-online.target mysqld.service
 
 [Service]
 User=bbs
