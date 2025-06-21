@@ -17,9 +17,9 @@
 #include "trie_dict.h"
 #include "log.h"
 #include <errno.h>
-#include <stdlib.h>
-#include <strings.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <time.h>
 #include <unistd.h>
 #include <sys/shm.h>
@@ -164,7 +164,7 @@ TRIE_NODE *trie_dict_create(void)
 		p_dict = p_trie_node_pool->p_node_free_list;
 		p_trie_node_pool->p_node_free_list = p_dict->p_nodes[0];
 
-		bzero(p_dict, sizeof(*p_dict));
+		memset(p_dict, 0, sizeof(*p_dict));
 
 		p_trie_node_pool->node_count++;
 	}
@@ -191,7 +191,7 @@ void trie_dict_destroy(TRIE_NODE *p_dict)
 		}
 	}
 
-	bzero(p_dict, sizeof(*p_dict));
+	memset(p_dict, 0, sizeof(*p_dict));
 
 	p_dict->p_nodes[0] = p_trie_node_pool->p_node_free_list;
 	p_trie_node_pool->p_node_free_list = p_dict;
