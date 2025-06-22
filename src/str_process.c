@@ -20,53 +20,91 @@
 #include <stdio.h>
 #include <string.h>
 
+/**
+* 检测并跳过ANSI控制序列
+*
+* @param buffer 输入字符串
+* @param index 当前处理的字符索引
+* @return int 处理后的新索引位置
+*/
+static int skip_ansi_control_sequence(const char *buffer, int index)
+{
+	assert(buffer != NULL);
+	
+	// 确认这是一个ANSI控制序列的开始
+	if (buffer[index] == '\033' && buffer[index + 1] == '[') {
+		index += 2; //跳过ESC[
+		
+		// 跳过控制序列直到结束符'm'或字符串结束
+		while (buffer[index] != '\0' && buffer[index] != 'm') {
+			index++;
+		}
+
+		// 如果找到了结束符'm',跳过它
+		if (buffer[index] == 'm') {
+			index++;
+		}
+	}
+	
+	return index;
+}
+
+/**
+* 计算字符的显示宽度
+* 
+* @param c 要计算的字符
+* @return int 字符的显示宽度（1或2）
+*/
+static inline int get_char_display_width(unsigned char c)
+{
+	// GBK中文字符(首字母范围)
+	// GBK编码中,汉字的第一个字节的范围通常为0x81-0xFE
+	return (c >= 0x81) ? 2 : 1;
+}
+
 int split_line(const char *buffer, int max_display_len, int *p_eol, int *p_display_len, int skip_ctrl_seq)
 {
-	int i;
+	if (!buffer || !p_eol || !p_display_len) {
+		log_error("split_line: Invalid parameters\n");
+		return 0;
+	}
+	
+	int i = 0;
 	*p_eol = 0;
 	*p_display_len = 0;
 	char c;
 
-	for (i = 0; buffer[i] != '\0'; i++)
-	{
-		c = buffer[i];
-
-		if (c == '\r' || c == '\7') // skip
-		{
-			continue;
-		}
-
-		if (skip_ctrl_seq && c == '\033' && buffer[i + 1] == '[') // Skip control sequence
-		{
-			i += 2;
-			while (buffer[i] != '\0' && buffer[i] != 'm')
-			{
-				i++;
-			}
-			continue;
-		}
-
-		if (c < 0 || c > 127) // GBK chinese character
-		{
-			if (*p_display_len + 2 > max_display_len)
-			{
-				break;
-			}
+	while ((c = (unsigned char)buffer[i]) != '\0') {
+		// 跳过回车和响铃控制字符
+		if (c == '\r' || c == '\7') {
 			i++;
-			(*p_display_len) += 2;
+			continue;
 		}
-		else
-		{
-			if (*p_display_len + 1 > max_display_len)
-			{
-				break;
-			}
+
+		// 处理ANSI控制序列
+		if (skip_ctrl_seq && c == '\033' && buffer[i + 1] == '['){
+			i = skip_ansi_control_sequence(buffer, i);
+			continue;
+		}
+
+		// 处理字符的显示宽度
+		int char_width = get_char_display_width(c);
+
+		// 检查是否超出最大显示长度
+		if (*p_display_len + char_width > max_display_len) {
+			break;
+		}
+
+		// 中文字符处理(GBK编码)
+		if (char_width == 2) {
+			i += 2; //中文字符占2个字节
+			*p_display_len += 2；
+		} else {
+			i++;
 			(*p_display_len)++;
 
-			// \n is regarded as 1 character wide in terminal editor, which is different from Web version
-			if (c == '\n')
-			{
-				i++;
+			//换行符处理
+			if (c == '\n') {
 				*p_eol = 1;
 				break;
 			}
