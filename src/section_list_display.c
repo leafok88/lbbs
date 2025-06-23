@@ -48,7 +48,7 @@ enum select_cmd_t
 	LAST_TOPIC_ARTICLE = 9,
 };
 
-static int section_list_draw_items(int page_id, ARTICLE *p_articles[], int article_count, int display_nickname)
+static int section_list_draw_items(int page_id, ARTICLE *p_articles[], int article_count, int display_nickname, int ontop_start_offset)
 {
 	char str_time[LINE_BUFFER_LEN];
 	struct tm tm_sub;
@@ -115,27 +115,44 @@ static int section_list_draw_items(int page_id, ARTICLE *p_articles[], int artic
 		}
 
 		moveto(4 + i, 1);
-		prints("  %s%7d\033[m %c %s%*s %s %s%s\033[m",
-			   (p_articles[i]->ontop
-					? "\033[47;30m"
-					: (p_articles[i]->aid == section_topic_view_tid
-						   ? "\033[1;33m"
-						   : (p_articles[i]->tid == section_topic_view_tid
-								  ? "\033[1;36m"
-								  : ""))),
-			   p_articles[i]->aid,
-			   article_flag,
-			   (display_nickname ? p_articles[i]->nickname : p_articles[i]->username),
-			   (display_nickname ? BBS_nickname_max_len - (int)strnlen(p_articles[i]->nickname, sizeof(p_articles[i]->nickname))
-								 : BBS_username_max_len - (int)strnlen(p_articles[i]->username, sizeof(p_articles[i]->username))),
-			   "",
-			   str_time,
-			   (p_articles[i]->aid == section_topic_view_tid
-					? "\033[1;33m"
-					: (p_articles[i]->tid == section_topic_view_tid
-						   ? "\033[1;36m"
-						   : "")),
-			   title_f);
+		if (i >= ontop_start_offset)
+		{
+			prints("   \033[1;33m[ÌבÊ¾]\033[m %c %s%*s %s %s%s\033[m",
+				   article_flag,
+				   (display_nickname ? p_articles[i]->nickname : p_articles[i]->username),
+				   (display_nickname ? BBS_nickname_max_len - (int)strnlen(p_articles[i]->nickname, sizeof(p_articles[i]->nickname))
+									 : BBS_username_max_len - (int)strnlen(p_articles[i]->username, sizeof(p_articles[i]->username))),
+				   "",
+				   str_time,
+				   (p_articles[i]->aid == section_topic_view_tid
+						? "\033[1;33m"
+						: (p_articles[i]->tid == section_topic_view_tid
+							   ? "\033[1;36m"
+							   : "")),
+				   title_f);
+		}
+		else
+		{
+			prints("  %s%7d\033[m %c %s%*s %s %s%s\033[m",
+				   (p_articles[i]->aid == section_topic_view_tid
+						? "\033[1;33m"
+						: (p_articles[i]->tid == section_topic_view_tid
+							   ? "\033[1;36m"
+							   : "")),
+				   p_articles[i]->aid,
+				   article_flag,
+				   (display_nickname ? p_articles[i]->nickname : p_articles[i]->username),
+				   (display_nickname ? BBS_nickname_max_len - (int)strnlen(p_articles[i]->nickname, sizeof(p_articles[i]->nickname))
+									 : BBS_username_max_len - (int)strnlen(p_articles[i]->username, sizeof(p_articles[i]->username))),
+				   "",
+				   str_time,
+				   (p_articles[i]->aid == section_topic_view_tid
+						? "\033[1;33m"
+						: (p_articles[i]->tid == section_topic_view_tid
+							   ? "\033[1;36m"
+							   : "")),
+				   title_f);
+		}
 	}
 
 	return 0;
@@ -412,6 +429,7 @@ int section_list_display(const char *sname)
 	ARTICLE *p_articles[BBS_article_limit_per_page];
 	int article_count;
 	int page_count;
+	int ontop_start_offset;
 	int page_id = 0;
 	int selected_index = 0;
 	ARTICLE_CACHE cache;
@@ -451,7 +469,7 @@ int section_list_display(const char *sname)
 		return -2;
 	}
 
-	ret = query_section_articles(p_section, page_id, p_articles, &article_count, &page_count);
+	ret = query_section_articles(p_section, page_id, p_articles, &article_count, &page_count, &ontop_start_offset);
 	if (ret < 0)
 	{
 		log_error("query_section_articles(sid=%d, page_id=%d) error\n", p_section->sid, page_id);
@@ -465,7 +483,7 @@ int section_list_display(const char *sname)
 
 	while (!SYS_server_exit)
 	{
-		ret = section_list_draw_items(page_id, p_articles, article_count, display_nickname);
+		ret = section_list_draw_items(page_id, p_articles, article_count, display_nickname, ontop_start_offset);
 		if (ret < 0)
 		{
 			log_error("section_list_draw_items(sid=%d, page_id=%d) error\n", p_section->sid, page_id);
@@ -490,7 +508,7 @@ int section_list_display(const char *sname)
 		case EXIT_SECTION:
 			return 0;
 		case CHANGE_PAGE:
-			ret = query_section_articles(p_section, page_id, p_articles, &article_count, &page_count);
+			ret = query_section_articles(p_section, page_id, p_articles, &article_count, &page_count, &ontop_start_offset);
 			if (ret < 0)
 			{
 				log_error("query_section_articles(sid=%d, page_id=%d) error\n", p_section->sid, page_id);
@@ -546,7 +564,7 @@ int section_list_display(const char *sname)
 							page_id--;
 							selected_index = BBS_article_limit_per_page - 1;
 
-							ret = query_section_articles(p_section, page_id, p_articles, &article_count, &page_count);
+							ret = query_section_articles(p_section, page_id, p_articles, &article_count, &page_count, &ontop_start_offset);
 							if (ret < 0)
 							{
 								log_error("query_section_articles(sid=%d, page_id=%d) error\n", p_section->sid, page_id);
@@ -577,7 +595,7 @@ int section_list_display(const char *sname)
 							page_id++;
 							selected_index = 0;
 
-							ret = query_section_articles(p_section, page_id, p_articles, &article_count, &page_count);
+							ret = query_section_articles(p_section, page_id, p_articles, &article_count, &page_count, &ontop_start_offset);
 							if (ret < 0)
 							{
 								log_error("query_section_articles(sid=%d, page_id=%d) error\n", p_section->sid, page_id);
@@ -613,7 +631,7 @@ int section_list_display(const char *sname)
 					}
 					else if (ret > 0) // found
 					{
-						ret = query_section_articles(p_section, page_id, p_articles, &article_count, &page_count);
+						ret = query_section_articles(p_section, page_id, p_articles, &article_count, &page_count, &ontop_start_offset);
 						if (ret < 0)
 						{
 							log_error("query_section_articles(sid=%d, page_id=%d) error\n", p_section->sid, page_id);
@@ -650,7 +668,7 @@ int section_list_display(const char *sname)
 					{
 						if (page_id != page_id_cur) // page changed
 						{
-							ret = query_section_articles(p_section, page_id, p_articles, &article_count, &page_count);
+							ret = query_section_articles(p_section, page_id, p_articles, &article_count, &page_count, &ontop_start_offset);
 							if (ret < 0)
 							{
 								log_error("query_section_articles(sid=%d, page_id=%d) error\n", p_section->sid, page_id);
@@ -692,7 +710,7 @@ int section_list_display(const char *sname)
 			}
 			else if (ret > 0) // New article posted
 			{
-				ret = query_section_articles(p_section, page_id, p_articles, &article_count, &page_count);
+				ret = query_section_articles(p_section, page_id, p_articles, &article_count, &page_count, &ontop_start_offset);
 				if (ret < 0)
 				{
 					log_error("query_section_articles(sid=%d, page_id=%d) error\n", p_section->sid, page_id);
@@ -739,7 +757,7 @@ int section_list_display(const char *sname)
 			}
 			else if (ret > 0) // Article deleted
 			{
-				ret = query_section_articles(p_section, page_id, p_articles, &article_count, &page_count);
+				ret = query_section_articles(p_section, page_id, p_articles, &article_count, &page_count, &ontop_start_offset);
 				if (ret < 0)
 				{
 					log_error("query_section_articles(sid=%d, page_id=%d) error\n", p_section->sid, page_id);
@@ -766,7 +784,7 @@ int section_list_display(const char *sname)
 			}
 			else if (ret > 0 && page_id != page_id_cur) // found and page changed
 			{
-				ret = query_section_articles(p_section, page_id, p_articles, &article_count, &page_count);
+				ret = query_section_articles(p_section, page_id, p_articles, &article_count, &page_count, &ontop_start_offset);
 				if (ret < 0)
 				{
 					log_error("query_section_articles(sid=%d, page_id=%d) error\n", p_section->sid, page_id);

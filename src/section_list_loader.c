@@ -787,14 +787,15 @@ int section_list_loader_reload(void)
 	return 0;
 }
 
-int query_section_articles(SECTION_LIST *p_section, int page_id, ARTICLE *p_articles[], int *p_article_count, int *p_page_count)
+int query_section_articles(SECTION_LIST *p_section, int page_id, ARTICLE *p_articles[],
+						   int *p_article_count, int *p_page_count, int *p_ontop_start_offset)
 {
 	ARTICLE *p_article;
 	ARTICLE *p_next_page_first_article;
 	int ret = 0;
 	int i;
 
-	if (p_section == NULL || p_articles == NULL || p_article_count == NULL || p_page_count == NULL)
+	if (p_section == NULL || p_articles == NULL || p_article_count == NULL || p_page_count == NULL || p_ontop_start_offset == NULL)
 	{
 		log_error("query_section_articles() NULL pointer error\n");
 		return -1;
@@ -809,6 +810,7 @@ int query_section_articles(SECTION_LIST *p_section, int page_id, ARTICLE *p_arti
 
 	*p_page_count = section_list_page_count_with_ontop(p_section);
 	*p_article_count = 0;
+	*p_ontop_start_offset = BBS_article_limit_per_page;
 
 	if (p_section->visible_article_count == 0)
 	{
@@ -844,6 +846,8 @@ int query_section_articles(SECTION_LIST *p_section, int page_id, ARTICLE *p_arti
 				log_error("Inconsistent visible article count %d detected in section %d page %d\n", *p_article_count, p_section->sid, page_id);
 			}
 		}
+
+		*p_ontop_start_offset = *p_article_count;
 
 		// Append ontop articles
 		if (page_id >= p_section->page_count - 1)
