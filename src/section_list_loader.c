@@ -589,10 +589,13 @@ int apply_article_op_log_from_db(int op_count_limit)
 			p_article->excerption = 0;
 			break;
 		case 'F': // Set article on top
-			p_article->ontop = 1;
-			break;
 		case 'V': // Unset article on top
-			p_article->ontop = 0;
+			p_article->ontop = (row[2][0] == 'F' ? 1 : 0);
+			if (section_list_update_article_ontop(p_section, p_article) < 0)
+			{
+				log_error("section_list_update_article_ontop(sid=%d, aid=%d) error\n",
+						  p_section->sid, p_article->aid);
+			}
 			break;
 		case 'Z': // Set article as trnasship
 			p_article->transship = 1;
@@ -789,6 +792,7 @@ int query_section_articles(SECTION_LIST *p_section, int page_id, ARTICLE *p_arti
 	ARTICLE *p_article;
 	ARTICLE *p_next_page_first_article;
 	int ret = 0;
+	int i;
 
 	if (p_section == NULL || p_articles == NULL || p_article_count == NULL || p_page_count == NULL)
 	{
@@ -803,38 +807,54 @@ int query_section_articles(SECTION_LIST *p_section, int page_id, ARTICLE *p_arti
 		return -2;
 	}
 
-	*p_page_count = p_section->page_count;
+	*p_page_count = section_list_page_count_with_ontop(p_section);
+	*p_article_count = 0;
 
 	if (p_section->visible_article_count == 0)
 	{
-		*p_article_count = 0;
+		// empty section
 	}
-	else if (page_id < 0 || page_id >= p_section->page_count)
+	else if (page_id < 0 || page_id >= *p_page_count)
 	{
-		log_error("Invalid page_id=%d, not in range [0, %d)\n", page_id, p_section->page_count);
+		log_error("Invalid page_id=%d, not in range [0, %d)\n", page_id, *p_page_count);
 		ret = -3;
 	}
 	else
 	{
 		ret = page_id;
-		p_article = p_section->p_page_first_article[page_id];
-		p_next_page_first_article =
-			(page_id == p_section->page_count - 1 ? p_section->p_article_head : p_section->p_page_first_article[page_id + 1]);
-		*p_article_count = 0;
 
-		do
+		if (page_id <= p_section->page_count - 1)
 		{
-			if (p_article->visible)
+			p_article = p_section->p_page_first_article[page_id];
+			p_next_page_first_article =
+				(page_id == p_section->page_count - 1 ? p_section->p_article_head : p_section->p_page_first_article[page_id + 1]);
+
+			do
 			{
-				p_articles[*p_article_count] = p_article;
-				(*p_article_count)++;
-			}
-			p_article = p_article->p_next;
-		} while (p_article != p_next_page_first_article && (*p_article_count) <= BBS_article_limit_per_page);
+				if (p_article->visible)
+				{
+					p_articles[*p_article_count] = p_article;
+					(*p_article_count)++;
+				}
+				p_article = p_article->p_next;
+			} while (p_article != p_next_page_first_article && (*p_article_count) <= BBS_article_limit_per_page);
 
-		if (*p_article_count != (page_id < p_section->page_count - 1 ? BBS_article_limit_per_page : p_section->last_page_visible_article_count))
+			if (*p_article_count != (page_id < p_section->page_count - 1 ? BBS_article_limit_per_page : p_section->last_page_visible_article_count))
+			{
+				log_error("Inconsistent visible article count %d detected in section %d page %d\n", *p_article_count, p_section->sid, page_id);
+			}
+		}
+
+		// Append ontop articles
+		if (page_id >= p_section->page_count - 1)
 		{
-			log_error("Inconsistent visible article count %d detected in section %d page %d\n", *p_article_count, p_section->sid, page_id);
+			i = (page_id == p_section->page_count - 1
+					 ? 0
+					 : (page_id - p_section->page_count + 1) * BBS_article_limit_per_page - p_section->last_page_visible_article_count);
+			while (*p_article_count < BBS_article_limit_per_page && i < p_section->ontop_article_count)
+			{
+				p_articles[(*p_article_count)++] = p_section->p_ontop_articles[i++];
+			}
 		}
 	}
 
@@ -931,6 +951,9 @@ int locate_article_in_section(SECTION_LIST *p_section, const ARTICLE *p_article_
 				}
 				p_article = p_article->p_next;
 			}
+
+			// Include ontop articles
+			*p_article_count = section_list_page_article_count_with_ontop(p_section, page_id);
 		}
 	}
 

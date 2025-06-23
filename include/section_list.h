@@ -25,6 +25,8 @@
 #define BBS_article_limit_per_section 50000
 #define BBS_article_limit_per_page 20
 
+#define BBS_ontop_article_limit_per_section 10
+
 #define ARTICLE_PER_BLOCK 1000
 
 struct article_t
@@ -69,6 +71,8 @@ struct section_list_t
 	ARTICLE *p_page_first_article[BBS_article_limit_per_section / BBS_article_limit_per_page];
 	int32_t page_count;
 	int32_t last_page_visible_article_count;
+	ARTICLE *p_ontop_articles[BBS_ontop_article_limit_per_section];
+	int32_t ontop_article_count;
 };
 typedef struct section_list_t SECTION_LIST;
 
@@ -105,6 +109,10 @@ extern int get_section_index(SECTION_LIST *p_section);
 
 extern int section_list_append_article(SECTION_LIST *p_section, const ARTICLE *p_article_src);
 extern int section_list_set_article_visible(SECTION_LIST *p_section, int32_t aid, int8_t visible);
+
+extern int section_list_update_article_ontop(SECTION_LIST *p_section, ARTICLE *p_article);
+extern int section_list_page_count_with_ontop(SECTION_LIST *p_section);
+extern int section_list_page_article_count_with_ontop(SECTION_LIST *p_section, int32_t page_id);
 
 // *p_page, *p_offset will be set as page / offset of the article with aid in *p_section (including both visible and invisible articles)
 // *pp_next will be set as pointer to the next article of the article with aid

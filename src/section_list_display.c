@@ -81,8 +81,6 @@ static int section_list_draw_items(int page_id, ARTICLE *p_articles[], int artic
 			}
 		}
 
-		article_flag = (is_viewed ? ' ' : 'N');
-
 		if (p_articles[i]->excerption)
 		{
 			article_flag = (is_viewed ? 'm' : 'M');
@@ -90,6 +88,10 @@ static int section_list_draw_items(int page_id, ARTICLE *p_articles[], int artic
 		else if (p_articles[i]->lock && is_viewed)
 		{
 			article_flag = 'x';
+		}
+		else
+		{
+			article_flag = (is_viewed ? ' ' : 'N');
 		}
 
 		localtime_r(&p_articles[i]->sub_dt, &tm_sub);
@@ -114,7 +116,13 @@ static int section_list_draw_items(int page_id, ARTICLE *p_articles[], int artic
 
 		moveto(4 + i, 1);
 		prints("  %s%7d\033[m %c %s%*s %s %s%s\033[m",
-			   (p_articles[i]->aid == section_topic_view_tid ? "\033[1;33m" : (p_articles[i]->tid == section_topic_view_tid ? "\033[1;36m" : "")),
+			   (p_articles[i]->ontop
+					? "\033[47;30m"
+					: (p_articles[i]->aid == section_topic_view_tid
+						   ? "\033[1;33m"
+						   : (p_articles[i]->tid == section_topic_view_tid
+								  ? "\033[1;36m"
+								  : ""))),
 			   p_articles[i]->aid,
 			   article_flag,
 			   (display_nickname ? p_articles[i]->nickname : p_articles[i]->username),
@@ -122,7 +130,11 @@ static int section_list_draw_items(int page_id, ARTICLE *p_articles[], int artic
 								 : BBS_username_max_len - (int)strnlen(p_articles[i]->username, sizeof(p_articles[i]->username))),
 			   "",
 			   str_time,
-			   (p_articles[i]->aid == section_topic_view_tid ? "\033[1;33m" : (p_articles[i]->tid == section_topic_view_tid ? "\033[1;36m" : "")),
+			   (p_articles[i]->aid == section_topic_view_tid
+					? "\033[1;33m"
+					: (p_articles[i]->tid == section_topic_view_tid
+						   ? "\033[1;36m"
+						   : "")),
 			   title_f);
 	}
 
@@ -653,6 +665,13 @@ int section_list_display(const char *sname)
 
 			// Update current topic
 			section_topic_view_tid = (p_articles[selected_index]->tid == 0 ? p_articles[selected_index]->aid : p_articles[selected_index]->tid);
+
+			if (section_list_draw_screen(sname, stitle, master_list, display_nickname) < 0)
+			{
+				log_error("section_list_draw_screen() error\n");
+				return -2;
+			}
+			break;
 		case CHANGE_NAME_DISPLAY:
 			display_nickname = !display_nickname;
 			if (section_list_draw_screen(sname, stitle, master_list, display_nickname) < 0)

@@ -42,7 +42,7 @@ union semun
 #define SECTION_TRY_LOCK_WAIT_TIME 1 // second
 #define SECTION_TRY_LOCK_TIMES 10
 
-#define ARTICLE_BLOCK_PER_SHM 1000		  // sizeof(ARTICLE_BLOCK) * ARTICLE_BLOCK_PER_SHM is the size of each shm segment to allocate
+#define ARTICLE_BLOCK_PER_SHM 1000		 // sizeof(ARTICLE_BLOCK) * ARTICLE_BLOCK_PER_SHM is the size of each shm segment to allocate
 #define ARTICLE_BLOCK_SHM_COUNT_LIMIT 80 // limited by length (8-bit) of proj_id in ftok(path, proj_id)
 #define ARTICLE_BLOCK_PER_POOL (ARTICLE_BLOCK_PER_SHM * ARTICLE_BLOCK_SHM_COUNT_LIMIT)
 
@@ -670,6 +670,8 @@ void section_list_reset_articles(SECTION_LIST *p_section)
 
 	p_section->page_count = 0;
 	p_section->last_page_visible_article_count = 0;
+
+	p_section->ontop_article_count = 0;
 }
 
 SECTION_LIST *section_list_find_by_name(const char *sname)
@@ -860,6 +862,13 @@ int section_list_append_article(SECTION_LIST *p_section, const ARTICLE *p_articl
 		p_section->last_page_visible_article_count++;
 	}
 
+	if (p_article->ontop && section_list_update_article_ontop(p_section, p_article) < 0)
+	{
+		log_error("section_list_update_article_ontop(sid=%d, aid=%d) error\n",
+				  p_section->sid, p_article->aid);
+		return -5;
+	}
+
 	return 0;
 }
 
@@ -871,8 +880,8 @@ int section_list_set_article_visible(SECTION_LIST *p_section, int32_t aid, int8_
 
 	if (p_section == NULL)
 	{
-		log_error("section_list_set_article_visible() NULL pointer error\n");
-		return -2;
+		log_error("NULL pointer error\n");
+		return -1;
 	}
 
 	p_article = article_block_find_by_aid(aid);
@@ -883,7 +892,7 @@ int section_list_set_article_visible(SECTION_LIST *p_section, int32_t aid, int8_
 
 	if (p_section->sid != p_article->sid)
 	{
-		log_error("section_list_set_article_visible() error: section sid %d != article sid %d\n", p_section->sid, p_article->sid);
+		log_error("Inconsistent section sid %d != article sid %d\n", p_section->sid, p_article->sid);
 		return -2;
 	}
 
@@ -932,6 +941,122 @@ int section_list_set_article_visible(SECTION_LIST *p_section, int32_t aid, int8_
 	affected_count++;
 
 	return affected_count;
+}
+
+int section_list_update_article_ontop(SECTION_LIST *p_section, ARTICLE *p_article)
+{
+	int i;
+
+	if (p_section == NULL || p_article == NULL)
+	{
+		log_error("NULL pointer error\n");
+		return -1;
+	}
+
+	if (p_section->sid != p_article->sid)
+	{
+		log_error("Inconsistent section sid %d != article sid %d\n", p_section->sid, p_article->sid);
+		return -2;
+	}
+
+	if (p_article->ontop)
+	{
+		for (i = 0; i < p_section->ontop_article_count; i++)
+		{
+			if (p_section->p_ontop_articles[i]->aid == p_article->aid)
+			{
+				log_error("Inconsistent state found: article %d already ontop in section %d\n", p_article->aid, p_section->sid);
+				return 0;
+			}
+			else if (p_section->p_ontop_articles[i]->aid > p_article->aid)
+			{
+				break;
+			}
+		}
+
+		// Remove the oldest one if the array of ontop articles is full
+		if (p_section->ontop_article_count >= BBS_ontop_article_limit_per_section)
+		{
+			if (i == 0) // p_article is the oldest one
+			{
+				return 0;
+			}
+			memmove((void *)(p_section->p_ontop_articles),
+					(void *)(p_section->p_ontop_articles + 1),
+					sizeof(ARTICLE *) * (size_t)(i - 1));
+			p_section->ontop_article_count--;
+			i--;
+		}
+		else
+		{
+			memmove((void *)(p_section->p_ontop_articles + i + 1),
+					(void *)(p_section->p_ontop_articles + i),
+					sizeof(ARTICLE *) * (size_t)(p_section->ontop_article_count - i));
+		}
+
+		p_section->p_ontop_articles[i] = p_article;
+		p_section->ontop_article_count++;
+
+		// TODO: debug
+	}
+	else // ontop == 0
+	{
+		for (i = 0; i < p_section->ontop_article_count; i++)
+		{
+			if (p_section->p_ontop_articles[i]->aid == p_article->aid)
+			{
+				break;
+			}
+		}
+		if (i == p_section->ontop_article_count) // not found
+		{
+			log_error("Inconsistent state found: article %d not ontop in section %d\n", p_article->aid, p_section->sid);
+			return 0;
+		}
+
+		memmove((void *)(p_section->p_ontop_articles + i),
+				(void *)(p_section->p_ontop_articles + i + 1),
+				sizeof(ARTICLE *) * (size_t)(p_section->ontop_article_count - i - 1));
+		p_section->ontop_article_count--;
+	}
+
+	return 0;
+}
+
+int section_list_page_count_with_ontop(SECTION_LIST *p_section)
+{
+	int page_count;
+
+	if (p_section == NULL)
+	{
+		log_error("NULL pointer error\n");
+		return -1;
+	}
+
+	page_count = p_section->page_count - 1 +
+				 (p_section->last_page_visible_article_count + p_section->ontop_article_count) / BBS_article_limit_per_page +
+				 ((p_section->last_page_visible_article_count + p_section->ontop_article_count) % BBS_article_limit_per_page == 0 ? 0 : 1);
+
+	return page_count;
+}
+
+int section_list_page_article_count_with_ontop(SECTION_LIST *p_section, int32_t page_id)
+{
+	if (p_section == NULL)
+	{
+		log_error("NULL pointer error\n");
+		return -1;
+	}
+
+	if (page_id < p_section->page_count - 1)
+	{
+		return BBS_article_limit_per_page;
+	}
+	else // if (page_id >= p_section->page_count - 1)
+	{
+		return MAX(0, (p_section->last_page_visible_article_count + p_section->ontop_article_count -
+					   BBS_article_limit_per_page * (page_id - p_section->page_count + 1)));
+	}
 }
 
 ARTICLE *section_list_find_article_with_offset(SECTION_LIST *p_section, int32_t aid, int32_t *p_page, int32_t *p_offset, ARTICLE **pp_next)
