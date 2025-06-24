@@ -35,7 +35,7 @@ MENU;
 			}
 			$output .= $output_sub_dir;
 
-			$dir_name_f = addslashes($row["name"]) . str_repeat(" ", 56 - str_length($row["name"]));
+			$dir_name_f = addslashes($row["name"]) . str_repeat(" ", 55 - str_length($row["name"]));
 			$dt = (new DateTimeImmutable($row["dt"]))->format("Y.m.d");
 
 			$output_cur_dir .= <<<MENU
@@ -64,8 +64,8 @@ MENU;
 		while ($row = mysqli_fetch_array($rs))
 		{
 			$aid_f = str_repeat(" ", 7 - strlen("{$row['AID']}")) . "{$row['AID']}";
-			$title_f = split_line($row["title"], "", 56, 1, "");
-			$title_f = addslashes($title_f) . str_repeat(" ", 56 - str_length($title_f));
+			$title_f = split_line($row["title"], "", 55, 1, "");
+			$title_f = addslashes($title_f) . str_repeat(" ", 55 - str_length($title_f));
 			$sub_dt = (new DateTimeImmutable($row["sub_dt"]))->format("Y.m.d");
 
 			$output_cur_dir .= <<<MENU
@@ -103,7 +103,7 @@ MENU;
 #---------------------------------------------------------------------
 %S_EX_DIR
   ·µ»Ø[[1;32m¡û[0;37m] ½øÈë[[1;32m¡ú[0;37m] Ñ¡Ôñ[[1;32m¡ü PgUp[0;37m,[1;32m¡ý PgDn[0;37m]
-[44;37m    [1;37m±à  ºÅ  ÎÄÕÂ±êÌâ                                                 ÈÕ  ÆÚ     [m
+[44;37m    [1;37m±à  ºÅ  ÎÄÕÂ±êÌâ                                                ÈÕ  ÆÚ      [m
 
 
 
