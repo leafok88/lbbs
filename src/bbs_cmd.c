@@ -29,9 +29,10 @@ static const BBS_CMD bbs_cmd_list[] = {
 	{"SHUTDOWN", shutdown_bbs},
 	{"M_FAVOUR", favour_section_filter},
 	{"VIEW_EX_ARTICLE", view_ex_article},
+	{"LIST_EX_SECTION", list_ex_section},
 };
 
-static const int bbs_cmd_count = 9;
+static const int bbs_cmd_count = 10;
 
 static TRIE_NODE *p_bbs_cmd_dict;
 

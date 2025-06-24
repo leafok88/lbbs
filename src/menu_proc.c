@@ -206,3 +206,22 @@ int view_ex_article(void *param)
 
 	return REDRAW;
 }
+
+int list_ex_section(void *param)
+{
+	SECTION_LIST *p_section;
+
+	p_section = section_list_find_by_name(param);
+	if (p_section == NULL)
+	{
+		log_error("Section %s not found\n", (const char *)param);
+		return -1;
+	}
+
+	if (section_list_ex_dir_display(p_section) < 0)
+	{
+		log_error("section_list_ex_dir_display(sid=%d) error\n", p_section->sid);
+	}
+
+	return REDRAW;
+}

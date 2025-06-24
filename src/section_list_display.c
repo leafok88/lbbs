@@ -826,7 +826,6 @@ int section_list_display(const char *sname)
 
 int section_list_ex_dir_display(SECTION_LIST *p_section)
 {
-	char str_section_name[LINE_BUFFER_LEN];
 	MENU_SET ex_menu_set;
 	int ch = 0;
 
@@ -847,10 +846,8 @@ int section_list_ex_dir_display(SECTION_LIST *p_section)
 		return -3;
 	}
 
-	snprintf(str_section_name, sizeof(str_section_name), "[%s | ¾«»ªÇø]", p_section->sname);
-
 	clearscr();
-	show_bottom(str_section_name);
+	show_bottom("");
 
 	if (display_menu(&ex_menu_set) == 0)
 	{
@@ -878,7 +875,7 @@ int section_list_ex_dir_display(SECTION_LIST *p_section)
 					break;
 				case REDRAW:
 					clearscr();
-					show_bottom(str_section_name);
+					show_bottom("");
 					display_menu(&ex_menu_set);
 					break;
 				case NOREDRAW:

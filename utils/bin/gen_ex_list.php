@@ -8,7 +8,7 @@
 		$output_cur_dir .= <<<MENU
 #---------------------------------------------------------------------
 %menu M_EX_{$sid}_{$fid}
-title       0, 0, "[{$name}]"
+title       0, 0, "¾«»ªÇø > {$name}"
 screen      2, 0, S_EX_DIR
 page        4, 1, 20
 

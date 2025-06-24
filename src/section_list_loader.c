@@ -134,9 +134,9 @@ int load_section_config_from_db(int reload)
 				break;
 			}
 
-			strncpy(p_section->sname, row[0], sizeof(p_section->sname) - 1);
+			strncpy(p_section->sname, row[1], sizeof(p_section->sname) - 1);
 			p_section->sname[sizeof(p_section->sname) - 1] = '\0';
-			strncpy(p_section->stitle, row[1], sizeof(p_section->stitle) - 1);
+			strncpy(p_section->stitle, row[2], sizeof(p_section->stitle) - 1);
 			p_section->stitle[sizeof(p_section->stitle) - 1] = '\0';
 			strncpy(p_section->master_list, master_list, sizeof(p_section->master_list) - 1);
 			p_section->master_list[sizeof(p_section->master_list) - 1] = '\0';
