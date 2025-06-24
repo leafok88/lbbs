@@ -26,5 +26,6 @@ extern int copyright(void *param);
 extern int reload_bbs_conf(void *param);
 extern int shutdown_bbs(void *param);
 extern int favour_section_filter(void *param);
+extern int view_ex_article(void *param);
 
 #endif //_MENU_PROC_H_

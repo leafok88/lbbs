@@ -21,4 +21,6 @@
 
 extern int section_list_display(const char *sname);
 
+extern int section_list_ex_dir_display(SECTION_LIST *p_section);
+
 #endif //_SECTION_LIST_DISPLAY_H_

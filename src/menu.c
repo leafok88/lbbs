@@ -78,7 +78,7 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 
 	if ((fin = fopen(conf_file, "r")) == NULL)
 	{
-		log_error("Open %s failed", conf_file);
+		log_error("Open %s failed\n", conf_file);
 		return -2;
 	}
 
@@ -119,6 +119,7 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 	p_menu_set->menu_screen_count = 0;
 	p_menu_set->choose_step = 0;
 	p_menu_set->menu_id_path[0] = 0;
+	p_menu_set->allow_exit = 0;
 
 	while (fgets(buffer, sizeof(buffer), fin))
 	{
@@ -980,7 +981,7 @@ int display_menu(MENU_SET *p_menu_set)
 			p_menu_set->choose_step--;
 			return REDRAW;
 		}
-		return EXITBBS;
+		return EXITMENU;
 	}
 
 	menu_item_pos = p_menu_set->menu_item_pos[p_menu_set->choose_step];
@@ -989,7 +990,7 @@ int display_menu(MENU_SET *p_menu_set)
 	if (p_menu_item == NULL)
 	{
 		log_error("get_menu_item_by_id(%d) return NULL pointer\n", menu_item_id);
-		menu_item_pos = 0;
+		return EXITMENU;
 	}
 
 	if (menu_item_pos > 0 &&
@@ -1100,7 +1101,9 @@ int menu_control(MENU_SET *p_menu_set, int key)
 
 	if (p_menu->item_count == 0)
 	{
+#ifdef _DEBUG
 		log_error("Empty menu (%s)\n", p_menu->name);
+#endif
 		if (p_menu_set->choose_step > 0)
 		{
 			p_menu_set->choose_step--;
@@ -1162,6 +1165,11 @@ int menu_control(MENU_SET *p_menu_set, int key)
 		}
 		else
 		{
+			if (p_menu_set->allow_exit)
+			{
+				return EXITMENU;
+			}
+
 			display_menu_cursor(p_menu_set, 0);
 			menu_item_pos = p_menu->item_count - 1;
 			while (menu_item_pos >= 0)
@@ -1365,6 +1373,27 @@ int unload_menu(MENU_SET *p_menu_set)
 		log_error("shmctl(shmid=%d, IPC_RMID) error (%d)\n", shmid, errno);
 		return -1;
 	}
+
+	return 0;
+}
+
+int get_menu_shm_readonly(MENU_SET *p_menu_set)
+{
+	void *p_shm;
+
+	p_shm = shmat(p_menu_set->shmid, NULL, SHM_RDONLY);
+	if (p_shm == (void *)-1)
+	{
+		log_error("shmat(menu_shm shmid = %d) error (%d)\n", p_menu_set->shmid, errno);
+		return -1;
+	}
+
+	p_menu_set->p_reserved = p_shm;
+	p_menu_set->p_menu_pool = p_menu_set->p_reserved + MENU_SET_RESERVED_LENGTH;
+	p_menu_set->p_menu_item_pool = p_menu_set->p_menu_pool + sizeof(MENU) * MAX_MENUS;
+	p_menu_set->p_menu_screen_pool = p_menu_set->p_menu_item_pool + sizeof(MENU_ITEM) * MAX_MENUITEMS;
+	p_menu_set->p_menu_screen_buf = p_menu_set->p_menu_screen_pool + sizeof(MENU_SCREEN) * MAX_MENUS;
+	p_menu_set->p_menu_screen_buf_free = p_menu_set->p_menu_screen_buf;
 
 	return 0;
 }

@@ -18,11 +18,15 @@
 
 #define MAX_CMD_LENGTH 20
 
-#define MENU_OK 0x0
-#define UNKNOWN_CMD 0xff
-#define EXITBBS 0xfe
-#define REDRAW 0x1
-#define NOREDRAW 0x2
+enum menu_return_t
+{
+	MENU_OK = 0x0,
+	REDRAW = 0x1,
+	NOREDRAW = 0x2,
+	EXITMENU = 0x3,
+	UNKNOWN_CMD = 0xff,
+	EXITBBS = 0xfe,
+};
 
 typedef int (*bbs_cmd_handler)(void *p_param);
 

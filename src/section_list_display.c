@@ -22,6 +22,7 @@
 #include "io.h"
 #include "log.h"
 #include "login.h"
+#include "menu.h"
 #include "section_list_display.h"
 #include "section_list_loader.h"
 #include "screen.h"
@@ -46,6 +47,7 @@ enum select_cmd_t
 	DELETE_ARTICLE = 7,
 	FIRST_TOPIC_ARTICLE = 8,
 	LAST_TOPIC_ARTICLE = 9,
+	VIEW_EX_DIR = 10,
 };
 
 static int section_list_draw_items(int page_id, ARTICLE *p_articles[], int article_count, int display_nickname, int ontop_start_offset)
@@ -174,8 +176,8 @@ static int section_list_draw_screen(const char *sname, const char *stitle, const
 	moveto(2, 0);
 	prints("返回[\033[1;32m←\033[0;37m,\033[1;32mESC\033[0;37m] 选择[\033[1;32m↑\033[0;37m,\033[1;32m↓\033[0;37m] "
 		   "阅读[\033[1;32m→\033[0;37m,\033[1;32mENTER\033[0;37m] 发表[\033[1;32mCtrl-P\033[0;37m] "
-		   "%s[\033[1;32mn\033[0;37m] 帮助[\033[1;32mh\033[0;37m]\033[m",
-		   (display_nickname ? "显示用户名" : "显示昵称"));
+		   "%s[\033[1;32mn\033[0;37m] 精华区[\033[1;32mx\033[0;37m] 帮助[\033[1;32mh\033[0;37m]\033[m",
+		   (display_nickname ? "用户名" : "昵称"));
 	moveto(3, 0);
 	if (display_nickname)
 	{
@@ -296,6 +298,8 @@ static enum select_cmd_t section_list_select(int total_page, int item_count, int
 			return LAST_TOPIC_ARTICLE;
 		case 'h':
 			return SHOW_HELP;
+		case 'x':
+			return VIEW_EX_DIR;
 		default:
 		}
 
@@ -801,10 +805,99 @@ int section_list_display(const char *sname)
 				return -2;
 			}
 			break;
+		case VIEW_EX_DIR:
+			if (section_list_ex_dir_display(p_section) < 0)
+			{
+				log_error("section_list_ex_dir_display(sid=%d) error\n", p_section->sid);
+			}
+			if (section_list_draw_screen(sname, stitle, master_list, display_nickname) < 0)
+			{
+				log_error("section_list_draw_screen() error\n");
+				return -2;
+			}
+			break;
 		default:
 			log_error("Unknown command %d\n", ret);
 		}
 	}
+
+	return 0;
+}
+
+int section_list_ex_dir_display(SECTION_LIST *p_section)
+{
+	char str_section_name[LINE_BUFFER_LEN];
+	MENU_SET ex_menu_set;
+	int ch = 0;
+
+	if (p_section == NULL)
+	{
+		log_error("NULL pointer error\n");
+		return -1;
+	}
+
+	if (get_section_ex_menu_set(p_section, &ex_menu_set) < 0)
+	{
+		log_error("get_section_ex_menu_set(sid=%d) error\n", p_section->sid);
+		return -3;
+	}
+	if (get_menu_shm_readonly(&ex_menu_set) < 0)
+	{
+		log_error("set_menu_shm_readonly(sid=%d) error\n", p_section->sid);
+		return -3;
+	}
+
+	snprintf(str_section_name, sizeof(str_section_name), "[%s | 精华区]", p_section->sname);
+
+	clearscr();
+	show_bottom(str_section_name);
+
+	if (display_menu(&ex_menu_set) == 0)
+	{
+		while (!SYS_server_exit)
+		{
+			iflush();
+			ch = igetch(100);
+			switch (ch)
+			{
+			case KEY_NULL: // broken pipe
+				return 0;
+			case KEY_TIMEOUT:
+				if (time(NULL) - BBS_last_access_tm >= MAX_DELAY_TIME)
+				{
+					return 0;
+				}
+				continue;
+			case CR:
+				igetch_reset();
+			default:
+				switch (menu_control(&ex_menu_set, ch))
+				{
+				case EXITMENU:
+					ch = EXITMENU;
+					break;
+				case REDRAW:
+					clearscr();
+					show_bottom(str_section_name);
+					display_menu(&ex_menu_set);
+					break;
+				case NOREDRAW:
+				case UNKNOWN_CMD:
+				default:
+					break;
+				}
+			}
+
+			BBS_last_access_tm = time(NULL);
+
+			if (ch == EXITMENU)
+			{
+				break;
+			}
+		}
+	}
+
+	detach_menu_shm(&ex_menu_set);
 
 	return 0;
 }

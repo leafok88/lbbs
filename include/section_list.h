@@ -19,6 +19,7 @@
 
 #include "bbs.h"
 #include "common.h"
+#include "menu.h"
 #include <time.h>
 
 #define BBS_article_title_max_len 80
@@ -73,6 +74,8 @@ struct section_list_t
 	int32_t last_page_visible_article_count;
 	ARTICLE *p_ontop_articles[BBS_ontop_article_limit_per_section];
 	int32_t ontop_article_count;
+	MENU_SET ex_menu_set;
+	time_t ex_menu_tm;
 };
 typedef struct section_list_t SECTION_LIST;
 
@@ -97,6 +100,7 @@ extern int article_count_of_topic(int32_t aid);
 
 extern int section_list_init(const char *filename);
 extern void section_list_cleanup(void);
+extern void section_list_ex_menu_set_cleanup(void);
 
 extern int set_section_list_shm_readonly(void);
 extern int detach_section_list_shm(void);

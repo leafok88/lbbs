@@ -14,11 +14,14 @@
  *                                                                         *
  ***************************************************************************/
 
+#include "article_cache.h"
+#include "article_view_log.h"
 #include "bbs.h"
 #include "bbs_cmd.h"
 #include "common.h"
 #include "io.h"
 #include "log.h"
+#include "login.h"
 #include "menu.h"
 #include "section_list_display.h"
 #include "screen.h"
@@ -26,6 +29,7 @@
 #include <dlfcn.h>
 #include <errno.h>
 #include <signal.h>
+#include <stdlib.h>
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
@@ -142,4 +146,63 @@ int favour_section_filter(void *param)
 	MENU_ITEM *p_menu_item = param;
 
 	return (is_favor(&BBS_priv, p_menu_item->priv) && checklevel2(&BBS_priv, p_menu_item->level));
+}
+
+static int display_ex_article_key_handler(int *p_key, DISPLAY_CTX *p_ctx)
+{
+	switch (*p_key)
+	{
+	case 0: // Set msg
+		snprintf(p_ctx->msg, sizeof(p_ctx->msg),
+				 "| ·µ»Ø[\033[32m¡û\033[33m,\033[32mESC\033[33m] | "
+				 "ÒÆ¶¯[\033[32m¡ü\033[33m/\033[32m¡ý\033[33m/\033[32mPgUp\033[33m/\033[32mPgDn\033[33m] | "
+				 "°ïÖú[\033[32mh\033[33m] |");
+		break;
+	}
+
+	return 0;
+}
+
+int view_ex_article(void *param)
+{
+	ARTICLE_CACHE cache;
+	ARTICLE *p_article;
+	int32_t aid = atoi(param);
+	int ret;
+
+	(void)ret;
+
+	p_article = article_block_find_by_aid(aid);
+	if (p_article == NULL)
+	{
+		log_error("article_block_find_by_aid(%d) error\n", aid);
+		return NOREDRAW;
+	}
+
+	if (article_cache_load(&cache, VAR_ARTICLE_CACHE_DIR, p_article) < 0)
+	{
+		log_error("article_cache_load(aid=%d, cid=%d) error\n", p_article->aid, p_article->cid);
+		return NOREDRAW;
+	}
+
+	if (user_online_update("VIEW_ARTICLE") < 0)
+	{
+		log_error("user_online_update(VIEW_ARTICLE) error\n");
+	}
+
+	ret = display_data(cache.p_data, cache.line_total, cache.line_offsets, 0,
+					   display_ex_article_key_handler, DATA_READ_HELP);
+
+	if (article_cache_unload(&cache) < 0)
+	{
+		log_error("article_cache_unload(aid=%d, cid=%d) error\n", p_article->aid, p_article->cid);
+	}
+
+	// Update article_view_log
+	if (article_view_log_set_viewed(p_article->aid, &BBS_article_view_log) < 0)
+	{
+		log_error("article_view_log_set_viewed(aid=%d) error\n", p_article->aid);
+	}
+
+	return REDRAW;
 }

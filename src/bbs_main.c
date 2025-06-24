@@ -29,6 +29,8 @@
 #include "section_list.h"
 #include "trie_dict.h"
 #include "user_priv.h"
+#include <errno.h>
+#include <signal.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
@@ -242,6 +244,7 @@ int bbs_center()
 			switch (menu_control(p_bbs_menu, ch))
 			{
 			case EXITBBS:
+			case EXITMENU:
 				return 0;
 			case REDRAW:
 				t_last_action = time(NULL);
@@ -267,6 +270,22 @@ int bbs_center()
 
 int bbs_main()
 {
+	struct sigaction act = {0};
+
+	// Set signal handler
+	act.sa_handler = SIG_IGN;
+	if (sigaction(SIGHUP, &act, NULL) == -1)
+	{
+		log_error("set signal action of SIGHUP error: %d\n", errno);
+		goto cleanup;
+	}
+	act.sa_handler = SIG_DFL;
+	if (sigaction(SIGCHLD, &act, NULL) == -1)
+	{
+		log_error("set signal action of SIGCHLD error: %d\n", errno);
+		goto cleanup;
+	}
+
 	// Set data pools in shared memory readonly
 	if (set_trie_dict_shm_readonly() < 0)
 	{

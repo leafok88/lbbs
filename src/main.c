@@ -231,7 +231,7 @@ int main(int argc, char *argv[])
 	}
 
 	// Load section config
-	if (load_section_config_from_db() < 0)
+	if (load_section_config_from_db(0) < 0)
 	{
 		log_error("load_section_config_from_db() error\n");
 		goto cleanup;

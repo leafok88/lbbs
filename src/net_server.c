@@ -469,7 +469,7 @@ int net_server(const char *hostaddr, in_port_t port[])
 
 			if (section_list_loader_reload() < 0)
 			{
-				log_error("ksection_list_loader_reload() failed\n");
+				log_error("section_list_loader_reload() failed\n");
 			}
 		}
 

@@ -54,6 +54,7 @@
 #define VAR_TRIE_DICT_SHM "var/trie_dict_shm.~"
 
 #define VAR_ARTICLE_CACHE_DIR "var/articles/"
+#define VAR_GEN_EX_MENU_DIR "var/gen_ex/"
 
 // File loader
 extern const char *data_files_load_startup[];

@@ -555,6 +555,19 @@ void section_list_cleanup(void)
 	p_section_list_pool = NULL;
 }
 
+void section_list_ex_menu_set_cleanup(void)
+{
+	int i;
+
+	for (i = 0; i < p_section_list_pool->section_count; i++)
+	{
+		if (p_section_list_pool->sections[i].ex_menu_tm > 0)
+		{
+			unload_menu(&(p_section_list_pool->sections[i].ex_menu_set));
+		}
+	}
+}
+
 int set_section_list_shm_readonly(void)
 {
 	int shmid;
@@ -630,6 +643,7 @@ SECTION_LIST *section_list_create(int32_t sid, const char *sname, const char *st
 	p_section = p_section_list_pool->sections + p_section_list_pool->section_count;
 
 	p_section->sid = sid;
+	p_section->ex_menu_tm = 0;
 
 	strncpy(p_section->sname, sname, sizeof(p_section->sname) - 1);
 	p_section->sname[sizeof(p_section->sname) - 1] = '\0';

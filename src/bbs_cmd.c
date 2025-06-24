@@ -27,10 +27,11 @@ static const BBS_CMD bbs_cmd_list[] = {
 	{"COPYRIGHT", copyright},
 	{"RELOADCONF", reload_bbs_conf},
 	{"SHUTDOWN", shutdown_bbs},
-	{"M_FAVOUR", favour_section_filter}
+	{"M_FAVOUR", favour_section_filter},
+	{"VIEW_EX_ARTICLE", view_ex_article},
 };
 
-static const int bbs_cmd_count = 8;
+static const int bbs_cmd_count = 9;
 
 static TRIE_NODE *p_bbs_cmd_dict;
 

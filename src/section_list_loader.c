@@ -30,7 +30,7 @@
 int section_list_loader_pid;
 int last_article_op_log_mid;
 
-int load_section_config_from_db(void)
+int load_section_config_from_db(int reload)
 {
 	MYSQL *db = NULL;
 	MYSQL_RES *rs = NULL, *rs2 = NULL;
@@ -39,6 +39,8 @@ int load_section_config_from_db(void)
 	int32_t sid;
 	char master_list[(BBS_username_max_len + 1) * 3 + 1];
 	SECTION_LIST *p_section;
+	char ex_menu_conf[FILE_PATH_LEN];
+	MENU_SET ex_menu_set_new;
 	int ret = 0;
 
 	db = db_open();
@@ -51,7 +53,8 @@ int load_section_config_from_db(void)
 
 	snprintf(sql, sizeof(sql),
 			 "SELECT section_config.SID, sname, section_config.title, section_config.CID, "
-			 "read_user_level, write_user_level, section_config.enable * section_class.enable AS enable "
+			 "read_user_level, write_user_level, section_config.enable * section_class.enable AS enable, "
+			 "UNIX_TIMESTAMP(ex_menu_tm) AS ex_menu_tm "
 			 "FROM section_config INNER JOIN section_class ON section_config.CID = section_class.CID "
 			 "ORDER BY section_config.SID");
 
@@ -143,6 +146,35 @@ int load_section_config_from_db(void)
 		p_section->read_user_level = atoi(row[4]);
 		p_section->write_user_level = atoi(row[5]);
 		p_section->enable = (int8_t)atoi(row[6]);
+
+		// Update gen_ex menu set
+		if (reload && p_section->enable && atoi(row[7]) > p_section->ex_menu_tm)
+		{
+			snprintf(ex_menu_conf, sizeof(ex_menu_conf), "%s/%d", VAR_GEN_EX_MENU_DIR, p_section->sid);
+
+			ret = load_menu(&ex_menu_set_new, ex_menu_conf);
+			if (ret < 0)
+			{
+				log_error("load_menu(%s) error: %d\n", ex_menu_conf, ret);
+				unload_menu(&ex_menu_set_new);
+			}
+			else
+			{
+				if (p_section->ex_menu_tm > 0)
+				{
+					unload_menu(&(p_section->ex_menu_set));
+				}
+
+				ex_menu_set_new.allow_exit = 1; // Allow exit menu
+				memcpy(&(p_section->ex_menu_set), &ex_menu_set_new, sizeof(ex_menu_set_new));
+				set_menu_shm_readonly(&(p_section->ex_menu_set));
+
+				p_section->ex_menu_tm = atol(row[7]);
+#ifdef _DEBUG
+				log_common("Loaded gen_ex_menu of section %d [%s]\n", p_section->sid, p_section->sname);
+#endif
+			}
+		}
 
 		// release rw lock
 		ret = section_list_rw_unlock(p_section);
@@ -635,6 +667,7 @@ cleanup:
 
 int section_list_loader_launch(void)
 {
+	struct sigaction act = {0};
 	int pid;
 	int ret;
 	int32_t last_aid;
@@ -672,6 +705,16 @@ int section_list_loader_launch(void)
 	free(p_bbs_menu);
 	p_bbs_menu = NULL;
 
+	// Set signal handler
+	act.sa_handler = SIG_DFL;
+	if (sigaction(SIGCHLD, &act, NULL) == -1)
+	{
+		log_error("set signal action of SIGCHLD error: %d\n", errno);
+	}
+
+	// Force reload to load gen_ex_menu
+	SYS_section_list_reload = 1;
+
 	// Do section data loader periodically
 	while (!SYS_server_exit)
 	{
@@ -680,7 +723,7 @@ int section_list_loader_launch(void)
 			SYS_section_list_reload = 0;
 
 			// Load section config
-			if (load_section_config_from_db() < 0)
+			if (load_section_config_from_db(1) < 0)
 			{
 				log_error("load_section_config_from_db() error\n");
 			}
@@ -755,6 +798,9 @@ int section_list_loader_launch(void)
 
 	article_cache_cleanup();
 
+	// gen_ex_menu cleanup
+	section_list_ex_menu_set_cleanup();
+	
 	// Detach data pools shm
 	detach_section_list_shm();
 	detach_article_block_shm();
@@ -797,7 +843,7 @@ int query_section_articles(SECTION_LIST *p_section, int page_id, ARTICLE *p_arti
 
 	if (p_section == NULL || p_articles == NULL || p_article_count == NULL || p_page_count == NULL || p_ontop_start_offset == NULL)
 	{
-		log_error("query_section_articles() NULL pointer error\n");
+		log_error("NULL pointer error\n");
 		return -1;
 	}
 
@@ -885,7 +931,7 @@ int locate_article_in_section(SECTION_LIST *p_section, const ARTICLE *p_article_
 
 	if (p_section == NULL || p_article_cur == NULL || p_page_id == NULL || p_visible_offset == NULL || p_article_count == NULL)
 	{
-		log_error("locate_article_in_section() NULL pointer error\n");
+		log_error("NULL pointer error\n");
 		return -1;
 	}
 
@@ -969,4 +1015,33 @@ int locate_article_in_section(SECTION_LIST *p_section, const ARTICLE *p_article_
 	}
 
 	return (ret < 0 ? ret : (p_article == NULL ? 0 : 1));
+}
+
+int get_section_ex_menu_set(SECTION_LIST *p_section, MENU_SET *p_ex_menu_set)
+{
+	int ret = 0;
+
+	if (p_section == NULL || p_ex_menu_set == NULL)
+	{
+		log_error("NULL pointer error\n");
+		return -1;
+	}
+
+	// acquire lock of section
+	if ((ret = section_list_rd_lock(p_section)) < 0)
+	{
+		log_error("section_list_rd_lock(sid = %d) error\n", p_section->sid);
+		return -2;
+	}
+
+	memcpy(p_ex_menu_set, &(p_section->ex_menu_set), sizeof(p_section->ex_menu_set));
+
+	// release lock of section
+	if (section_list_rd_unlock(p_section) < 0)
+	{
+		log_error("section_list_rd_unlock(sid = %d) error\n", p_section->sid);
+		ret = -2;
+	}
+
+	return ret;
 }

@@ -105,6 +105,7 @@ struct menu_set_t
 	int16_t menu_item_r_row[MAX_ITEMS_PER_MENU];
 	int16_t menu_item_r_col[MAX_ITEMS_PER_MENU];
 	int16_t menu_item_page_id[MAX_ITEMS_PER_MENU];
+	int8_t allow_exit;
 };
 typedef struct menu_set_t MENU_SET;
 
@@ -113,6 +114,7 @@ extern MENU_SET *p_bbs_menu;
 extern int load_menu(MENU_SET *p_menu_set, const char *conf_file);
 extern int unload_menu(MENU_SET *p_menu_set);
 
+extern int get_menu_shm_readonly(MENU_SET *p_menu_set);
 extern int set_menu_shm_readonly(MENU_SET *p_menu_set);
 extern int detach_menu_shm(MENU_SET *p_menu_set);
 
