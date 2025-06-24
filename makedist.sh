@@ -18,6 +18,7 @@ md ${PRG_HOME} data
 md ${PRG_HOME} var
 md ${PRG_HOME} log
 md ${PRG_HOME}/var articles
+md ${PRG_HOME}/var gen_ex
 md ${PRG_HOME}/var chicken
 
 for i in `find conf/ -maxdepth 1 -type f`; do
