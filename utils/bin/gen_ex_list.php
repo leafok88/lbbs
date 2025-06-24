@@ -35,10 +35,11 @@ MENU;
 			}
 			$output .= $output_sub_dir;
 
-			$dt = date("YÄêmÔÂdÈÕ", strtotime($row["dt"]));
+			$dir_name_f = addslashes($row["name"]) . str_repeat(" ", 56 - str_length($row["name"]));
+			$dt = (new DateTimeImmutable($row["dt"]))->format("Y.m.d");
 
 			$output_cur_dir .= <<<MENU
-			!M_EX_{$sid}_{$row['FID']}   {$display_row}, 4, 1, 0, "{$row['dir']}", " [Ä¿Â¼]  {$row['name']} [{$dt}]"
+			!M_EX_{$sid}_{$row['FID']}   {$display_row}, 4, 1, 0, "{$row['dir']}", " [Ä¿Â¼]  {$dir_name_f} {$dt}"
 
 			MENU;
 
@@ -63,12 +64,12 @@ MENU;
 		while ($row = mysqli_fetch_array($rs))
 		{
 			$aid_f = str_repeat(" ", 7 - strlen("{$row['AID']}")) . "{$row['AID']}";
-			$title_f = split_line($row["title"], "", 50, 1, "");
-			$title_f = addslashes($title_f) . str_repeat(" ", 50 - str_length($title_f));
-			$sub_dt = date("YÄêmÔÂdÈÕ", strtotime($row["sub_dt"]));
+			$title_f = split_line($row["title"], "", 56, 1, "");
+			$title_f = addslashes($title_f) . str_repeat(" ", 56 - str_length($title_f));
+			$sub_dt = (new DateTimeImmutable($row["sub_dt"]))->format("Y.m.d");
 
 			$output_cur_dir .= <<<MENU
-			@VIEW_EX_ARTICLE   {$display_row}, 4, 1, 0, "{$row['AID']}", "{$aid_f}  {$title_f} [{$sub_dt}]"
+			@VIEW_EX_ARTICLE   {$display_row}, 4, 1, 0, "{$row['AID']}", "{$aid_f}  {$title_f} {$sub_dt}"
 
 			MENU;
 
@@ -102,7 +103,7 @@ MENU;
 #---------------------------------------------------------------------
 %S_EX_DIR
   ·µ»Ø[[1;32m¡û[0;37m] ½øÈë[[1;32m¡ú[0;37m] Ñ¡Ôñ[[1;32m¡ü PgUp[0;37m,[1;32m¡ý PgDn[0;37m]
-[44;37m    [1;37m±à  ºÅ  ÎÄÕÂ±êÌâ                                           ÈÕ  ÆÚ           [m
+[44;37m    [1;37m±à  ºÅ  ÎÄÕÂ±êÌâ                                                 ÈÕ  ÆÚ     [m
 
 
 
