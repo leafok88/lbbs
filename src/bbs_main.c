@@ -206,20 +206,20 @@ int bbs_center()
 	show_top("", BBS_name, "");
 	show_active_board();
 	show_bottom("");
-	display_menu(p_bbs_menu);
+	display_menu(&bbs_menu);
 	iflush();
 
 	while (!SYS_server_exit)
 	{
 		ch = igetch(100);
 
-		if (p_bbs_menu->choose_step == 0 && time(NULL) - t_last_action >= 10)
+		if (bbs_menu.choose_step == 0 && time(NULL) - t_last_action >= 10)
 		{
 			t_last_action = time(NULL);
 
 			show_active_board();
 			show_bottom("");
-			display_menu_cursor(p_bbs_menu, 1);
+			display_menu_cursor(&bbs_menu, 1);
 			iflush();
 		}
 
@@ -241,7 +241,7 @@ int bbs_center()
 		case CR:
 			igetch_reset();
 		default:
-			switch (menu_control(p_bbs_menu, ch))
+			switch (menu_control(&bbs_menu, ch))
 			{
 			case EXITBBS:
 			case EXITMENU:
@@ -252,7 +252,7 @@ int bbs_center()
 				show_top("", BBS_name, "");
 				show_active_board();
 				show_bottom("");
-				display_menu(p_bbs_menu);
+				display_menu(&bbs_menu);
 				break;
 			case NOREDRAW:
 			case UNKNOWN_CMD:
@@ -301,7 +301,7 @@ int bbs_main()
 	}
 
 	// Load menu in shared memory
-	if (set_menu_shm_readonly(p_bbs_menu) < 0)
+	if (set_menu_shm_readonly(&bbs_menu) < 0)
 	{
 		goto cleanup;
 	}
@@ -371,9 +371,7 @@ cleanup:
 	article_view_log_unload(&BBS_article_view_log);
 
 	// Detach menu in shared memory
-	detach_menu_shm(p_bbs_menu);
-	free(p_bbs_menu);
-	p_bbs_menu = NULL;
+	detach_menu_shm(&bbs_menu);
 
 	// Detach data pools shm
 	detach_section_list_shm();

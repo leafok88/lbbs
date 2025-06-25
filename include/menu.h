@@ -109,7 +109,7 @@ struct menu_set_t
 };
 typedef struct menu_set_t MENU_SET;
 
-extern MENU_SET *p_bbs_menu;
+extern MENU_SET bbs_menu;
 
 extern int load_menu(MENU_SET *p_menu_set, const char *conf_file);
 extern int unload_menu(MENU_SET *p_menu_set);

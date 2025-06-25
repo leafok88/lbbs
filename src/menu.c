@@ -38,7 +38,7 @@
 
 #define MENU_SET_RESERVED_LENGTH (sizeof(int16_t) * 4)
 
-MENU_SET *p_bbs_menu;
+MENU_SET bbs_menu;
 
 int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 {
@@ -59,6 +59,9 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 	int proj_id;
 	key_t key;
 	size_t size;
+
+	// Initialize the data structure
+	memset(p_menu_set, 0, sizeof(*p_menu_set));
 
 	// Use trie_dict to search menu_id by menu name
 	p_menu_set->p_menu_name_dict = trie_dict_create();
@@ -119,6 +122,7 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 	p_menu_set->menu_screen_count = 0;
 	p_menu_set->choose_step = 0;
 	p_menu_set->menu_id_path[0] = 0;
+	p_menu_set->menu_item_pos[0] = 0;
 	p_menu_set->allow_exit = 0;
 
 	while (fgets(buffer, sizeof(buffer), fin))
@@ -1394,6 +1398,10 @@ int get_menu_shm_readonly(MENU_SET *p_menu_set)
 	p_menu_set->p_menu_screen_pool = p_menu_set->p_menu_item_pool + sizeof(MENU_ITEM) * MAX_MENUITEMS;
 	p_menu_set->p_menu_screen_buf = p_menu_set->p_menu_screen_pool + sizeof(MENU_SCREEN) * MAX_MENUS;
 	p_menu_set->p_menu_screen_buf_free = p_menu_set->p_menu_screen_buf;
+
+	p_menu_set->choose_step = 0;
+	p_menu_set->menu_id_path[0] = 0;
+	p_menu_set->menu_item_pos[0] = 0;
 
 	return 0;
 }

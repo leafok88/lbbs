@@ -205,13 +205,7 @@ int main(int argc, char *argv[])
 	}
 
 	// Load menus
-	p_bbs_menu = calloc(1, sizeof(MENU_SET));
-	if (p_bbs_menu == NULL)
-	{
-		log_error("OOM: calloc(MENU_SET)\n");
-		goto cleanup;
-	}
-	if (load_menu(p_bbs_menu, CONF_MENU) < 0)
+	if (load_menu(&bbs_menu, CONF_MENU) < 0)
 	{
 		goto cleanup;
 	}
@@ -289,9 +283,7 @@ cleanup:
 	file_loader_cleanup();
 
 	// Cleanup menu
-	unload_menu(p_bbs_menu);
-	free(p_bbs_menu);
-	p_bbs_menu = NULL;
+	unload_menu(&bbs_menu);
 
 	// Cleanup data pools
 	section_list_cleanup();

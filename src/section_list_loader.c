@@ -155,8 +155,8 @@ int load_section_config_from_db(int reload)
 			ret = load_menu(&ex_menu_set_new, ex_menu_conf);
 			if (ret < 0)
 			{
-				log_error("load_menu(%s) error: %d\n", ex_menu_conf, ret);
 				unload_menu(&ex_menu_set_new);
+				log_error("load_menu(%s) error: %d\n", ex_menu_conf, ret);
 			}
 			else
 			{
@@ -167,7 +167,6 @@ int load_section_config_from_db(int reload)
 
 				ex_menu_set_new.allow_exit = 1; // Allow exit menu
 				memcpy(&(p_section->ex_menu_set), &ex_menu_set_new, sizeof(ex_menu_set_new));
-				set_menu_shm_readonly(&(p_section->ex_menu_set));
 
 				p_section->ex_menu_tm = atol(row[7]);
 #ifdef _DEBUG
@@ -701,9 +700,7 @@ int section_list_loader_launch(void)
 	SYS_child_process_count = 0;
 
 	// Detach menu in shared memory
-	detach_menu_shm(p_bbs_menu);
-	free(p_bbs_menu);
-	p_bbs_menu = NULL;
+	detach_menu_shm(&bbs_menu);
 
 	// Set signal handler
 	act.sa_handler = SIG_DFL;
