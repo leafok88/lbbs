@@ -835,6 +835,15 @@ int section_list_ex_dir_display(SECTION_LIST *p_section)
 		return -1;
 	}
 
+	if (p_section->ex_menu_tm == 0) // N/A
+	{
+		moveto(2, 1);
+		clrtoeol();
+		prints("该版块精华区未开放");
+		press_any_key();
+		return 0;
+	}
+
 	if (get_section_ex_menu_set(p_section, &ex_menu_set) < 0)
 	{
 		log_error("get_section_ex_menu_set(sid=%d) error\n", p_section->sid);
@@ -842,7 +851,7 @@ int section_list_ex_dir_display(SECTION_LIST *p_section)
 	}
 	if (get_menu_shm_readonly(&ex_menu_set) < 0)
 	{
-		log_error("set_menu_shm_readonly(sid=%d) error\n", p_section->sid);
+		log_error("get_menu_shm_readonly(sid=%d) error\n", p_section->sid);
 		return -3;
 	}
 
