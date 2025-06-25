@@ -152,26 +152,42 @@ int load_section_config_from_db(int reload)
 		{
 			snprintf(ex_menu_conf, sizeof(ex_menu_conf), "%s/%d", VAR_GEN_EX_MENU_DIR, p_section->sid);
 
-			ret = load_menu(&ex_menu_set_new, ex_menu_conf);
+			// acquire rw lock of all sections to avoid conflict with menu reload in main process
+			ret = section_list_rw_lock(NULL);
 			if (ret < 0)
 			{
-				unload_menu(&ex_menu_set_new);
-				log_error("load_menu(%s) error: %d\n", ex_menu_conf, ret);
+				log_error("section_list_rw_lock(NULL) error\n");
 			}
 			else
 			{
-				if (p_section->ex_menu_tm > 0)
+				ret = load_menu(&ex_menu_set_new, ex_menu_conf);
+				if (ret < 0)
 				{
-					unload_menu(&(p_section->ex_menu_set));
+					unload_menu(&ex_menu_set_new);
+					log_error("load_menu(%s) error: %d\n", ex_menu_conf, ret);
+				}
+				else
+				{
+					if (p_section->ex_menu_tm > 0)
+					{
+						unload_menu(&(p_section->ex_menu_set));
+					}
+
+					ex_menu_set_new.allow_exit = 1; // Allow exit menu
+					memcpy(&(p_section->ex_menu_set), &ex_menu_set_new, sizeof(ex_menu_set_new));
+
+					p_section->ex_menu_tm = atol(row[7]);
+#ifdef _DEBUG
+					log_common("Loaded gen_ex_menu of section %d [%s]\n", p_section->sid, p_section->sname);
+#endif
 				}
 
-				ex_menu_set_new.allow_exit = 1; // Allow exit menu
-				memcpy(&(p_section->ex_menu_set), &ex_menu_set_new, sizeof(ex_menu_set_new));
-
-				p_section->ex_menu_tm = atol(row[7]);
-#ifdef _DEBUG
-				log_common("Loaded gen_ex_menu of section %d [%s]\n", p_section->sid, p_section->sname);
-#endif
+				// release rw lock of all sections
+				ret = section_list_rw_unlock(NULL);
+				if (ret < 0)
+				{
+					log_error("section_list_rw_unlock(NULL) error\n");
+				}
 			}
 		}
 
@@ -797,7 +813,7 @@ int section_list_loader_launch(void)
 
 	// gen_ex_menu cleanup
 	section_list_ex_menu_set_cleanup();
-	
+
 	// Detach data pools shm
 	detach_section_list_shm();
 	detach_article_block_shm();

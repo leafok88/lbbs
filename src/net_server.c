@@ -25,6 +25,7 @@
 #include "login.h"
 #include "menu.h"
 #include "net_server.h"
+#include "section_list.h"
 #include "section_list_loader.h"
 #include <errno.h>
 #include <fcntl.h>
@@ -419,15 +420,32 @@ int net_server(const char *hostaddr, in_port_t port[])
 				log_error("Reload conf failed\n");
 			}
 
-			if (load_menu(&bbs_menu_new, CONF_MENU) < 0)
+			// acquire rw lock of all sections to avoid conflict with menu reload in data loader process
+			ret = section_list_rw_lock(NULL);
+			if (ret < 0)
 			{
-				unload_menu(&bbs_menu_new);
-				log_error("Reload menu failed\n");
+				log_error("section_list_rw_lock(NULL) error\n");
 			}
 			else
 			{
-				memcpy(&bbs_menu, &bbs_menu_new, sizeof(bbs_menu_new));
-				log_common("Reload menu successfully\n");
+				if (load_menu(&bbs_menu_new, CONF_MENU) < 0)
+				{
+					unload_menu(&bbs_menu_new);
+					log_error("Reload menu failed\n");
+				}
+				else
+				{
+					unload_menu(&bbs_menu);
+					memcpy(&bbs_menu, &bbs_menu_new, sizeof(bbs_menu_new));
+					log_common("Reload menu successfully\n");
+				}
+
+				// release rw lock of all sections
+				ret = section_list_rw_unlock(NULL);
+				if (ret < 0)
+				{
+					log_error("section_list_rw_unlock(NULL) error\n");
+				}
 			}
 
 			sd_notify(0, "READY=1");

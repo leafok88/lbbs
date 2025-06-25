@@ -1709,12 +1709,12 @@ int section_list_rd_lock(SECTION_LIST *p_section)
 			timer++;
 			if (timer % SECTION_TRY_LOCK_TIMES == 0)
 			{
-				log_error("section_list_rd_lock() tried %d times on section %d\n", sid, timer);
+				log_error("section_list_try_rd_lock() tried %d times on section %d\n", sid, timer);
 			}
 		}
 		else // failed
 		{
-			log_error("section_list_rd_lock() failed on section %d\n", sid);
+			log_error("section_list_try_rd_lock() failed on section %d\n", sid);
 			break;
 		}
 	}
@@ -1740,12 +1740,12 @@ int section_list_rw_lock(SECTION_LIST *p_section)
 			timer++;
 			if (timer % SECTION_TRY_LOCK_TIMES == 0)
 			{
-				log_error("acquire_section_rw_lock() tried %d times on section %d\n", sid, timer);
+				log_error("section_list_try_rw_lock() tried %d times on section %d\n", sid, timer);
 			}
 		}
 		else // failed
 		{
-			log_error("acquire_section_rw_lock() failed on section %d\n", sid);
+			log_error("section_list_try_rw_lock() failed on section %d\n", sid);
 			break;
 		}
 	}
