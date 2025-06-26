@@ -30,7 +30,7 @@
 int section_list_loader_pid;
 int last_article_op_log_mid;
 
-int load_section_config_from_db(int reload)
+int load_section_config_from_db(int update_gen_ex)
 {
 	MYSQL *db = NULL;
 	MYSQL_RES *rs = NULL, *rs2 = NULL;
@@ -148,46 +148,30 @@ int load_section_config_from_db(int reload)
 		p_section->enable = (int8_t)atoi(row[6]);
 
 		// Update gen_ex menu set
-		if (reload && p_section->enable && atoi(row[7]) > p_section->ex_menu_tm)
+		if (update_gen_ex && p_section->enable && atoi(row[7]) > p_section->ex_menu_tm)
 		{
 			snprintf(ex_menu_conf, sizeof(ex_menu_conf), "%s/%d", VAR_GEN_EX_MENU_DIR, p_section->sid);
 
-			// acquire rw lock of all sections to avoid conflict with menu reload in main process
-			ret = section_list_rw_lock(NULL);
+			ret = load_menu(&ex_menu_set_new, ex_menu_conf);
 			if (ret < 0)
 			{
-				log_error("section_list_rw_lock(NULL) error\n");
+				unload_menu(&ex_menu_set_new);
+				log_error("load_menu(%s) error: %d\n", ex_menu_conf, ret);
 			}
 			else
 			{
-				ret = load_menu(&ex_menu_set_new, ex_menu_conf);
-				if (ret < 0)
+				if (p_section->ex_menu_tm > 0)
 				{
-					unload_menu(&ex_menu_set_new);
-					log_error("load_menu(%s) error: %d\n", ex_menu_conf, ret);
+					unload_menu(&(p_section->ex_menu_set));
 				}
-				else
-				{
-					if (p_section->ex_menu_tm > 0)
-					{
-						unload_menu(&(p_section->ex_menu_set));
-					}
 
-					ex_menu_set_new.allow_exit = 1; // Allow exit menu
-					memcpy(&(p_section->ex_menu_set), &ex_menu_set_new, sizeof(ex_menu_set_new));
+				ex_menu_set_new.allow_exit = 1; // Allow exit menu
+				memcpy(&(p_section->ex_menu_set), &ex_menu_set_new, sizeof(ex_menu_set_new));
 
-					p_section->ex_menu_tm = atol(row[7]);
+				p_section->ex_menu_tm = atol(row[7]);
 #ifdef _DEBUG
-					log_common("Loaded gen_ex_menu of section %d [%s]\n", p_section->sid, p_section->sname);
+				log_common("Loaded gen_ex_menu of section %d [%s]\n", p_section->sid, p_section->sname);
 #endif
-				}
-
-				// release rw lock of all sections
-				ret = section_list_rw_unlock(NULL);
-				if (ret < 0)
-				{
-					log_error("section_list_rw_unlock(NULL) error\n");
-				}
 			}
 		}
 
@@ -720,25 +704,27 @@ int section_list_loader_launch(void)
 
 	// Set signal handler
 	act.sa_handler = SIG_DFL;
+	if (sigaction(SIGHUP, &act, NULL) == -1)
+	{
+		log_error("set signal action of SIGHUP error: %d\n", errno);
+	}
+	act.sa_handler = SIG_DFL;
 	if (sigaction(SIGCHLD, &act, NULL) == -1)
 	{
 		log_error("set signal action of SIGCHLD error: %d\n", errno);
 	}
 
-	// Force reload to load gen_ex_menu
-	SYS_section_list_reload = 1;
-
 	// Do section data loader periodically
 	while (!SYS_server_exit)
 	{
-		if (SYS_section_list_reload)
+		if (SYS_conf_reload)
 		{
-			SYS_section_list_reload = 0;
+			SYS_conf_reload = 0;
 
 			// Load section config
-			if (load_section_config_from_db(1) < 0)
+			if (load_section_config_from_db(0) < 0)
 			{
-				log_error("load_section_config_from_db() error\n");
+				log_error("load_section_config_from_db(0) error\n");
 			}
 			else
 			{
@@ -759,7 +745,7 @@ int section_list_loader_launch(void)
 
 				if (ret == ERR_UNKNOWN_SECTION)
 				{
-					SYS_section_list_reload = 1; // Force reload section_list
+					SYS_conf_reload = 1; // Force reload section_list
 				}
 			}
 		} while (ret == LOAD_ARTICLE_COUNT_LIMIT);
@@ -770,7 +756,7 @@ int section_list_loader_launch(void)
 			log_common("Incrementally load %d articles, last_aid = %d\n", load_count, article_block_last_aid());
 		}
 
-		if (SYS_section_list_reload)
+		if (SYS_conf_reload)
 		{
 			continue;
 		}
@@ -786,7 +772,7 @@ int section_list_loader_launch(void)
 
 				if (ret == ERR_UNKNOWN_SECTION)
 				{
-					SYS_section_list_reload = 1; // Force reload section_list
+					SYS_conf_reload = 1; // Force reload section_list
 				}
 			}
 		} while (ret == LOAD_ARTICLE_COUNT_LIMIT);
@@ -796,12 +782,12 @@ int section_list_loader_launch(void)
 			log_common("Proceeded %d article logs, last_mid = %d\n", last_article_op_log_mid - last_mid, last_article_op_log_mid);
 		}
 
-		if (SYS_section_list_reload)
+		if (SYS_conf_reload)
 		{
 			continue;
 		}
 
-		for (i = 0; i < BBS_section_list_load_interval && !SYS_server_exit && !SYS_section_list_reload; i++)
+		for (i = 0; i < BBS_section_list_load_interval && !SYS_server_exit && !SYS_conf_reload; i++)
 		{
 			sleep(1);
 		}
@@ -825,23 +811,6 @@ int section_list_loader_launch(void)
 	section_list_loader_pid = 0;
 
 	_exit(0);
-
-	return 0;
-}
-
-int section_list_loader_reload(void)
-{
-	if (section_list_loader_pid == 0)
-	{
-		log_error("section_list_loader not running\n");
-		return -2;
-	}
-
-	if (kill(section_list_loader_pid, SIGHUP) < 0)
-	{
-		log_error("Send SIGTERM signal failed (%d)\n", errno);
-		return -1;
-	}
 
 	return 0;
 }

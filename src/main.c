@@ -224,10 +224,10 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	// Load section config
-	if (load_section_config_from_db(0) < 0)
+	// Load section config and gen_ex
+	if (load_section_config_from_db(1) < 0)
 	{
-		log_error("load_section_config_from_db() error\n");
+		log_error("load_section_config_from_db(0) error\n");
 		goto cleanup;
 	}
 

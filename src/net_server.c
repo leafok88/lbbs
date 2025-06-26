@@ -420,41 +420,17 @@ int net_server(const char *hostaddr, in_port_t port[])
 				log_error("Reload conf failed\n");
 			}
 
-			// acquire rw lock of all sections to avoid conflict with menu reload in data loader process
-			ret = section_list_rw_lock(NULL);
-			if (ret < 0)
+			if (load_menu(&bbs_menu_new, CONF_MENU) < 0)
 			{
-				log_error("section_list_rw_lock(NULL) error\n");
+				unload_menu(&bbs_menu_new);
+				log_error("Reload menu failed\n");
 			}
 			else
 			{
-				if (load_menu(&bbs_menu_new, CONF_MENU) < 0)
-				{
-					unload_menu(&bbs_menu_new);
-					log_error("Reload menu failed\n");
-				}
-				else
-				{
-					unload_menu(&bbs_menu);
-					memcpy(&bbs_menu, &bbs_menu_new, sizeof(bbs_menu_new));
-					log_common("Reload menu successfully\n");
-				}
-
-				// release rw lock of all sections
-				ret = section_list_rw_unlock(NULL);
-				if (ret < 0)
-				{
-					log_error("section_list_rw_unlock(NULL) error\n");
-				}
+				unload_menu(&bbs_menu);
+				memcpy(&bbs_menu, &bbs_menu_new, sizeof(bbs_menu_new));
+				log_common("Reload menu successfully\n");
 			}
-
-			sd_notify(0, "READY=1");
-		}
-
-		if (SYS_data_file_reload && !SYS_server_exit)
-		{
-			SYS_data_file_reload = 0;
-			sd_notify(0, "RELOADING=1");
 
 			for (int i = 0; i < data_files_load_startup_count; i++)
 			{
@@ -463,19 +439,19 @@ int net_server(const char *hostaddr, in_port_t port[])
 					log_error("load_file_mmap(%s) error\n", data_files_load_startup[i]);
 				}
 			}
-
 			log_common("Reload data files successfully\n");
-			sd_notify(0, "READY=1");
-		}
 
-		if (SYS_section_list_reload && !SYS_server_exit)
-		{
-			SYS_section_list_reload = 0;
-
-			if (section_list_loader_reload() < 0)
+			// Load section config and gen_ex
+			if (load_section_config_from_db(1) < 0)
 			{
-				log_error("section_list_loader_reload() failed\n");
+				log_error("load_section_config_from_db(1) error\n");
 			}
+			else
+			{
+				log_common("Reload section config and gen_ex successfully\n");
+			}
+
+			sd_notify(0, "READY=1");
 		}
 
 		nfds = epoll_wait(epollfd, events, MAX_EVENTS, 100); // 0.1 second

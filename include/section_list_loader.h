@@ -27,7 +27,7 @@
 extern int section_list_loader_pid;
 extern int last_article_op_log_mid;
 
-extern int load_section_config_from_db(int reload);
+extern int load_section_config_from_db(int update_gen_ex);
 
 // Input global_lock = 0 : lock / unlock corresponding section per article
 //                     1 : lock / unlock all sections per invocation
@@ -44,8 +44,6 @@ extern int set_last_article_op_log_from_db(void);
 extern int apply_article_op_log_from_db(int op_count_limit);
 
 extern int section_list_loader_launch(void);
-
-extern int section_list_loader_reload(void);
 
 // Return on success : real page_id (>= 0)
 //           failure : error number (< 0)
