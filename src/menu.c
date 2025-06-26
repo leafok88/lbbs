@@ -988,6 +988,15 @@ int display_menu(MENU_SET *p_menu_set)
 		return EXITMENU;
 	}
 
+	if(p_menu->item_count <= 0) // empty menu
+	{
+		moveto(p_menu->screen_row, p_menu->screen_col);
+		clrtoeol();
+		prints("没有可选项");
+		press_any_key();
+		return -1;
+	}
+
 	menu_item_pos = p_menu_set->menu_item_pos[p_menu_set->choose_step];
 	menu_item_id = p_menu->items[menu_item_pos];
 	p_menu_item = get_menu_item_by_id(p_menu_set, menu_item_id);
