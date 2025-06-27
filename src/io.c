@@ -237,135 +237,141 @@ int igetch(int timeout)
 	int i = 0;
 	int flags;
 
-	epollfd = epoll_create1(0);
-	if (epollfd < 0)
+	if (pos >= len)
 	{
-		log_error("epoll_create1() error (%d)\n", errno);
-		return -1;
-	}
+		len = 0;
+		pos = 0;
 
-	ev.events = EPOLLIN;
-	ev.data.fd = STDIN_FILENO;
-	if (epoll_ctl(epollfd, EPOLL_CTL_ADD, STDIN_FILENO, &ev) == -1)
-	{
-		log_error("epoll_ctl(STDIN_FILENO) error (%d)\n", errno);
+		epollfd = epoll_create1(0);
+		if (epollfd < 0)
+		{
+			log_error("epoll_create1() error (%d)\n", errno);
+			return -1;
+		}
+
+		ev.events = EPOLLIN;
+		ev.data.fd = STDIN_FILENO;
+		if (epoll_ctl(epollfd, EPOLL_CTL_ADD, STDIN_FILENO, &ev) == -1)
+		{
+			log_error("epoll_ctl(STDIN_FILENO) error (%d)\n", errno);
+
+			if (close(epollfd) < 0)
+			{
+				log_error("close(epoll) error (%d)\n");
+			}
+			return -1;
+		}
+
+		flags = fcntl(STDIN_FILENO, F_GETFL, 0);
+		fcntl(STDIN_FILENO, F_SETFL, flags | O_NONBLOCK);
+
+		for (loop = 1; loop && !SYS_server_exit;)
+		{
+			if (SSH_v2 && ssh_channel_is_closed(SSH_channel))
+			{
+				log_error("SSH channel is closed\n");
+				loop = 0;
+				break;
+			}
+
+			nfds = epoll_wait(epollfd, events, MAX_EVENTS, timeout);
+
+			if (nfds < 0)
+			{
+				if (errno != EINTR)
+				{
+					log_error("epoll_wait() error (%d)\n", errno);
+					break;
+				}
+				continue;
+			}
+			else if (nfds == 0) // timeout
+			{
+				out = KEY_TIMEOUT;
+				break;
+			}
+
+			for (int i = 0; i < nfds; i++)
+			{
+				if (events[i].data.fd == STDIN_FILENO)
+				{
+					while (len < sizeof(buf) && !SYS_server_exit) // read until complete or error
+					{
+						if (SSH_v2)
+						{
+							ret = ssh_channel_read_nonblocking(SSH_channel, buf + len, sizeof(buf) - (uint32_t)len, 0);
+							if (ret == SSH_ERROR)
+							{
+								log_error("ssh_channel_read_nonblocking() error: %s\n", ssh_get_error(SSH_session));
+								loop = 0;
+								break;
+							}
+							else if (ret == SSH_EOF)
+							{
+								loop = 0;
+								break;
+							}
+							else if (ret == 0)
+							{
+								out = 0;
+								break; // Check whether channel is still open
+							}
+						}
+						else
+						{
+							ret = (int)read(STDIN_FILENO, buf + len, sizeof(buf) - (size_t)len);
+						}
+						if (ret < 0)
+						{
+							if (errno == EAGAIN || errno == EWOULDBLOCK)
+							{
+								out = 0;
+								loop = 0;
+								break;
+							}
+							else if (errno == EINTR)
+							{
+								continue;
+							}
+							else
+							{
+#ifdef _DEBUG
+								log_error("read(STDIN) error (%d)\n", errno);
+#endif
+								loop = 0;
+								break;
+							}
+						}
+						else if (ret == 0) // broken pipe
+						{
+							loop = 0;
+							break;
+						}
+						else
+						{
+							len += ret;
+							continue;
+						}
+					}
+				}
+			}
+
+			// For debug
+#ifdef _DEBUG
+			for (int j = pos; j < len; j++)
+			{
+				log_common("Debug: <--[%u]\n", (buf[j] + 256) % 256);
+			}
+#endif
+		}
+
+		fcntl(STDIN_FILENO, F_SETFL, flags);
 
 		if (close(epollfd) < 0)
 		{
 			log_error("close(epoll) error (%d)\n");
 		}
-		return -1;
 	}
-
-	flags = fcntl(STDIN_FILENO, F_GETFL, 0);
-	fcntl(STDIN_FILENO, F_SETFL, flags | O_NONBLOCK);
-
-	loop = 1;
-
-	while (loop && pos >= len && !SYS_server_exit)
-	{
-		len = 0;
-		pos = 0;
-
-		if (SSH_v2 && ssh_channel_is_closed(SSH_channel))
-		{
-			log_error("SSH channel is closed\n");
-			loop = 0;
-			break;
-		}
-
-		nfds = epoll_wait(epollfd, events, MAX_EVENTS, timeout);
-
-		if (nfds < 0)
-		{
-			if (errno != EINTR)
-			{
-				log_error("epoll_wait() error (%d)\n", errno);
-				break;
-			}
-			continue;
-		}
-		else if (nfds == 0) // timeout
-		{
-			out = KEY_TIMEOUT;
-			break;
-		}
-
-		for (int i = 0; i < nfds; i++)
-		{
-			if (events[i].data.fd == STDIN_FILENO)
-			{
-				while (len < sizeof(buf) && !SYS_server_exit) // read until complete or error
-				{
-					if (SSH_v2)
-					{
-						ret = ssh_channel_read_nonblocking(SSH_channel, buf + len, sizeof(buf) - (uint32_t)len, 0);
-						if (ret == SSH_ERROR)
-						{
-							log_error("ssh_channel_read_nonblocking() error: %s\n", ssh_get_error(SSH_session));
-							loop = 0;
-							break;
-						}
-						else if (ret == SSH_EOF)
-						{
-							loop = 0;
-							break;
-						}
-						else if (ret == 0)
-						{
-							out = 0;
-							break; // Check whether channel is still open
-						}
-					}
-					else
-					{
-						ret = (int)read(STDIN_FILENO, buf + len, sizeof(buf) - (size_t)len);
-					}
-					if (ret < 0)
-					{
-						if (errno == EAGAIN || errno == EWOULDBLOCK)
-						{
-							out = 0;
-							loop = 0;
-							break;
-						}
-						else if (errno == EINTR)
-						{
-							continue;
-						}
-						else
-						{
-#ifdef _DEBUG
-							log_error("read(STDIN) error (%d)\n", errno);
-#endif
-							loop = 0;
-							break;
-						}
-					}
-					else if (ret == 0) // broken pipe
-					{
-						loop = 0;
-						break;
-					}
-					else
-					{
-						len += ret;
-						continue;
-					}
-				}
-			}
-		}
-
-		// For debug
-#ifdef _DEBUG
-		for (int j = pos; j < len; j++)
-		{
-			log_common("Debug: <--[%u]\n", (buf[j] + 256) % 256);
-		}
-#endif
-	}
-
-	fcntl(STDIN_FILENO, F_SETFL, flags);
 
 	while (pos < len)
 	{
@@ -803,11 +809,6 @@ int igetch(int timeout)
 
 		out = ((int)c + 256) % 256;
 		break;
-	}
-
-	if (close(epollfd) < 0)
-	{
-		log_error("close(epoll) error (%d)\n");
 	}
 
 	// For ESC key
