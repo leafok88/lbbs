@@ -675,8 +675,7 @@ int editor_display(EDITOR_DATA *p_editor_data)
 		return ch;
 	}
 
-	loop = 1;
-	while (!SYS_server_exit && loop)
+	for (loop = 1; !SYS_server_exit && loop;)
 	{
 		if (line_current >= p_editor_data->display_line_total || output_current_row > output_end_row)
 		{
