@@ -7,8 +7,7 @@ Demo site : bbs.fenglin.info (Telnet 2323 / SSH2 2322)
 
 Introduction
 =================
-This software (named as LBBS) aims to providing a telnet-based interface for a pure web-based BBS (named as LeafOK BBS).  
-LeafOK BBS (https://github.com/leafok88/leafok_bbs) provides almost all fundamental BBS features as well as many additional plugins. Its major part was written in PHP + MySQL.
+This software (named as LBBS) aims to providing a telnet-based interface for a pure web-based BBS (LeafOK BBS @ https://github.com/leafok88/leafok_bbs).
 
 
 System Requirement
