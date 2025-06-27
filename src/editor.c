@@ -706,9 +706,8 @@ int editor_display(EDITOR_DATA *p_editor_data)
 			iflush();
 
 			str_len = 0;
-			input_ok = 0;
 			ch = igetch_t(MAX_DELAY_TIME);
-			while (!SYS_server_exit && !input_ok)
+			while (!SYS_server_exit)
 			{
 				// extended key handler
 				if (editor_display_key_handler(&ch, &ctx) != 0)
