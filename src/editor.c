@@ -213,7 +213,7 @@ int editor_data_insert(EDITOR_DATA *p_editor_data, long *p_display_line, long *p
 	long last_display_line; // of data line
 	long line_offsets[MAX_EDITOR_DATA_LINE_LENGTH + 1];
 	long split_line_total;
-	long i, j;
+	long i;
 	int len;
 	int eol;
 	int display_len;
@@ -389,12 +389,23 @@ int editor_data_insert(EDITOR_DATA *p_editor_data, long *p_display_line, long *p
 				}
 				break;
 			}
-			for (j = p_editor_data->display_line_total; j > last_display_line + 1; j--)
-			{
-				p_editor_data->p_display_lines[j] = p_editor_data->p_display_lines[j - 1];
-				p_editor_data->display_line_lengths[j] = p_editor_data->display_line_lengths[j - 1];
-			}
+
+			// for (j = p_editor_data->display_line_total; j > last_display_line + 1; j--)
+			// {
+			// 	p_editor_data->p_display_lines[j] = p_editor_data->p_display_lines[j - 1];
+			// 	p_editor_data->display_line_lengths[j] = p_editor_data->display_line_lengths[j - 1];
+			// }
+			memmove(p_editor_data->p_display_lines + last_display_line + 2,
+					p_editor_data->p_display_lines + last_display_line + 1,
+					(size_t)(p_editor_data->display_line_total - last_display_line - 1) *
+						sizeof(p_editor_data->p_display_lines[last_display_line + 1]));
+			memmove(p_editor_data->display_line_lengths + last_display_line + 2,
+					p_editor_data->display_line_lengths + last_display_line + 1,
+					(size_t)(p_editor_data->display_line_total - last_display_line - 1) *
+						sizeof(p_editor_data->display_line_lengths[last_display_line + 1]));
+
 			last_display_line++;
+			*p_last_updated_line = p_editor_data->display_line_total;
 			(p_editor_data->display_line_total)++;
 		}
 
@@ -589,11 +600,19 @@ int editor_data_delete(EDITOR_DATA *p_editor_data, long *p_display_line, long *p
 	if (*p_last_updated_line < last_display_line)
 	{
 		// Remove redundant display line after last_display_line
-		for (j = last_display_line + 1; j < p_editor_data->display_line_total; j++)
-		{
-			p_editor_data->p_display_lines[j - (last_display_line - *p_last_updated_line)] = p_editor_data->p_display_lines[j];
-			p_editor_data->display_line_lengths[j - (last_display_line - *p_last_updated_line)] = p_editor_data->display_line_lengths[j];
-		}
+		// for (j = last_display_line + 1; j < p_editor_data->display_line_total; j++)
+		// {
+		// 	p_editor_data->p_display_lines[j - (last_display_line - *p_last_updated_line)] = p_editor_data->p_display_lines[j];
+		// 	p_editor_data->display_line_lengths[j - (last_display_line - *p_last_updated_line)] = p_editor_data->display_line_lengths[j];
+		// }
+		memmove(p_editor_data->p_display_lines + *p_last_updated_line + 1,
+				p_editor_data->p_display_lines + last_display_line + 1,
+				(size_t)(p_editor_data->display_line_total - last_display_line - 1) *
+					sizeof(p_editor_data->p_display_lines[last_display_line + 1]));
+		memmove(p_editor_data->display_line_lengths + *p_last_updated_line + 1,
+				p_editor_data->display_line_lengths + last_display_line + 1,
+				(size_t)(p_editor_data->display_line_total - last_display_line - 1) *
+					sizeof(p_editor_data->display_line_lengths[last_display_line + 1]));
 
 		j = p_editor_data->display_line_total;
 		(p_editor_data->display_line_total) -= (last_display_line - *p_last_updated_line);
@@ -719,11 +738,12 @@ int editor_display(EDITOR_DATA *p_editor_data)
 						str_len = 1;
 					}
 
-					last_updated_line = line_current;
 					display_line_in = line_current - output_current_row + row_pos;
 					offset_in = col_pos - 1;
 					display_line_out = display_line_in;
 					offset_out = offset_in;
+
+					last_updated_line = display_line_in;
 
 					if (!key_insert) // overwrite
 					{
