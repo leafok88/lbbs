@@ -812,8 +812,7 @@ int editor_display(EDITOR_DATA *p_editor_data)
 					{
 						if (line_current - output_current_row + row_pos <= 0 && col_pos <= 1) // Forbidden
 						{
-							ch = igetch_t(MAX_DELAY_TIME);
-							continue;
+							break; // force output prior operation result if any
 						}
 
 						col_pos--;
