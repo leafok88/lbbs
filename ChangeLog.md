@@ -4,7 +4,7 @@ Copyright (C) 2004-2025 by Leaflet
 Email : leaflet@leafok.com
 
 
-2025-06-24
+2025-06-28
 =================
 Add major features
 

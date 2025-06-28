@@ -26,7 +26,7 @@
 
 // Version
 #define APP_NAME "LBBS"
-#define APP_VER "1.2.0"
+#define APP_VER "1.2.1"
 #define APP_INFO (APP_NAME " version " APP_VER " build on " __DATE__ " " __TIME__)
 
 // Enviroment
