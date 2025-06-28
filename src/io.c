@@ -265,7 +265,7 @@ int igetch(int timeout)
 		flags = fcntl(STDIN_FILENO, F_GETFL, 0);
 		fcntl(STDIN_FILENO, F_SETFL, flags | O_NONBLOCK);
 
-		for (loop = 1; loop && !SYS_server_exit;)
+		for (loop = 1; loop && pos >= len && !SYS_server_exit;)
 		{
 			if (SSH_v2 && ssh_channel_is_closed(SSH_channel))
 			{
