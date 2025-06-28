@@ -817,6 +817,12 @@ int igetch(int timeout)
 		out = KEY_ESC;
 	}
 
+	// Convert LF to CR -- Cterm send LF without CR
+	if (out == LF)
+	{
+		out = CR;
+	}
+
 	// for debug
 #ifdef _DEBUG
 	if (out != KEY_TIMEOUT && out != KEY_NULL)
