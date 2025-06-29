@@ -213,7 +213,7 @@ int bbsnet_connect(int n)
 	int tos;
 	char remote_addr[IP_ADDR_LEN];
 	int remote_port;
-	time_t t_used;
+	time_t t_used = time(NULL);
 	struct tm *tm_used;
 	int ch;
 
