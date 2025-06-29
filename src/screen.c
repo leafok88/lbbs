@@ -373,7 +373,8 @@ int display_data(const void *p_data, long display_line_total, const long *p_line
 					output_end_row = SCREEN_ROWS - 1;
 					moveto(SCREEN_ROWS, 0);
 					clrtoeol();
-					prints("\033[S"); // Scroll up 1 line
+					//prints("\033[S"); // Scroll up 1 line
+					prints("\n"); // Legacy Cterm only works with this line
 					break;
 				case KEY_PGUP:
 					if (line_current - output_current_row < 0) // Reach begin

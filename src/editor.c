@@ -771,7 +771,8 @@ int editor_display(EDITOR_DATA *p_editor_data)
 							clrtoeol();
 							for (i = 0; i < scroll_rows; i++)
 							{
-								prints("\033[S"); // Scroll up 1 line
+								// prints("\033[S"); // Scroll up 1 line
+								prints("\n"); // Legacy Cterm only works with this line
 							}
 
 							output_current_row -= scroll_rows;
@@ -1026,7 +1027,8 @@ int editor_display(EDITOR_DATA *p_editor_data)
 					col_pos = MIN(col_pos, MAX(1, p_editor_data->display_line_lengths[line_current - output_current_row + row_pos]));
 					moveto(SCREEN_ROWS, 0);
 					clrtoeol();
-					prints("\033[S"); // Scroll up 1 line
+					// prints("\033[S"); // Scroll up 1 line
+					prints("\n"); // Legacy Cterm only works with this line
 					break;
 				case KEY_PGUP:
 					if (line_current - output_current_row < 0) // Reach begin
