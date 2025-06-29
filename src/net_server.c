@@ -407,6 +407,8 @@ int net_server(const char *hostaddr, in_port_t port[])
 			}
 
 			sd_notifyf(0, "STATUS=Waiting for %d child process to exit", SYS_child_process_count);
+
+			sleep(1); // Sleep for a while to avoid notifying child processes too frequently
 		}
 
 		if (SYS_conf_reload && !SYS_server_exit)
