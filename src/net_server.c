@@ -45,6 +45,9 @@
 #include <sys/wait.h>
 #include <systemd/sd-daemon.h>
 
+#define WAIT_CHILD_PROCESS_EXIT_TIMEOUT 5 // second
+#define WAIT_CHILD_PROCESS_KILL_TIMEOUT 1 // second
+
 struct process_sockaddr_t
 {
 	pid_t pid;
@@ -258,6 +261,8 @@ int net_server(const char *hostaddr, in_port_t port[])
 	struct epoll_event ev, events[MAX_EVENTS];
 	int nfds, epollfd;
 	siginfo_t siginfo;
+	int notify_child_exit = 0;
+	time_t tm_notify_child_exit = time(NULL);
 	int sd_notify_stopping = 0;
 	MENU_SET bbs_menu_new;
 	int i, j;
@@ -400,15 +405,43 @@ int net_server(const char *hostaddr, in_port_t port[])
 
 		if (SYS_server_exit && !SYS_child_exit && SYS_child_process_count > 0)
 		{
-			log_common("Notify %d child process to exit\n", SYS_child_process_count);
-			if (kill(0, SIGTERM) < 0)
+			if (notify_child_exit == 0)
 			{
-				log_error("Send SIGTERM signal failed (%d)\n", errno);
+				sd_notifyf(0, "STATUS=Notify %d child process to exit", SYS_child_process_count);
+				log_common("Notify %d child process to exit\n", SYS_child_process_count);
+
+				if (kill(0, SIGTERM) < 0)
+				{
+					log_error("Send SIGTERM signal failed (%d)\n", errno);
+				}
+
+				notify_child_exit = 1;
+				tm_notify_child_exit = time(NULL);
 			}
+			else if (notify_child_exit == 1 && time(NULL) - tm_notify_child_exit >= WAIT_CHILD_PROCESS_EXIT_TIMEOUT)
+			{
+				sd_notifyf(0, "STATUS=Kill %d child process", SYS_child_process_count);
 
-			sd_notifyf(0, "STATUS=Waiting for %d child process to exit", SYS_child_process_count);
+				for (i = 0; i < BBS_max_client; i++)
+				{
+					if (process_sockaddr_pool[i].pid != 0)
+					{
+						log_error("Kill child process (pid=%d)\n", process_sockaddr_pool[i].pid);
+						if (kill(process_sockaddr_pool[i].pid, SIGKILL) < 0)
+						{
+							log_error("Send SIGKILL signal failed (%d)\n", errno);
+						}
+					}
+				}
 
-			sleep(1); // Sleep for a while to avoid notifying child processes too frequently
+				notify_child_exit = 2;
+				tm_notify_child_exit = time(NULL);
+			}
+			else if (notify_child_exit == 2 && time(NULL) - tm_notify_child_exit >= WAIT_CHILD_PROCESS_KILL_TIMEOUT)
+			{
+				log_error("Main process prepare to exit without waiting for %d child process any longer\n", SYS_child_process_count);
+				SYS_child_process_count = 0;
+			}
 		}
 
 		if (SYS_conf_reload && !SYS_server_exit)
