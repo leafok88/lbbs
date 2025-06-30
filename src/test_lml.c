@@ -26,10 +26,10 @@
 const char *str_in[] = {
 	"[left]ABCD[right]EFG",
 	"A[u]B[italic]CD[/i]E[/u]F[b]G[/bold]",
-	"A[url BCDE[/url]FG",
+	"A[url BC DE]测试a网址[/url]FG",
 	"AB[email CDE]F[/eMAil]G01[emaiL]23456[/email]789",
-	"A[user DE]BC[  /User  ]FG",
-	"[article A B CD]EF[/article   ]G",
+	"A[user DE]BC[/User]FG",
+	"[article A B CD]EF[  /article]G",
 	"A[ image  BCD]EFG",
 	"AB[ Flash  CDE ]FG",
 	"AB[bwf]CDEFG",

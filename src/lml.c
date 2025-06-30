@@ -152,6 +152,7 @@ inline static void lml_init(void)
 
 int lml_plain(const char *str_in, char *str_out, int buf_len)
 {
+	char c;
 	char tag_param_buf[LML_TAG_PARAM_BUF_LEN];
 	char tag_output_buf[LML_TAG_OUTPUT_BUF_LEN];
 	int i;
@@ -315,19 +316,25 @@ int lml_plain(const char *str_in, char *str_out, int buf_len)
 		}
 		else if (tag_start_pos == -1) // not in LML tag
 		{
-			if (str_in[i] < 0 || str_in[i] > 127) // GBK chinese character
+			if ((str_in[i] & 0b10000000) == 0b10000000) // head of multi-byte character
 			{
-				if (j + 2 >= buf_len)
+				if (j + 4 >= buf_len) // Assuming UTF-8 CJK characters use 4 bytes, though most of them actually use 3 bytes
 				{
-					log_error("Buffer is not longer enough for output string %ld >= %d\n", j + 2, buf_len);
+					log_error("Buffer is not longer enough for output string %ld >= %d\n", j + 4, buf_len);
 					str_out[j] = '\0';
 					return j;
 				}
-				str_out[j++] = str_in[i++];
-				if (str_in[i] == '\0')
+
+				c = (str_in[i] & 0b01111000) << 1;
+				while (c & 0b10000000)
 				{
-					str_out[j] = '\0';
-					return j;
+					str_out[j++] = str_in[i++];
+					if (str_in[i] == '\0')
+					{
+						str_out[j] = '\0';
+						return j;
+					}
+					c = (c & 0b01111111) << 1;
 				}
 			}
 
