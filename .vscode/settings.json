@@ -1,5 +1,5 @@
 {
-    "files.encoding": "gbk",
+    "files.encoding": "utf8",
     "makefile.launchConfigurations": [
         {
             "cwd": "${workspaceFolder}/src",
