@@ -23,7 +23,6 @@
 /var
 CVS
 .cvsignore
-.vscode
 Makefile
 Makefile.in
 *.o
