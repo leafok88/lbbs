@@ -1,0 +1,14 @@
+{
+    "files.encoding": "gbk",
+    "makefile.launchConfigurations": [
+        {
+            "cwd": "${workspaceFolder}/src",
+            "binaryPath": "${workspaceFolder}/src/bbsd",
+            "binaryArgs": [
+                "-f",
+                "--display-log",
+                "--display-error-log"
+            ]
+        }
+    ]
+}
