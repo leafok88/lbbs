@@ -631,7 +631,7 @@ static int editor_display_key_handler(int *p_key, EDITOR_CTX *p_ctx)
 	{
 	case 0: // Set msg
 		snprintf(p_ctx->msg, sizeof(p_ctx->msg),
-				 "| ÍË³ö[\033[32mCtrl-W\033[33m] |");
+				 "| é€€å‡º[\033[32mCtrl-W\033[33m] |");
 		break;
 	case KEY_CSI:
 		*p_key = KEY_ESC;
@@ -683,11 +683,11 @@ int editor_display(EDITOR_DATA *p_editor_data)
 
 			snprintf(buffer, sizeof(buffer),
 					 "\033[1;44;33m[\033[32m%ld\033[33m;\033[32m%ld\033[33m] "
-					 "µÚ\033[32m%ld\033[33m/\033[32m%ld\033[33mĞĞ [\033[32m%s\033[33m] "
+					 "ç¬¬\033[32m%ld\033[33m/\033[32m%ld\033[33mè¡Œ [\033[32m%s\033[33m] "
 					 "%s",
 					 row_pos, col_pos,
 					 ctx.line_cursor, p_editor_data->display_line_total,
-					 key_insert ? "²åÈë" : "Ìæ»»",
+					 key_insert ? "æ’å…¥" : "æ›¿æ¢",
 					 ctx.msg);
 
 			len = split_line(buffer, SCREEN_COLS, &eol, &display_len, 1);

@@ -81,8 +81,8 @@ int exec_mbem(void *param)
 		else
 		{
 			clearscr();
-			prints("¼ÓÔØ¿âÎÄ¼þ [%s] Ê§°Ü!!\r\n", s + 5);
-			prints("Ê§°ÜÔ­Òò:%s\r\n", dlerror());
+			prints("åŠ è½½åº“æ–‡ä»¶ [%s] å¤±è´¥!!\r\n", s + 5);
+			prints("å¤±è´¥åŽŸå› :%s\r\n", dlerror());
 			press_any_key();
 		}
 	}
@@ -117,11 +117,11 @@ int reload_bbs_conf(void *param)
 	{
 		log_error("Send SIGHUP signal failed (%d)\n", errno);
 
-		prints("·¢ËÍÖ¸ÁîÊ§°Ü\r\n");
+		prints("å‘é€æŒ‡ä»¤å¤±è´¥\r\n");
 	}
 	else
 	{
-		prints("ÒÑ·¢ËÍÖ¸Áî\r\n");
+		prints("å·²å‘é€æŒ‡ä»¤\r\n");
 	}
 
 	press_any_key();
@@ -154,9 +154,9 @@ static int display_ex_article_key_handler(int *p_key, DISPLAY_CTX *p_ctx)
 	{
 	case 0: // Set msg
 		snprintf(p_ctx->msg, sizeof(p_ctx->msg),
-				 "| ·µ»Ø[\033[32m¡û\033[33m,\033[32mESC\033[33m] | "
-				 "ÒÆ¶¯[\033[32m¡ü\033[33m/\033[32m¡ý\033[33m/\033[32mPgUp\033[33m/\033[32mPgDn\033[33m] | "
-				 "°ïÖú[\033[32mh\033[33m] |");
+				 "| è¿”å›ž[\033[32mâ†\033[33m,\033[32mESC\033[33m] | "
+				 "ç§»åŠ¨[\033[32mâ†‘\033[33m/\033[32mâ†“\033[33m/\033[32mPgUp\033[33m/\033[32mPgDn\033[33m] | "
+				 "å¸®åŠ©[\033[32mh\033[33m] |");
 		break;
 	}
 

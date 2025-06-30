@@ -65,7 +65,7 @@ int article_post(const SECTION_LIST *p_section, ARTICLE *p_article_new)
 	{
 		clearscr();
 		moveto(1, 1);
-		prints("ÄúÃ»ÓĞÈ¨ÏŞÔÚ±¾°æ¿é·¢±íÎÄÕÂ\n");
+		prints("æ‚¨æ²¡æœ‰æƒé™åœ¨æœ¬ç‰ˆå—å‘è¡¨æ–‡ç« \n");
 		press_any_key();
 
 		return 0;
@@ -88,18 +88,18 @@ int article_post(const SECTION_LIST *p_section, ARTICLE *p_article_new)
 	{
 		clearscr();
 		moveto(21, 1);
-		prints("·¢±íÎÄÕÂÓÚ %s[%s] ÌÖÂÛÇø£¬ÀàĞÍ: %s", p_section->stitle, p_section->sname, (p_article_new->transship ? "×ªÔØ" : "Ô­´´"));
+		prints("å‘è¡¨æ–‡ç« äº %s[%s] è®¨è®ºåŒºï¼Œç±»å‹: %s", p_section->stitle, p_section->sname, (p_article_new->transship ? "è½¬è½½" : "åŸåˆ›"));
 		moveto(22, 1);
-		prints("±êÌâ: %s", (p_article_new->title[0] == '\0' ? "[ÎŞ]" : p_article_new->title));
+		prints("æ ‡é¢˜: %s", (p_article_new->title[0] == '\0' ? "[æ— ]" : p_article_new->title));
 		moveto(23, 1);
-		prints("Ê¹ÓÃµÚ [1;32m%d[m ¸öÇ©Ãû", sign_id);
+		prints("ä½¿ç”¨ç¬¬ [1;32m%d[m ä¸ªç­¾å", sign_id);
 
 		if (toupper(ch) != 'T')
 		{
-			prints("    °´[1;32m0[m~[1;32m3[mÑ¡Ç©Ãûµµ(0±íÊ¾²»Ê¹ÓÃ)");
+			prints("    æŒ‰[1;32m0[m~[1;32m3[mé€‰ç­¾åæ¡£(0è¡¨ç¤ºä¸ä½¿ç”¨)");
 
 			moveto(24, 1);
-			prints("[1;32mT[m¸Ä±êÌâ, [1;32mC[mÈ¡Ïû, [1;32mZ[mÉèÎª×ªÔØ, [1;32mY[mÉèÎªÔ­´´, [1;32mEnter[m¼ÌĞø: ");
+			prints("[1;32mT[mæ”¹æ ‡é¢˜, [1;32mC[må–æ¶ˆ, [1;32mZ[mè®¾ä¸ºè½¬è½½, [1;32mY[mè®¾ä¸ºåŸåˆ›, [1;32mEnter[mç»§ç»­: ");
 			iflush();
 			ch = 0;
 		}
@@ -117,7 +117,7 @@ int article_post(const SECTION_LIST *p_section, ARTICLE *p_article_new)
 			case 'T':
 				moveto(24, 1);
 				clrtoeol();
-				len = get_data(24, 1, "±êÌâ: ", title_input, TITLE_INPUT_MAX_LEN, 1);
+				len = get_data(24, 1, "æ ‡é¢˜: ", title_input, TITLE_INPUT_MAX_LEN, 1);
 				for (p = title_input; *p == ' '; p++)
 					;
 				for (q = title_input + len; q > p && *(q - 1) == ' '; q--)
@@ -134,7 +134,7 @@ int article_post(const SECTION_LIST *p_section, ARTICLE *p_article_new)
 			case 'C':
 				clearscr();
 				moveto(1, 1);
-				prints("È¡Ïû...");
+				prints("å–æ¶ˆ...");
 				press_any_key();
 				goto cleanup;
 			case 'Y':
@@ -167,7 +167,7 @@ int article_post(const SECTION_LIST *p_section, ARTICLE *p_article_new)
 
 			clearscr();
 			moveto(1, 1);
-			prints("(S)·¢ËÍ, (C)È¡Ïû, (T)¸ü¸Ä±êÌâ or (E)ÔÙ±à¼­? [S]: ");
+			prints("(S)å‘é€, (C)å–æ¶ˆ, (T)æ›´æ”¹æ ‡é¢˜ or (E)å†ç¼–è¾‘? [S]: ");
 			iflush();
 
 			for (ch = 0; !SYS_server_exit; ch = igetch_t(MAX_DELAY_TIME))
@@ -184,7 +184,7 @@ int article_post(const SECTION_LIST *p_section, ARTICLE *p_article_new)
 				case 'C':
 					clearscr();
 					moveto(1, 1);
-					prints("È¡Ïû...");
+					prints("å–æ¶ˆ...");
 					press_any_key();
 					goto cleanup;
 				case 'T':
@@ -392,7 +392,7 @@ int article_post(const SECTION_LIST *p_section, ARTICLE *p_article_new)
 
 	clearscr();
 	moveto(1, 1);
-	prints("·¢ËÍÍê³É£¬ĞÂÎÄÕÂÍ¨³£»áÔÚ%dÃëºó¿É¼û", BBS_section_list_load_interval);
+	prints("å‘é€å®Œæˆï¼Œæ–°æ–‡ç« é€šå¸¸ä¼šåœ¨%dç§’åå¯è§", BBS_section_list_load_interval);
 	press_any_key();
 	ret = 1; // Success
 
@@ -436,7 +436,7 @@ int article_modify(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTI
 	{
 		clearscr();
 		moveto(1, 1);
-		prints("¸ÃÎÄÕÂÎŞ·¨±»±à¼­£¬ÇëÁªÏµ°æÖ÷¡£");
+		prints("è¯¥æ–‡ç« æ— æ³•è¢«ç¼–è¾‘ï¼Œè¯·è”ç³»ç‰ˆä¸»ã€‚");
 		press_any_key();
 
 		return 0;
@@ -508,7 +508,7 @@ int article_modify(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTI
 
 		clearscr();
 		moveto(1, 1);
-		prints("(S)±£´æ, (C)È¡Ïû or (E)ÔÙ±à¼­? [S]: ");
+		prints("(S)ä¿å­˜, (C)å–æ¶ˆ or (E)å†ç¼–è¾‘? [S]: ");
 		iflush();
 
 		for (ch = 0; !SYS_server_exit; ch = igetch_t(MAX_DELAY_TIME))
@@ -525,7 +525,7 @@ int article_modify(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTI
 			case 'C':
 				clearscr();
 				moveto(1, 1);
-				prints("È¡Ïû...");
+				prints("å–æ¶ˆ...");
 				press_any_key();
 				goto cleanup;
 			case 'E':
@@ -565,7 +565,7 @@ int article_modify(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTI
 	strftime(str_modify_dt, sizeof(str_modify_dt), "%Y-%m-%d %H:%M:%S (UTC %z)", &tm_modify_dt);
 
 	len_content += snprintf(content + len_content, LINE_BUFFER_LEN,
-							"\n--\n¡ù ×÷ÕßÒÑÓÚ %s ĞŞ¸Ä±¾ÎÄ¡ù\n",
+							"\n--\nâ€» ä½œè€…å·²äº %s ä¿®æ”¹æœ¬æ–‡â€»\n",
 							str_modify_dt);
 
 	db = db_open();
@@ -678,7 +678,7 @@ int article_modify(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTI
 
 	clearscr();
 	moveto(1, 1);
-	prints("ĞŞ¸ÄÍê³É£¬ĞÂÄÚÈİÍ¨³£»áÔÚ%dÃëºó¿É¼û", BBS_section_list_load_interval);
+	prints("ä¿®æ”¹å®Œæˆï¼Œæ–°å†…å®¹é€šå¸¸ä¼šåœ¨%dç§’åå¯è§", BBS_section_list_load_interval);
 	press_any_key();
 	ret = 1; // Success
 
@@ -731,7 +731,7 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 	{
 		clearscr();
 		moveto(1, 1);
-		prints("ÄúÃ»ÓĞÈ¨ÏŞÔÚ±¾°æ¿é·¢±íÎÄÕÂ\n");
+		prints("æ‚¨æ²¡æœ‰æƒé™åœ¨æœ¬ç‰ˆå—å‘è¡¨æ–‡ç« \n");
 		press_any_key();
 
 		return 0;
@@ -784,7 +784,7 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 
 		clearscr();
 		moveto(1, 1);
-		prints("¸ÃÖ÷ÌâĞ»¾ø»Ø¸´");
+		prints("è¯¥ä¸»é¢˜è°¢ç»å›å¤");
 		press_any_key();
 
 		goto cleanup;
@@ -835,7 +835,7 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 		len = str_filter(content_f, 0);
 
 		len = snprintf(content, ARTICLE_CONTENT_MAX_LEN,
-					   "\n\n¡¾ ÔÚ %s (%s) µÄ´ó×÷ÖĞÌáµ½: ¡¿\n",
+					   "\n\nã€ åœ¨ %s (%s) çš„å¤§ä½œä¸­æåˆ°: ã€‘\n",
 					   p_article->username, p_article->nickname);
 
 		quote_content_lines = split_data_lines(content_f, ARTICLE_QUOTE_LINE_MAX_LEN, line_offsets, ARTICLE_QUOTE_MAX_LINES + 1, 0);
@@ -883,18 +883,18 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 	{
 		clearscr();
 		moveto(21, 1);
-		prints("»Ø¸´ÎÄÕÂÓÚ %s[%s] ÌÖÂÛÇø", p_section->stitle, p_section->sname);
+		prints("å›å¤æ–‡ç« äº %s[%s] è®¨è®ºåŒº", p_section->stitle, p_section->sname);
 		moveto(22, 1);
-		prints("±êÌâ: %s", (p_article_new->title[0] == '\0' ? "[ÎŞ]" : p_article_new->title));
+		prints("æ ‡é¢˜: %s", (p_article_new->title[0] == '\0' ? "[æ— ]" : p_article_new->title));
 		moveto(23, 1);
-		prints("Ê¹ÓÃµÚ [1;32m%d[m ¸öÇ©Ãû", sign_id);
+		prints("ä½¿ç”¨ç¬¬ [1;32m%d[m ä¸ªç­¾å", sign_id);
 
 		if (toupper(ch) != 'T')
 		{
-			prints("    °´[1;32m0[m~[1;32m3[mÑ¡Ç©Ãûµµ(0±íÊ¾²»Ê¹ÓÃ)");
+			prints("    æŒ‰[1;32m0[m~[1;32m3[mé€‰ç­¾åæ¡£(0è¡¨ç¤ºä¸ä½¿ç”¨)");
 
 			moveto(24, 1);
-			prints("[1;32mT[m¸Ä±êÌâ, [1;32mC[mÈ¡Ïû, [1;32mEnter[m¼ÌĞø: ");
+			prints("[1;32mT[mæ”¹æ ‡é¢˜, [1;32mC[må–æ¶ˆ, [1;32mEnter[mç»§ç»­: ");
 			iflush();
 			ch = 0;
 		}
@@ -912,7 +912,7 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 			case 'T':
 				moveto(24, 1);
 				clrtoeol();
-				len = get_data(24, 1, "±êÌâ: ", title_input, TITLE_INPUT_MAX_LEN, 1);
+				len = get_data(24, 1, "æ ‡é¢˜: ", title_input, TITLE_INPUT_MAX_LEN, 1);
 				for (p = title_input; *p == ' '; p++)
 					;
 				for (q = title_input + len; q > p && *(q - 1) == ' '; q--)
@@ -929,7 +929,7 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 			case 'C':
 				clearscr();
 				moveto(1, 1);
-				prints("È¡Ïû...");
+				prints("å–æ¶ˆ...");
 				press_any_key();
 				goto cleanup;
 			case '0':
@@ -956,7 +956,7 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 
 			clearscr();
 			moveto(1, 1);
-			prints("(S)·¢ËÍ, (C)È¡Ïû, (T)¸ü¸Ä±êÌâ or (E)ÔÙ±à¼­? [S]: ");
+			prints("(S)å‘é€, (C)å–æ¶ˆ, (T)æ›´æ”¹æ ‡é¢˜ or (E)å†ç¼–è¾‘? [S]: ");
 			iflush();
 
 			for (ch = 0; !SYS_server_exit; ch = igetch_t(MAX_DELAY_TIME))
@@ -973,7 +973,7 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 				case 'C':
 					clearscr();
 					moveto(1, 1);
-					prints("È¡Ïû...");
+					prints("å–æ¶ˆ...");
 					press_any_key();
 					goto cleanup;
 				case 'T':
@@ -1197,7 +1197,7 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 
 	clearscr();
 	moveto(1, 1);
-	prints("·¢ËÍÍê³É£¬ĞÂÎÄÕÂÍ¨³£»áÔÚ%dÃëºó¿É¼û", BBS_section_list_load_interval);
+	prints("å‘é€å®Œæˆï¼Œæ–°æ–‡ç« é€šå¸¸ä¼šåœ¨%dç§’åå¯è§", BBS_section_list_load_interval);
 	press_any_key();
 	ret = 1; // Success
 

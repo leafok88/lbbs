@@ -32,14 +32,14 @@
 #define S_ALL 0xff
 #define S_DEFAULT 0x3 // 0x1 | 0x2
 
-#define P_GUEST 0x0		//ÓÎ¿Í
-#define P_USER 0x1		//ÆÕÍ¨ÓÃ»§
+#define P_GUEST 0x0		//æ¸¸å®¢
+#define P_USER 0x1		//æ™®é€šç”¨æˆ·
 //#define P_AUTH_USER 0x2 // Reserved
-#define P_MAN_S 0x4		//¸±°æÖ÷
-#define P_MAN_M 0x8		//Õı°æÖ÷
+#define P_MAN_S 0x4		//å‰¯ç‰ˆä¸»
+#define P_MAN_M 0x8		//æ­£ç‰ˆä¸»
 #define P_MAN_C 0x10	// Reserved
-#define P_ADMIN_S 0x20	//¸±ÏµÍ³¹ÜÀíÔ±
-#define P_ADMIN_M 0x40	//Ö÷ÏµÍ³¹ÜÀíÔ±
+#define P_ADMIN_S 0x20	//å‰¯ç³»ç»Ÿç®¡ç†å‘˜
+#define P_ADMIN_M 0x40	//ä¸»ç³»ç»Ÿç®¡ç†å‘˜
 
 struct user_priv
 {

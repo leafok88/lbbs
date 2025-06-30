@@ -86,7 +86,7 @@ int press_any_key()
 	moveto(SCREEN_ROWS, 0);
 	clrtoeol();
 
-	prints("                           \033[1;33m°´ÈÎÒâ¼ü¼ÌĞø...\033[0;37m");
+	prints("                           \033[1;33mæŒ‰ä»»æ„é”®ç»§ç»­...\033[0;37m");
 	iflush();
 
 	return igetch_t(MIN(MAX_DELAY_TIME, 60));
@@ -294,7 +294,7 @@ int display_data(const void *p_data, long display_line_total, const long *p_line
 			ctx.line_bottom = MIN(line_current - (output_current_row - screen_begin_row) + screen_row_total, display_line_total);
 
 			snprintf(buffer, sizeof(buffer),
-					 "\033[1;44;33mµÚ\033[32m%ld\033[33m-\033[32m%ld\033[33mĞĞ (\033[32m%ld%%\033[33m) %s",
+					 "\033[1;44;33mç¬¬\033[32m%ld\033[33m-\033[32m%ld\033[33mè¡Œ (\033[32m%ld%%\033[33m) %s",
 					 ctx.line_top,
 					 ctx.line_bottom,
 					 percentile,
@@ -471,9 +471,9 @@ static int display_file_key_handler(int *p_key, DISPLAY_CTX *p_ctx)
 	{
 	case 0: // Set msg
 		snprintf(p_ctx->msg, sizeof(p_ctx->msg),
-				 "| ·µ»Ø[\033[32m¡û\033[33m,\033[32mESC\033[33m] | "
-				 "ÒÆ¶¯[\033[32m¡ü\033[33m/\033[32m¡ı\033[33m/\033[32mPgUp\033[33m/\033[32mPgDn\033[33m] | "
-				 "°ïÖú[\033[32mh\033[33m] |");
+				 "| è¿”å›[\033[32mâ†\033[33m,\033[32mESC\033[33m] | "
+				 "ç§»åŠ¨[\033[32mâ†‘\033[33m/\033[32mâ†“\033[33m/\033[32mPgUp\033[33m/\033[32mPgDn\033[33m] | "
+				 "å¸®åŠ©[\033[32mh\033[33m] |");
 		break;
 	}
 
@@ -575,19 +575,19 @@ int show_bottom(const char *msg)
 	if (tm_online->tm_mday > 1)
 	{
 		snprintf(str_tm_online, sizeof(str_tm_online),
-				 "\033[36m%2d\033[33mÌì\033[36m%2d\033[33mÊ±",
+				 "\033[36m%2d\033[33må¤©\033[36m%2d\033[33mæ—¶",
 				 tm_online->tm_mday - 1, tm_online->tm_hour);
 	}
 	else
 	{
 		snprintf(str_tm_online, sizeof(str_tm_online),
-				 "\033[36m%2d\033[33mÊ±\033[36m%2d\033[33m·Ö",
+				 "\033[36m%2d\033[33mæ—¶\033[36m%2d\033[33måˆ†",
 				 tm_online->tm_hour, tm_online->tm_min);
 	}
 
 	moveto(SCREEN_ROWS, 0);
 	clrtoeol();
-	prints("\033[1;44;33mÊ±¼ä[\033[36m%s\033[33m]%s%*s \033[33mÕÊºÅ[\033[36m%s\033[33m][%s\033[33m]\033[m",
+	prints("\033[1;44;33mæ—¶é—´[\033[36m%s\033[33m]%s%*s \033[33må¸å·[\033[36m%s\033[33m][%s\033[33m]\033[m",
 		   str_time, msg_f, 38 - msg_len - len_username, "", BBS_username, str_tm_online);
 
 	return 0;

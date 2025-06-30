@@ -30,7 +30,7 @@ const char *keys[] = {
 	"../$@^",
 	"1234567890",
 	"1234657890",
-	"HZ²âÊÔºº×ÖHZ", // GBK Chinese might not be displayed in UTF-8 env
+	"HZæµ‹è¯•æ±‰å­—HZ", // GBK Chinese might not be displayed in UTF-8 env
 	"P3p4P3z4P_",
 	"_bbBBz_Z_",
 	""};
