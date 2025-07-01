@@ -29,7 +29,7 @@
 #include <stdlib.h>
 #include <time.h>
 
-#define TITLE_INPUT_MAX_LEN 74
+#define TITLE_INPUT_MAX_LEN 72
 #define ARTICLE_CONTENT_MAX_LEN 1024 * 1024 * 4 // 4MB
 #define ARTICLE_QUOTE_MAX_LINES 20
 #define ARTICLE_QUOTE_LINE_MAX_LEN 76
@@ -44,7 +44,7 @@ int article_post(const SECTION_LIST *p_section, ARTICLE *p_article_new)
 	char sql[SQL_BUFFER_LEN];
 	char *sql_content = NULL;
 	EDITOR_DATA *p_editor_data = NULL;
-	char title_input[TITLE_INPUT_MAX_LEN + 1];
+	char title_input[BBS_article_title_max_len + 1];
 	char title_f[BBS_article_title_max_len * 2 + 1];
 	char *content = NULL;
 	char *content_f = NULL;
@@ -117,7 +117,7 @@ int article_post(const SECTION_LIST *p_section, ARTICLE *p_article_new)
 			case 'T':
 				moveto(24, 1);
 				clrtoeol();
-				len = get_data(24, 1, "标题: ", title_input, TITLE_INPUT_MAX_LEN, 1);
+				len = get_data(24, 1, "标题: ", title_input, sizeof(title_input), TITLE_INPUT_MAX_LEN, DOECHO);
 				for (p = title_input; *p == ' '; p++)
 					;
 				for (q = title_input + len; q > p && *(q - 1) == ' '; q--)
@@ -912,7 +912,7 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 			case 'T':
 				moveto(24, 1);
 				clrtoeol();
-				len = get_data(24, 1, "标题: ", title_input, TITLE_INPUT_MAX_LEN, 1);
+				len = get_data(24, 1, "标题: ", title_input, sizeof(title_input), TITLE_INPUT_MAX_LEN, DOECHO);
 				for (p = title_input; *p == ' '; p++)
 					;
 				for (q = title_input + len; q > p && *(q - 1) == ' '; q--)
