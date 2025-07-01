@@ -124,7 +124,7 @@ int article_cache_generate(const char *cache_dir, const ARTICLE *p_article, cons
 	header_len = strnlen(header, sizeof(header));
 	footer_len = strnlen(footer, sizeof(footer));
 
-	header_line_cnt = split_data_lines(header, SCREEN_COLS, cache.line_offsets, MAX_SPLIT_FILE_LINES, 1);
+	header_line_cnt = split_data_lines(header, SCREEN_COLS, cache.line_offsets, MAX_SPLIT_FILE_LINES, 1, NULL);
 
 	if (header_len != cache.line_offsets[header_line_cnt])
 	{
@@ -138,7 +138,7 @@ int article_cache_generate(const char *cache_dir, const ARTICLE *p_article, cons
 	cache.data_len = header_len + (size_t)lml_plain(content, content_f, ARTICLE_CONTENT_MAX_LEN);
 
 	cache.line_total = header_line_cnt +
-					   split_data_lines(content_f, SCREEN_COLS, cache.line_offsets + header_line_cnt, MAX_SPLIT_FILE_LINES - header_line_cnt, 1);
+					   split_data_lines(content_f, SCREEN_COLS, cache.line_offsets + header_line_cnt, MAX_SPLIT_FILE_LINES - header_line_cnt, 1, NULL);
 
 	if (cache.data_len - header_len != (size_t)cache.line_offsets[cache.line_total])
 	{
@@ -154,7 +154,7 @@ int article_cache_generate(const char *cache_dir, const ARTICLE *p_article, cons
 		cache.line_offsets[i] += (long)header_len;
 	}
 
-	footer_line_cnt = split_data_lines(footer, SCREEN_COLS, cache.line_offsets + cache.line_total, MAX_SPLIT_FILE_LINES - cache.line_total, 1);
+	footer_line_cnt = split_data_lines(footer, SCREEN_COLS, cache.line_offsets + cache.line_total, MAX_SPLIT_FILE_LINES - cache.line_total, 1, NULL);
 
 	if (footer_len != cache.line_offsets[cache.line_total + footer_line_cnt])
 	{
