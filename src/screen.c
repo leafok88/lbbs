@@ -109,95 +109,144 @@ void set_input_echo(int echo)
 	}
 }
 
-static int _str_input(char *buffer, int buf_size, int echo_mode)
+static int _str_input(char *buffer, int buf_size, int max_display_len, int echo_mode)
 {
-	int c;
+	int ch;
 	int offset = 0;
-	int hz = 0;
+	int eol;
+	int display_len;
+	char input_str[4];
+	int str_len = 0;
+	char c;
 
 	buffer[buf_size - 1] = '\0';
-	for (offset = 0; offset < buf_size - 1 && buffer[offset] != '\0'; offset++)
-		;
+	offset = split_line(buffer, max_display_len, &eol, &display_len, 0);
 
 	igetch_reset();
 
 	while (!SYS_server_exit)
 	{
-		c = igetch_t(MIN(MAX_DELAY_TIME, 60));
+		ch = igetch_t(MIN(MAX_DELAY_TIME, 60));
 
-		if (c == CR)
+		if (ch == CR)
 		{
 			igetch_reset();
 			break;
 		}
-		else if (c == KEY_TIMEOUT || c == KEY_NULL) // timeout or broken pipe
+		else if (ch == KEY_TIMEOUT || ch == KEY_NULL) // timeout or broken pipe
 		{
 			return -1;
 		}
-		else if (c == LF || c == '\0')
+		else if (ch == LF || ch == '\0')
 		{
 			continue;
 		}
-		else if (c == BACKSPACE)
+		else if (ch == BACKSPACE)
 		{
 			if (offset > 0)
 			{
 				offset--;
-				if (buffer[offset] < 0 || buffer[offset] > 127)
+				if (buffer[offset] < 0 || buffer[offset] > 127) // UTF8
 				{
-					prints("\033[D \033[D");
-					offset--;
-					if (offset < 0) // should not happen
+					while (offset > 0 && (buffer[offset] & 0b11000000) != 0b11000000)
 					{
-						log_error("Offset of buffer is negative\n");
-						offset = 0;
+						offset--;
 					}
+					display_len--;
+					prints("\033[D \033[D");
 				}
 				buffer[offset] = '\0';
+				display_len--;
 				prints("\033[D \033[D");
 				iflush();
 			}
 			continue;
 		}
-		else if (c > 255 || iscntrl(c))
+		else if (ch > 255 || iscntrl(ch))
 		{
 			continue;
 		}
-		else if (c > 127 && c <= 255)
+		else if ((ch & 0xff80) == 0x80) // head of multi-byte character
 		{
-			if (!hz && offset + 2 > buf_size - 1) // No enough space for Chinese character
+			str_len = 0;
+			c = (char)(ch & 0b11111000);
+			while (c & 0b10000000)
 			{
-				igetch(0); // Ignore 1 character
+				input_str[str_len] = (char)(ch - 256);
+				str_len++;
+				c = (c & 0b01111111) << 1;
+
+				if ((c & 0b10000000) == 0) // Input completed
+				{
+					break;
+				}
+
+				// Expect additional bytes of input
+				ch = igetch(100);						 // 0.1 second
+				if (ch == KEY_NULL || ch == KEY_TIMEOUT) // Ignore received bytes if no futher input
+				{
+					log_error("Ignore %d bytes of incomplete UTF8 character\n", str_len);
+					str_len = 0;
+					break;
+				}
+			}
+
+			if (str_len == 0) // Incomplete input
+			{
+				continue;
+			}
+
+			if (offset + str_len > buf_size - 1 || display_len + 2 > max_display_len) // No enough space for Chinese character
+			{
 				outc('\a');
 				iflush();
 				continue;
 			}
-			hz = (!hz);
-		}
 
-		if (offset + 1 > buf_size - 1)
+			memcpy(buffer + offset, input_str, (size_t)str_len);
+			offset += str_len;
+			buffer[offset] = '\0';
+			display_len += 2;
+
+			switch (echo_mode)
+			{
+			case DOECHO:
+				prints(input_str);
+				break;
+			case NOECHO:
+				prints("**");
+				break;
+			}
+		}
+		else if (ch >= 32 && ch < 127) // Printable character
 		{
-			outc('\a');
-			iflush();
+			if (offset + 1 > buf_size - 1 || display_len + 1 > max_display_len)
+			{
+				outc('\a');
+				iflush();
+				continue;
+			}
+
+			buffer[offset++] = (char)ch;
+			buffer[offset] = '\0';
+			display_len++;
+
+			switch (echo_mode)
+			{
+			case DOECHO:
+				outc((char)ch);
+				break;
+			case NOECHO:
+				outc('*');
+				break;
+			}
+		}
+		else // Invalid character
+		{
 			continue;
 		}
 
-		buffer[offset++] = (char)c;
-		buffer[offset] = '\0';
-
-		switch (echo_mode)
-		{
-		case DOECHO:
-			outc((char)c);
-			break;
-		case NOECHO:
-			outc('*');
-			break;
-		}
-		if (!hz)
-		{
-			iflush();
-		}
+		iflush();
 	}
 
 	return offset;
@@ -209,7 +258,7 @@ int str_input(char *buffer, int buf_size, int echo_mode)
 
 	buffer[0] = '\0';
 
-	len = _str_input(buffer, buf_size, echo_mode);
+	len = _str_input(buffer, buf_size, buf_size, echo_mode);
 
 	prints("\r\n");
 	iflush();
@@ -217,7 +266,7 @@ int str_input(char *buffer, int buf_size, int echo_mode)
 	return len;
 };
 
-int get_data(int row, int col, char *prompt, char *buffer, int buf_size, int echo_mode)
+int get_data(int row, int col, char *prompt, char *buffer, int buf_size, int max_display_len, int echo_mode)
 {
 	int len;
 
@@ -226,7 +275,7 @@ int get_data(int row, int col, char *prompt, char *buffer, int buf_size, int ech
 	prints("%s", buffer);
 	iflush();
 
-	len = _str_input(buffer, buf_size, echo_mode);
+	len = _str_input(buffer, buf_size, max_display_len, echo_mode);
 
 	return len;
 }
@@ -373,7 +422,7 @@ int display_data(const void *p_data, long display_line_total, const long *p_line
 					output_end_row = SCREEN_ROWS - 1;
 					moveto(SCREEN_ROWS, 0);
 					clrtoeol();
-					//prints("\033[S"); // Scroll up 1 line
+					// prints("\033[S"); // Scroll up 1 line
 					prints("\n"); // Legacy Cterm only works with this line
 					break;
 				case KEY_PGUP:
