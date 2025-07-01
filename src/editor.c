@@ -288,7 +288,7 @@ int editor_data_insert(EDITOR_DATA *p_editor_data, long *p_display_line, long *p
 	}
 
 	// Split current data line if over-length
-	if (len_data_line + str_len + 1 > MAX_EDITOR_DATA_LINE_LENGTH || str[0] == CR)
+	if (len_data_line + str_len + 2 > MAX_EDITOR_DATA_LINE_LENGTH || str[0] == CR)
 	{
 		if (p_editor_data->display_line_total >= MAX_EDITOR_DATA_LINES)
 		{
@@ -308,7 +308,7 @@ int editor_data_insert(EDITOR_DATA *p_editor_data, long *p_display_line, long *p
 			return -2;
 		}
 
-		if (offset_data_line + str_len + 1 >= MAX_EDITOR_DATA_LINE_LENGTH || str[0] == CR)
+		if (offset_data_line + str_len + 2 >= MAX_EDITOR_DATA_LINE_LENGTH || str[0] == CR)
 		{
 			if (str[0] == CR)
 			{
