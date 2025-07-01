@@ -216,50 +216,15 @@ int editor_data_insert(EDITOR_DATA *p_editor_data, long *p_display_line, long *p
 	int line_widths[MAX_EDITOR_DATA_LINE_LENGTH + 1];
 	long split_line_total;
 	long i;
-	// long j;
 	int len;
 	int eol;
 	int display_len;
-	// char c;
 
 	if (p_editor_data == NULL || p_last_updated_line == NULL)
 	{
 		log_error("editor_data_op() error: NULL pointer\n");
 		return -1;
 	}
-
-	// Validate str
-	// if ((str_len == 1 && str[0] <= 0) ||
-	// 	(str_len == 2 && (str[0] >= 0 || str[1] >= 0)))
-	// {
-	// 	log_error("Invalid input str, len=%d\n", str_len);
-	// 	return -2;
-	// }
-
-	// Get accurate offset of first character of CJK at offset position
-	// for (i = 0; i < offset; i++)
-	// {
-	// 	if ((p_editor_data->p_display_lines[display_line][i] & 0b10000000) == 0b10000000) // head of multi-byte character
-	// 	{
-	// 		j = i + 1;
-	// 		c = (p_editor_data->p_display_lines[display_line][i] & 0b01111000) << 1;
-	// 		while (c & 0b10000000)
-	// 		{
-	// 			j++;
-	// 			c = (c & 0b01111111) << 1;
-	// 		}
-
-	// 		if (j > offset) // offset was skipped
-	// 		{
-	// 			offset = i;
-	// 			break;
-	// 		}
-	// 		else // j <= offset
-	// 		{
-	// 			i = j - 1;
-	// 		}
-	// 	}
-	// }
 
 	// Get length of current data line
 	len_data_line = 0;
@@ -498,31 +463,6 @@ int editor_data_delete(EDITOR_DATA *p_editor_data, long *p_display_line, long *p
 		log_error("editor_data_op() error: NULL pointer\n");
 		return -1;
 	}
-
-	// Get accurate offset of first character of CJK at offset position
-	// for (i = 0; i < offset; i++)
-	// {
-	// 	if ((p_editor_data->p_display_lines[display_line][i] & 0b10000000) == 0b10000000) // head of multi-byte character
-	// 	{
-	// 		j = i + 1;
-	// 		c = (p_editor_data->p_display_lines[display_line][i] & 0b01111000) << 1;
-	// 		while (c & 0b10000000)
-	// 		{
-	// 			j++;
-	// 			c = (c & 0b01111111) << 1;
-	// 		}
-
-	// 		if (j > offset) // offset was skipped
-	// 		{
-	// 			offset = i;
-	// 			break;
-	// 		}
-	// 		else // j <= offset
-	// 		{
-	// 			i = j - 1;
-	// 		}
-	// 	}
-	// }
 
 	// Get length of current data line
 	len_data_line = 0;
@@ -807,7 +747,6 @@ int editor_display(EDITOR_DATA *p_editor_data)
 					}
 
 					display_line_in = line_current - output_current_row + row_pos;
-					// offset_in = col_pos - 1; // replaced to support UTF8
 					offset_in = split_line(p_editor_data->p_display_lines[display_line_in], (int)col_pos - 1, &eol, &display_len, 0);
 					display_line_out = display_line_in;
 					offset_out = offset_in;
@@ -859,7 +798,6 @@ int editor_display(EDITOR_DATA *p_editor_data)
 							row_pos += (display_line_out - display_line_in);
 						}
 
-						// col_pos = offset_out + 1; // replaced to support UTF8
 						if (offset_out != offset_in)
 						{
 							if (display_line_out != display_line_in)
@@ -917,7 +855,6 @@ int editor_display(EDITOR_DATA *p_editor_data)
 					}
 
 					display_line_in = line_current - output_current_row + row_pos;
-					// offset_in = col_pos - 1; // replaced to support UTF8
 					offset_in = split_line(p_editor_data->p_display_lines[display_line_in], (int)col_pos - 1, &eol, &display_len, 0);
 					display_line_out = display_line_in;
 					offset_out = offset_in;
@@ -929,7 +866,6 @@ int editor_display(EDITOR_DATA *p_editor_data)
 					}
 					else
 					{
-						// col_pos = offset_out + 1; // Set col_pos to accurate pos
 						col_pos = display_len + 1; // Set col_pos to accurate pos
 
 						output_end_row = MIN(SCREEN_ROWS - 1, output_current_row + (int)(last_updated_line - line_current));
