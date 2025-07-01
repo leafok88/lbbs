@@ -18,7 +18,7 @@
 
 #define DATA_FILE "var/chicken"
 #define LOG_FILE "var/chicken/log"
-#define CHICKEN_NAME_LEN 20
+#define CHICKEN_NAME_LEN 40
 
 char
 	*cstate[10] = {"我在吃饭", "偷吃零食", "拉便便", "笨蛋..输给鸡?", "哈..赢小鸡也没多光荣", "没食物啦..", "疲劳全消!"};
@@ -147,7 +147,7 @@ static int create_a_egg()
 		strncpy(name_tmp, chicken_name, sizeof(name_tmp) - 1);
 		name_tmp[sizeof(name_tmp) - 1] = '\0';
 
-		if (get_data(2, 0, "帮小鸡取个好名字：", name_tmp, sizeof(name_tmp), DOECHO) > 0)
+		if (get_data(2, 0, "帮小鸡取个好名字：", name_tmp, sizeof(name_tmp), CHICKEN_NAME_LEN / 2, DOECHO) > 0)
 		{
 			strncpy(chicken_name, name_tmp, sizeof(chicken_name) - 1);
 			chicken_name[sizeof(chicken_name) - 1] = '\0';
@@ -388,7 +388,7 @@ static int select_menu()
 		moveto(23, 0);
 		prints("[0;46;31m  使用帮助  [0;47;34m c 改名字   k 杀鸡   t 消除非疲劳($50)   q 退出     [m");
 		inbuf[0] = '\0';
-		if (get_data(22, 0, "要做些什么呢?：", inbuf, sizeof(inbuf), DOECHO) < 0)
+		if (get_data(22, 0, "要做些什么呢?：", inbuf, sizeof(inbuf), 1, DOECHO) < 0)
 		{
 			return 0; // input timeout
 		}
@@ -589,7 +589,7 @@ static int select_menu()
 
 			clrline(22, 22);
 
-			if (get_data(22, 0, "帮小鸡取个好名字：", name_tmp, sizeof(name_tmp), DOECHO) > 0)
+			if (get_data(22, 0, "帮小鸡取个好名字：", name_tmp, sizeof(name_tmp), CHICKEN_NAME_LEN / 2, DOECHO) > 0)
 			{
 				strncpy(chicken_name, name_tmp, sizeof(chicken_name) - 1);
 				chicken_name[sizeof(chicken_name) - 1] = '\0';
@@ -791,7 +791,7 @@ int sell()
 	clrtobot(20);
 	moveto(20, 0);
 	prints("小鸡值[33;45m$$ %d [m糖糖", sel);
-	if (get_data(19, 0, "真的要卖掉小鸡?[y/N]", ans, sizeof(ans), DOECHO) < 0)
+	if (get_data(19, 0, "真的要卖掉小鸡?[y/N]", ans, sizeof(ans), 1, DOECHO) < 0)
 	{
 		return -1; // input timeout
 	}
