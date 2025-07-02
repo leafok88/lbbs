@@ -23,10 +23,10 @@
 // BBS
 #define BBS_max_section 200
 #define BBS_section_name_max_len 20
-#define BBS_section_title_max_len 20
+#define BBS_section_title_max_len 40
 #define BBS_username_max_len 12
 #define BBS_password_max_len 12
-#define BBS_nickname_max_len 20
+#define BBS_nickname_max_len 40
 #define BBS_user_tz_max_len 50
 
 #define BBS_id_max_len 20
