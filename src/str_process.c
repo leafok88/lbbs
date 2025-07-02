@@ -76,7 +76,8 @@ int split_line(const char *buffer, int max_display_len, int *p_eol, int *p_displ
 	return i;
 }
 
-long split_data_lines(const char *p_buf, int max_display_len, long *p_line_offsets, long line_offsets_count, int skip_ctrl_seq)
+long split_data_lines(const char *p_buf, int max_display_len, long *p_line_offsets, long line_offsets_count,
+					  int skip_ctrl_seq, int *p_line_widths)
 {
 	int line_cnt = 0;
 	int len;
@@ -88,6 +89,11 @@ long split_data_lines(const char *p_buf, int max_display_len, long *p_line_offse
 	do
 	{
 		len = split_line(p_buf, max_display_len, &end_of_line, &display_len, skip_ctrl_seq);
+
+		if (p_line_widths)
+		{
+			p_line_widths[line_cnt] = display_len;
+		}
 
 		// Exceed max_line_cnt
 		if (line_cnt + 1 >= line_offsets_count)

@@ -121,7 +121,7 @@ int load_file(const char *filename)
 		return -1;
 	}
 
-	line_total = split_data_lines(p_data, SCREEN_COLS, line_offsets, MAX_SPLIT_FILE_LINES, 1);
+	line_total = split_data_lines(p_data, SCREEN_COLS, line_offsets, MAX_SPLIT_FILE_LINES, 1, NULL);
 
 	// Allocate shared memory
 	proj_id = (int)(time(NULL) % getpid());

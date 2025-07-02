@@ -93,7 +93,7 @@ EDITOR_DATA *editor_data_load(const char *p_data)
 		return NULL;
 	}
 
-	p_editor_data->display_line_total = split_data_lines(p_data, SCREEN_COLS, line_offsets, MAX_EDITOR_DATA_LINES + 1, 0);
+	p_editor_data->display_line_total = split_data_lines(p_data, SCREEN_COLS, line_offsets, MAX_EDITOR_DATA_LINES + 1, 0, NULL);
 
 	for (i = 0; i < p_editor_data->display_line_total; i++)
 	{
@@ -362,7 +362,7 @@ int editor_data_insert(EDITOR_DATA *p_editor_data, long *p_display_line, long *p
 	}
 
 	// Split current data line since beginning of current display line
-	split_line_total = split_data_lines(p_data_line, SCREEN_COLS, line_offsets, split_line_total, 0);
+	split_line_total = split_data_lines(p_data_line, SCREEN_COLS, line_offsets, split_line_total, 0, NULL);
 
 	for (i = 0; i < split_line_total; i++)
 	{
@@ -578,7 +578,7 @@ int editor_data_delete(EDITOR_DATA *p_editor_data, long *p_display_line, long *p
 	split_line_total = last_display_line - display_line + 2;
 
 	// Split current data line since beginning of current display line
-	split_line_total = split_data_lines(p_data_line, SCREEN_COLS, line_offsets, split_line_total, 0);
+	split_line_total = split_data_lines(p_data_line, SCREEN_COLS, line_offsets, split_line_total, 0, NULL);
 
 	for (i = 0; i < split_line_total; i++)
 	{

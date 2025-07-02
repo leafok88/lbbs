@@ -23,7 +23,9 @@
 
 extern int split_line(const char *buffer, int max_display_len, int *p_eol, int *p_display_len, int skip_ctrl_seq);
 
-extern long split_data_lines(const char *p_buf, int max_display_len, long *p_line_offsets, long line_offsets_count, int skip_ctrl_seq);
+// p_line_widths may be NULL. Otherwise, the widths of each line will be store into the pointed array
+extern long split_data_lines(const char *p_buf, int max_display_len, long *p_line_offsets, long line_offsets_count,
+							 int skip_ctrl_seq, int *p_line_widths);
 
 extern int str_filter(char *buffer, int skip_ctrl_seq);
 

@@ -838,7 +838,7 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 					   "\n\n【 在 %s (%s) 的大作中提到: 】\n",
 					   p_article->username, p_article->nickname);
 
-		quote_content_lines = split_data_lines(content_f, ARTICLE_QUOTE_LINE_MAX_LEN, line_offsets, ARTICLE_QUOTE_MAX_LINES + 1, 0);
+		quote_content_lines = split_data_lines(content_f, ARTICLE_QUOTE_LINE_MAX_LEN, line_offsets, ARTICLE_QUOTE_MAX_LINES + 1, 0, NULL);
 		for (i = 0; i < quote_content_lines; i++)
 		{
 			memcpy(content + len, ": ", 2); // quote line prefix
