@@ -36,9 +36,9 @@
 
 #define ACTIVE_BOARD_HEIGHT 8
 
-#define STR_TOP_LEFT_MAX_LEN 40
-#define STR_TOP_MIDDLE_MAX_LEN 20
-#define STR_TOP_RIGHT_MAX_LEN 20
+#define STR_TOP_LEFT_MAX_LEN 80
+#define STR_TOP_MIDDLE_MAX_LEN 40
+#define STR_TOP_RIGHT_MAX_LEN 40
 
 void moveto(int row, int col)
 {
@@ -572,23 +572,24 @@ int show_top(const char *str_left, const char *str_middle, const char *str_right
 
 	strncpy(str_left_f, str_left, sizeof(str_left_f) - 1);
 	str_left_f[sizeof(str_left_f) - 1] = '\0';
-	len = split_line(str_left_f, STR_TOP_LEFT_MAX_LEN, &eol, &str_left_len, 1);
+	len = split_line(str_left_f, STR_TOP_LEFT_MAX_LEN / 2, &eol, &str_left_len, 1);
 	str_left_f[len] = '\0';
 
 	strncpy(str_middle_f, str_middle, sizeof(str_middle_f) - 1);
 	str_middle_f[sizeof(str_middle_f) - 1] = '\0';
-	len = split_line(str_middle, STR_TOP_MIDDLE_MAX_LEN, &eol, &str_middle_len, 1);
+	len = split_line(str_middle, STR_TOP_MIDDLE_MAX_LEN / 2, &eol, &str_middle_len, 1);
 	str_middle_f[len] = '\0';
 
 	strncpy(str_right_f, str_right, sizeof(str_right_f) - 1);
 	str_right_f[sizeof(str_right_f) - 1] = '\0';
-	len = split_line(str_right, STR_TOP_RIGHT_MAX_LEN, &eol, &str_right_len, 1);
+	len = split_line(str_right, STR_TOP_RIGHT_MAX_LEN / 2, &eol, &str_right_len, 1);
 	str_right_f[len] = '\0';
 
 	moveto(1, 0);
 	clrtoeol();
-	prints("\033[1;44;33m%s\033[37m%*s\033[33m%*s\033[m",
-		   str_left_f, 44 - str_left_len, str_middle_f, 36, str_right_f);
+	prints("\033[1;44;33m%s\033[37m%*s%s\033[33m%*s%s\033[m",
+		   str_left_f, 44 - str_left_len - str_middle_len, "",
+		   str_middle_f, 36 - str_right_len, "", str_right_f);
 
 	return 0;
 }
