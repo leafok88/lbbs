@@ -377,6 +377,18 @@ int igetch(int timeout)
 	{
 		unsigned char c = buf[pos++];
 
+		// Convert \r\n to \r
+		if (c == CR && pos < len && buf[pos] == LF)
+		{
+			pos++;
+		}
+
+		// Convert single \n to \r
+		if (c == LF)
+		{
+			c = CR;
+		}
+
 		if (c == KEY_CONTROL)
 		{
 			if (in_control == 0)
@@ -815,12 +827,6 @@ int igetch(int timeout)
 	if (out == 0 && in_esc)
 	{
 		out = KEY_ESC;
-	}
-
-	// Convert LF to CR -- Cterm send LF without CR
-	if (out == LF)
-	{
-		out = CR;
 	}
 
 	// for debug
