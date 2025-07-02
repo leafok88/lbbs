@@ -131,6 +131,7 @@ EDITOR_DATA *editor_data_load(const char *p_data)
 			p_editor_data->p_display_lines[i][p_editor_data->display_line_lengths[i] - 1] == '\n')
 		{
 			p_editor_data->display_line_lengths[i]--;
+			p_editor_data->display_line_widths[i]--;
 			current_data_line_length--;
 		}
 		p_data_line[current_data_line_length] = '\0';
