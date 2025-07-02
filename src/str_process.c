@@ -20,6 +20,52 @@
 #include <stdio.h>
 #include <string.h>
 
+int str_length(const char *str, int skip_ctrl_seq)
+{
+	int i;
+	char c;
+	int ret = 0;
+
+	for (i = 0; str[i] != '\0'; i++)
+	{
+		c = str[i];
+
+		if (c == '\r' || c == '\7') // skip
+		{
+			continue;
+		}
+
+		if (skip_ctrl_seq && c == '\033' && str[i + 1] == '[') // Skip control sequence
+		{
+			i += 2;
+			while (str[i] != '\0' && str[i] != 'm')
+			{
+				i++;
+			}
+			continue;
+		}
+
+		// Process UTF-8 Chinese characters
+		if (c & 0b10000000) // head of multi-byte character
+		{
+			c = (c & 0b01110000) << 1;
+			while (c & 0b10000000)
+			{
+				i++;
+				c = (c & 0b01111111) << 1;
+			}
+
+			ret += 2;
+		}
+		else
+		{
+			ret++;
+		}
+	}
+
+	return ret;
+}
+
 int split_line(const char *buffer, int max_display_len, int *p_eol, int *p_display_len, int skip_ctrl_seq)
 {
 	int i;

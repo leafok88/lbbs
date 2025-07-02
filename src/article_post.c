@@ -49,6 +49,7 @@ int article_post(const SECTION_LIST *p_section, ARTICLE *p_article_new)
 	char *content = NULL;
 	char *content_f = NULL;
 	long len_content;
+	int content_display_length;
 	char nickname_f[BBS_nickname_max_len * 2 + 1];
 	int sign_id = 0;
 	long len;
@@ -263,6 +264,9 @@ int article_post(const SECTION_LIST *p_section, ARTICLE *p_article_new)
 		rs = NULL;
 	}
 
+	// Calculate display length of content
+	content_display_length = str_length(content, 1);
+
 	// Begin transaction
 	if (mysql_query(db, "SET autocommit=0") != 0)
 	{
@@ -326,9 +330,9 @@ int article_post(const SECTION_LIST *p_section, ARTICLE *p_article_new)
 	snprintf(sql, sizeof(sql),
 			 "INSERT INTO bbs(SID, TID, UID, username, nickname, title, CID, transship, "
 			 "sub_dt, sub_ip, reply_note, exp, last_reply_dt, icon, length) "
-			 "VALUES(%d, 0, %d, '%s', '%s', '%s', %d, %d, NOW(), '%s', 1, %d, NOW(), 1, %ld)",
+			 "VALUES(%d, 0, %d, '%s', '%s', '%s', %d, %d, NOW(), '%s', 1, %d, NOW(), 1, %d)",
 			 p_section->sid, BBS_priv.uid, BBS_username, nickname_f, title_f,
-			 p_article_new->cid, p_article_new->transship, hostaddr_client, BBS_user_exp, len_content);
+			 p_article_new->cid, p_article_new->transship, hostaddr_client, BBS_user_exp, content_display_length);
 
 	if (mysql_query(db, sql) != 0)
 	{
@@ -419,6 +423,7 @@ int article_modify(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTI
 	char *content = NULL;
 	char *content_f = NULL;
 	long len_content;
+	int content_display_length;
 	int ch;
 	long ret = 0;
 	time_t now;
@@ -568,6 +573,9 @@ int article_modify(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTI
 							"\n--\n※ 作者已于 %s 修改本文※\n",
 							str_modify_dt);
 
+	// Calculate display length of content
+	content_display_length = str_length(content, 1);
+
 	db = db_open();
 	if (db == NULL)
 	{
@@ -635,8 +643,8 @@ int article_modify(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTI
 
 	// Update article
 	snprintf(sql, sizeof(sql),
-			 "UPDATE bbs SET CID = %d, length = %ld, excerption = 0 WHERE AID = %d", // Set excerption = 0 explictly in case of rare condition
-			 p_article_new->cid, len_content, p_article->aid);
+			 "UPDATE bbs SET CID = %d, length = %d, excerption = 0 WHERE AID = %d", // Set excerption = 0 explictly in case of rare condition
+			 p_article_new->cid, content_display_length, p_article->aid);
 
 	if (mysql_query(db, sql) != 0)
 	{
@@ -710,6 +718,7 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 	char *content = NULL;
 	char *content_f = NULL;
 	long len_content;
+	int content_display_length;
 	char nickname_f[BBS_nickname_max_len * 2 + 1];
 	int sign_id = 0;
 	long len;
@@ -1052,6 +1061,9 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 		rs = NULL;
 	}
 
+	// Calculate display length of content
+	content_display_length = str_length(content, 1);
+
 	// Begin transaction
 	if (mysql_query(db, "SET autocommit=0") != 0)
 	{
@@ -1115,10 +1127,10 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 	snprintf(sql, sizeof(sql),
 			 "INSERT INTO bbs(SID, TID, UID, username, nickname, title, CID, transship, "
 			 "sub_dt, sub_ip, reply_note, exp, last_reply_dt, icon, length) "
-			 "VALUES(%d, %d, %d, '%s', '%s', '%s', %d, 0, NOW(), '%s', 1, %d, NOW(), 1, %ld)",
+			 "VALUES(%d, %d, %d, '%s', '%s', '%s', %d, 0, NOW(), '%s', 1, %d, NOW(), 1, %d)",
 			 p_section->sid, (p_article->tid == 0 ? p_article->aid : p_article->tid),
 			 BBS_priv.uid, BBS_username, nickname_f, title_f,
-			 p_article_new->cid, hostaddr_client, BBS_user_exp, len_content);
+			 p_article_new->cid, hostaddr_client, BBS_user_exp, content_display_length);
 
 	if (mysql_query(db, sql) != 0)
 	{
