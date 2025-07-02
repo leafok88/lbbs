@@ -46,14 +46,14 @@ int split_line(const char *buffer, int max_display_len, int *p_eol, int *p_displ
 			continue;
 		}
 
-		if ((c & 0b10000000) == 0b10000000) // head of multi-byte character
+		if (c & 0b10000000) // head of multi-byte character
 		{
 			if (*p_display_len + 2 > max_display_len)
 			{
 				break;
 			}
 
-			c = (c & 0b01111000) << 1;
+			c = (c & 0b01110000) << 1;
 			while (c & 0b10000000)
 			{
 				i++;

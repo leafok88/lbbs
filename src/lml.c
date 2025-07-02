@@ -316,7 +316,7 @@ int lml_plain(const char *str_in, char *str_out, int buf_len)
 		}
 		else if (tag_start_pos == -1) // not in LML tag
 		{
-			if ((str_in[i] & 0b10000000) == 0b10000000) // head of multi-byte character
+			if (str_in[i] & 0b10000000) // head of multi-byte character
 			{
 				if (j + 4 >= buf_len) // Assuming UTF-8 CJK characters use 4 bytes, though most of them actually use 3 bytes
 				{
@@ -325,7 +325,7 @@ int lml_plain(const char *str_in, char *str_out, int buf_len)
 					return j;
 				}
 
-				c = (str_in[i] & 0b01111000) << 1;
+				c = (str_in[i] & 0b01110000) << 1;
 				while (c & 0b10000000)
 				{
 					str_out[j++] = str_in[i++];

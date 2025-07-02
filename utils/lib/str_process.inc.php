@@ -10,15 +10,14 @@ function str_length(string $str) : int
 
 		// Process UTF-8 Chinese characters
 		$v1 = ord($c);
-		if (($v1 & 0b10000000) == 0b10000000) //head of multi-byte character
+		if ($v1 & 0b10000000) //head of multi-byte character
 		{
-			$v2 = ($v1 & 0b01111000) << 1;
+			$v2 = ($v1 & 0b01110000) << 1;
 			while ($v2 & 0b10000000)
 			{
 				$i++;
-				$v3 = $str[$i];
-				$c .= $v3;
-				$v2 = ($v2 & 0b01111111 ) << 1;
+				$c .= $str[$i];
+				$v2 = ($v2 & 0b01111111) << 1;
 			}
 
 			$ret += 2;
@@ -73,15 +72,14 @@ function split_line(string $str, string $prefix = "", int $width = 76, int $line
 
 		// Process UTF-8 Chinese characters
 		$v1 = ord($c);
-		if (($v1 & 0b10000000) == 0b10000000) //head of multi-byte character
+		if ($v1 & 0b10000000) //head of multi-byte character
 		{
-			$v2 = ($v1 & 0b01111000) << 1;
+			$v2 = ($v1 & 0b01110000) << 1;
 			while ($v2 & 0b10000000)
 			{
 				$i++;
-				$v3 = $str[$i];
-				$c .= $v3;
-				$v2 = ($v2 & 0b01111111 ) << 1;
+				$c .= $str[$i];
+				$v2 = ($v2 & 0b01111111) << 1;
 			}
 
 			// Each UTF-8 CJK character should use two character length for display

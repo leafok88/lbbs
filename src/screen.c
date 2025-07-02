@@ -169,7 +169,7 @@ static int _str_input(char *buffer, int buf_size, int max_display_len, int echo_
 		else if ((ch & 0xff80) == 0x80) // head of multi-byte character
 		{
 			str_len = 0;
-			c = (char)(ch & 0b11111000);
+			c = (char)(ch & 0b11110000);
 			while (c & 0b10000000)
 			{
 				input_str[str_len] = (char)(ch - 256);
