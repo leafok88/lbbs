@@ -4,7 +4,6 @@
 AC_PREREQ([2.69])
 AC_INIT([bbsd],[1.3])
 AC_CONFIG_SRCDIR([src/])
-# AM_CONFIG_HEADERS(config.h)
 AC_CONFIG_MACRO_DIRS([m4])
 AM_INIT_AUTOMAKE([foreign])
 
