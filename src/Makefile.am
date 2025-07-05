@@ -1,7 +1,7 @@
 bin_PROGRAMS = bbsd
 EXTRA_PROGRAMS = test_trie_dict test_file_loader test_section_list test_lml test_ssh_server test_article_view_log test_memory_pool
 
-bbsd_SOURCES = article_cache.c article_del.c article_post.c article_view_log.c bbs.c bbs_cmd.c bbs_main.c common.c database.c \
+bbsd_SOURCES = ${srcdir}/../include/*.h article_cache.c article_del.c article_post.c article_view_log.c bbs.c bbs_cmd.c bbs_main.c common.c database.c \
 			   editor.c file_loader.c init.c io.c lml.c log.c login.c memory_pool.c menu.c main.c menu_proc.c net_server.c \
 			   screen.c section_list.c section_list_display.c section_list_loader.c str_process.c \
 			   trie_dict.c user_priv.c
@@ -20,10 +20,9 @@ lib_LTLIBRARIES = libbbs.la
 
 libbbs_la_SOURCES = bbs_net.c
 
-AM_CFLAGS = -std=c17 -Wall -Werror -Wno-unused-parameter -Wformat -Wconversion -Wdeprecated -finline-functions
-AM_CPPFLAGS = -I../include
+AM_CFLAGS = -I${srcdir}/../include -std=c17 -Wall -Werror -Wno-unused-parameter -Wformat -Wconversion -Wdeprecated -finline-functions
 LIBS = -L/usr/lib64/mysql/ -lmysqlclient -lsystemd -lssh -lz -ldl
 
 libdir = ${prefix}/lib
 
-CLEANFILES = @EXTRA_CLEAN@ ${EXTRA_PROGRAMS}
+CLEANFILES = ${EXTRA_PROGRAMS}

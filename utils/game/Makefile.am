@@ -1,11 +1,8 @@
 lib_LTLIBRARIES = libgame.la
 
-libgame_la_SOURCES = chicken.c money.c
+libgame_la_SOURCES = money.h chicken.c money.c
 
-AM_CFLAGS = -std=c17 -Wall -Werror -Wno-unused-parameter -Wformat -Wconversion -Wdeprecated -finline-functions
-AM_CPPFLAGS = -I$(top_builddir)/include
+AM_CFLAGS = -I${srcdir}/../../include -std=c17 -Wall -Werror -Wno-unused-parameter -Wformat -Wconversion -Wdeprecated -finline-functions
 LIBS = -L/usr/lib64/mysql/ -lmysqlclient -lz
 
 libdir = ${prefix}/game/so
-
-CLEANFILES = @EXTRA_CLEAN@
