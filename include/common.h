@@ -25,9 +25,7 @@
 #define FILE_PATH_LEN 4096
 
 // Version
-#define APP_NAME "LBBS"
-#define APP_VER "1.3.1"
-#define APP_INFO (APP_NAME " version " APP_VER " build on " __DATE__ " " __TIME__)
+#define APP_INFO (PACKAGE_STRING " build on " __DATE__ " " __TIME__)
 
 // Enviroment
 #define CONF_BBSD "conf/bbsd.conf"
