@@ -225,7 +225,7 @@ int bbsnet_connect(int n)
 	clearscr();
 
 	moveto(0, 0);
-	prints("\033[1;32mÕıÔÚ²âÊÔÍù %s (%s) µÄÁ¬½Ó£¬ÇëÉÔºò... \033[m\r\n",
+	prints("\033[1;32mæ­£åœ¨æµ‹è¯•å¾€ %s (%s) çš„è¿æ¥ï¼Œè¯·ç¨å€™... \033[m\r\n",
 		   bbsnet_conf[n].host1, bbsnet_conf[n].ip);
 	iflush();
 
@@ -233,7 +233,7 @@ int bbsnet_connect(int n)
 
 	if (p_host == NULL)
 	{
-		prints("\033[1;31m²éÕÒÖ÷»úÃûÊ§°Ü£¡\033[m\r\n");
+		prints("\033[1;31mæŸ¥æ‰¾ä¸»æœºåå¤±è´¥ï¼\033[m\r\n");
 		press_any_key();
 		return -1;
 	}
@@ -242,7 +242,7 @@ int bbsnet_connect(int n)
 
 	if (sock < 0)
 	{
-		prints("\033[1;31mÎŞ·¨´´½¨socket£¡\033[m\r\n");
+		prints("\033[1;31mæ— æ³•åˆ›å»ºsocketï¼\033[m\r\n");
 		press_any_key();
 		return -1;
 	}
@@ -267,7 +267,7 @@ int bbsnet_connect(int n)
 	remote_addr[sizeof(remote_addr) - 1] = '\0';
 	remote_port = ntohs(sin.sin_port);
 
-	prints("\033[1;32m´©Ëó½ø¶ÈÌõÌáÊ¾Äúµ±Ç°ÒÑÊ¹ÓÃµÄÊ±¼ä£¬°´\033[1;33mCtrl+C\033[1;32mÖĞ¶Ï¡£\033[m\r\n");
+	prints("\033[1;32mç©¿æ¢­è¿›åº¦æ¡æç¤ºæ‚¨å½“å‰å·²ä½¿ç”¨çš„æ—¶é—´ï¼ŒæŒ‰\033[1;33mCtrl+C\033[1;32mä¸­æ–­ã€‚\033[m\r\n");
 	process_bar(0, MAX_PROCESS_BAR_LEN);
 
 	// Set socket as non-blocking
@@ -322,7 +322,7 @@ int bbsnet_connect(int n)
 			{
 				log_error("connect(socket) error (%d)\n", errno);
 
-				prints("\033[1;31mÁ¬½ÓÊ§°Ü£¡\033[m\r\n");
+				prints("\033[1;31mè¿æ¥å¤±è´¥ï¼\033[m\r\n");
 				press_any_key();
 
 				goto cleanup;
@@ -380,7 +380,7 @@ int bbsnet_connect(int n)
 	}
 	if (!sock_connected)
 	{
-		prints("\033[1;31mÁ¬½ÓÊ§°Ü£¡\033[m\r\n");
+		prints("\033[1;31mè¿æ¥å¤±è´¥ï¼\033[m\r\n");
 		press_any_key();
 
 		goto cleanup;
@@ -392,7 +392,7 @@ int bbsnet_connect(int n)
 		log_error("setsockopt IP_TOS=%d error (%d)\n", tos, errno);
 	}
 
-	prints("\033[1;31mÁ¬½Ó³É¹¦£¡\033[m\r\n");
+	prints("\033[1;31mè¿æ¥æˆåŠŸï¼\033[m\r\n");
 	iflush();
 	log_common("BBSNET connect to %s:%d\n", remote_addr, remote_port);
 
@@ -708,7 +708,7 @@ bbsnet_refresh()
 	moveto(22, 0);
 	prints(" ----------------------------------------------------------------------------- ");
 	moveto(23, 0);
-	prints(" [\x1b[1;32mCtrl+C\x1b[m]ÍË³ö");
+	prints(" [\x1b[1;32mCtrl+C\x1b[m]é€€å‡º");
 
 	iflush();
 
@@ -721,13 +721,13 @@ int bbsnet_selchange()
 
 	moveto(20, 0);
 	clrtoeol();
-	prints("|\x1b[1mµ¥Î»:\x1b[1;33m%-18s\x1b[m  Õ¾Ãû:\x1b[1;33m%s\x1b[m",
+	prints("|\x1b[1må•ä½:\x1b[1;33m%-18s\x1b[m  ç«™å:\x1b[1;33m%s\x1b[m",
 		   bbsnet_conf[i].host2, bbsnet_conf[i].host1);
 	moveto(20, 79);
 	prints("|");
 	moveto(21, 0);
 	clrtoeol();
-	prints("|\x1b[1mÁ¬Íù:\x1b[1;33m%-20s", bbsnet_conf[i].ip);
+	prints("|\x1b[1mè¿å¾€:\x1b[1;33m%-20s", bbsnet_conf[i].ip);
 	if (bbsnet_conf[i].port != 23)
 	{
 		prints("  %d", bbsnet_conf[i].port);

@@ -93,7 +93,8 @@ EDITOR_DATA *editor_data_load(const char *p_data)
 		return NULL;
 	}
 
-	p_editor_data->display_line_total = split_data_lines(p_data, SCREEN_COLS, line_offsets, MAX_EDITOR_DATA_LINES + 1, 0, NULL);
+	p_editor_data->display_line_total = split_data_lines(p_data, SCREEN_COLS, line_offsets, MAX_EDITOR_DATA_LINES + 1,
+														 0, p_editor_data->display_line_widths);
 
 	for (i = 0; i < p_editor_data->display_line_total; i++)
 	{
@@ -130,6 +131,7 @@ EDITOR_DATA *editor_data_load(const char *p_data)
 			p_editor_data->p_display_lines[i][p_editor_data->display_line_lengths[i] - 1] == '\n')
 		{
 			p_editor_data->display_line_lengths[i]--;
+			p_editor_data->display_line_widths[i]--;
 			current_data_line_length--;
 		}
 		p_data_line[current_data_line_length] = '\0';
@@ -212,6 +214,7 @@ int editor_data_insert(EDITOR_DATA *p_editor_data, long *p_display_line, long *p
 	long offset_data_line;
 	long last_display_line; // of data line
 	long line_offsets[MAX_EDITOR_DATA_LINE_LENGTH + 1];
+	int line_widths[MAX_EDITOR_DATA_LINE_LENGTH + 1];
 	long split_line_total;
 	long i;
 	int len;
@@ -222,27 +225,6 @@ int editor_data_insert(EDITOR_DATA *p_editor_data, long *p_display_line, long *p
 	{
 		log_error("editor_data_op() error: NULL pointer\n");
 		return -1;
-	}
-
-	// Validate str
-	if ((str_len == 1 && str[0] <= 0) ||
-		(str_len == 2 && (str[0] >= 0 || str[1] >= 0)))
-	{
-		log_error("Invalid input str, len=%d\n", str_len);
-		return -2;
-	}
-
-	// Get accurate offset of first character of CJK at offset position
-	for (i = 0; i < offset; i++)
-	{
-		if (p_editor_data->p_display_lines[display_line][i] < 0) // GBK
-		{
-			i++;
-		}
-	}
-	if (i > offset) // offset was skipped
-	{
-		offset--;
 	}
 
 	// Get length of current data line
@@ -340,6 +322,10 @@ int editor_data_insert(EDITOR_DATA *p_editor_data, long *p_display_line, long *p
 			*p_offset = offset + str_len;
 		}
 
+		// Update display width of current display line
+		len = split_line(p_editor_data->p_display_lines[display_line], SCREEN_COLS, &eol, &display_len, 0);
+		p_editor_data->display_line_widths[display_line] = display_len;
+
 		split_line_total = last_display_line - display_line + 3;
 
 		// Set start display_line for spliting new data line
@@ -362,7 +348,7 @@ int editor_data_insert(EDITOR_DATA *p_editor_data, long *p_display_line, long *p
 	}
 
 	// Split current data line since beginning of current display line
-	split_line_total = split_data_lines(p_data_line, SCREEN_COLS, line_offsets, split_line_total, 0, NULL);
+	split_line_total = split_data_lines(p_data_line, SCREEN_COLS, line_offsets, split_line_total, 0, line_widths);
 
 	for (i = 0; i < split_line_total; i++)
 	{
@@ -382,6 +368,7 @@ int editor_data_insert(EDITOR_DATA *p_editor_data, long *p_display_line, long *p
 					p_editor_data->p_display_lines[display_line + i - 1][len] = '\n';
 					p_editor_data->p_display_lines[display_line + i - 1][len + 1] = '\0';
 					p_editor_data->display_line_lengths[display_line + i - 1] = len + 1;
+					p_editor_data->display_line_widths[display_line + i - 1] = display_len;
 				}
 				if (*p_offset >= p_editor_data->display_line_lengths[*p_display_line])
 				{
@@ -394,6 +381,7 @@ int editor_data_insert(EDITOR_DATA *p_editor_data, long *p_display_line, long *p
 			// {
 			// 	p_editor_data->p_display_lines[j] = p_editor_data->p_display_lines[j - 1];
 			// 	p_editor_data->display_line_lengths[j] = p_editor_data->display_line_lengths[j - 1];
+			// 	p_editor_data->display_line_widths[j] = p_editor_data->display_line_widths[j - 1];
 			// }
 			memmove(p_editor_data->p_display_lines + last_display_line + 2,
 					p_editor_data->p_display_lines + last_display_line + 1,
@@ -403,6 +391,10 @@ int editor_data_insert(EDITOR_DATA *p_editor_data, long *p_display_line, long *p
 					p_editor_data->display_line_lengths + last_display_line + 1,
 					(size_t)(p_editor_data->display_line_total - last_display_line - 1) *
 						sizeof(p_editor_data->display_line_lengths[last_display_line + 1]));
+			memmove(p_editor_data->display_line_widths + last_display_line + 2,
+					p_editor_data->display_line_widths + last_display_line + 1,
+					(size_t)(p_editor_data->display_line_total - last_display_line - 1) *
+						sizeof(p_editor_data->display_line_widths[last_display_line + 1]));
 
 			last_display_line++;
 			*p_last_updated_line = p_editor_data->display_line_total;
@@ -410,6 +402,7 @@ int editor_data_insert(EDITOR_DATA *p_editor_data, long *p_display_line, long *p
 		}
 
 		p_editor_data->display_line_lengths[display_line + i] = line_offsets[i + 1] - line_offsets[i];
+		p_editor_data->display_line_widths[display_line + i] = line_widths[i];
 		p_editor_data->p_display_lines[display_line + i] =
 			(i == 0
 				 ? p_data_line
@@ -439,6 +432,7 @@ int editor_data_insert(EDITOR_DATA *p_editor_data, long *p_display_line, long *p
 		len = split_line(p_editor_data->p_display_lines[p_editor_data->display_line_total - 1], SCREEN_COLS - 1, &eol, &display_len, 0);
 		p_editor_data->p_display_lines[p_editor_data->display_line_total - 1][len] = '\0';
 		p_editor_data->display_line_lengths[p_editor_data->display_line_total - 1] = len;
+		p_editor_data->display_line_widths[p_editor_data->display_line_total - 1] = display_len;
 		if (*p_display_line + 1 >= p_editor_data->display_line_total)
 		{
 			*p_offset = MIN(*p_offset, len);
@@ -459,27 +453,16 @@ int editor_data_delete(EDITOR_DATA *p_editor_data, long *p_display_line, long *p
 	long offset_data_line;
 	long last_display_line; // of data line
 	long line_offsets[MAX_EDITOR_DATA_LINE_LENGTH + 1];
+	int line_widths[MAX_EDITOR_DATA_LINE_LENGTH + 1];
 	long split_line_total;
 	long i, j;
 	int str_len = 0;
+	char c;
 
 	if (p_editor_data == NULL || p_last_updated_line == NULL)
 	{
 		log_error("editor_data_op() error: NULL pointer\n");
 		return -1;
-	}
-
-	// Get accurate offset of first character of CJK at offset position
-	for (i = 0; i < offset; i++)
-	{
-		if (p_editor_data->p_display_lines[display_line][i] < 0) // GBK
-		{
-			i++;
-		}
-	}
-	if (i > offset) // offset was skipped
-	{
-		offset--;
 	}
 
 	// Get length of current data line
@@ -520,9 +503,15 @@ int editor_data_delete(EDITOR_DATA *p_editor_data, long *p_display_line, long *p
 	{
 		str_len = 1;
 	}
-	else if (p_data_line[offset_data_line + 1] < 0) // GBK
+	else if (p_data_line[offset_data_line] & 0b10000000) // head of multi-byte character
 	{
-		str_len = 2;
+		str_len = 1;
+		c = (p_data_line[offset_data_line] & 0b01110000) << 1;
+		while (c & 0b10000000)
+		{
+			str_len++;
+			c = (c & 0b01111111) << 1;
+		}
 	}
 	else
 	{
@@ -578,11 +567,12 @@ int editor_data_delete(EDITOR_DATA *p_editor_data, long *p_display_line, long *p
 	split_line_total = last_display_line - display_line + 2;
 
 	// Split current data line since beginning of current display line
-	split_line_total = split_data_lines(p_data_line, SCREEN_COLS, line_offsets, split_line_total, 0, NULL);
+	split_line_total = split_data_lines(p_data_line, SCREEN_COLS, line_offsets, split_line_total, 0, line_widths);
 
 	for (i = 0; i < split_line_total; i++)
 	{
 		p_editor_data->display_line_lengths[display_line + i] = line_offsets[i + 1] - line_offsets[i];
+		p_editor_data->display_line_widths[display_line + i] = line_widths[i];
 		p_editor_data->p_display_lines[display_line + i] =
 			(i == 0
 				 ? p_data_line
@@ -604,6 +594,7 @@ int editor_data_delete(EDITOR_DATA *p_editor_data, long *p_display_line, long *p
 		// {
 		// 	p_editor_data->p_display_lines[j - (last_display_line - *p_last_updated_line)] = p_editor_data->p_display_lines[j];
 		// 	p_editor_data->display_line_lengths[j - (last_display_line - *p_last_updated_line)] = p_editor_data->display_line_lengths[j];
+		// 	p_editor_data->display_line_widths[j - (last_display_line - *p_last_updated_line)] = p_editor_data->display_line_widths[j];
 		// }
 		memmove(p_editor_data->p_display_lines + *p_last_updated_line + 1,
 				p_editor_data->p_display_lines + last_display_line + 1,
@@ -613,6 +604,10 @@ int editor_data_delete(EDITOR_DATA *p_editor_data, long *p_display_line, long *p
 				p_editor_data->display_line_lengths + last_display_line + 1,
 				(size_t)(p_editor_data->display_line_total - last_display_line - 1) *
 					sizeof(p_editor_data->display_line_lengths[last_display_line + 1]));
+		memmove(p_editor_data->display_line_widths + *p_last_updated_line + 1,
+				p_editor_data->display_line_widths + last_display_line + 1,
+				(size_t)(p_editor_data->display_line_total - last_display_line - 1) *
+					sizeof(p_editor_data->display_line_widths[last_display_line + 1]));
 
 		j = p_editor_data->display_line_total;
 		(p_editor_data->display_line_total) -= (last_display_line - *p_last_updated_line);
@@ -631,7 +626,7 @@ static int editor_display_key_handler(int *p_key, EDITOR_CTX *p_ctx)
 	{
 	case 0: // Set msg
 		snprintf(p_ctx->msg, sizeof(p_ctx->msg),
-				 "| ÍË³ö[\033[32mCtrl-W\033[33m] |");
+				 "| é€€å‡º[\033[32mCtrl-W\033[33m] |");
 		break;
 	case KEY_CSI:
 		*p_key = KEY_ESC;
@@ -648,6 +643,7 @@ int editor_display(EDITOR_DATA *p_editor_data)
 	EDITOR_CTX ctx;
 	int ch = 0;
 	char input_str[4];
+	char c;
 	int str_len = 0;
 	int input_ok;
 	const int screen_begin_row = 1;
@@ -683,11 +679,11 @@ int editor_display(EDITOR_DATA *p_editor_data)
 
 			snprintf(buffer, sizeof(buffer),
 					 "\033[1;44;33m[\033[32m%ld\033[33m;\033[32m%ld\033[33m] "
-					 "µÚ\033[32m%ld\033[33m/\033[32m%ld\033[33mÐÐ [\033[32m%s\033[33m] "
+					 "ç¬¬\033[32m%ld\033[33m/\033[32m%ld\033[33mè¡Œ [\033[32m%s\033[33m] "
 					 "%s",
 					 row_pos, col_pos,
 					 ctx.line_cursor, p_editor_data->display_line_total,
-					 key_insert ? "²åÈë" : "Ìæ»»",
+					 key_insert ? "æ’å…¥" : "æ›¿æ¢",
 					 ctx.msg);
 
 			len = split_line(buffer, SCREEN_COLS, &eol, &display_len, 1);
@@ -714,19 +710,34 @@ int editor_display(EDITOR_DATA *p_editor_data)
 					goto cleanup;
 				}
 
-				if (ch > 127 && ch <= 255) // GBK
+				if (ch < 256 && (ch & 0b10000000)) // head of multi-byte character
 				{
-					input_str[str_len] = (char)(ch - 256);
-					str_len++;
-				}
-				else if (str_len > 0)
-				{
-					log_error("Received %d character over 127 followed by character less than 127\n", str_len);
 					str_len = 0;
+					c = (char)(ch & 0b11110000);
+					while (c & 0b10000000)
+					{
+						input_str[str_len] = (char)(ch - 256);
+						str_len++;
+						c = (c & 0b01111111) << 1;
+
+						if ((c & 0b10000000) == 0) // Input completed
+						{
+							break;
+						}
+
+						// Expect additional bytes of input
+						ch = igetch(100);						 // 0.1 second
+						if (ch == KEY_NULL || ch == KEY_TIMEOUT) // Ignore received bytes if no futher input
+						{
+							log_error("Ignore %d bytes of incomplete UTF8 character\n", str_len);
+							str_len = 0;
+							break;
+						}
+					}
 				}
 
-				if ((ch >= 32 && ch < 127) || (ch > 127 && ch <= 255 && str_len == 2) || // Printable character or GBK
-					ch == CR || ch == KEY_ESC)											 // Special character
+				if ((ch >= 32 && ch < 127) || str_len >= 2 || // Printable character or multi-byte character
+					ch == CR || ch == KEY_ESC)				  // Special character
 				{
 					BBS_last_access_tm = time(NULL);
 
@@ -737,7 +748,7 @@ int editor_display(EDITOR_DATA *p_editor_data)
 					}
 
 					display_line_in = line_current - output_current_row + row_pos;
-					offset_in = col_pos - 1;
+					offset_in = split_line(p_editor_data->p_display_lines[display_line_in], (int)col_pos - 1, &eol, &display_len, 0);
 					display_line_out = display_line_in;
 					offset_out = offset_in;
 
@@ -787,7 +798,18 @@ int editor_display(EDITOR_DATA *p_editor_data)
 						{
 							row_pos += (display_line_out - display_line_in);
 						}
-						col_pos = offset_out + 1; // Set col_pos to accurate pos
+
+						if (offset_out != offset_in)
+						{
+							if (display_line_out != display_line_in)
+							{
+								col_pos = 1;
+							}
+							if (ch != CR)
+							{
+								col_pos += (str_len == 1 ? 1 : 2);
+							}
+						}
 					}
 
 					if (display_line_out != display_line_in) // Output on line change
@@ -815,22 +837,26 @@ int editor_display(EDITOR_DATA *p_editor_data)
 							break; // force output prior operation result if any
 						}
 
-						col_pos--;
-						if (col_pos > 1 &&
-							p_editor_data->p_display_lines[line_current - output_current_row + row_pos][col_pos - 1] < 0) // GBK
+						offset_in = split_line(p_editor_data->p_display_lines[line_current - output_current_row + row_pos],
+											   (int)col_pos - 1, &eol, &display_len, 0);
+						if (offset_in >= 1 && p_editor_data->p_display_lines[line_current - output_current_row + row_pos][offset_in - 1] < 0) // UTF8
 						{
-							col_pos--;
+							col_pos = display_len - 1;
+						}
+						else
+						{
+							col_pos = display_len;
 						}
 
 						if (col_pos < 1 && line_current - output_current_row + row_pos >= 0)
 						{
 							row_pos--;
-							col_pos = MAX(1, p_editor_data->display_line_lengths[line_current - output_current_row + row_pos]);
+							col_pos = MAX(1, p_editor_data->display_line_widths[line_current - output_current_row + row_pos]);
 						}
 					}
 
 					display_line_in = line_current - output_current_row + row_pos;
-					offset_in = col_pos - 1;
+					offset_in = split_line(p_editor_data->p_display_lines[display_line_in], (int)col_pos - 1, &eol, &display_len, 0);
 					display_line_out = display_line_in;
 					offset_out = offset_in;
 
@@ -841,7 +867,7 @@ int editor_display(EDITOR_DATA *p_editor_data)
 					}
 					else
 					{
-						col_pos = offset_out + 1; // Set col_pos to accurate pos
+						col_pos = display_len + 1; // Set col_pos to accurate pos
 
 						output_end_row = MIN(SCREEN_ROWS - 1, output_current_row + (int)(last_updated_line - line_current));
 						line_current -= (output_current_row - row_pos);
@@ -903,15 +929,15 @@ int editor_display(EDITOR_DATA *p_editor_data)
 					if (line_current - output_current_row + row_pos == p_editor_data->display_line_total - 1) // row_pos at end line
 					{
 						// last display line does NOT have \n in the end
-						col_pos = p_editor_data->display_line_lengths[line_current - output_current_row + row_pos] + 1;
+						col_pos = p_editor_data->display_line_widths[line_current - output_current_row + row_pos] + 1;
 						break;
 					}
-					col_pos = MAX(1, p_editor_data->display_line_lengths[line_current - output_current_row + row_pos]);
+					col_pos = MAX(1, p_editor_data->display_line_widths[line_current - output_current_row + row_pos]);
 					break;
 				case Ctrl('T'): // Top of screen
 				case KEY_CTRL_UP:
 					row_pos = screen_begin_row;
-					col_pos = MIN(col_pos, MAX(1, p_editor_data->display_line_lengths[line_current - output_current_row + row_pos]));
+					col_pos = MIN(col_pos, MAX(1, p_editor_data->display_line_widths[line_current - output_current_row + row_pos]));
 					break;
 				case Ctrl('B'): // Bottom of screen
 				case KEY_CTRL_DOWN:
@@ -926,11 +952,11 @@ int editor_display(EDITOR_DATA *p_editor_data)
 					if (line_current + (screen_row_total - (output_current_row - screen_begin_row)) >= p_editor_data->display_line_total) // Reach end
 					{
 						// last display line does NOT have \n in the end
-						col_pos = MIN(col_pos, p_editor_data->display_line_lengths[line_current - output_current_row + row_pos] + 1);
+						col_pos = MIN(col_pos, p_editor_data->display_line_widths[line_current - output_current_row + row_pos] + 1);
 					}
 					else
 					{
-						col_pos = MIN(col_pos, MAX(1, p_editor_data->display_line_lengths[line_current - output_current_row + row_pos]));
+						col_pos = MIN(col_pos, MAX(1, p_editor_data->display_line_widths[line_current - output_current_row + row_pos]));
 					}
 					break;
 				case KEY_INS:
@@ -952,26 +978,29 @@ int editor_display(EDITOR_DATA *p_editor_data)
 					if (p_editor_data->display_line_total < screen_row_total)
 					{
 						row_pos = p_editor_data->display_line_total;
-						col_pos = p_editor_data->display_line_lengths[line_current - output_current_row + row_pos] + 1;
+						col_pos = p_editor_data->display_line_widths[line_current - output_current_row + row_pos] + 1;
 						break;
 					}
 					line_current = p_editor_data->display_line_total - screen_row_total;
 					output_current_row = screen_begin_row;
 					output_end_row = SCREEN_ROWS - 1;
 					row_pos = SCREEN_ROWS - 1;
-					col_pos = p_editor_data->display_line_lengths[line_current - output_current_row + row_pos] + 1;
+					col_pos = p_editor_data->display_line_widths[line_current - output_current_row + row_pos] + 1;
 					clrline(output_current_row, SCREEN_ROWS);
 					break;
 				case KEY_LEFT:
-					if (col_pos > 1)
+					offset_in = split_line(p_editor_data->p_display_lines[line_current - output_current_row + row_pos],
+										   (int)col_pos - 1, &eol, &display_len, 0);
+					if (offset_in >= 1 && p_editor_data->p_display_lines[line_current - output_current_row + row_pos][offset_in - 1] < 0) // UTF8
 					{
-						col_pos--;
-						if (col_pos > 1 &&
-							p_editor_data->p_display_lines[line_current - output_current_row + row_pos][col_pos - 1] < 0 &&
-							p_editor_data->p_display_lines[line_current - output_current_row + row_pos][col_pos - 2] < 0) // GBK
-						{
-							col_pos--;
-						}
+						col_pos = display_len - 1;
+					}
+					else
+					{
+						col_pos = display_len;
+					}
+					if (col_pos >= 1)
+					{
 						break;
 					}
 					col_pos = SCREEN_COLS; // continue to KEY_UP
@@ -979,7 +1008,7 @@ int editor_display(EDITOR_DATA *p_editor_data)
 					if (row_pos > screen_begin_row)
 					{
 						row_pos--;
-						col_pos = MIN(col_pos, MAX(1, p_editor_data->display_line_lengths[line_current - output_current_row + row_pos]));
+						col_pos = MIN(col_pos, MAX(1, p_editor_data->display_line_widths[line_current - output_current_row + row_pos]));
 						break;
 					}
 					if (line_current - output_current_row < 0) // Reach begin
@@ -992,19 +1021,24 @@ int editor_display(EDITOR_DATA *p_editor_data)
 					// screen_end_line = begin_line;
 					// prints("\033[T"); // Scroll down 1 line
 					output_end_row = SCREEN_ROWS - 1; // Legacy Fterm only works with this line
-					col_pos = MIN(col_pos, MAX(1, p_editor_data->display_line_lengths[line_current - output_current_row + row_pos]));
+					col_pos = MIN(col_pos, MAX(1, p_editor_data->display_line_widths[line_current - output_current_row + row_pos]));
 					break;
 				case KEY_SPACE:
 					break;
 				case KEY_RIGHT:
-					if (col_pos < p_editor_data->display_line_lengths[line_current - output_current_row + row_pos])
+					offset_in = split_line(p_editor_data->p_display_lines[line_current - output_current_row + row_pos],
+										   (int)col_pos - 1, &eol, &display_len, 0);
+					if (offset_in < p_editor_data->display_line_lengths[line_current - output_current_row + row_pos] &&
+						p_editor_data->p_display_lines[line_current - output_current_row + row_pos][offset_in] < 0) // UTF8
 					{
-						if (p_editor_data->p_display_lines[line_current - output_current_row + row_pos][col_pos - 1] < 0 &&
-							p_editor_data->p_display_lines[line_current - output_current_row + row_pos][col_pos] < 0) // GBK
-						{
-							col_pos++;
-						}
-						col_pos++;
+						col_pos = display_len + 3;
+					}
+					else
+					{
+						col_pos = display_len + 2;
+					}
+					if (col_pos <= p_editor_data->display_line_widths[line_current - output_current_row + row_pos])
+					{
 						break;
 					}
 					col_pos = 1; // continue to KEY_DOWN
@@ -1012,19 +1046,19 @@ int editor_display(EDITOR_DATA *p_editor_data)
 					if (row_pos < MIN(screen_row_total, p_editor_data->display_line_total))
 					{
 						row_pos++;
-						col_pos = MIN(col_pos, MAX(1, p_editor_data->display_line_lengths[line_current - output_current_row + row_pos]));
+						col_pos = MIN(col_pos, MAX(1, p_editor_data->display_line_widths[line_current - output_current_row + row_pos]));
 						break;
 					}
 					if (line_current - output_current_row + row_pos == p_editor_data->display_line_total - 1) // row_pos at end line
 					{
 						// last display line does NOT have \n in the end
-						col_pos = p_editor_data->display_line_lengths[line_current - output_current_row + row_pos] + 1;
+						col_pos = p_editor_data->display_line_widths[line_current - output_current_row + row_pos] + 1;
 						break;
 					}
 					line_current += (screen_row_total - (output_current_row - screen_begin_row));
 					output_current_row = screen_row_total;
 					output_end_row = SCREEN_ROWS - 1;
-					col_pos = MIN(col_pos, MAX(1, p_editor_data->display_line_lengths[line_current - output_current_row + row_pos]));
+					col_pos = MIN(col_pos, MAX(1, p_editor_data->display_line_widths[line_current - output_current_row + row_pos]));
 					moveto(SCREEN_ROWS, 0);
 					clrtoeol();
 					// prints("\033[S"); // Scroll up 1 line
@@ -1042,7 +1076,7 @@ int editor_display(EDITOR_DATA *p_editor_data)
 					}
 					output_current_row = screen_begin_row;
 					output_end_row = SCREEN_ROWS - 1;
-					col_pos = MIN(col_pos, MAX(1, p_editor_data->display_line_lengths[line_current - output_current_row + row_pos]));
+					col_pos = MIN(col_pos, MAX(1, p_editor_data->display_line_widths[line_current - output_current_row + row_pos]));
 					clrline(output_current_row, SCREEN_ROWS);
 					break;
 				case KEY_PGDN:
@@ -1057,7 +1091,7 @@ int editor_display(EDITOR_DATA *p_editor_data)
 					}
 					output_current_row = screen_begin_row;
 					output_end_row = SCREEN_ROWS - 1;
-					col_pos = MIN(col_pos, MAX(1, p_editor_data->display_line_lengths[line_current - output_current_row + row_pos]));
+					col_pos = MIN(col_pos, MAX(1, p_editor_data->display_line_widths[line_current - output_current_row + row_pos]));
 					clrline(output_current_row, SCREEN_ROWS);
 					break;
 				case KEY_F1:

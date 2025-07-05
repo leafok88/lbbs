@@ -39,8 +39,8 @@ int bbs_login(void)
 
 	for (; !SYS_server_exit && !ok && i < BBS_login_retry_times; i++)
 	{
-		prints("\033[1;33mÇëÊäÈëÕÊºÅ\033[m(ÊÔÓÃÇëÊäÈë`\033[1;36mguest\033[m', "
-			   "×¢²áÇëÊäÈë`\033[1;31mnew\033[m'): ");
+		prints("\033[1;33mè¯·è¾“å…¥å¸å·\033[m(è¯•ç”¨è¯·è¾“å…¥`\033[1;36mguest\033[m', "
+			   "æ³¨å†Œè¯·è¾“å…¥`\033[1;31mnew\033[m'): ");
 		iflush();
 
 		if (str_input(username, sizeof(username), DOECHO) < 0)
@@ -64,7 +64,7 @@ int bbs_login(void)
 
 		if (username[0] != '\0')
 		{
-			prints("\033[1;37mÇëÊäÈëÃÜÂë\033[m: ");
+			prints("\033[1;37mè¯·è¾“å…¥å¯†ç \033[m: ");
 			iflush();
 
 			if (str_input(password, sizeof(password), NOECHO) < 0)
@@ -135,7 +135,7 @@ int check_user(const char *username, const char *password)
 
 	if (!ok)
 	{
-		prints("\033[1;31mÓÃ»§Ãû»òÃÜÂë¸ñÊ½´íÎó...\033[m\r\n");
+		prints("\033[1;31mç”¨æˆ·åæˆ–å¯†ç æ ¼å¼é”™è¯¯...\033[m\r\n");
 		ret = 1;
 		goto cleanup;
 	}
@@ -181,7 +181,7 @@ int check_user(const char *username, const char *password)
 	{
 		if (atoi(row[0]) > BBS_allowed_login_failures_within_interval)
 		{
-			prints("\033[1;31mÀ´Ô´´æÔÚ¶à´ÎÊ§°ÜµÇÂ½³¢ÊÔ£¬ÇëÉÔºóÔÙÊÔ\033[m\r\n");
+			prints("\033[1;31mæ¥æºå­˜åœ¨å¤šæ¬¡å¤±è´¥ç™»é™†å°è¯•ï¼Œè¯·ç¨åå†è¯•\033[m\r\n");
 			ret = 1;
 			goto cleanup;
 		}
@@ -210,7 +210,7 @@ int check_user(const char *username, const char *password)
 	{
 		if (atoi(row[0]) >= 5)
 		{
-			prints("\033[1;31mÕË»§´æÔÚ¶à´ÎÊ§°ÜµÇÂ½³¢ÊÔ£¬ÇëÊ¹ÓÃWeb·½Ê½µÇÂ¼\033[m\r\n");
+			prints("\033[1;31mè´¦æˆ·å­˜åœ¨å¤šæ¬¡å¤±è´¥ç™»é™†å°è¯•ï¼Œè¯·ä½¿ç”¨Webæ–¹å¼ç™»å½•\033[m\r\n");
 			ret = 1;
 			goto cleanup;
 		}
@@ -266,7 +266,7 @@ int check_user(const char *username, const char *password)
 
 		if (p_login == 0)
 		{
-			prints("\033[1;31mÄúÄ¿Ç°ÎŞÈ¨µÇÂ½...\033[m\r\n");
+			prints("\033[1;31mæ‚¨ç›®å‰æ— æƒç™»é™†...\033[m\r\n");
 			ret = 1;
 			goto cleanup;
 		}
@@ -295,7 +295,7 @@ int check_user(const char *username, const char *password)
 			goto cleanup;
 		}
 
-		prints("\033[1;31m´íÎóµÄÓÃ»§Ãû»òÃÜÂë...\033[m\r\n");
+		prints("\033[1;31mé”™è¯¯çš„ç”¨æˆ·åæˆ–å¯†ç ...\033[m\r\n");
 		ret = 1;
 		goto cleanup;
 	}
@@ -315,15 +315,15 @@ int check_user(const char *username, const char *password)
 	case 0: // Login successfully
 		break;
 	case -1: // Load data error
-		prints("\033[1;31m¶ÁÈ¡ÓÃ»§Êı¾İ´íÎó...\033[m\r\n");
+		prints("\033[1;31mè¯»å–ç”¨æˆ·æ•°æ®é”™è¯¯...\033[m\r\n");
 		ret = -1;
 		goto cleanup;
 	case -2: // Unused
-		prints("\033[1;31mÇëÍ¨¹ıWebµÇÂ¼¸üĞÂÓÃ»§Ğí¿ÉĞ­Òé...\033[m\r\n");
+		prints("\033[1;31mè¯·é€šè¿‡Webç™»å½•æ›´æ–°ç”¨æˆ·è®¸å¯åè®®...\033[m\r\n");
 		ret = 1;
 		goto cleanup;
 	case -3: // Dead
-		prints("\033[1;31mºÜÒÅº¶£¬ÄúÒÑ¾­ÓÀÔ¶Àë¿ªÁËÎÒÃÇµÄÊÀ½ç£¡\033[m\r\n");
+		prints("\033[1;31må¾ˆé—æ†¾ï¼Œæ‚¨å·²ç»æ°¸è¿œç¦»å¼€äº†æˆ‘ä»¬çš„ä¸–ç•Œï¼\033[m\r\n");
 		ret = 1;
 		goto cleanup;
 	default:

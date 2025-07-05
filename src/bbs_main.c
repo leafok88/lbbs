@@ -38,7 +38,7 @@
 
 int bbs_info()
 {
-	prints("»¶Ó­¹âÁÙ \033[1;33m%s \033[32m[%s]  \033[37m( %s )\r\n",
+	prints("æ¬¢è¿å…‰ä¸´ \033[1;33m%s \033[32m[%s]  \033[37m( %s )\033[m\r\n",
 		   BBS_name, BBS_server, APP_INFO);
 
 	return iflush();
@@ -157,11 +157,11 @@ int bbs_welcome(void)
 	display_file(DATA_WELCOME, 2);
 
 	// Display welcome message
-	prints("\r\033[1;35m»¶Ó­¹âÁÙ\033[33m ¡¾ %s ¡¿ \033[35mBBS\r\n"
-		   "\033[32mÄ¿Ç°ÉÏÕ¾ÈËÊı [\033[36m%d/%d\033[32m] "
-		   "ÄäÃûÓÎ¿Í[\033[36m%d\033[32m] "
-		   "×¢²áÓÃ»§Êı[\033[36m%d/%d\033[32m]\r\n"
-		   "´Ó [\033[36m%s\033[32m] Æğ£¬ÀÛ¼Æ·ÃÎÊÈË´Î£º[\033[36m%d\033[32m]\033[m\r\n",
+	prints("\r\033[1;35mæ¬¢è¿å…‰ä¸´\033[33m ã€ %s ã€‘ \033[35mBBS\r\n"
+		   "\033[32mç›®å‰ä¸Šç«™äººæ•° [\033[36m%d/%d\033[32m] "
+		   "åŒ¿åæ¸¸å®¢[\033[36m%d\033[32m] "
+		   "æ³¨å†Œç”¨æˆ·æ•°[\033[36m%d/%d\033[32m]\r\n"
+		   "ä» [\033[36m%s\033[32m] èµ·ï¼Œç´¯è®¡è®¿é—®äººæ¬¡ï¼š[\033[36m%d\033[32m]\033[m\r\n",
 		   BBS_name, u_online, BBS_max_client, u_anonymous, u_total,
 		   BBS_max_user, BBS_start_dt, u_login_count);
 
@@ -323,7 +323,7 @@ int bbs_main()
 	// User login
 	if (SSH_v2)
 	{
-		prints("\033[1m%s »¶Ó­Ê¹ÓÃssh·½Ê½·ÃÎÊ \033[1;33m°´ÈÎÒâ¼ü¼ÌĞø...\033[m", BBS_username);
+		prints("\033[1m%s æ¬¢è¿ä½¿ç”¨sshæ–¹å¼è®¿é—® \033[1;33mæŒ‰ä»»æ„é”®ç»§ç»­...\033[m", BBS_username);
 		iflush();
 		igetch_t(MAX_DELAY_TIME);
 	}
