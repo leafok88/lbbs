@@ -174,7 +174,7 @@ int load_conf(const char *conf_file)
 				log_error("Ignore config bbs_start_dt with incorrect value\n");
 				continue;
 			}
-			snprintf(BBS_start_dt, sizeof(BBS_start_dt), "%4så¹´%2sæœˆ%2sæ—¥", y, m, d);
+			snprintf(BBS_start_dt, sizeof(BBS_start_dt), "%4sÄê%2sÔÂ%2sÈÕ", y, m, d);
 		}
 		else if (strcasecmp(p, "db_host") == 0)
 		{

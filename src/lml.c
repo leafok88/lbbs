@@ -116,16 +116,16 @@ const static char *LML_tag_def[][3] = {
 	{"quote", NULL, (const char *)lml_tag_quote_filter},
 	{"/quote", NULL, (const char *)lml_tag_quote_filter},
 	{"url", "", ""},
-	{"/url", "(閾炬帴: %s)", NULL},
+	{"/url", "(链接: %s)", NULL},
 	{"link", "", ""},
-	{"/link", "(閾炬帴: %s)", NULL},
+	{"/link", "(链接: %s)", NULL},
 	{"email", "", ""},
 	{"/email", "(Email: %s)", NULL},
 	{"user", "", ""},
-	{"/user", "(鐢ㄦ埛: %s)", NULL},
+	{"/user", "(用户: %s)", NULL},
 	{"article", "", ""},
-	{"/article", "(鏂囩珷: %s)", NULL},
-	{"image", "(鍥剧墖: %s)", ""},
+	{"/article", "(文章: %s)", NULL},
+	{"image", "(图片: %s)", ""},
 	{"flash", "(Flash: %s)", ""},
 	{"bwf", "\033[1;31m****\033[m", ""},
 };
@@ -152,7 +152,6 @@ inline static void lml_init(void)
 
 int lml_plain(const char *str_in, char *str_out, int buf_len)
 {
-	char c;
 	char tag_param_buf[LML_TAG_PARAM_BUF_LEN];
 	char tag_output_buf[LML_TAG_OUTPUT_BUF_LEN];
 	int i;
@@ -316,25 +315,19 @@ int lml_plain(const char *str_in, char *str_out, int buf_len)
 		}
 		else if (tag_start_pos == -1) // not in LML tag
 		{
-			if (str_in[i] & 0b10000000) // head of multi-byte character
+			if (str_in[i] < 0 || str_in[i] > 127) // GBK chinese character
 			{
-				if (j + 4 >= buf_len) // Assuming UTF-8 CJK characters use 4 bytes, though most of them actually use 3 bytes
+				if (j + 2 >= buf_len)
 				{
-					log_error("Buffer is not longer enough for output string %ld >= %d\n", j + 4, buf_len);
+					log_error("Buffer is not longer enough for output string %ld >= %d\n", j + 2, buf_len);
 					str_out[j] = '\0';
 					return j;
 				}
-
-				c = (str_in[i] & 0b01110000) << 1;
-				while (c & 0b10000000)
+				str_out[j++] = str_in[i++];
+				if (str_in[i] == '\0')
 				{
-					str_out[j++] = str_in[i++];
-					if (str_in[i] == '\0')
-					{
-						str_out[j] = '\0';
-						return j;
-					}
-					c = (c & 0b01111111) << 1;
+					str_out[j] = '\0';
+					return j;
 				}
 			}
 

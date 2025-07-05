@@ -44,7 +44,7 @@ int article_del(const SECTION_LIST *p_section, const ARTICLE *p_article)
 	{
 		clearscr();
 		moveto(1, 1);
-		prints("è¯¥æ–‡ç« æ— æ³•è¢«åˆ é™¤ï¼Œè¯·è”ç³»ç‰ˆä¸»ã€‚");
+		prints("¸ÃÎÄÕÂÎŞ·¨±»É¾³ı£¬ÇëÁªÏµ°æÖ÷¡£");
 		press_any_key();
 
 		return 0;
@@ -52,7 +52,7 @@ int article_del(const SECTION_LIST *p_section, const ARTICLE *p_article)
 
 	clearscr();
 	moveto(1, 1);
-	prints("çœŸçš„è¦åˆ é™¤æ–‡ç« ï¼Ÿ(Y)æ˜¯, (N)å¦ [N]: ");
+	prints("ÕæµÄÒªÉ¾³ıÎÄÕÂ£¿(Y)ÊÇ, (N)·ñ [N]: ");
 	iflush();
 
 	for (ch = 0; !SYS_server_exit; ch = igetch_t(MAX_DELAY_TIME))
@@ -136,7 +136,7 @@ int article_del(const SECTION_LIST *p_section, const ARTICLE *p_article)
 
 		clearscr();
 		moveto(1, 1);
-		prints("è¯¥æ–‡ç« å·²è¢«åˆ é™¤ï¼Œè¯·ç¨ååˆ·æ–°åˆ—è¡¨ã€‚");
+		prints("¸ÃÎÄÕÂÒÑ±»É¾³ı£¬ÇëÉÔºóË¢ĞÂÁĞ±í¡£");
 		press_any_key();
 
 		goto cleanup;
@@ -146,7 +146,7 @@ int article_del(const SECTION_LIST *p_section, const ARTICLE *p_article)
 	{
 		clearscr();
 		moveto(1, 1);
-		prints("è¯¥æ–‡ç« æ— æ³•è¢«åˆ é™¤ï¼Œè¯·è”ç³»ç‰ˆä¸»ã€‚");
+		prints("¸ÃÎÄÕÂÎŞ·¨±»É¾³ı£¬ÇëÁªÏµ°æÖ÷¡£");
 		press_any_key();
 
 		goto cleanup;
@@ -230,7 +230,7 @@ int article_del(const SECTION_LIST *p_section, const ARTICLE *p_article)
 
 	clearscr();
 	moveto(1, 1);
-	prints("åˆ é™¤æˆåŠŸï¼Œè¯·åœ¨%dç§’ååˆ·æ–°åˆ—è¡¨ã€‚", BBS_section_list_load_interval);
+	prints("É¾³ı³É¹¦£¬ÇëÔÚ%dÃëºóË¢ĞÂÁĞ±í¡£", BBS_section_list_load_interval);
 	press_any_key();
 	ret = 1; // Success
 

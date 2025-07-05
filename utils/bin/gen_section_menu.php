@@ -91,7 +91,7 @@
 	$buffer .= <<<MENU
 #---------------------------------------------------------------------
 %menu M_EGROUP
-title       0, 0, "[æ ç›®åˆ—è¡¨]"
+title       0, 0, "[À¸Ä¿ÁÐ±í]"
 screen      2, 0, S_EGROUP
 
 MENU;
@@ -102,7 +102,7 @@ MENU;
 
 		$section_count = count($section_class["sections"]);
 
-		$title_f = str_repeat(" ", 5 - intval(log10($section_count))) . $section_count . " ï¼‹  " .
+		$title_f = str_repeat(" ", 5 - intval(log10($section_count))) . $section_count . " £«  " .
 			$section_class['name'] . str_repeat(" ", 32 - strlen($section_class['name'])) .
 			"[" . addslashes($section_class['title']) . "]";
 
@@ -136,10 +136,10 @@ MENU;
 
 			$article_count = $section['udf_values']['article_count'];
 
-			$title_f = str_repeat(" ", 5 - intval(log10($article_count))) . $article_count . " ï¼‹  " .
+			$title_f = str_repeat(" ", 5 - intval(log10($article_count))) . $article_count . " £«  " .
 				$section['name'] . str_repeat(" ", 20 - strlen($section['name'])) .
 				$class_title_f . addslashes($section['title']) . str_repeat(" ", 22 - str_length($section['title'])) .
-				($section['udf_values']['section_master'] == "" ? "è¯šå¾ç‰ˆä¸»ä¸­" : $section['udf_values']['section_master']);
+				($section['udf_values']['section_master'] == "" ? "³ÏÕ÷°æÖ÷ÖÐ" : $section['udf_values']['section_master']);
 
 			$buffer .= <<<MENU
 			@LIST_SECTION   {$display_row}, 4, 1, {$section['read_user_level']},   "{$section['name']}",    "{$title_f}"
@@ -236,7 +236,7 @@ MENU;
 	$buffer .= <<<MENU
 #---------------------------------------------------------------------
 %menu M_ANNOUNCE
-title       0, 0, "ç²¾åŽå…¬å¸ƒæ "
+title       0, 0, "¾«»ª¹«²¼À¸"
 screen      2, 0, S_EGROUP
 
 MENU;
@@ -247,7 +247,7 @@ MENU;
 
 		$section_count = count($section_class["sections"]);
 
-		$title_f = str_repeat(" ", 5 - intval(log10($section_count))) . $section_count . " ï¼‹  " .
+		$title_f = str_repeat(" ", 5 - intval(log10($section_count))) . $section_count . " £«  " .
 			$section_class['name'] . str_repeat(" ", 32 - strlen($section_class['name'])) .
 			"[" . addslashes($section_class['title']) . "]";
 
@@ -268,7 +268,7 @@ MENU;
 		$buffer .= <<<MENU
 #---------------------------------------------------------------------
 %menu M_EX_{$section_class["name"]}
-title       0, 0, "ç²¾åŽåŒº > {$section_class["title"]}"
+title       0, 0, "¾«»ªÇø > {$section_class["title"]}"
 screen      2, 0, S_EX_DIR
 
 MENU;
@@ -284,7 +284,7 @@ MENU;
 				continue;
 			}
 
-			$title_f = str_repeat(" ", 5 - intval(log10($article_count))) . $article_count . " ï¼‹  " .
+			$title_f = str_repeat(" ", 5 - intval(log10($article_count))) . $article_count . " £«  " .
 				$section['name'] . str_repeat(" ", 20 - strlen($section['name'])) .
 				$class_title_f . addslashes($section['title']) . str_repeat(" ", 22 - str_length($section['title'])) .
 				(new DateTimeImmutable($section['udf_values']['ex_menu_tm']))->format("Y.m.d");
@@ -308,7 +308,7 @@ MENU;
 	$buffer .= <<<MENU
 #---------------------------------------------------------------------
 %menu M_BOARD
-title       0, 0, "[ç‰ˆå—åˆ—è¡¨]"
+title       0, 0, "[°æ¿éÁÐ±í]"
 screen      2, 0, S_BOARD
 page        4, 1, 20
 
@@ -324,10 +324,10 @@ MENU;
 		{
 			$article_count = $section['udf_values']['article_count'];
 
-			$title_f = str_repeat(" ", 5 - intval(log10($article_count))) . $article_count . " ï¼‹  " .
+			$title_f = str_repeat(" ", 5 - intval(log10($article_count))) . $article_count . " £«  " .
 				$section['name'] . str_repeat(" ", 20 - strlen($section['name'])) .
 				$class_title_f . addslashes($section['title']) . str_repeat(" ", 22 - str_length($section['title'])) .
-				($section['udf_values']['section_master'] == "" ? "è¯šå¾ç‰ˆä¸»ä¸­" : $section['udf_values']['section_master']);
+				($section['udf_values']['section_master'] == "" ? "³ÏÕ÷°æÖ÷ÖÐ" : $section['udf_values']['section_master']);
 
 			$buffer .= <<<MENU
 			@LIST_SECTION   {$display_row}, 4, 1, {$section['read_user_level']},   "{$section['name']}",    "{$title_f}"
@@ -347,7 +347,7 @@ MENU;
 	$buffer .= <<<MENU
 #---------------------------------------------------------------------
 %menu M_FAVOUR
-title       0, 0, "[ç‰ˆå—æ”¶è—]"
+title       0, 0, "[°æ¿éÊÕ²Ø]"
 screen      2, 0, S_BOARD
 use_filter
 page        4, 1, 20
@@ -364,10 +364,10 @@ MENU;
 		{
 			$article_count = $section['udf_values']['article_count'];
 
-			$title_f = str_repeat(" ", 5 - intval(log10($article_count))) . $article_count . " ï¼‹  " .
+			$title_f = str_repeat(" ", 5 - intval(log10($article_count))) . $article_count . " £«  " .
 				$section['name'] . str_repeat(" ", 20 - strlen($section['name'])) .
 				$class_title_f . addslashes($section['title']) . str_repeat(" ", 22 - str_length($section['title'])) .
-				($section['udf_values']['section_master'] == "" ? "è¯šå¾ç‰ˆä¸»ä¸­" : $section['udf_values']['section_master']);
+				($section['udf_values']['section_master'] == "" ? "³ÏÕ÷°æÖ÷ÖÐ" : $section['udf_values']['section_master']);
 
 			$buffer .= <<<MENU
 			@LIST_SECTION   {$display_row}, 4, {$section['sid']}, {$section['read_user_level']},   "{$section['name']}",    "{$title_f}"

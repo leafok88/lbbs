@@ -4,12 +4,7 @@ Copyright (C) 2004-2025 by Leaflet
 Email : leaflet@leafok.com
 
 
-2025-07-01  v1.3
-=================
-Support UTF8 instead of GBK
-
-
-2025-06-28  v1.2
+2025-06-28
 =================
 Add major features
 
@@ -17,7 +12,7 @@ Add major features
 2. Excerptional directories and articles  
 
 
-2025-06-15  v1.1
+2025-06-15
 =================
 Major release with all fundamental features
 
@@ -27,7 +22,7 @@ Major release with all fundamental features
 4. SSH2 secure connection  
 
 
-2025-05-31  v1.0
+2025-05-31
 =================
 Initial release with major features ready
 

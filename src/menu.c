@@ -992,7 +992,7 @@ int display_menu(MENU_SET *p_menu_set)
 	{
 		moveto(p_menu->screen_row, p_menu->screen_col);
 		clrtoeol();
-		prints("娌℃湁鍙�夐」");
+		prints("没有可选项");
 		press_any_key();
 		return -1;
 	}
@@ -1068,7 +1068,7 @@ int display_menu(MENU_SET *p_menu_set)
 	{
 		moveto(p_menu->screen_row, p_menu->screen_col);
 		clrtoeol();
-		prints("娌℃湁鍙�夐」");
+		prints("没有可选项");
 		press_any_key();
 		return -1;
 	}

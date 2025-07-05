@@ -1,7 +1,7 @@
 <?php
 	include "../conf/db_conn.conf.php";
 
-	function db_open($sql_charset = "utf8")
+	function db_open($sql_charset = "gb2312")
 	{
 		global $DB_hostname, $DB_username, $DB_password, $DB_database, $DB_session_timezone;
 

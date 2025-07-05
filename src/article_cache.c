@@ -113,11 +113,11 @@ int article_cache_generate(const char *cache_dir, const ARTICLE *p_article, cons
 	localtime_r(&(p_article->sub_dt), &tm_sub_dt);
 	strftime(str_sub_dt, sizeof(str_sub_dt), "%c", &tm_sub_dt);
 
-	snprintf(header, sizeof(header), "å‘å¸ƒè€…: %s (%s), ç‰ˆå—: %s (%s)\næ ‡  é¢˜: %s\nå‘å¸ƒäºŽ: %s (%s)\n\n",
+	snprintf(header, sizeof(header), "·¢²¼Õß: %s (%s), °æ¿é: %s (%s)\n±ê  Ìâ: %s\n·¢²¼ÓÚ: %s (%s)\n\n",
 			 p_article->username, p_article->nickname, p_section->sname, p_section->stitle, p_article->title, BBS_name, str_sub_dt);
 
 	snprintf(footer, sizeof(footer),
-			 "\n--\n%sâ€» æ¥æº: %s http://%s [FROM: %s]\033[m\n\n",
+			 "\n--\n%s¡ù À´Ô´: %s http://%s [FROM: %s]\033[m\n\n",
 			 BBS_article_footer_color[p_article->aid % BBS_article_footer_color_count],
 			 BBS_name, BBS_server, sub_ip);
 

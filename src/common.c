@@ -54,7 +54,7 @@ volatile int SYS_child_exit = 0;
 volatile int SYS_conf_reload = 0;
 
 static const char *weekday[] = {
-	"å¤©", "ä¸€", "äºŒ", "ä¸‰", "å››", "äº”", "å…­"};
+	"Ìì", "Ò»", "¶þ", "Èý", "ËÄ", "Îå", "Áù"};
 
 // Common function
 const char *get_time_str(char *s, size_t len)
@@ -64,7 +64,7 @@ const char *get_time_str(char *s, size_t len)
 
 	time(&curtime);
 	localtime_r(&curtime, &local_tm);
-	size_t j = strftime(s, len, "%b %d %H:%M æ˜ŸæœŸ", &local_tm);
+	size_t j = strftime(s, len, "%b %d %H:%M ÐÇÆÚ", &local_tm);
 
 	if (j == 0 || j + strlen(weekday[local_tm.tm_wday]) + 1 > len)
 	{

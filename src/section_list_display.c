@@ -106,9 +106,9 @@ static int section_list_draw_items(int page_id, ARTICLE *p_articles[], int artic
 			strftime(str_time, sizeof(str_time), "%m/%Y", &tm_sub);
 		}
 
-		strncpy(title_f, (p_articles[i]->tid == 0 ? "â— " : ""), sizeof(title_f) - 1);
+		strncpy(title_f, (p_articles[i]->tid == 0 ? "¡ñ " : ""), sizeof(title_f) - 1);
 		title_f[sizeof(title_f) - 1] = '\0';
-		strncat(title_f, (p_articles[i]->transship ? "[è½¬è½½]" : ""), sizeof(title_f) - 1 - strnlen(title_f, sizeof(title_f)));
+		strncat(title_f, (p_articles[i]->transship ? "[×ªÔØ]" : ""), sizeof(title_f) - 1 - strnlen(title_f, sizeof(title_f)));
 		strncat(title_f, p_articles[i]->title, sizeof(title_f) - 1 - strnlen(title_f, sizeof(title_f)));
 		len = split_line(title_f, 47 - (display_nickname ? 8 : 0), &eol, &title_f_len, 1);
 		if (title_f[len] != '\0')
@@ -119,7 +119,7 @@ static int section_list_draw_items(int page_id, ARTICLE *p_articles[], int artic
 		moveto(4 + i, 1);
 		if (i >= ontop_start_offset)
 		{
-			prints("   \033[1;33m[æç¤º]\033[m %c %s%*s %s %s%s\033[m",
+			prints("   \033[1;33m[ÌáÊ¾]\033[m %c %s%*s %s %s%s\033[m",
 				   article_flag,
 				   (display_nickname ? p_articles[i]->nickname : p_articles[i]->username),
 				   (display_nickname ? BBS_nickname_max_len - (int)strnlen(p_articles[i]->nickname, sizeof(p_articles[i]->nickname))
@@ -162,30 +162,30 @@ static int section_list_draw_items(int page_id, ARTICLE *p_articles[], int artic
 
 static int section_list_draw_screen(const char *sname, const char *stitle, const char *master_list, int display_nickname)
 {
-	char str_section_master[LINE_BUFFER_LEN] = "è¯šå¾ç‰ˆä¸»ä¸­";
+	char str_section_master[LINE_BUFFER_LEN] = "³ÏÕ÷°æÖ÷ÖĞ";
 	char str_section_name[LINE_BUFFER_LEN];
 
 	if (master_list[0] != '\0')
 	{
-		snprintf(str_section_master, sizeof(str_section_master), "ç‰ˆä¸»ï¼š%s", master_list);
+		snprintf(str_section_master, sizeof(str_section_master), "°æÖ÷£º%s", master_list);
 	}
-	snprintf(str_section_name, sizeof(str_section_name), "è®¨è®ºåŒº [%s]", sname);
+	snprintf(str_section_name, sizeof(str_section_name), "ÌÖÂÛÇø [%s]", sname);
 
 	clearscr();
 	show_top(str_section_master, stitle, str_section_name);
 	moveto(2, 0);
-	prints("è¿”å›[\033[1;32mâ†\033[0;37m,\033[1;32mESC\033[0;37m] é€‰æ‹©[\033[1;32mâ†‘\033[0;37m,\033[1;32mâ†“\033[0;37m] "
-		   "é˜…è¯»[\033[1;32mâ†’\033[0;37m,\033[1;32mENTER\033[0;37m] å‘è¡¨[\033[1;32mCtrl-P\033[0;37m] "
-		   "%s[\033[1;32mn\033[0;37m] ç²¾ååŒº[\033[1;32mx\033[0;37m] å¸®åŠ©[\033[1;32mh\033[0;37m]\033[m",
-		   (display_nickname ? "ç”¨æˆ·å" : "æ˜µç§°"));
+	prints("·µ»Ø[\033[1;32m¡û\033[0;37m,\033[1;32mESC\033[0;37m] Ñ¡Ôñ[\033[1;32m¡ü\033[0;37m,\033[1;32m¡ı\033[0;37m] "
+		   "ÔÄ¶Á[\033[1;32m¡ú\033[0;37m,\033[1;32mENTER\033[0;37m] ·¢±í[\033[1;32mCtrl-P\033[0;37m] "
+		   "%s[\033[1;32mn\033[0;37m] ¾«»ªÇø[\033[1;32mx\033[0;37m] °ïÖú[\033[1;32mh\033[0;37m]\033[m",
+		   (display_nickname ? "ÓÃ»§Ãû" : "êÇ³Æ"));
 	moveto(3, 0);
 	if (display_nickname)
 	{
-		prints("\033[44;37m  \033[1;37m ç¼–  å·   å‘å¸ƒè€…æ˜µç§°           æ—¥  æœŸ  æ–‡ç« æ ‡é¢˜                               \033[m");
+		prints("\033[44;37m  \033[1;37m ±à  ºÅ   ·¢²¼ÕßêÇ³Æ           ÈÕ  ÆÚ  ÎÄÕÂ±êÌâ                               \033[m");
 	}
 	else
 	{
-		prints("\033[44;37m  \033[1;37m ç¼–  å·   å‘ å¸ƒ è€…     æ—¥  æœŸ  æ–‡ç« æ ‡é¢˜                                       \033[m");
+		prints("\033[44;37m  \033[1;37m ±à  ºÅ   ·¢ ²¼ Õß     ÈÕ  ÆÚ  ÎÄÕÂ±êÌâ                                       \033[m");
 	}
 
 	return 0;
@@ -346,16 +346,16 @@ static int display_article_key_handler(int *p_key, DISPLAY_CTX *p_ctx)
 		if (section_topic_view_mode)
 		{
 			snprintf(p_ctx->msg, sizeof(p_ctx->msg),
-					 "| è¿”å›[\033[32mâ†\033[33m,\033[32mESC\033[33m] "
-					 "åŒä¸»é¢˜é˜…è¯»[\033[32mâ†‘\033[33m/\033[32mâ†“\033[33m] "
-					 "åˆ‡æ¢[\033[32mp\033[33m] å›å¤[\033[32mr\033[33m] å¸®åŠ©[\033[32mh\033[33m] |");
+					 "| ·µ»Ø[\033[32m¡û\033[33m,\033[32mESC\033[33m] "
+					 "Í¬Ö÷ÌâÔÄ¶Á[\033[32m¡ü\033[33m/\033[32m¡ı\033[33m] "
+					 "ÇĞ»»[\033[32mp\033[33m] »Ø¸´[\033[32mr\033[33m] °ïÖú[\033[32mh\033[33m] |");
 		}
 		else
 		{
 			snprintf(p_ctx->msg, sizeof(p_ctx->msg),
-					 "| è¿”å›[\033[32mâ†\033[33m,\033[32mESC\033[33m] "
-					 "ç§»åŠ¨[\033[32mâ†‘\033[33m/\033[32mâ†“\033[33m/\033[32mPgUp\033[33m/\033[32mPgDn\033[33m] "
-					 "åˆ‡æ¢[\033[32mp\033[33m] å›å¤[\033[32mr\033[33m] å¸®åŠ©[\033[32mh\033[33m] |");
+					 "| ·µ»Ø[\033[32m¡û\033[33m,\033[32mESC\033[33m] "
+					 "ÒÆ¶¯[\033[32m¡ü\033[33m/\033[32m¡ı\033[33m/\033[32mPgUp\033[33m/\033[32mPgDn\033[33m] "
+					 "ÇĞ»»[\033[32mp\033[33m] »Ø¸´[\033[32mr\033[33m] °ïÖú[\033[32mh\033[33m] |");
 		}
 		*p_key = 0;
 		break;
@@ -495,7 +495,7 @@ int section_list_display(const char *sname)
 		}
 
 		snprintf(page_info_str, sizeof(page_info_str),
-				 "\033[33m[ç¬¬\033[36m%d\033[33m/\033[36m%d\033[33mé¡µ]",
+				 "\033[33m[µÚ\033[36m%d\033[33m/\033[36m%d\033[33mÒ³]",
 				 page_id + 1, MAX(page_count, 1));
 
 		show_bottom(page_info_str);
@@ -839,7 +839,7 @@ int section_list_ex_dir_display(SECTION_LIST *p_section)
 	{
 		moveto(2, 1);
 		clrtoeol();
-		prints("è¯¥ç‰ˆå—ç²¾ååŒºæœªå¼€æ”¾");
+		prints("¸Ã°æ¿é¾«»ªÇøÎ´¿ª·Å");
 		press_any_key();
 		return 0;
 	}

@@ -33,8 +33,8 @@ const char *sname[] = {
 
 const char *stitle[] = {
 	" Test Section ",
-	"å­—æ¯ç»„åˆABC",
-	"_æ•°å­—_123"};
+	"×ÖÄ¸×éºÏABC",
+	"_Êı×Ö_123"};
 
 const char *master_name[] = {
 	"sysadm",

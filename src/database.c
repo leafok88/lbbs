@@ -47,7 +47,7 @@ MYSQL *db_open()
 		return NULL;
 	}
 
-	if (mysql_set_character_set(db, "utf8") != 0)
+	if (mysql_set_character_set(db, "gb2312") != 0)
 	{
 		log_error("Set character set error: %s\n", mysql_error(db));
 		mysql_close(db);

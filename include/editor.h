@@ -25,8 +25,7 @@
 struct editor_data_t
 {
 	char *p_display_lines[MAX_EDITOR_DATA_LINES];
-	long display_line_lengths[MAX_EDITOR_DATA_LINES]; // string length of display line
-	int display_line_widths[MAX_EDITOR_DATA_LINES]; // display width of display line
+	long display_line_lengths[MAX_EDITOR_DATA_LINES];
 	long display_line_total;
 };
 typedef struct editor_data_t EDITOR_DATA;

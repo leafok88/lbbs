@@ -21,8 +21,6 @@
 
 #define MAX_SPLIT_FILE_LINES 65536
 
-extern int str_length(const char *str, int skip_ctrl_seq);
-
 extern int split_line(const char *buffer, int max_display_len, int *p_eol, int *p_display_len, int skip_ctrl_seq);
 
 // p_line_widths may be NULL. Otherwise, the widths of each line will be store into the pointed array

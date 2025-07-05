@@ -22,7 +22,7 @@
 #include "menu.h"
 #include <time.h>
 
-#define BBS_article_title_max_len 160
+#define BBS_article_title_max_len 80
 #define BBS_article_limit_per_section 50000
 #define BBS_article_limit_per_page 20
 

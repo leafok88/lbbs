@@ -20,7 +20,7 @@
 #include <stddef.h>
 
 #define CTRL_SEQ_CLR_LINE "\033[K"
-#define MSG_EXT_MAX_LEN 400
+#define MSG_EXT_MAX_LEN 200
 
 struct display_ctx_t
 {
@@ -45,7 +45,7 @@ extern int press_any_key();
 extern void set_input_echo(int echo);
 
 extern int str_input(char *buffer, int buffer_length, int echo_mode);
-extern int get_data(int row, int col, char *prompt, char *buffer, int buffer_length, int max_display_len, int echo_mode);
+extern int get_data(int row, int col, char *prompt, char *buffer, int buffer_length, int echo_mode);
 
 // eof_exit = 0 : Do not exit at EOF
 //            1 : Prompt for any key at EOF, then exit

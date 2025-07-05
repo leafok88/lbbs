@@ -8,17 +8,12 @@ function str_length(string $str) : int
 	{
 		$c = $str[$i];
 
-		// Process UTF-8 Chinese characters
+		// Process GBK Chinese characters
 		$v1 = ord($c);
-		if ($v1 & 0b10000000) //head of multi-byte character
+		if ($v1 > 127 && $v1 <= 255) // GBK chinese character
 		{
-			$v2 = ($v1 & 0b01110000) << 1;
-			while ($v2 & 0b10000000)
-			{
-				$i++;
-				$c .= $str[$i];
-				$v2 = ($v2 & 0b01111111) << 1;
-			}
+			$i++;
+			$c .= $str[$i];
 
 			$ret += 2;
 		}
@@ -70,19 +65,14 @@ function split_line(string $str, string $prefix = "", int $width = 76, int $line
 			continue;
 		}
 
-		// Process UTF-8 Chinese characters
+		// Process GBK Chinese characters
 		$v1 = ord($c);
-		if ($v1 & 0b10000000) //head of multi-byte character
+		if ($v1 > 127 && $v1 <= 255) // GBK chinese character
 		{
-			$v2 = ($v1 & 0b01110000) << 1;
-			while ($v2 & 0b10000000)
-			{
-				$i++;
-				$c .= $str[$i];
-				$v2 = ($v2 & 0b01111111) << 1;
-			}
+			$i++;
+			$c .= $str[$i];
 
-			// Each UTF-8 CJK character should use two character length for display
+			// Each GBK CJK character should use two character length for display
 			if ($line_len + 2 > $width)
 			{
 				if ($lines_count + 1 >= $lines_limit)

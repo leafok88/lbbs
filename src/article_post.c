@@ -29,7 +29,7 @@
 #include <stdlib.h>
 #include <time.h>
 
-#define TITLE_INPUT_MAX_LEN 72
+#define TITLE_INPUT_MAX_LEN 74
 #define ARTICLE_CONTENT_MAX_LEN 1024 * 1024 * 4 // 4MB
 #define ARTICLE_QUOTE_MAX_LINES 20
 #define ARTICLE_QUOTE_LINE_MAX_LEN 76
@@ -44,12 +44,11 @@ int article_post(const SECTION_LIST *p_section, ARTICLE *p_article_new)
 	char sql[SQL_BUFFER_LEN];
 	char *sql_content = NULL;
 	EDITOR_DATA *p_editor_data = NULL;
-	char title_input[BBS_article_title_max_len + 1];
+	char title_input[TITLE_INPUT_MAX_LEN + 1];
 	char title_f[BBS_article_title_max_len * 2 + 1];
 	char *content = NULL;
 	char *content_f = NULL;
 	long len_content;
-	int content_display_length;
 	char nickname_f[BBS_nickname_max_len * 2 + 1];
 	int sign_id = 0;
 	long len;
@@ -66,7 +65,7 @@ int article_post(const SECTION_LIST *p_section, ARTICLE *p_article_new)
 	{
 		clearscr();
 		moveto(1, 1);
-		prints("æ‚¨æ²¡æœ‰æƒé™åœ¨æœ¬ç‰ˆå—å‘è¡¨æ–‡ç« \n");
+		prints("ÄúÃ»ÓĞÈ¨ÏŞÔÚ±¾°æ¿é·¢±íÎÄÕÂ\n");
 		press_any_key();
 
 		return 0;
@@ -89,18 +88,18 @@ int article_post(const SECTION_LIST *p_section, ARTICLE *p_article_new)
 	{
 		clearscr();
 		moveto(21, 1);
-		prints("å‘è¡¨æ–‡ç« äº %s[%s] è®¨è®ºåŒºï¼Œç±»å‹: %s", p_section->stitle, p_section->sname, (p_article_new->transship ? "è½¬è½½" : "åŸåˆ›"));
+		prints("·¢±íÎÄÕÂÓÚ %s[%s] ÌÖÂÛÇø£¬ÀàĞÍ: %s", p_section->stitle, p_section->sname, (p_article_new->transship ? "×ªÔØ" : "Ô­´´"));
 		moveto(22, 1);
-		prints("æ ‡é¢˜: %s", (p_article_new->title[0] == '\0' ? "[æ— ]" : p_article_new->title));
+		prints("±êÌâ: %s", (p_article_new->title[0] == '\0' ? "[ÎŞ]" : p_article_new->title));
 		moveto(23, 1);
-		prints("ä½¿ç”¨ç¬¬ [1;32m%d[m ä¸ªç­¾å", sign_id);
+		prints("Ê¹ÓÃµÚ [1;32m%d[m ¸öÇ©Ãû", sign_id);
 
 		if (toupper(ch) != 'T')
 		{
-			prints("    æŒ‰[1;32m0[m~[1;32m3[mé€‰ç­¾åæ¡£(0è¡¨ç¤ºä¸ä½¿ç”¨)");
+			prints("    °´[1;32m0[m~[1;32m3[mÑ¡Ç©Ãûµµ(0±íÊ¾²»Ê¹ÓÃ)");
 
 			moveto(24, 1);
-			prints("[1;32mT[mæ”¹æ ‡é¢˜, [1;32mC[må–æ¶ˆ, [1;32mZ[mè®¾ä¸ºè½¬è½½, [1;32mY[mè®¾ä¸ºåŸåˆ›, [1;32mEnter[mç»§ç»­: ");
+			prints("[1;32mT[m¸Ä±êÌâ, [1;32mC[mÈ¡Ïû, [1;32mZ[mÉèÎª×ªÔØ, [1;32mY[mÉèÎªÔ­´´, [1;32mEnter[m¼ÌĞø: ");
 			iflush();
 			ch = 0;
 		}
@@ -118,7 +117,7 @@ int article_post(const SECTION_LIST *p_section, ARTICLE *p_article_new)
 			case 'T':
 				moveto(24, 1);
 				clrtoeol();
-				len = get_data(24, 1, "æ ‡é¢˜: ", title_input, sizeof(title_input), TITLE_INPUT_MAX_LEN, DOECHO);
+				len = get_data(24, 1, "±êÌâ: ", title_input, TITLE_INPUT_MAX_LEN, 1);
 				for (p = title_input; *p == ' '; p++)
 					;
 				for (q = title_input + len; q > p && *(q - 1) == ' '; q--)
@@ -135,7 +134,7 @@ int article_post(const SECTION_LIST *p_section, ARTICLE *p_article_new)
 			case 'C':
 				clearscr();
 				moveto(1, 1);
-				prints("å–æ¶ˆ...");
+				prints("È¡Ïû...");
 				press_any_key();
 				goto cleanup;
 			case 'Y':
@@ -168,7 +167,7 @@ int article_post(const SECTION_LIST *p_section, ARTICLE *p_article_new)
 
 			clearscr();
 			moveto(1, 1);
-			prints("(S)å‘é€, (C)å–æ¶ˆ, (T)æ›´æ”¹æ ‡é¢˜ or (E)å†ç¼–è¾‘? [S]: ");
+			prints("(S)·¢ËÍ, (C)È¡Ïû, (T)¸ü¸Ä±êÌâ or (E)ÔÙ±à¼­? [S]: ");
 			iflush();
 
 			for (ch = 0; !SYS_server_exit; ch = igetch_t(MAX_DELAY_TIME))
@@ -185,7 +184,7 @@ int article_post(const SECTION_LIST *p_section, ARTICLE *p_article_new)
 				case 'C':
 					clearscr();
 					moveto(1, 1);
-					prints("å–æ¶ˆ...");
+					prints("È¡Ïû...");
 					press_any_key();
 					goto cleanup;
 				case 'T':
@@ -264,9 +263,6 @@ int article_post(const SECTION_LIST *p_section, ARTICLE *p_article_new)
 		rs = NULL;
 	}
 
-	// Calculate display length of content
-	content_display_length = str_length(content, 1);
-
 	// Begin transaction
 	if (mysql_query(db, "SET autocommit=0") != 0)
 	{
@@ -330,9 +326,9 @@ int article_post(const SECTION_LIST *p_section, ARTICLE *p_article_new)
 	snprintf(sql, sizeof(sql),
 			 "INSERT INTO bbs(SID, TID, UID, username, nickname, title, CID, transship, "
 			 "sub_dt, sub_ip, reply_note, exp, last_reply_dt, icon, length) "
-			 "VALUES(%d, 0, %d, '%s', '%s', '%s', %d, %d, NOW(), '%s', 1, %d, NOW(), 1, %d)",
+			 "VALUES(%d, 0, %d, '%s', '%s', '%s', %d, %d, NOW(), '%s', 1, %d, NOW(), 1, %ld)",
 			 p_section->sid, BBS_priv.uid, BBS_username, nickname_f, title_f,
-			 p_article_new->cid, p_article_new->transship, hostaddr_client, BBS_user_exp, content_display_length);
+			 p_article_new->cid, p_article_new->transship, hostaddr_client, BBS_user_exp, len_content);
 
 	if (mysql_query(db, sql) != 0)
 	{
@@ -396,7 +392,7 @@ int article_post(const SECTION_LIST *p_section, ARTICLE *p_article_new)
 
 	clearscr();
 	moveto(1, 1);
-	prints("å‘é€å®Œæˆï¼Œæ–°æ–‡ç« é€šå¸¸ä¼šåœ¨%dç§’åå¯è§", BBS_section_list_load_interval);
+	prints("·¢ËÍÍê³É£¬ĞÂÎÄÕÂÍ¨³£»áÔÚ%dÃëºó¿É¼û", BBS_section_list_load_interval);
 	press_any_key();
 	ret = 1; // Success
 
@@ -423,7 +419,6 @@ int article_modify(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTI
 	char *content = NULL;
 	char *content_f = NULL;
 	long len_content;
-	int content_display_length;
 	int ch;
 	long ret = 0;
 	time_t now;
@@ -441,7 +436,7 @@ int article_modify(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTI
 	{
 		clearscr();
 		moveto(1, 1);
-		prints("è¯¥æ–‡ç« æ— æ³•è¢«ç¼–è¾‘ï¼Œè¯·è”ç³»ç‰ˆä¸»ã€‚");
+		prints("¸ÃÎÄÕÂÎŞ·¨±»±à¼­£¬ÇëÁªÏµ°æÖ÷¡£");
 		press_any_key();
 
 		return 0;
@@ -513,7 +508,7 @@ int article_modify(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTI
 
 		clearscr();
 		moveto(1, 1);
-		prints("(S)ä¿å­˜, (C)å–æ¶ˆ or (E)å†ç¼–è¾‘? [S]: ");
+		prints("(S)±£´æ, (C)È¡Ïû or (E)ÔÙ±à¼­? [S]: ");
 		iflush();
 
 		for (ch = 0; !SYS_server_exit; ch = igetch_t(MAX_DELAY_TIME))
@@ -530,7 +525,7 @@ int article_modify(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTI
 			case 'C':
 				clearscr();
 				moveto(1, 1);
-				prints("å–æ¶ˆ...");
+				prints("È¡Ïû...");
 				press_any_key();
 				goto cleanup;
 			case 'E':
@@ -570,11 +565,8 @@ int article_modify(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTI
 	strftime(str_modify_dt, sizeof(str_modify_dt), "%Y-%m-%d %H:%M:%S (UTC %z)", &tm_modify_dt);
 
 	len_content += snprintf(content + len_content, LINE_BUFFER_LEN,
-							"\n--\nâ€» ä½œè€…å·²äº %s ä¿®æ”¹æœ¬æ–‡â€»\n",
+							"\n--\n¡ù ×÷ÕßÒÑÓÚ %s ĞŞ¸Ä±¾ÎÄ¡ù\n",
 							str_modify_dt);
-
-	// Calculate display length of content
-	content_display_length = str_length(content, 1);
 
 	db = db_open();
 	if (db == NULL)
@@ -643,8 +635,8 @@ int article_modify(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTI
 
 	// Update article
 	snprintf(sql, sizeof(sql),
-			 "UPDATE bbs SET CID = %d, length = %d, excerption = 0 WHERE AID = %d", // Set excerption = 0 explictly in case of rare condition
-			 p_article_new->cid, content_display_length, p_article->aid);
+			 "UPDATE bbs SET CID = %d, length = %ld, excerption = 0 WHERE AID = %d", // Set excerption = 0 explictly in case of rare condition
+			 p_article_new->cid, len_content, p_article->aid);
 
 	if (mysql_query(db, sql) != 0)
 	{
@@ -686,7 +678,7 @@ int article_modify(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTI
 
 	clearscr();
 	moveto(1, 1);
-	prints("ä¿®æ”¹å®Œæˆï¼Œæ–°å†…å®¹é€šå¸¸ä¼šåœ¨%dç§’åå¯è§", BBS_section_list_load_interval);
+	prints("ĞŞ¸ÄÍê³É£¬ĞÂÄÚÈİÍ¨³£»áÔÚ%dÃëºó¿É¼û", BBS_section_list_load_interval);
 	press_any_key();
 	ret = 1; // Success
 
@@ -718,7 +710,6 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 	char *content = NULL;
 	char *content_f = NULL;
 	long len_content;
-	int content_display_length;
 	char nickname_f[BBS_nickname_max_len * 2 + 1];
 	int sign_id = 0;
 	long len;
@@ -740,7 +731,7 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 	{
 		clearscr();
 		moveto(1, 1);
-		prints("æ‚¨æ²¡æœ‰æƒé™åœ¨æœ¬ç‰ˆå—å‘è¡¨æ–‡ç« \n");
+		prints("ÄúÃ»ÓĞÈ¨ÏŞÔÚ±¾°æ¿é·¢±íÎÄÕÂ\n");
 		press_any_key();
 
 		return 0;
@@ -793,7 +784,7 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 
 		clearscr();
 		moveto(1, 1);
-		prints("è¯¥ä¸»é¢˜è°¢ç»å›å¤");
+		prints("¸ÃÖ÷ÌâĞ»¾ø»Ø¸´");
 		press_any_key();
 
 		goto cleanup;
@@ -844,7 +835,7 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 		len = str_filter(content_f, 0);
 
 		len = snprintf(content, ARTICLE_CONTENT_MAX_LEN,
-					   "\n\nã€ åœ¨ %s (%s) çš„å¤§ä½œä¸­æåˆ°: ã€‘\n",
+					   "\n\n¡¾ ÔÚ %s (%s) µÄ´ó×÷ÖĞÌáµ½: ¡¿\n",
 					   p_article->username, p_article->nickname);
 
 		quote_content_lines = split_data_lines(content_f, ARTICLE_QUOTE_LINE_MAX_LEN, line_offsets, ARTICLE_QUOTE_MAX_LINES + 1, 0, NULL);
@@ -892,18 +883,18 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 	{
 		clearscr();
 		moveto(21, 1);
-		prints("å›å¤æ–‡ç« äº %s[%s] è®¨è®ºåŒº", p_section->stitle, p_section->sname);
+		prints("»Ø¸´ÎÄÕÂÓÚ %s[%s] ÌÖÂÛÇø", p_section->stitle, p_section->sname);
 		moveto(22, 1);
-		prints("æ ‡é¢˜: %s", (p_article_new->title[0] == '\0' ? "[æ— ]" : p_article_new->title));
+		prints("±êÌâ: %s", (p_article_new->title[0] == '\0' ? "[ÎŞ]" : p_article_new->title));
 		moveto(23, 1);
-		prints("ä½¿ç”¨ç¬¬ [1;32m%d[m ä¸ªç­¾å", sign_id);
+		prints("Ê¹ÓÃµÚ [1;32m%d[m ¸öÇ©Ãû", sign_id);
 
 		if (toupper(ch) != 'T')
 		{
-			prints("    æŒ‰[1;32m0[m~[1;32m3[mé€‰ç­¾åæ¡£(0è¡¨ç¤ºä¸ä½¿ç”¨)");
+			prints("    °´[1;32m0[m~[1;32m3[mÑ¡Ç©Ãûµµ(0±íÊ¾²»Ê¹ÓÃ)");
 
 			moveto(24, 1);
-			prints("[1;32mT[mæ”¹æ ‡é¢˜, [1;32mC[må–æ¶ˆ, [1;32mEnter[mç»§ç»­: ");
+			prints("[1;32mT[m¸Ä±êÌâ, [1;32mC[mÈ¡Ïû, [1;32mEnter[m¼ÌĞø: ");
 			iflush();
 			ch = 0;
 		}
@@ -921,7 +912,7 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 			case 'T':
 				moveto(24, 1);
 				clrtoeol();
-				len = get_data(24, 1, "æ ‡é¢˜: ", title_input, sizeof(title_input), TITLE_INPUT_MAX_LEN, DOECHO);
+				len = get_data(24, 1, "±êÌâ: ", title_input, TITLE_INPUT_MAX_LEN, 1);
 				for (p = title_input; *p == ' '; p++)
 					;
 				for (q = title_input + len; q > p && *(q - 1) == ' '; q--)
@@ -938,7 +929,7 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 			case 'C':
 				clearscr();
 				moveto(1, 1);
-				prints("å–æ¶ˆ...");
+				prints("È¡Ïû...");
 				press_any_key();
 				goto cleanup;
 			case '0':
@@ -965,7 +956,7 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 
 			clearscr();
 			moveto(1, 1);
-			prints("(S)å‘é€, (C)å–æ¶ˆ, (T)æ›´æ”¹æ ‡é¢˜ or (E)å†ç¼–è¾‘? [S]: ");
+			prints("(S)·¢ËÍ, (C)È¡Ïû, (T)¸ü¸Ä±êÌâ or (E)ÔÙ±à¼­? [S]: ");
 			iflush();
 
 			for (ch = 0; !SYS_server_exit; ch = igetch_t(MAX_DELAY_TIME))
@@ -982,7 +973,7 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 				case 'C':
 					clearscr();
 					moveto(1, 1);
-					prints("å–æ¶ˆ...");
+					prints("È¡Ïû...");
 					press_any_key();
 					goto cleanup;
 				case 'T':
@@ -1061,9 +1052,6 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 		rs = NULL;
 	}
 
-	// Calculate display length of content
-	content_display_length = str_length(content, 1);
-
 	// Begin transaction
 	if (mysql_query(db, "SET autocommit=0") != 0)
 	{
@@ -1127,10 +1115,10 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 	snprintf(sql, sizeof(sql),
 			 "INSERT INTO bbs(SID, TID, UID, username, nickname, title, CID, transship, "
 			 "sub_dt, sub_ip, reply_note, exp, last_reply_dt, icon, length) "
-			 "VALUES(%d, %d, %d, '%s', '%s', '%s', %d, 0, NOW(), '%s', 1, %d, NOW(), 1, %d)",
+			 "VALUES(%d, %d, %d, '%s', '%s', '%s', %d, 0, NOW(), '%s', 1, %d, NOW(), 1, %ld)",
 			 p_section->sid, (p_article->tid == 0 ? p_article->aid : p_article->tid),
 			 BBS_priv.uid, BBS_username, nickname_f, title_f,
-			 p_article_new->cid, hostaddr_client, BBS_user_exp, content_display_length);
+			 p_article_new->cid, hostaddr_client, BBS_user_exp, len_content);
 
 	if (mysql_query(db, sql) != 0)
 	{
@@ -1209,7 +1197,7 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 
 	clearscr();
 	moveto(1, 1);
-	prints("å‘é€å®Œæˆï¼Œæ–°æ–‡ç« é€šå¸¸ä¼šåœ¨%dç§’åå¯è§", BBS_section_list_load_interval);
+	prints("·¢ËÍÍê³É£¬ĞÂÎÄÕÂÍ¨³£»áÔÚ%dÃëºó¿É¼û", BBS_section_list_load_interval);
 	press_any_key();
 	ret = 1; // Success
 
