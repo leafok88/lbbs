@@ -38,7 +38,7 @@
 
 int bbs_info()
 {
-	prints("欢迎光临 \033[1;33m%s \033[32m[%s]  \033[37m( %s )\r\n",
+	prints("欢迎光临 \033[1;33m%s \033[32m[%s]  \033[37m( %s )\033[m\r\n",
 		   BBS_name, BBS_server, APP_INFO);
 
 	return iflush();
