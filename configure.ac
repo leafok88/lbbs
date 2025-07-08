@@ -6,6 +6,7 @@ AC_INIT([lbbs],[1.2.2])
 AC_CONFIG_SRCDIR([src/])
 AC_CONFIG_MACRO_DIRS([m4])
 AM_INIT_AUTOMAKE([foreign])
+AM_SILENT_RULES(yes)
 
 AC_USE_SYSTEM_EXTENSIONS
 # Checks for programs.
