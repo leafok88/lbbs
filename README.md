@@ -7,7 +7,11 @@ Demo site : bbs.fenglin.info (Telnet 2323 / SSH2 2322)
 
 Introduction
 =================
-This software (named as LBBS) aims to providing a telnet-based interface for a pure web-based BBS (LeafOK BBS @ https://github.com/leafok88/leafok_bbs).
+This software (named as LBBS) aims to providing a telnet-based interface for a pure web-based BBS (LeafOK BBS @ https://github.com/leafok88/leafok_bbs).  
+![Welcome](misc/images/ssh_welcome.jpg "Welcome to LBBS")  
+![Menu](misc/images/telnet_menu.jpg "Main menu")  
+![Section](misc/images/telnet_section.jpg "List of articles")  
+![Reader](misc/images/telnet_article_reader.jpg "Article reader")  
 
 
 System Requirement
