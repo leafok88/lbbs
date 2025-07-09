@@ -7,7 +7,7 @@ Demo site : bbs.fenglin.info (Telnet 2323 / SSH2 2322)
 
 Introduction
 =================
-This software (named as LBBS) aims to providing a telnet-based interface for a pure web-based BBS (LeafOK BBS @ https://github.com/leafok88/leafok_bbs).  
+This software aims to providing a telnet-based interface for a pure web-based BBS [leafok_bbs](https://github.com/leafok88/leafok_bbs).  
 ![Welcome](misc/images/ssh_welcome.jpg "Welcome to LBBS")  
 ![Menu](misc/images/telnet_menu.jpg "Main menu")  
 ![Section](misc/images/telnet_section.jpg "List of articles")  
@@ -26,7 +26,7 @@ Quick Installation
 To install LBBS quickly, please do the following steps:
 
 0) Prerequisite  
-   Follow README.md under https://github.com/leafok88/leafok_bbs to initialize the database structure shared by both web version and telnet version.   
+   Follow README.md under [leafok_bbs](https://github.com/leafok88/leafok_bbs) to initialize the database structure shared by both web version and telnet version.   
    It is highly recommended to finish the configuration steps of web version first and make sure those features could work properly.
 
 1) Extract the source files from a tarball or export from GitHub  
