@@ -19,16 +19,9 @@
 
 #include "bbs.h"
 #include "common.h"
+#include "constant.h"
 #include "menu.h"
 #include <time.h>
-
-#define BBS_article_title_max_len 160
-#define BBS_article_limit_per_section 50000
-#define BBS_article_limit_per_page 20
-
-#define BBS_ontop_article_limit_per_section 10
-
-#define ARTICLE_PER_BLOCK 1000
 
 struct article_t
 {
