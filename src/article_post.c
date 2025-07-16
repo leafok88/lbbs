@@ -17,6 +17,7 @@
 #include "article_cache.h"
 #include "article_post.h"
 #include "bbs.h"
+#include "constants.h"
 #include "database.h"
 #include "editor.h"
 #include "io.h"
@@ -28,13 +29,6 @@
 #include <string.h>
 #include <stdlib.h>
 #include <time.h>
-
-#define TITLE_INPUT_MAX_LEN 72
-#define ARTICLE_CONTENT_MAX_LEN 1024 * 1024 * 4 // 4MB
-#define ARTICLE_QUOTE_MAX_LINES 20
-#define ARTICLE_QUOTE_LINE_MAX_LEN 76
-
-#define MODIFY_DT_MAX_LEN 50
 
 int article_post(const SECTION_LIST *p_section, ARTICLE *p_article_new)
 {
@@ -272,14 +266,14 @@ int article_post(const SECTION_LIST *p_section, ARTICLE *p_article_new)
 	{
 		log_error("SET autocommit=0 error: %s\n", mysql_error(db));
 		ret = -1;
-		goto cleanup;
+		goto rollback;
 	}
 
 	if (mysql_query(db, "BEGIN") != 0)
 	{
 		log_error("Begin transaction error: %s\n", mysql_error(db));
 		ret = -1;
-		goto cleanup;
+		goto rollback;
 	}
 
 	// Secure SQL parameters
@@ -391,6 +385,12 @@ int article_post(const SECTION_LIST *p_section, ARTICLE *p_article_new)
 		goto cleanup;
 	}
 
+	// 事务成功后恢复 autocommit
+	if (mysql_query(db, SQL_AUTOCOMMIT_ON) != 0)
+	{
+	    log_error("SQL_AUTOCOMMIT_ON error: %s\n", mysql_error(db));
+	}
+
 	mysql_close(db);
 	db = NULL;
 
@@ -400,6 +400,11 @@ int article_post(const SECTION_LIST *p_section, ARTICLE *p_article_new)
 	press_any_key();
 	ret = 1; // Success
 
+rollback:
+	mysql_query(db, SQL_ROLLBACK);
+	log_error("Transaction rolled back due to error.");
+	mysql_query(db, SQL_AUTOCOMMIT_ON);	
+	
 cleanup:
 	mysql_close(db);
 
