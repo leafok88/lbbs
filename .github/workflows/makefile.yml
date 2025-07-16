@@ -14,12 +14,15 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
+    - name: autogen
+      run: sh autogen.sh
+
     - name: Install dependencies
       run: |
         sudo apt-get update
         sudo apt-get install -y libssh-dev
           
-    - name: Run configure
+    - name: configure
       run: ./configure
 
     - name: Run make
