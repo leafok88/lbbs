@@ -80,6 +80,7 @@ static int load_chicken()
 	FILE *fp;
 	time_t now;
 	struct tm ptime;
+	int ret;
 
 	agetmp = 1;
 	//  modify_user_mode(CHICK);
@@ -95,15 +96,18 @@ static int load_chicken()
 		}
 		last = 1;
 		fp = fopen(fname, "r");
-		fscanf(fp, "%d %d %d %d %d %d %d %d %d %d %d %d %d %d %s ", &weight, &mon, &day, &satis, &age, &oo, &happy, &clean, &tiredstrong, &play, &winn, &losee, &food, &zfood, chicken_name);
-		fclose(fp);
 	}
 	else
 	{
 		last = 0;
-		fscanf(fp, "%d %d %d %d %d %d %d %d %d %d %d %d %d %d %s ", &weight, &mon, &day, &satis, &age, &oo, &happy, &clean, &tiredstrong, &play, &winn, &losee, &food, &zfood, chicken_name);
-		fclose(fp);
 	}
+	ret = fscanf(fp, "%d %d %d %d %d %d %d %d %d %d %d %d %d %d %s ",
+				 &weight, &mon, &day, &satis, &age, &oo, &happy, &clean, &tiredstrong, &play, &winn, &losee, &food, &zfood, chicken_name);
+	if (ret != 15)
+	{
+		log_error("Error in chicken data\n");
+	}
+	fclose(fp);
 
 	if (day < (ptime.tm_mon + 1))
 	{
@@ -123,7 +127,8 @@ int save_chicken()
 	FILE *fp;
 
 	fp = fopen(fname, "r+");
-	fprintf(fp, "%d %d %d %d %d %d %d %d %d %d %d %d %d %d %s ", weight, mon, day, satis, age, oo, happy, clean, tiredstrong, play, winn, losee, food, zfood, chicken_name);
+	fprintf(fp, "%d %d %d %d %d %d %d %d %d %d %d %d %d %d %s ",
+			weight, mon, day, satis, age, oo, happy, clean, tiredstrong, play, winn, losee, food, zfood, chicken_name);
 	fclose(fp);
 
 	return 0;
@@ -159,7 +164,8 @@ static int create_a_egg()
 		log_error("Error!!cannot open file '%s'!\n", fname);
 		return -2;
 	}
-	fprintf(fp, "%d %d %d %d %d %d %d %d %d %d %d %d %d %d %s ", ptime.tm_hour * 2, ptime.tm_mday, ptime.tm_mon + 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10, 5, chicken_name);
+	fprintf(fp, "%d %d %d %d %d %d %d %d %d %d %d %d %d %d %s ",
+			ptime.tm_hour * 2, ptime.tm_mday, ptime.tm_mon + 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10, 5, chicken_name);
 	fclose(fp);
 
 	if ((fp = fopen(LOG_FILE, "a")) == NULL)
