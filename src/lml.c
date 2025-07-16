@@ -81,7 +81,8 @@ static int lml_tag_quote_filter(const char *tag_name, const char *tag_param_buf,
 		{
 			lml_tag_quote_level++;
 		}
-		return snprintf(tag_output_buf, tag_output_buf_len, lml_tag_quote_color[lml_tag_quote_level % LML_TAG_QUOTE_LEVEL_LOOP]);
+		return snprintf(tag_output_buf, tag_output_buf_len, "%s",
+						lml_tag_quote_color[lml_tag_quote_level % LML_TAG_QUOTE_LEVEL_LOOP]);
 	}
 	else if (strcasecmp(tag_name, "/quote") == 0)
 	{
@@ -89,7 +90,7 @@ static int lml_tag_quote_filter(const char *tag_name, const char *tag_param_buf,
 		{
 			lml_tag_quote_level--;
 		}
-		return snprintf(tag_output_buf, tag_output_buf_len,
+		return snprintf(tag_output_buf, tag_output_buf_len, "%s",
 						(lml_tag_quote_level > 0 ? lml_tag_quote_color[lml_tag_quote_level % LML_TAG_QUOTE_LEVEL_LOOP] : "\033[m"));
 	}
 
@@ -177,7 +178,7 @@ int lml_plain(const char *str_in, char *str_out, int buf_len)
 			{
 				lml_tag_quote_level -= fb_quote_level;
 
-				tag_output_len = snprintf(tag_output_buf, LML_TAG_OUTPUT_BUF_LEN,
+				tag_output_len = snprintf(tag_output_buf, LML_TAG_OUTPUT_BUF_LEN, "%s",
 										  (lml_tag_quote_level > 0 ? lml_tag_quote_color[lml_tag_quote_level % LML_TAG_QUOTE_LEVEL_LOOP] : "\033[m"));
 				if (j + tag_output_len >= buf_len)
 				{
@@ -200,7 +201,7 @@ int lml_plain(const char *str_in, char *str_out, int buf_len)
 			{
 				lml_tag_quote_level += fb_quote_level;
 
-				tag_output_len = snprintf(tag_output_buf, LML_TAG_OUTPUT_BUF_LEN,
+				tag_output_len = snprintf(tag_output_buf, LML_TAG_OUTPUT_BUF_LEN, "%s",
 										  lml_tag_quote_color[(lml_tag_quote_level) % LML_TAG_QUOTE_LEVEL_LOOP]);
 				if (j + tag_output_len >= buf_len)
 				{

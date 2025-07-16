@@ -128,8 +128,16 @@ int main(int argc, char *argv[])
 	strncpy(file_path_temp, argv[0], sizeof(file_path_temp) - 1);
 	file_path_temp[sizeof(file_path_temp) - 1] = '\0';
 
-	chdir(dirname(file_path_temp));
-	chdir("..");
+	if (chdir(dirname(file_path_temp)) < 0)
+	{
+		fprintf(stderr, "chdir(%s) error: %d\n", dirname(file_path_temp), errno);
+		return -1;
+	}
+	if (chdir("..") < 0)
+	{
+		fprintf(stderr, "chdir(..) error: %d\n", errno);
+		return -1;
+	}
 
 	// Initialize log
 	if (log_begin(LOG_FILE_INFO, LOG_FILE_ERROR) < 0)
