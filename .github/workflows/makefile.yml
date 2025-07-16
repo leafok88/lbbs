@@ -2,9 +2,9 @@ name: Makefile CI
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "gbk" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "gbk" ]
 
 jobs:
   build:
