@@ -729,7 +729,9 @@ int editor_display(EDITOR_DATA *p_editor_data)
 						ch = igetch(100);						 // 0.1 second
 						if (ch == KEY_NULL || ch == KEY_TIMEOUT) // Ignore received bytes if no futher input
 						{
+#ifdef _DEBUG
 							log_error("Ignore %d bytes of incomplete UTF8 character\n", str_len);
+#endif
 							str_len = 0;
 							break;
 						}

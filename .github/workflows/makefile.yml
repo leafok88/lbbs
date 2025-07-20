@@ -2,9 +2,9 @@ name: Makefile CI
 
 on:
   push:
-    branches: [ "utf8" ]
+    branches: [ "main" ]
   pull_request:
-    branches: [ "utf8" ]
+    branches: [ "main" ]
 
 jobs:
   build:

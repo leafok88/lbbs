@@ -185,7 +185,9 @@ static int _str_input(char *buffer, int buf_size, int max_display_len, int echo_
 				ch = igetch(100);						 // 0.1 second
 				if (ch == KEY_NULL || ch == KEY_TIMEOUT) // Ignore received bytes if no futher input
 				{
+#ifdef _DEBUG
 					log_error("Ignore %d bytes of incomplete UTF8 character\n", str_len);
+#endif
 					str_len = 0;
 					break;
 				}
