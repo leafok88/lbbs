@@ -40,6 +40,27 @@
 #define STR_TOP_MIDDLE_MAX_LEN 20
 #define STR_TOP_RIGHT_MAX_LEN 20
 
+static const char *get_time_str(char *s, size_t len)
+{
+	static const char *weekday[] = {
+		"天", "一", "二", "三", "四", "五", "六"};
+	time_t curtime;
+	struct tm local_tm;
+
+	time(&curtime);
+	localtime_r(&curtime, &local_tm);
+	size_t j = strftime(s, len, "%b %d %H:%M 星期", &local_tm);
+
+	if (j == 0 || j + strlen(weekday[local_tm.tm_wday]) + 1 > len)
+	{
+		return NULL;
+	}
+
+	strncat(s, weekday[local_tm.tm_wday], len - 1 - j);
+
+	return s;
+}
+
 void moveto(int row, int col)
 {
 	if (row >= 0)

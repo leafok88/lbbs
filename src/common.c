@@ -53,29 +53,7 @@ volatile int SYS_child_process_count = 0;
 volatile int SYS_child_exit = 0;
 volatile int SYS_conf_reload = 0;
 
-static const char *weekday[] = {
-	"天", "一", "二", "三", "四", "五", "六"};
-
 // Common function
-const char *get_time_str(char *s, size_t len)
-{
-	time_t curtime;
-	struct tm local_tm;
-
-	time(&curtime);
-	localtime_r(&curtime, &local_tm);
-	size_t j = strftime(s, len, "%b %d %H:%M 星期", &local_tm);
-
-	if (j == 0 || j + strlen(weekday[local_tm.tm_wday]) + 1 > len)
-	{
-		return NULL;
-	}
-
-	strncat(s, weekday[local_tm.tm_wday], len - 1 - j);
-
-	return s;
-}
-
 void sig_hup_handler(int i)
 {
 	SYS_conf_reload = 1;
