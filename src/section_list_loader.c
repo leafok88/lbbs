@@ -17,6 +17,7 @@
 #include "article_cache.h"
 #include "bbs.h"
 #include "database.h"
+#include "ip_mask.h"
 #include "log.h"
 #include "menu.h"
 #include "section_list_loader.h"

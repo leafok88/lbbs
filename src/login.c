@@ -18,6 +18,7 @@
 #include "common.h"
 #include "database.h"
 #include "io.h"
+#include "ip_mask.h"
 #include "log.h"
 #include "login.h"
 #include "screen.h"
