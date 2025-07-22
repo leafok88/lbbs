@@ -18,7 +18,6 @@
 #include "log.h"
 #include "menu.h"
 #include <signal.h>
-#include <string.h>
 #include <time.h>
 #include <sys/types.h>
 
@@ -67,42 +66,4 @@ void sig_term_handler(int i)
 void sig_chld_handler(int i)
 {
 	SYS_child_exit = 1;
-}
-
-const char *ip_mask(char *s, int level, char mask)
-{
-	char *p = s;
-
-	if (level <= 0)
-	{
-		return s;
-	}
-	if (level > 4)
-	{
-		level = 4;
-	}
-
-	for (int i = 0; i < 4 - level; i++)
-	{
-		p = strchr(p, '.');
-		if (p == NULL)
-		{
-			return s;
-		}
-		p++;
-	}
-
-	for (int i = 0; i < level; i++)
-	{
-		*p = mask;
-		p++;
-		if (i < level - 1)
-		{
-			*p = '.';
-			p++;
-		}
-	}
-	*p = '\0';
-
-	return s;
 }

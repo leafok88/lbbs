@@ -93,7 +93,4 @@ extern volatile int SYS_child_process_count;
 extern volatile int SYS_child_exit;
 extern volatile int SYS_conf_reload;
 
-// Network
-extern const char *ip_mask(char *s, int level, char mask);
-
 #endif //_COMMON_H_
