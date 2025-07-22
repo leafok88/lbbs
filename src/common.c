@@ -15,11 +15,6 @@
  ***************************************************************************/
 
 #include "common.h"
-#include "log.h"
-#include "menu.h"
-#include <signal.h>
-#include <time.h>
-#include <sys/types.h>
 
 // File loader
 const char *data_files_load_startup[] = {
