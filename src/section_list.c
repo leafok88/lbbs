@@ -75,18 +75,7 @@ typedef struct article_block_pool_t ARTICLE_BLOCK_POOL;
 
 static ARTICLE_BLOCK_POOL *p_article_block_pool = NULL;
 
-struct section_list_pool_t
-{
-	int shmid;
-	SECTION_LIST sections[BBS_max_section];
-	int section_count;
-	int semid;
-	TRIE_NODE *p_trie_dict_section_by_name;
-	TRIE_NODE *p_trie_dict_section_by_sid;
-};
-typedef struct section_list_pool_t SECTION_LIST_POOL;
-
-static SECTION_LIST_POOL *p_section_list_pool = NULL;
+SECTION_LIST_POOL *p_section_list_pool = NULL;
 
 int article_block_init(const char *filename, int block_count)
 {
@@ -553,19 +542,6 @@ void section_list_cleanup(void)
 	}
 
 	p_section_list_pool = NULL;
-}
-
-void section_list_ex_menu_set_cleanup(void)
-{
-	int i;
-
-	for (i = 0; i < p_section_list_pool->section_count; i++)
-	{
-		if (p_section_list_pool->sections[i].ex_menu_tm > 0)
-		{
-			unload_menu(&(p_section_list_pool->sections[i].ex_menu_set));
-		}
-	}
 }
 
 int set_section_list_shm_readonly(void)
