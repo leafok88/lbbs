@@ -665,6 +665,19 @@ cleanup:
 	return (ret < 0 ? ret : op_count);
 }
 
+static void section_list_ex_menu_set_cleanup(void)
+{
+	int i;
+
+	for (i = 0; i < p_section_list_pool->section_count; i++)
+	{
+		if (p_section_list_pool->sections[i].ex_menu_tm > 0)
+		{
+			unload_menu(&(p_section_list_pool->sections[i].ex_menu_set));
+		}
+	}
+}
+
 int section_list_loader_launch(void)
 {
 	struct sigaction act = {0};
