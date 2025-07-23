@@ -82,8 +82,6 @@ extern ssh_bind sshbind;
 extern ssh_session SSH_session;
 extern ssh_channel SSH_channel;
 
-extern const char *get_time_str(char *string, size_t length);
-
 // Signal handler
 extern void sig_hup_handler(int);
 extern void sig_term_handler(int);
@@ -94,8 +92,5 @@ extern volatile int SYS_server_exit;
 extern volatile int SYS_child_process_count;
 extern volatile int SYS_child_exit;
 extern volatile int SYS_conf_reload;
-
-// Network
-extern const char *ip_mask(char *s, int level, char mask);
 
 #endif //_COMMON_H_

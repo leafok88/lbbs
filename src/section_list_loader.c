@@ -17,6 +17,7 @@
 #include "article_cache.h"
 #include "bbs.h"
 #include "database.h"
+#include "ip_mask.h"
 #include "log.h"
 #include "menu.h"
 #include "section_list_loader.h"
@@ -662,6 +663,19 @@ cleanup:
 	mysql_close(db);
 
 	return (ret < 0 ? ret : op_count);
+}
+
+static void section_list_ex_menu_set_cleanup(void)
+{
+	int i;
+
+	for (i = 0; i < p_section_list_pool->section_count; i++)
+	{
+		if (p_section_list_pool->sections[i].ex_menu_tm > 0)
+		{
+			unload_menu(&(p_section_list_pool->sections[i].ex_menu_set));
+		}
+	}
 }
 
 int section_list_loader_launch(void)
