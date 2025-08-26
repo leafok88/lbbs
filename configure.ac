@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.69])
-AC_INIT([lbbs],[1.3.5])
+AC_INIT([lbbs],[1.3.6])
 AC_CONFIG_SRCDIR([src/])
 AC_CONFIG_MACRO_DIRS([m4])
 AM_INIT_AUTOMAKE([foreign])
@@ -10,7 +10,6 @@ AM_SILENT_RULES(yes)
 
 AC_USE_SYSTEM_EXTENSIONS
 # Checks for programs.
-AC_PROG_GCC_TRADITIONAL
 LT_INIT
 AC_PROG_CXX
 AC_PROG_CC
