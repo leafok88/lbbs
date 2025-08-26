@@ -1,6 +1,6 @@
 ACLOCAL_AMFLAGS = -I m4
 
-EXTRA_DIST = README.md LICENSE conf data
+EXTRA_DIST = README.md INSTALL.md ChangeLog.md LICENSE conf data
 SUBDIRS = src utils
 
 install-data-local:
