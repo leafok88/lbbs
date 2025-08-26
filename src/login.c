@@ -60,7 +60,7 @@ int bbs_login(void)
 		{
 			display_file(DATA_REGISTER, 1);
 
-			return 0;
+			return -1;
 		}
 
 		if (username[0] != '\0')
