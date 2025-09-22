@@ -114,6 +114,8 @@ int ssh_server(const char *hostaddr, unsigned int port)
 		.auth_password_function = auth_password,
 		.channel_open_request_session_function = new_session_channel};
 
+	long int ssh_timeout = 0;
+
 	char buf[BUF_SIZE];
 	char host[128] = "";
 	int i, r;
@@ -163,10 +165,19 @@ int ssh_server(const char *hostaddr, unsigned int port)
 				ssh_callbacks_init(&cb);
 				ssh_set_server_callbacks(session, &cb);
 
+				ssh_timeout = 60; // second
+				if (ssh_options_set(session, SSH_OPTIONS_TIMEOUT, &ssh_timeout) < 0)
+				{
+					log_error("Error setting SSH options: %s\n", ssh_get_error(session));
+					ssh_disconnect(session);
+					_exit(1);
+				}
+
 				if (ssh_handle_key_exchange(session))
 				{
 					log_error("ssh_handle_key_exchange: %s\n", ssh_get_error(session));
-					return 1;
+					ssh_disconnect(session);
+					_exit(1);
 				}
 				ssh_set_auth_methods(session, SSH_AUTH_METHOD_PASSWORD | SSH_AUTH_METHOD_GSSAPI_MIC);
 
@@ -194,6 +205,14 @@ int ssh_server(const char *hostaddr, unsigned int port)
 				else
 				{
 					log_common("Authenticated and got a channel\n");
+				}
+
+				ssh_timeout = 0;
+				if (ssh_options_set(session, SSH_OPTIONS_TIMEOUT, &ssh_timeout) < 0)
+				{
+					log_error("Error setting SSH options: %s\n", ssh_get_error(session));
+					ssh_disconnect(session);
+					_exit(1);
 				}
 
 				snprintf(buf, sizeof(buf), "Hello, welcome to the Sample SSH proxy.\r\nPlease select your destination: ");
