@@ -125,6 +125,7 @@ static ssh_channel new_session_channel(ssh_session session, void *userdata)
 static int fork_server(void)
 {
 	ssh_event event;
+	long int ssh_timeout = 0;
 	int pid;
 	int i;
 	int ret;
@@ -176,6 +177,13 @@ static int fork_server(void)
 		ssh_callbacks_init(&cb);
 		ssh_set_server_callbacks(SSH_session, &cb);
 
+		ssh_timeout = 60; // second
+		if (ssh_options_set(SSH_session, SSH_OPTIONS_TIMEOUT, &ssh_timeout) < 0)
+		{
+			log_error("Error setting SSH options: %s\n", ssh_get_error(SSH_session));
+			goto cleanup;
+		}
+
 		if (ssh_handle_key_exchange(SSH_session))
 		{
 			log_error("ssh_handle_key_exchange() error: %s\n", ssh_get_error(SSH_session));
@@ -199,6 +207,13 @@ static int fork_server(void)
 		if (cb_data.error)
 		{
 			log_error("SSH auth error, tried %d times\n", cb_data.tries);
+			goto cleanup;
+		}
+
+		ssh_timeout = 0;
+		if (ssh_options_set(SSH_session, SSH_OPTIONS_TIMEOUT, &ssh_timeout) < 0)
+		{
+			log_error("Error setting SSH options: %s\n", ssh_get_error(SSH_session));
 			goto cleanup;
 		}
 	}
