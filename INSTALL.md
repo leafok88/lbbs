@@ -10,7 +10,7 @@ To install LBBS, please perform the following steps:
    gcc >= 14.2.0  
    autoconf >= 2.68  
    automake >= 1.16  
-   libssh >= 0.11.1
+   libssh >= 0.11.1  
    PHP >= 8.2  
    MySQL >= 8.4
 
@@ -46,3 +46,4 @@ To install LBBS, please perform the following steps:
 10) Set up systemd  
    Create your own /usr/lib/systemd/system/lbbs.service from the sample at conf/lbbs.service.default, and make any change if necessary.  
    Reload daemon config and start the service.  
+
