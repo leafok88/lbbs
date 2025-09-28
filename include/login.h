@@ -20,7 +20,7 @@
 #include <mysql/mysql.h>
 
 #define BBS_login_retry_times 3
-#define BBS_allowed_login_failures_within_interval 3
+#define BBS_allowed_login_failures_within_interval 10
 #define BBS_login_failures_count_interval 10 // minutes
 
 extern void login_fail(void);
