@@ -213,7 +213,7 @@ int check_user(const char *username, const char *password)
 	}
 	if ((row = mysql_fetch_row(rs)))
 	{
-		if (atoi(row[0]) >= 3)
+		if (atoi(row[0]) >= BBS_allowed_login_failures_per_account)
 		{
 			prints("\033[1;31m账户存在多次失败登陆尝试，请使用Web方式登录解锁\033[m\r\n");
 			ret = 1;

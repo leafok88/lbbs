@@ -22,6 +22,7 @@
 #define BBS_login_retry_times 3
 #define BBS_allowed_login_failures_within_interval 10
 #define BBS_login_failures_count_interval 10 // minutes
+#define BBS_allowed_login_failures_per_account 3
 
 extern void login_fail(void);
 
