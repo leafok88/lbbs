@@ -180,9 +180,9 @@ int check_user(const char *username, const char *password)
 	}
 	if ((row = mysql_fetch_row(rs)))
 	{
-		if (atoi(row[0]) > BBS_allowed_login_failures_within_interval)
+		if (atoi(row[0]) >= BBS_allowed_login_failures_within_interval)
 		{
-			prints("\033[1;31m来源存在多次失败登陆尝试，请稍后再试\033[m\r\n");
+			prints("\033[1;31m来源存在多次失败登陆尝试，请稍后再试，或使用Web方式访问\033[m\r\n");
 			ret = 1;
 			goto cleanup;
 		}
@@ -190,10 +190,14 @@ int check_user(const char *username, const char *password)
 	mysql_free_result(rs);
 	rs = NULL;
 
-	// Failed login attempts against the current username during certain time period
+	// Failed login attempts against the current username since last successful login
 	snprintf(sql, sizeof(sql),
 			 "SELECT COUNT(*) AS err_count FROM user_err_login_log "
-			 "WHERE username = '%s' AND login_dt >= SUBDATE(NOW(), INTERVAL 1 DAY)",
+			 "LEFT JOIN user_list ON user_err_login_log.username = user_list.username "
+			 "LEFT JOIN user_pubinfo ON user_list.UID = user_pubinfo.UID "
+			 "WHERE user_err_login_log.username = '%s' "
+			 "AND (user_err_login_log.login_dt >= user_pubinfo.last_login_dt "
+			 "OR user_pubinfo.last_login_dt IS NULL)",
 			 username);
 	if (mysql_query(db, sql) != 0)
 	{
@@ -209,9 +213,9 @@ int check_user(const char *username, const char *password)
 	}
 	if ((row = mysql_fetch_row(rs)))
 	{
-		if (atoi(row[0]) >= 5)
+		if (atoi(row[0]) >= 3)
 		{
-			prints("\033[1;31m账户存在多次失败登陆尝试，请使用Web方式登录\033[m\r\n");
+			prints("\033[1;31m账户存在多次失败登陆尝试，请使用Web方式登录解锁\033[m\r\n");
 			ret = 1;
 			goto cleanup;
 		}
