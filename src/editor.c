@@ -920,6 +920,7 @@ int editor_display(EDITOR_DATA *p_editor_data)
 				case KEY_TIMEOUT:
 					goto cleanup;
 				case Ctrl('W'):
+				case Ctrl('X'):
 					loop = 0;
 					break;
 				case Ctrl('S'): // Start of line

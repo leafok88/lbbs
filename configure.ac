@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.69])
-AC_INIT([lbbs],[1.3.7])
+AC_INIT([lbbs],[1.3.8])
 AC_CONFIG_SRCDIR([src/])
 AC_CONFIG_MACRO_DIRS([m4])
 AM_INIT_AUTOMAKE([foreign])
