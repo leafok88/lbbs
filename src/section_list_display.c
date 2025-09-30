@@ -15,6 +15,7 @@
  ***************************************************************************/
 
 #include "article_cache.h"
+#include "article_op.h"
 #include "article_post.h"
 #include "article_view_log.h"
 #include "article_del.h"
@@ -38,16 +39,17 @@ static int section_topic_view_tid = -1;
 enum select_cmd_t
 {
 	EXIT_SECTION = 0,
-	VIEW_ARTICLE = 1,
-	CHANGE_PAGE = 2,
-	SHOW_HELP = 3,
-	CHANGE_NAME_DISPLAY = 4,
-	POST_ARTICLE = 5,
-	EDIT_ARTICLE = 6,
-	DELETE_ARTICLE = 7,
-	FIRST_TOPIC_ARTICLE = 8,
-	LAST_TOPIC_ARTICLE = 9,
-	VIEW_EX_DIR = 10,
+	VIEW_ARTICLE,
+	CHANGE_PAGE,
+	SHOW_HELP,
+	CHANGE_NAME_DISPLAY,
+	POST_ARTICLE,
+	EDIT_ARTICLE,
+	DELETE_ARTICLE,
+	QUERY_ARTICLE,
+	FIRST_TOPIC_ARTICLE,
+	LAST_TOPIC_ARTICLE,
+	VIEW_EX_DIR,
 };
 
 static int section_list_draw_items(int page_id, ARTICLE *p_articles[], int article_count, int display_nickname, int ontop_start_offset)
@@ -238,9 +240,23 @@ static enum select_cmd_t section_list_select(int total_page, int item_count, int
 		case Ctrl('P'):
 			return POST_ARTICLE;
 		case 'E':
-			return EDIT_ARTICLE;
+			if (item_count > 0)
+			{
+				return EDIT_ARTICLE;
+			}
+			break;
 		case 'd':
-			return DELETE_ARTICLE;
+			if (item_count > 0)
+			{
+				return DELETE_ARTICLE;
+			}
+			break;
+		case Ctrl('Q'):
+			if (item_count > 0)
+			{
+				return QUERY_ARTICLE;
+			}
+			break;
 		case KEY_HOME:
 			*p_page_id = 0;
 		case 'P':
@@ -293,9 +309,17 @@ static enum select_cmd_t section_list_select(int total_page, int item_count, int
 			}
 			break;
 		case '=':
-			return FIRST_TOPIC_ARTICLE;
+			if (item_count > 0)
+			{
+				return FIRST_TOPIC_ARTICLE;
+			}
+			break;
 		case '\\':
-			return LAST_TOPIC_ARTICLE;
+			if (item_count > 0)
+			{
+				return LAST_TOPIC_ARTICLE;
+			}
+			break;
 		case 'h':
 			return SHOW_HELP;
 		case 'x':
@@ -767,6 +791,17 @@ int section_list_display(const char *sname)
 					log_error("query_section_articles(sid=%d, page_id=%d) error\n", p_section->sid, page_id);
 					return -3;
 				}
+			}
+			if (section_list_draw_screen(sname, stitle, master_list, display_nickname) < 0)
+			{
+				log_error("section_list_draw_screen() error\n");
+				return -2;
+			}
+			break;
+		case QUERY_ARTICLE:
+			if ((ret = display_article_meta(p_articles[selected_index]->aid)) < 0)
+			{
+				log_error("display_article_meta(aid=%d) error\n", p_articles[selected_index]->aid);
 			}
 			if (section_list_draw_screen(sname, stitle, master_list, display_nickname) < 0)
 			{
