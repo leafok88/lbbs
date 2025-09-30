@@ -61,6 +61,7 @@ static int section_list_draw_items(int page_id, ARTICLE *p_articles[], int artic
 	int eol;
 	int len;
 	int i;
+	size_t j;
 	char article_flag;
 	int is_viewed;
 	time_t tm_now;
@@ -111,7 +112,26 @@ static int section_list_draw_items(int page_id, ARTICLE *p_articles[], int artic
 		strncpy(title_f, (p_articles[i]->tid == 0 ? "● " : ""), sizeof(title_f) - 1);
 		title_f[sizeof(title_f) - 1] = '\0';
 		strncat(title_f, (p_articles[i]->transship ? "[转载]" : ""), sizeof(title_f) - 1 - strnlen(title_f, sizeof(title_f)));
-		strncat(title_f, p_articles[i]->title, sizeof(title_f) - 1 - strnlen(title_f, sizeof(title_f)));
+
+		// Rewrite title with "Re: Re: " prefix into "Re: ... "
+		j = 0;
+		if (p_articles[i]->tid != 0)
+		{
+			while (strncmp(p_articles[i]->title + j, "Re: ", strlen("Re: ")) == 0)
+			{
+				j += strlen("Re: ");
+			}
+			if (j >= strlen("Re: Re: "))
+			{
+				strncat(title_f, "Re: ... ", sizeof(title_f) - 1 - strnlen(title_f, sizeof(title_f)));
+			}
+			else
+			{
+				j = 0;
+			}
+		}
+		strncat(title_f, p_articles[i]->title + j, sizeof(title_f) - 1 - strnlen(title_f, sizeof(title_f)));
+
 		len = split_line(title_f, 47 - (display_nickname ? 8 : 0), &eol, &title_f_len, 1);
 		if (title_f[len] != '\0')
 		{
@@ -124,8 +144,8 @@ static int section_list_draw_items(int page_id, ARTICLE *p_articles[], int artic
 			prints("   \033[1;33m[提示]\033[m %c %s%*s %s %s%s\033[m",
 				   article_flag,
 				   (display_nickname ? p_articles[i]->nickname : p_articles[i]->username),
-				   (display_nickname ? BBS_nickname_max_len - (int)strnlen(p_articles[i]->nickname, sizeof(p_articles[i]->nickname))
-									 : BBS_username_max_len - (int)strnlen(p_articles[i]->username, sizeof(p_articles[i]->username))),
+				   (display_nickname ? BBS_nickname_max_len / 2 - str_length(p_articles[i]->nickname, 1)
+									 : BBS_username_max_len - str_length(p_articles[i]->username, 1)),
 				   "",
 				   str_time,
 				   (p_articles[i]->aid == section_topic_view_tid
@@ -146,8 +166,8 @@ static int section_list_draw_items(int page_id, ARTICLE *p_articles[], int artic
 				   p_articles[i]->aid,
 				   article_flag,
 				   (display_nickname ? p_articles[i]->nickname : p_articles[i]->username),
-				   (display_nickname ? BBS_nickname_max_len - (int)strnlen(p_articles[i]->nickname, sizeof(p_articles[i]->nickname))
-									 : BBS_username_max_len - (int)strnlen(p_articles[i]->username, sizeof(p_articles[i]->username))),
+				   (display_nickname ? BBS_nickname_max_len / 2 - str_length(p_articles[i]->nickname, 1)
+									 : BBS_username_max_len - str_length(p_articles[i]->username, 1)),
 				   "",
 				   str_time,
 				   (p_articles[i]->aid == section_topic_view_tid
