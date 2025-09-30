@@ -58,12 +58,23 @@ int main(int argc, char *argv[])
 	log_common_redir(STDOUT_FILENO);
 	log_error_redir(STDERR_FILENO);
 
+	printf("Test #1: lml_tag = 1\n");
 	for (i = 0; i < str_cnt; i++)
 	{
-		j = lml_plain(str_in[i], str_out_buf, sizeof(str_out_buf));
+		j = lml_plain(str_in[i], str_out_buf, sizeof(str_out_buf), 1);
 
 		printf("Input(len=%ld): %s\nOutput(len=%d): %s\n", strlen(str_in[i]), str_in[i], j, str_out_buf);
 	}
+	printf("Test #1: Done\n");
+
+	printf("Test #2: lml_tag = 0\n");
+	for (i = 0; i < str_cnt; i++)
+	{
+		j = lml_plain(str_in[i], str_out_buf, sizeof(str_out_buf), 0);
+
+		printf("Input(len=%ld): %s\nOutput(len=%d): %s\n", strlen(str_in[i]), str_in[i], j, str_out_buf);
+	}
+	printf("Test #2: Done\n");
 
 	log_end();
 

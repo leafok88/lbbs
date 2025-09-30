@@ -135,7 +135,7 @@ int article_cache_generate(const char *cache_dir, const ARTICLE *p_article, cons
 	}
 
 	// Apply LML render to content body
-	cache.data_len = header_len + (size_t)lml_plain(content, content_f, ARTICLE_CONTENT_MAX_LEN);
+	cache.data_len = header_len + (size_t)lml_plain(content, content_f, ARTICLE_CONTENT_MAX_LEN, 1);
 
 	cache.line_total = header_line_cnt +
 					   split_data_lines(content_f, SCREEN_COLS, cache.line_offsets + header_line_cnt, MAX_SPLIT_FILE_LINES - header_line_cnt, 1, NULL);
