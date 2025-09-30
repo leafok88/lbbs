@@ -61,6 +61,7 @@ static int section_list_draw_items(int page_id, ARTICLE *p_articles[], int artic
 	int eol;
 	int len;
 	int i;
+	size_t j;
 	char article_flag;
 	int is_viewed;
 	time_t tm_now;
@@ -111,7 +112,26 @@ static int section_list_draw_items(int page_id, ARTICLE *p_articles[], int artic
 		strncpy(title_f, (p_articles[i]->tid == 0 ? "¡ñ " : ""), sizeof(title_f) - 1);
 		title_f[sizeof(title_f) - 1] = '\0';
 		strncat(title_f, (p_articles[i]->transship ? "[×ªÔØ]" : ""), sizeof(title_f) - 1 - strnlen(title_f, sizeof(title_f)));
-		strncat(title_f, p_articles[i]->title, sizeof(title_f) - 1 - strnlen(title_f, sizeof(title_f)));
+
+		// Rewrite title with "Re: Re: " prefix into "Re: ... "
+		j = 0;
+		if (p_articles[i]->tid != 0)
+		{
+			while (strncmp(p_articles[i]->title + j, "Re: ", strlen("Re: ")) == 0)
+			{
+				j += strlen("Re: ");
+			}
+			if (j >= strlen("Re: Re: "))
+			{
+				strncat(title_f, "Re: ... ", sizeof(title_f) - 1 - strnlen(title_f, sizeof(title_f)));
+			}
+			else
+			{
+				j = 0;
+			}
+		}
+		strncat(title_f, p_articles[i]->title + j, sizeof(title_f) - 1 - strnlen(title_f, sizeof(title_f)));
+
 		len = split_line(title_f, 47 - (display_nickname ? 8 : 0), &eol, &title_f_len, 1);
 		if (title_f[len] != '\0')
 		{
