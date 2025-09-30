@@ -23,7 +23,7 @@ int display_article_meta(int32_t aid)
 {
 	clearscr();
 	moveto(3, 1);
-	prints("Webç‰ˆ æ–‡ç« é“¾æ¥ï¼š");
+	prints("Web°æ ÎÄÕÂÁ´½Ó£º");
 	moveto(4, 1);
 	prints("http://%s/bbs/view_article.php?id=%d#%d", BBS_server, aid, aid);
 	press_any_key();
