@@ -1,5 +1,5 @@
 /***************************************************************************
-							lml.h  -  description
+					   article_op.c  -  description
 							 -------------------
 	Copyright            : (C) 2004-2025 by Leaflet
 	Email                : leaflet@leafok.com
@@ -14,11 +14,19 @@
  *                                                                         *
  ***************************************************************************/
 
-#ifndef _LML_H_
-#define _LML_H_
+#include "article_op.h"
+#include "bbs.h"
+#include "io.h"
+#include "screen.h"
 
-#include <stddef.h>
+int display_article_meta(int32_t aid)
+{
+	clearscr();
+	moveto(3, 1);
+	prints("Web版 文章链接：");
+	moveto(4, 1);
+	prints("http://%s/bbs/view_article.php?id=%d#%d", BBS_server, aid, aid);
+	press_any_key();
 
-extern int lml_plain(const char *str_in, char *str_out, int buf_len, int lml_tag);
-
-#endif //_LML_H_
+	return 0;
+}

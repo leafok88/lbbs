@@ -807,7 +807,7 @@ int editor_display(EDITOR_DATA *p_editor_data)
 							{
 								col_pos = 1;
 							}
-							if (ch != CR)
+							if (offset_out > 0)
 							{
 								col_pos += (str_len == 1 ? 1 : 2);
 							}

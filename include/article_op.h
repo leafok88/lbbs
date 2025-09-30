@@ -1,5 +1,5 @@
 /***************************************************************************
-							lml.h  -  description
+					   article_op.h  -  description
 							 -------------------
 	Copyright            : (C) 2004-2025 by Leaflet
 	Email                : leaflet@leafok.com
@@ -14,11 +14,11 @@
  *                                                                         *
  ***************************************************************************/
 
-#ifndef _LML_H_
-#define _LML_H_
+#ifndef _ARTICLE_OP_H_
+#define _ARTICLE_OP_H_
 
-#include <stddef.h>
+#include <stdint.h>
 
-extern int lml_plain(const char *str_in, char *str_out, int buf_len, int lml_tag);
+extern int display_article_meta(int32_t aid);
 
-#endif //_LML_H_
+#endif //_ARTICLE_OP_H_
