@@ -19,6 +19,6 @@
 
 #include <stddef.h>
 
-extern int lml_plain(const char *str_in, char *str_out, int buf_len);
+extern int lml_plain(const char *str_in, char *str_out, int buf_len, int lml_tag);
 
 #endif //_LML_H_

@@ -97,38 +97,39 @@ static int lml_tag_quote_filter(const char *tag_name, const char *tag_param_buf,
 	return 0;
 }
 
-const static char *LML_tag_def[][3] = {
-	{"left", "[", ""},
-	{"right", "]", NULL},
-	{"bold", "\033[1m", ""}, // does not work in Fterm
-	{"/bold", "\033[22m", NULL},
-	{"b", "\033[1m", ""},
-	{"/b", "\033[22m", NULL},
-	{"italic", "\033[5m", ""},	 // use blink instead
-	{"/italic", "\033[m", NULL}, // \033[25m does not work in Fterm
-	{"i", "\033[5m", ""},
-	{"/i", "\033[m", NULL},
-	{"underline", "\033[4m", ""},
-	{"/underline", "\033[m", NULL}, // \033[24m does not work in Fterm
-	{"u", "\033[4m", ""},
-	{"/u", "\033[m", NULL},
-	{"color", NULL, (const char *)lml_tag_color_filter},
-	{"/color", "\033[m", NULL},
-	{"quote", NULL, (const char *)lml_tag_quote_filter},
-	{"/quote", NULL, (const char *)lml_tag_quote_filter},
-	{"url", "", ""},
-	{"/url", "(链接: %s)", NULL},
+const static char *LML_tag_def[][4] = {
+	// Definition of tuple: {lml_tag, lml_output, default_param | lml_filter_cb, no_lml_output}
+	{"left", "[", "", "[left]"},
+	{"right", "]", "", "[right]"},
+	{"bold", "\033[1m", "", ""}, // does not work in Fterm
+	{"/bold", "\033[22m", NULL, ""},
+	{"b", "\033[1m", "", ""},
+	{"/b", "\033[22m", NULL, ""},
+	{"italic", "\033[5m", "", ""},	 // use blink instead
+	{"/italic", "\033[m", NULL, ""}, // \033[25m does not work in Fterm
+	{"i", "\033[5m", "", ""},
+	{"/i", "\033[m", NULL, ""},
+	{"underline", "\033[4m", "", ""},
+	{"/underline", "\033[m", NULL, ""}, // \033[24m does not work in Fterm
+	{"u", "\033[4m", "", ""},
+	{"/u", "\033[m", NULL, ""},
+	{"color", NULL, (const char *)lml_tag_color_filter, ""},
+	{"/color", "\033[m", NULL, ""},
+	{"quote", NULL, (const char *)lml_tag_quote_filter, ""},
+	{"/quote", NULL, (const char *)lml_tag_quote_filter, ""},
+	{"url", "", "", ""},
+	{"/url", "(链接: %s)", NULL, "(链接: %s)"},
 	{"link", "", ""},
-	{"/link", "(链接: %s)", NULL},
+	{"/link", "(链接: %s)", NULL, "(链接: %s)"},
 	{"email", "", ""},
-	{"/email", "(Email: %s)", NULL},
+	{"/email", "(Email: %s)", NULL, "(Email: %s)"},
 	{"user", "", ""},
-	{"/user", "(用户: %s)", NULL},
+	{"/user", "(用户: %s)", NULL, "(用户: %s)"},
 	{"article", "", ""},
-	{"/article", "(文章: %s)", NULL},
-	{"image", "(图片: %s)", ""},
-	{"flash", "(Flash: %s)", ""},
-	{"bwf", "\033[1;31m****\033[m", ""},
+	{"/article", "(文章: %s)", NULL, "(文章: %s)"},
+	{"image", "(图片: %s)", "", "(图片: %s)"},
+	{"flash", "(Flash: %s)", "", "(Flash: %s)"},
+	{"bwf", "\033[1;31m****\033[m", "", "****"},
 };
 
 #define LML_TAG_COUNT 31
@@ -151,7 +152,7 @@ inline static void lml_init(void)
 	}
 }
 
-int lml_plain(const char *str_in, char *str_out, int buf_len)
+int lml_plain(const char *str_in, char *str_out, int buf_len, int lml_tag)
 {
 	char c;
 	char tag_param_buf[LML_TAG_PARAM_BUF_LEN];
@@ -172,7 +173,7 @@ int lml_plain(const char *str_in, char *str_out, int buf_len)
 
 	for (i = 0; str_in[i] != '\0'; i++)
 	{
-		if (new_line)
+		if (lml_tag && new_line)
 		{
 			if (fb_quote_level > 0)
 			{
@@ -287,14 +288,28 @@ int lml_plain(const char *str_in, char *str_out, int buf_len)
 								strncpy(tag_param_buf, LML_tag_def[k][2], LML_TAG_PARAM_BUF_LEN - 1);
 								tag_param_buf[LML_TAG_PARAM_BUF_LEN - 1] = '\0';
 							}
-							if (LML_tag_def[k][1] != NULL)
+							if (lml_tag)
 							{
-								tag_output_len = snprintf(tag_output_buf, LML_TAG_OUTPUT_BUF_LEN, LML_tag_def[k][1], tag_param_buf);
+								if (LML_tag_def[k][1] != NULL)
+								{
+									tag_output_len = snprintf(tag_output_buf, LML_TAG_OUTPUT_BUF_LEN, LML_tag_def[k][1], tag_param_buf);
+								}
+								else
+								{
+									tag_output_len = ((lml_tag_filter_cb)LML_tag_def[k][2])(
+										LML_tag_def[k][0], tag_param_buf, tag_output_buf, LML_TAG_OUTPUT_BUF_LEN);
+								}
 							}
 							else
 							{
-								tag_output_len = ((lml_tag_filter_cb)LML_tag_def[k][2])(
-									LML_tag_def[k][0], tag_param_buf, tag_output_buf, LML_TAG_OUTPUT_BUF_LEN);
+								if (LML_tag_def[k][3] != NULL)
+								{
+									tag_output_len = snprintf(tag_output_buf, LML_TAG_OUTPUT_BUF_LEN, LML_tag_def[k][3], tag_param_buf);
+								}
+								else
+								{
+									tag_output_len = 0;
+								}
 							}
 							if (j + tag_output_len >= buf_len)
 							{
@@ -353,7 +368,7 @@ int lml_plain(const char *str_in, char *str_out, int buf_len)
 		}
 	}
 
-	if (lml_tag_quote_level > 0)
+	if (lml_tag && lml_tag_quote_level > 0)
 	{
 		tag_output_len = snprintf(tag_output_buf, LML_TAG_OUTPUT_BUF_LEN, "\033[m");
 		if (j + tag_output_len >= buf_len)

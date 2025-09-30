@@ -837,7 +837,7 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 		}
 
 		// Apply LML render to content body
-		len = lml_plain(row[1], content_f, ARTICLE_CONTENT_MAX_LEN);
+		len = lml_plain(row[1], content_f, ARTICLE_CONTENT_MAX_LEN, 0);
 		content_f[len] = '\0';
 
 		// Remove control sequence
