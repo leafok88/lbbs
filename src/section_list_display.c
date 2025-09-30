@@ -144,8 +144,8 @@ static int section_list_draw_items(int page_id, ARTICLE *p_articles[], int artic
 			prints("   \033[1;33m[提示]\033[m %c %s%*s %s %s%s\033[m",
 				   article_flag,
 				   (display_nickname ? p_articles[i]->nickname : p_articles[i]->username),
-				   (display_nickname ? BBS_nickname_max_len - (int)strnlen(p_articles[i]->nickname, sizeof(p_articles[i]->nickname))
-									 : BBS_username_max_len - (int)strnlen(p_articles[i]->username, sizeof(p_articles[i]->username))),
+				   (display_nickname ? BBS_nickname_max_len / 2 - str_length(p_articles[i]->nickname, 1)
+									 : BBS_username_max_len - str_length(p_articles[i]->username, 1)),
 				   "",
 				   str_time,
 				   (p_articles[i]->aid == section_topic_view_tid
@@ -166,8 +166,8 @@ static int section_list_draw_items(int page_id, ARTICLE *p_articles[], int artic
 				   p_articles[i]->aid,
 				   article_flag,
 				   (display_nickname ? p_articles[i]->nickname : p_articles[i]->username),
-				   (display_nickname ? BBS_nickname_max_len - (int)strnlen(p_articles[i]->nickname, sizeof(p_articles[i]->nickname))
-									 : BBS_username_max_len - (int)strnlen(p_articles[i]->username, sizeof(p_articles[i]->username))),
+				   (display_nickname ? BBS_nickname_max_len / 2 - str_length(p_articles[i]->nickname, 1)
+									 : BBS_username_max_len - str_length(p_articles[i]->username, 1)),
 				   "",
 				   str_time,
 				   (p_articles[i]->aid == section_topic_view_tid
