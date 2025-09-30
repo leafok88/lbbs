@@ -206,6 +206,7 @@ int append_articles_from_db(int32_t start_aid, int global_lock, int article_coun
 	int article_count = 0;
 	int ret = 0;
 	int i;
+	size_t j;
 
 	db = db_open();
 	if (db == NULL)
@@ -267,6 +268,19 @@ int append_articles_from_db(int32_t start_aid, int global_lock, int article_coun
 		article.nickname[sizeof(article.nickname) - 1] = '\0';
 		strncpy(article.title, row[i++], sizeof(article.title) - 1);
 		article.title[sizeof(article.title) - 1] = '\0';
+
+		// Rewrite title with "Re: Re: " prefix into "Re: ... "
+		if (article.tid != 0)
+		{
+			for (j = 0; strncmp(article.title + j, "Re: ", strlen("Re: ")) == 0; j += strlen("Re: "))
+				;
+			if (j >= strlen("Re: Re: "))
+			{
+				memcpy(article.title, "Re: ... ", strlen("Re: ... "));
+				memmove(article.title + strlen("Re: ... "), article.title + j, sizeof(article.title) - 1 - j);
+				article.title[sizeof(article.title) - 1 - j] = '\0';
+			}
+		}
 
 		article.sub_dt = atol(row[i++]);
 
