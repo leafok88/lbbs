@@ -1073,6 +1073,7 @@ int editor_display(EDITOR_DATA *p_editor_data)
 					col_pos = MIN(col_pos, MAX(1, p_editor_data->display_line_lengths[line_current - output_current_row + row_pos]));
 					clrline(output_current_row, SCREEN_ROWS);
 					break;
+				case Ctrl('Q'):
 				case KEY_F1:
 					if (!show_help) // Not reentrant
 					{
