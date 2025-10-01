@@ -19,6 +19,7 @@
 #include "editor.h"
 #include "io.h"
 #include "log.h"
+#include "login.h"
 #include "memory_pool.h"
 #include "str_process.h"
 #include <stdlib.h>
@@ -730,6 +731,12 @@ int editor_display(EDITOR_DATA *p_editor_data)
 				{
 					BBS_last_access_tm = time(NULL);
 
+					// Refresh current action while user input
+					if (user_online_update(NULL) < 0)
+					{
+						log_error("user_online_update(NULL) error\n");
+					}
+
 					if (str_len == 0) // ch >= 32 && ch < 127
 					{
 						input_str[0] = (char)ch;
@@ -807,6 +814,12 @@ int editor_display(EDITOR_DATA *p_editor_data)
 				else if (ch == KEY_DEL || ch == BACKSPACE) // Del
 				{
 					BBS_last_access_tm = time(NULL);
+
+					// Refresh current action while user input
+					if (user_online_update(NULL) < 0)
+					{
+						log_error("user_online_update(NULL) error\n");
+					}
 
 					if (ch == BACKSPACE)
 					{
@@ -1084,6 +1097,12 @@ int editor_display(EDITOR_DATA *p_editor_data)
 				}
 
 				BBS_last_access_tm = time(NULL);
+
+				// Refresh current action while user input
+				if (user_online_update(NULL) < 0)
+				{
+					log_error("user_online_update(NULL) error\n");
+				}
 
 				if (input_ok)
 				{
