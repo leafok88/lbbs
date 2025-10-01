@@ -526,13 +526,15 @@ int user_online_update(const char *action)
 	MYSQL *db = NULL;
 	char sql[SQL_BUFFER_LEN];
 
-	if (strcmp(BBS_current_action, action) == 0) // No change
+	if (strcmp(BBS_current_action, action) == 0 &&
+		time(NULL) - BBS_current_action_tm < BBS_current_action_refresh_interval) // No change
 	{
 		return 0;
 	}
 
 	strncpy(BBS_current_action, action, sizeof(BBS_current_action) - 1);
 	BBS_current_action[sizeof(BBS_current_action) - 1] = '\0';
+	BBS_current_action_tm = time(NULL);
 
 	db = db_open();
 	if (db == NULL)

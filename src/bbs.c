@@ -44,6 +44,7 @@ time_t BBS_login_tm;
 time_t BBS_last_access_tm;
 
 char BBS_current_action[BBS_current_action_max_len + 1];
+time_t BBS_current_action_tm;
 
 char *setuserfile(char *buf, size_t len, const char *filename)
 {
