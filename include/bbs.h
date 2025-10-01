@@ -62,6 +62,8 @@ extern time_t BBS_last_access_tm;
 #define BBS_current_action_max_len 20
 
 extern char BBS_current_action[BBS_current_action_max_len + 1];
+extern time_t BBS_current_action_tm;
+#define BBS_current_action_refresh_interval 60 // 1 minute
 
 extern char *setuserfile(char *buf, size_t len, const char *filename);
 

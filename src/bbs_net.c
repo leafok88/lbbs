@@ -507,6 +507,13 @@ int bbsnet_connect(int n)
 					{
 						input_buf_len += ret;
 						BBS_last_access_tm = time(NULL);
+
+						// Refresh current action while user input
+						if (user_online_update("BBS_NET") < 0)
+						{
+							log_error("user_online_update(BBS_NET) error\n");
+						}
+
 						continue;
 					}
 				}
