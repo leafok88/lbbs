@@ -291,6 +291,17 @@ static enum select_cmd_t section_list_select(int total_page, int item_count, int
 					(*p_page_id)--;
 					*p_selected_index = BBS_article_limit_per_page - 1;
 				}
+				else if (ch == KEY_UP || ch == 'k') // Rotate to the tail of section list
+				{
+					if (total_page > 0)
+					{
+						*p_page_id = total_page - 1;
+					}
+					if (item_count > 0)
+					{
+						*p_selected_index = item_count - 1;
+					}
+				}
 			}
 			else
 			{
@@ -318,9 +329,10 @@ static enum select_cmd_t section_list_select(int total_page, int item_count, int
 					(*p_page_id)++;
 					*p_selected_index = 0;
 				}
-				else // end of last page
+				else if (ch == KEY_DOWN || ch == 'j') // Rotate to the head of section list
 				{
-					return CHANGE_PAGE; // force refresh pages
+					*p_page_id = 0;
+					*p_selected_index = 0;
 				}
 			}
 			else
