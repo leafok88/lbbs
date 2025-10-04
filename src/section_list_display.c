@@ -49,6 +49,7 @@ enum select_cmd_t
 	QUERY_ARTICLE,
 	FIRST_TOPIC_ARTICLE,
 	LAST_TOPIC_ARTICLE,
+	SCAN_NEW_ARTICLE,
 	VIEW_EX_DIR,
 };
 
@@ -352,6 +353,12 @@ static enum select_cmd_t section_list_select(int total_page, int item_count, int
 				return LAST_TOPIC_ARTICLE;
 			}
 			break;
+		case 'S':
+			if (item_count > 0)
+			{
+				return SCAN_NEW_ARTICLE;
+			}
+			break;
 		case 'h':
 			return SHOW_HELP;
 		case 'x':
@@ -498,6 +505,7 @@ int section_list_display(const char *sname)
 	int direction;
 	ARTICLE article_new;
 	int page_id_cur;
+	const ARTICLE *p_article_unread;
 
 	p_section = section_list_find_by_name(sname);
 	if (p_section == NULL)
@@ -851,6 +859,37 @@ int section_list_display(const char *sname)
 			{
 				log_error("locate_article_in_section(sid=%d, aid=%d, direction=%d, step=%d) error\n",
 						  p_section->sid, p_articles[selected_index]->aid, direction, BBS_article_limit_per_section);
+				return -3;
+			}
+			else if (ret > 0 && page_id != page_id_cur) // found and page changed
+			{
+				ret = query_section_articles(p_section, page_id, p_articles, &article_count, &page_count, &ontop_start_offset);
+				if (ret < 0)
+				{
+					log_error("query_section_articles(sid=%d, page_id=%d) error\n", p_section->sid, page_id);
+					return -3;
+				}
+			}
+			break;
+		case SCAN_NEW_ARTICLE:
+			ret = scan_unread_article_in_section(p_section, p_articles[selected_index], &p_article_unread);
+			if (ret < 0)
+			{
+				log_error("scan_unread_article_in_section(sid=%d, aid=%d) error\n",
+						  p_section->sid, p_articles[selected_index]->aid);
+				return -3;
+			}
+			else if (ret == 0) // not found
+			{
+				break;
+			}
+			page_id_cur = page_id;
+			ret = locate_article_in_section(p_section, p_article_unread, 0, 0,
+											&page_id, &selected_index, &article_count);
+			if (ret < 0)
+			{
+				log_error("locate_article_in_section(sid=%d, aid=%d, direction=0, step=0) error\n",
+						  p_section->sid, p_article_unread->aid);
 				return -3;
 			}
 			else if (ret > 0 && page_id != page_id_cur) // found and page changed
