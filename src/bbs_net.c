@@ -287,7 +287,7 @@ int bbsnet_connect(int n)
 		return -1;
 	}
 
-	ev.events = EPOLLOUT;
+	ev.events = EPOLLOUT | EPOLLET;
 	ev.data.fd = sock;
 	if (epoll_ctl(epollfd, EPOLL_CTL_ADD, sock, &ev) == -1)
 	{
@@ -295,7 +295,7 @@ int bbsnet_connect(int n)
 		goto cleanup;
 	}
 
-	ev.events = EPOLLIN;
+	ev.events = EPOLLIN | EPOLLET;
 	ev.data.fd = STDIN_FILENO;
 	if (epoll_ctl(epollfd, EPOLL_CTL_ADD, STDIN_FILENO, &ev) == -1)
 	{
@@ -404,7 +404,7 @@ int bbsnet_connect(int n)
 		goto cleanup;
 	}
 
-	ev.events = EPOLLOUT;
+	ev.events = EPOLLOUT | EPOLLET;
 	ev.data.fd = STDOUT_FILENO;
 	if (epoll_ctl(epollfd, EPOLL_CTL_ADD, STDOUT_FILENO, &ev) == -1)
 	{
@@ -441,229 +441,246 @@ int bbsnet_connect(int n)
 			{
 				break;
 			}
-			continue;
 		}
 
 		for (int i = 0; i < nfds; i++)
 		{
-			if (events[i].data.fd == STDIN_FILENO || stdin_read_wait)
+			if (events[i].data.fd == STDIN_FILENO)
 			{
 				stdin_read_wait = 1;
-				while (input_buf_len < sizeof(input_buf) && !SYS_server_exit)
+			}
+
+			if (events[i].data.fd == sock)
+			{
+				if (events[i].events & EPOLLIN)
 				{
-					if (SSH_v2)
+					sock_read_wait = 1;
+				}
+				if (events[i].events & EPOLLOUT)
+				{
+					sock_write_wait = 1;
+				}
+			}
+
+			if (events[i].data.fd == STDOUT_FILENO)
+			{
+				stdout_write_wait = 1;
+			}
+		}
+
+		if (stdin_read_wait)
+		{
+			while (input_buf_len < sizeof(input_buf) && !SYS_server_exit)
+			{
+				if (SSH_v2)
+				{
+					ret = ssh_channel_read_nonblocking(SSH_channel, input_buf + input_buf_len, sizeof(input_buf) - (uint32_t)input_buf_len, 0);
+					if (ret == SSH_ERROR)
 					{
-						ret = ssh_channel_read_nonblocking(SSH_channel, input_buf + input_buf_len, sizeof(input_buf) - (uint32_t)input_buf_len, 0);
-						if (ret == SSH_ERROR)
-						{
-							log_error("ssh_channel_read_nonblocking() error: %s\n", ssh_get_error(SSH_session));
-							loop = 0;
-							break;
-						}
-						else if (ret == SSH_EOF)
-						{
-							stdin_read_wait = 0;
-							loop = 0;
-							break;
-						}
-						else if (ret == 0)
-						{
-							stdin_read_wait = 0;
-							break; // Check whether channel is still open
-						}
+						log_error("ssh_channel_read_nonblocking() error: %s\n", ssh_get_error(SSH_session));
+						loop = 0;
+						break;
 					}
-					else
+					else if (ret == SSH_EOF)
 					{
-						ret = (int)read(STDIN_FILENO, input_buf + input_buf_len, sizeof(input_buf) - (size_t)input_buf_len);
-					}
-					if (ret < 0)
-					{
-						if (errno == EAGAIN || errno == EWOULDBLOCK)
-						{
-							stdin_read_wait = 0;
-							break;
-						}
-						else if (errno == EINTR)
-						{
-							continue;
-						}
-						else
-						{
-							log_error("read(STDIN) error (%d)\n", errno);
-							loop = 0;
-							break;
-						}
-					}
-					else if (ret == 0) // broken pipe
-					{
-#ifdef _DEBUG
-						log_error("read(STDIN) EOF\n");
-#endif
 						stdin_read_wait = 0;
 						loop = 0;
 						break;
 					}
-					else
+					else if (ret == 0)
 					{
-						input_buf_len += ret;
-						BBS_last_access_tm = time(NULL);
-
-						// Refresh current action while user input
-						if (user_online_update("BBS_NET") < 0)
-						{
-							log_error("user_online_update(BBS_NET) error\n");
-						}
-
-						continue;
+						stdin_read_wait = 0;
+						break; // Check whether channel is still open
 					}
 				}
-			}
-
-			if (events[i].data.fd == sock || sock_write_wait) // EPOLLOUT
-			{
-				sock_write_wait = 1;
-				while (input_buf_offset < input_buf_len && !SYS_server_exit)
+				else
 				{
-					ret = (int)write(sock, input_buf + input_buf_offset, (size_t)(input_buf_len - input_buf_offset));
-					if (ret < 0)
+					ret = (int)read(STDIN_FILENO, input_buf + input_buf_len, sizeof(input_buf) - (size_t)input_buf_len);
+				}
+				if (ret < 0)
+				{
+					if (errno == EAGAIN || errno == EWOULDBLOCK)
 					{
-						if (errno == EAGAIN || errno == EWOULDBLOCK)
-						{
-							sock_write_wait = 0;
-							break;
-						}
-						else if (errno == EINTR)
-						{
-							continue;
-						}
-						else
-						{
-							log_error("write(socket) error (%d)\n", errno);
-							loop = 0;
-							break;
-						}
+						stdin_read_wait = 0;
+						break;
 					}
-					else if (ret == 0) // broken pipe
+					else if (errno == EINTR)
 					{
+						continue;
+					}
+					else
+					{
+						log_error("read(STDIN) error (%d)\n", errno);
+						loop = 0;
+						break;
+					}
+				}
+				else if (ret == 0) // broken pipe
+				{
 #ifdef _DEBUG
-						log_error("write(socket) EOF\n");
+					log_error("read(STDIN) EOF\n");
 #endif
+					stdin_read_wait = 0;
+					loop = 0;
+					break;
+				}
+				else
+				{
+					input_buf_len += ret;
+					BBS_last_access_tm = time(NULL);
+
+					// Refresh current action while user input
+					if (user_online_update("BBS_NET") < 0)
+					{
+						log_error("user_online_update(BBS_NET) error\n");
+					}
+
+					continue;
+				}
+			}
+		}
+
+		if (sock_write_wait)
+		{
+			while (input_buf_offset < input_buf_len && !SYS_server_exit)
+			{
+				ret = (int)write(sock, input_buf + input_buf_offset, (size_t)(input_buf_len - input_buf_offset));
+				if (ret < 0)
+				{
+					if (errno == EAGAIN || errno == EWOULDBLOCK)
+					{
 						sock_write_wait = 0;
-						loop = 0;
 						break;
+					}
+					else if (errno == EINTR)
+					{
+						continue;
 					}
 					else
 					{
-						input_buf_offset += ret;
-						if (input_buf_offset >= input_buf_len) // Output buffer complete
-						{
-							input_buf_offset = 0;
-							input_buf_len = 0;
-							break;
-						}
-						continue;
+						log_error("write(socket) error (%d)\n", errno);
+						loop = 0;
+						break;
 					}
 				}
-			}
-
-			if (events[i].data.fd == sock || sock_read_wait) // EPOLLIN
-			{
-				sock_read_wait = 1;
-				while (output_buf_len < sizeof(output_buf) && !SYS_server_exit)
+				else if (ret == 0) // broken pipe
 				{
-					ret = (int)read(sock, output_buf + output_buf_len, sizeof(output_buf) - (size_t)output_buf_len);
-					if (ret < 0)
-					{
-						if (errno == EAGAIN || errno == EWOULDBLOCK)
-						{
-							sock_read_wait = 0;
-							break;
-						}
-						else if (errno == EINTR)
-						{
-							continue;
-						}
-						else
-						{
-							log_error("read(socket) error (%d)\n", errno);
-							loop = 0;
-							break;
-						}
-					}
-					else if (ret == 0) // broken pipe
-					{
 #ifdef _DEBUG
-						log_error("read(socket) EOF\n");
+					log_error("write(socket) EOF\n");
 #endif
+					sock_write_wait = 0;
+					loop = 0;
+					break;
+				}
+				else
+				{
+					input_buf_offset += ret;
+					if (input_buf_offset >= input_buf_len) // Output buffer complete
+					{
+						input_buf_offset = 0;
+						input_buf_len = 0;
+						break;
+					}
+					continue;
+				}
+			}
+		}
+
+		if (sock_read_wait)
+		{
+			while (output_buf_len < sizeof(output_buf) && !SYS_server_exit)
+			{
+				ret = (int)read(sock, output_buf + output_buf_len, sizeof(output_buf) - (size_t)output_buf_len);
+				if (ret < 0)
+				{
+					if (errno == EAGAIN || errno == EWOULDBLOCK)
+					{
 						sock_read_wait = 0;
-						loop = 0;
 						break;
+					}
+					else if (errno == EINTR)
+					{
+						continue;
 					}
 					else
 					{
-						output_buf_len += ret;
-						continue;
+						log_error("read(socket) error (%d)\n", errno);
+						loop = 0;
+						break;
 					}
 				}
-			}
-
-			if (events[i].data.fd == STDOUT_FILENO || stdout_write_wait)
-			{
-				stdout_write_wait = 1;
-				while (output_buf_offset < output_buf_len && !SYS_server_exit)
+				else if (ret == 0) // broken pipe
 				{
-					if (SSH_v2)
-					{
-						ret = ssh_channel_write(SSH_channel, output_buf + output_buf_offset, (uint32_t)(output_buf_len - output_buf_offset));
-						if (ret == SSH_ERROR)
-						{
-							log_error("ssh_channel_write() error: %s\n", ssh_get_error(SSH_session));
-							loop = 0;
-							break;
-						}
-					}
-					else
-					{
-						ret = (int)write(STDOUT_FILENO, output_buf + output_buf_offset, (size_t)(output_buf_len - output_buf_offset));
-					}
-					if (ret < 0)
-					{
-						if (errno == EAGAIN || errno == EWOULDBLOCK)
-						{
-							stdout_write_wait = 0;
-							break;
-						}
-						else if (errno == EINTR)
-						{
-							continue;
-						}
-						else
-						{
-							log_error("write(STDOUT) error (%d)\n", errno);
-							loop = 0;
-							break;
-						}
-					}
-					else if (ret == 0) // broken pipe
-					{
 #ifdef _DEBUG
-						log_error("write(STDOUT) EOF\n");
+					log_error("read(socket) EOF\n");
 #endif
-						stdout_write_wait = 0;
+					sock_read_wait = 0;
+					loop = 0;
+					break;
+				}
+				else
+				{
+					output_buf_len += ret;
+					continue;
+				}
+			}
+		}
+
+		if (stdout_write_wait)
+		{
+			while (output_buf_offset < output_buf_len && !SYS_server_exit)
+			{
+				if (SSH_v2)
+				{
+					ret = ssh_channel_write(SSH_channel, output_buf + output_buf_offset, (uint32_t)(output_buf_len - output_buf_offset));
+					if (ret == SSH_ERROR)
+					{
+						log_error("ssh_channel_write() error: %s\n", ssh_get_error(SSH_session));
 						loop = 0;
 						break;
 					}
-					else
+				}
+				else
+				{
+					ret = (int)write(STDOUT_FILENO, output_buf + output_buf_offset, (size_t)(output_buf_len - output_buf_offset));
+				}
+				if (ret < 0)
+				{
+					if (errno == EAGAIN || errno == EWOULDBLOCK)
 					{
-						output_buf_offset += ret;
-						if (output_buf_offset >= output_buf_len) // Output buffer complete
-						{
-							output_buf_offset = 0;
-							output_buf_len = 0;
-							break;
-						}
+						stdout_write_wait = 0;
+						break;
+					}
+					else if (errno == EINTR)
+					{
 						continue;
 					}
+					else
+					{
+						log_error("write(STDOUT) error (%d)\n", errno);
+						loop = 0;
+						break;
+					}
+				}
+				else if (ret == 0) // broken pipe
+				{
+#ifdef _DEBUG
+					log_error("write(STDOUT) EOF\n");
+#endif
+					stdout_write_wait = 0;
+					loop = 0;
+					break;
+				}
+				else
+				{
+					output_buf_offset += ret;
+					if (output_buf_offset >= output_buf_len) // Output buffer complete
+					{
+						output_buf_offset = 0;
+						output_buf_len = 0;
+						break;
+					}
+					continue;
 				}
 			}
 		}
