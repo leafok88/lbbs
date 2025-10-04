@@ -15,6 +15,7 @@
  ***************************************************************************/
 
 #include "article_cache.h"
+#include "article_view_log.h"
 #include "bbs.h"
 #include "database.h"
 #include "ip_mask.h"
@@ -1020,6 +1021,51 @@ int locate_article_in_section(SECTION_LIST *p_section, const ARTICLE *p_article_
 	}
 
 	return (ret < 0 ? ret : (p_article == NULL ? 0 : 1));
+}
+
+int scan_unread_article_in_section(SECTION_LIST *p_section, const ARTICLE *p_article_cur, const ARTICLE **pp_article_unread)
+{
+	ARTICLE *p_article;
+	int ret = 0;
+
+	if (p_section == NULL || p_article_cur == NULL || pp_article_unread == NULL)
+	{
+		log_error("NULL pointer error\n");
+		return -1;
+	}
+
+	if (p_article_cur->sid != p_section->sid)
+	{
+		log_error("Inconsistent SID\n");
+		return -1;
+	}
+
+	// acquire lock of section
+	if ((ret = section_list_rd_lock(p_section)) < 0)
+	{
+		log_error("section_list_rd_lock(sid = %d) error\n", p_section->sid);
+		return -2;
+	}
+
+	*pp_article_unread = NULL;
+
+	for (p_article = p_article_cur->p_next; p_article != NULL && p_article != p_article_cur; p_article = p_article->p_next)
+	{
+		if (p_article->visible && !article_view_log_is_viewed(p_article->aid, &BBS_article_view_log))
+		{
+			*pp_article_unread = p_article;
+			break;
+		}
+	}
+
+	// release lock of section
+	if (section_list_rd_unlock(p_section) < 0)
+	{
+		log_error("section_list_rd_unlock(sid = %d) error\n", p_section->sid);
+		return -2;
+	}
+
+	return (p_article != NULL && p_article != p_article_cur ? 1 : 0);
 }
 
 int get_section_ex_menu_set(SECTION_LIST *p_section, MENU_SET *p_ex_menu_set)
