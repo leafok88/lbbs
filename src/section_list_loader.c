@@ -22,6 +22,7 @@
 #include "log.h"
 #include "menu.h"
 #include "section_list_loader.h"
+#include "user_priv.h"
 #include <errno.h>
 #include <signal.h>
 #include <stdio.h>
@@ -1051,7 +1052,7 @@ int scan_unread_article_in_section(SECTION_LIST *p_section, const ARTICLE *p_art
 
 	for (p_article = p_article_cur->p_next; p_article != NULL && p_article != p_article_cur; p_article = p_article->p_next)
 	{
-		if (p_article->visible && !article_view_log_is_viewed(p_article->aid, &BBS_article_view_log))
+		if (p_article->visible && p_article->uid != BBS_priv.uid && !article_view_log_is_viewed(p_article->aid, &BBS_article_view_log))
 		{
 			*pp_article_unread = p_article;
 			break;
