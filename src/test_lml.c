@@ -39,9 +39,10 @@ const char *str_in[] = {
 	": ABCDE[quote]FG\r\nab[/quote]cd[quote]ef[quote]g\r\n: : 012[/quote]345[/quote]6789\nABC[quote]DEFG",
 	"[35mabc[m",
 	"123456",
+	"[color red]Red[/color][plain][color blue]Blue[/color][plain]",
 };
 
-int str_cnt = 15;
+int str_cnt = 16;
 
 int main(int argc, char *argv[])
 {
