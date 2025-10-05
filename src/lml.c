@@ -24,7 +24,7 @@
 #define LML_TAG_PARAM_BUF_LEN 256
 #define LML_TAG_OUTPUT_BUF_LEN 1024
 
-typedef int (*lml_tag_filter_cb)(const char *tag_name, const char *tag_param_buf, char *tag_output_buf, size_t tag_output_buf_len);
+typedef int (*lml_tag_filter_cb)(const char *tag_name, const char *tag_param_buf, char *tag_output_buf, size_t tag_output_buf_len, int quote_mode);
 
 static int lml_tag_color_filter(const char *tag_name, const char *tag_param_buf, char *tag_output_buf, size_t tag_output_buf_len)
 {
@@ -73,7 +73,7 @@ static const char *lml_tag_quote_color[] = {
 
 static int lml_tag_quote_level = 0;
 
-static int lml_tag_quote_filter(const char *tag_name, const char *tag_param_buf, char *tag_output_buf, size_t tag_output_buf_len)
+static int lml_tag_quote_filter(const char *tag_name, const char *tag_param_buf, char *tag_output_buf, size_t tag_output_buf_len, int quote_mode)
 {
 	if (strcasecmp(tag_name, "quote") == 0)
 	{
@@ -97,8 +97,18 @@ static int lml_tag_quote_filter(const char *tag_name, const char *tag_param_buf,
 	return 0;
 }
 
+static int lml_tag_disabled = 0;
+
+static int lml_tag_disable_filter(const char *tag_name, const char *tag_param_buf, char *tag_output_buf, size_t tag_output_buf_len, int quote_mode)
+{
+	lml_tag_disabled = 1;
+
+	return snprintf(tag_output_buf, tag_output_buf_len, "%s", (quote_mode ? "" : "[plain]"));
+}
+
 const static char *lml_tag_def[][4] = {
-	// Definition of tuple: {lml_tag, lml_output, default_param | lml_filter_cb, no_lml_output}
+	// Definition of tuple: {lml_tag, lml_output, default_param | lml_filter_cb, quote_mode_output}
+	{"plain", NULL, (const char *)lml_tag_disable_filter, NULL},
 	{"left", "[", "", "[left]"},
 	{"right", "]", "", "[right]"},
 	{"bold", "\033[1m", "", ""}, // does not work in Fterm
@@ -119,13 +129,13 @@ const static char *lml_tag_def[][4] = {
 	{"/quote", NULL, (const char *)lml_tag_quote_filter, ""},
 	{"url", "", "", ""},
 	{"/url", "（链接: %s）", NULL, ""},
-	{"link", "", ""},
+	{"link", "", "", ""},
 	{"/link", "（链接: %s）", NULL, ""},
-	{"email", "", ""},
+	{"email", "", "", ""},
 	{"/email", "（Email: %s）", NULL, ""},
-	{"user", "", ""},
+	{"user", "", "", ""},
 	{"/user", "（用户: %s）", NULL, ""},
-	{"article", "", ""},
+	{"article", "", "", ""},
 	{"/article", "（文章: %s）", NULL, ""},
 	{"image", "（图片: %s）", "", "%s"},
 	{"flash", "（Flash: %s）", "", ""},
@@ -152,7 +162,7 @@ inline static void lml_init(void)
 	}
 }
 
-int lml_render(const char *str_in, char *str_out, int buf_len, int lml_tag)
+int lml_render(const char *str_in, char *str_out, int buf_len, int quote_mode)
 {
 	char c;
 	char tag_param_buf[LML_TAG_PARAM_BUF_LEN];
@@ -169,11 +179,12 @@ int lml_render(const char *str_in, char *str_out, int buf_len, int lml_tag)
 
 	lml_init();
 
+	lml_tag_disabled = 0;
 	lml_tag_quote_level = 0;
 
 	for (i = 0; str_in[i] != '\0'; i++)
 	{
-		if (lml_tag && new_line)
+		if (quote_mode && !lml_tag_disabled && new_line)
 		{
 			if (fb_quote_level > 0)
 			{
@@ -251,11 +262,11 @@ int lml_render(const char *str_in, char *str_out, int buf_len, int lml_tag)
 			continue; // ignore '\r'
 		}
 
-		if (str_in[i] == '[')
+		if (!lml_tag_disabled && str_in[i] == '[')
 		{
 			tag_start_pos = i + 1;
 		}
-		else if (str_in[i] == ']')
+		else if (!lml_tag_disabled && str_in[i] == ']')
 		{
 			if (tag_start_pos >= 0)
 			{
@@ -288,7 +299,7 @@ int lml_render(const char *str_in, char *str_out, int buf_len, int lml_tag)
 								strncpy(tag_param_buf, lml_tag_def[k][2], LML_TAG_PARAM_BUF_LEN - 1);
 								tag_param_buf[LML_TAG_PARAM_BUF_LEN - 1] = '\0';
 							}
-							if (lml_tag)
+							if (quote_mode)
 							{
 								if (lml_tag_def[k][1] != NULL)
 								{
@@ -297,7 +308,7 @@ int lml_render(const char *str_in, char *str_out, int buf_len, int lml_tag)
 								else
 								{
 									tag_output_len = ((lml_tag_filter_cb)lml_tag_def[k][2])(
-										lml_tag_def[k][0], tag_param_buf, tag_output_buf, LML_TAG_OUTPUT_BUF_LEN);
+										lml_tag_def[k][0], tag_param_buf, tag_output_buf, LML_TAG_OUTPUT_BUF_LEN, quote_mode);
 								}
 							}
 							else
@@ -308,7 +319,8 @@ int lml_render(const char *str_in, char *str_out, int buf_len, int lml_tag)
 								}
 								else
 								{
-									tag_output_len = 0;
+									tag_output_len = ((lml_tag_filter_cb)lml_tag_def[k][2])(
+										lml_tag_def[k][0], tag_param_buf, tag_output_buf, LML_TAG_OUTPUT_BUF_LEN, quote_mode);
 								}
 							}
 							if (j + tag_output_len >= buf_len)
@@ -330,7 +342,7 @@ int lml_render(const char *str_in, char *str_out, int buf_len, int lml_tag)
 				tag_start_pos = -1;
 			}
 		}
-		else if (tag_start_pos == -1) // not in LML tag
+		else if (lml_tag_disabled || tag_start_pos == -1) // not in LML tag
 		{
 			if (str_in[i] & 0b10000000) // head of multi-byte character
 			{
@@ -368,7 +380,7 @@ int lml_render(const char *str_in, char *str_out, int buf_len, int lml_tag)
 		}
 	}
 
-	if (lml_tag && lml_tag_quote_level > 0)
+	if (quote_mode && !lml_tag_disabled && lml_tag_quote_level > 0)
 	{
 		tag_output_len = snprintf(tag_output_buf, LML_TAG_OUTPUT_BUF_LEN, "\033[m");
 		if (j + tag_output_len >= buf_len)
