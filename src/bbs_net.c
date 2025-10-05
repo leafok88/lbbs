@@ -213,6 +213,9 @@ int bbsnet_io_buf_conv(iconv_t cd, char *p_buf, int *p_buf_len, int *p_buf_offse
 		{
 			if (errno == EINVAL) // Incomplete
 			{
+#ifdef _DEBUG
+				log_error("iconv(inbytes=%d, outbytes=%d) error: EINVAL\n", in_bytes, out_bytes);
+#endif
 				*p_buf_len = (int)(p_buf + *p_buf_len - in_buf);
 				*p_buf_offset = 0;
 				*p_conv_len = (int)(conv_size - out_bytes);
@@ -229,11 +232,13 @@ int bbsnet_io_buf_conv(iconv_t cd, char *p_buf, int *p_buf_len, int *p_buf_offse
 			{
 				if (in_bytes > out_bytes || out_bytes <= 0)
 				{
-					errno = E2BIG;
-					return -1;
+					log_error("iconv(inbytes=%d, outbytes=%d) error: EILSEQ and E2BIG\n", in_bytes, out_bytes);
+					return -2;
 				}
 
-				*out_buf++ = *in_buf++;
+				*out_buf = *in_buf;
+				in_buf++;
+				out_buf++;
 				in_bytes--;
 				out_bytes--;
 
