@@ -142,7 +142,7 @@ const static char *lml_tag_def[][4] = {
 	{"bwf", "\033[1;31m****\033[m", "", "****"},
 };
 
-#define LML_TAG_COUNT 31
+#define LML_TAG_COUNT 32
 
 static int lml_tag_name_len[LML_TAG_COUNT];
 static int lml_ready = 0;
