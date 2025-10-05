@@ -97,7 +97,7 @@ static int lml_tag_quote_filter(const char *tag_name, const char *tag_param_buf,
 	return 0;
 }
 
-const static char *LML_tag_def[][4] = {
+const static char *lml_tag_def[][4] = {
 	// Definition of tuple: {lml_tag, lml_output, default_param | lml_filter_cb, no_lml_output}
 	{"left", "[", "", "[left]"},
 	{"right", "]", "", "[right]"},
@@ -134,21 +134,21 @@ const static char *LML_tag_def[][4] = {
 
 #define LML_TAG_COUNT 31
 
-static int LML_tag_name_len[LML_TAG_COUNT];
-static int LML_init = 0;
+static int lml_tag_name_len[LML_TAG_COUNT];
+static int lml_ready = 0;
 
 inline static void lml_init(void)
 {
 	int i;
 
-	if (!LML_init)
+	if (!lml_ready)
 	{
 		for (i = 0; i < LML_TAG_COUNT; i++)
 		{
-			LML_tag_name_len[i] = (int)strlen(LML_tag_def[i][0]);
+			lml_tag_name_len[i] = (int)strlen(lml_tag_def[i][0]);
 		}
 
-		LML_init = 1;
+		lml_ready = 1;
 	}
 }
 
@@ -268,13 +268,13 @@ int lml_render(const char *str_in, char *str_out, int buf_len, int lml_tag)
 
 				for (k = 0; k < LML_TAG_COUNT; k++)
 				{
-					if (strncasecmp(LML_tag_def[k][0], str_in + tag_start_pos, (size_t)LML_tag_name_len[k]) == 0)
+					if (strncasecmp(lml_tag_def[k][0], str_in + tag_start_pos, (size_t)lml_tag_name_len[k]) == 0)
 					{
 						tag_param_pos = -1;
-						switch (str_in[tag_start_pos + LML_tag_name_len[k]])
+						switch (str_in[tag_start_pos + lml_tag_name_len[k]])
 						{
 						case ' ':
-							tag_param_pos = tag_start_pos + LML_tag_name_len[k] + 1;
+							tag_param_pos = tag_start_pos + lml_tag_name_len[k] + 1;
 							while (str_in[tag_param_pos] == ' ')
 							{
 								tag_param_pos++;
@@ -282,28 +282,28 @@ int lml_render(const char *str_in, char *str_out, int buf_len, int lml_tag)
 							strncpy(tag_param_buf, str_in + tag_param_pos, (size_t)MIN(tag_end_pos - tag_param_pos, LML_TAG_PARAM_BUF_LEN));
 							tag_param_buf[MIN(tag_end_pos - tag_param_pos, LML_TAG_PARAM_BUF_LEN)] = '\0';
 						case ']':
-							if (tag_param_pos == -1 && LML_tag_def[k][1] != NULL && LML_tag_def[k][2] != NULL) // Apply default param if not defined
+							if (tag_param_pos == -1 && lml_tag_def[k][1] != NULL && lml_tag_def[k][2] != NULL) // Apply default param if not defined
 							{
-								strncpy(tag_param_buf, LML_tag_def[k][2], LML_TAG_PARAM_BUF_LEN - 1);
+								strncpy(tag_param_buf, lml_tag_def[k][2], LML_TAG_PARAM_BUF_LEN - 1);
 								tag_param_buf[LML_TAG_PARAM_BUF_LEN - 1] = '\0';
 							}
 							if (lml_tag)
 							{
-								if (LML_tag_def[k][1] != NULL)
+								if (lml_tag_def[k][1] != NULL)
 								{
-									tag_output_len = snprintf(tag_output_buf, LML_TAG_OUTPUT_BUF_LEN, LML_tag_def[k][1], tag_param_buf);
+									tag_output_len = snprintf(tag_output_buf, LML_TAG_OUTPUT_BUF_LEN, lml_tag_def[k][1], tag_param_buf);
 								}
 								else
 								{
-									tag_output_len = ((lml_tag_filter_cb)LML_tag_def[k][2])(
-										LML_tag_def[k][0], tag_param_buf, tag_output_buf, LML_TAG_OUTPUT_BUF_LEN);
+									tag_output_len = ((lml_tag_filter_cb)lml_tag_def[k][2])(
+										lml_tag_def[k][0], tag_param_buf, tag_output_buf, LML_TAG_OUTPUT_BUF_LEN);
 								}
 							}
 							else
 							{
-								if (LML_tag_def[k][3] != NULL)
+								if (lml_tag_def[k][3] != NULL)
 								{
-									tag_output_len = snprintf(tag_output_buf, LML_TAG_OUTPUT_BUF_LEN, LML_tag_def[k][3], tag_param_buf);
+									tag_output_len = snprintf(tag_output_buf, LML_TAG_OUTPUT_BUF_LEN, lml_tag_def[k][3], tag_param_buf);
 								}
 								else
 								{
