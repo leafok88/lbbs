@@ -31,7 +31,7 @@ To install LBBS, please perform the following steps:
 6) Modify following configuration files  
    Default configuration files is saved as *.default, you should rename them first.  
    /usr/local/lbbs/conf/bbsd.conf  
-   /usr/local/lbbs/utils/conf/db_conn.inc.php  
+   /usr/local/lbbs/utils/conf/db_conn.conf.php  
 
 7) Generate menu configuration file with section data by running the script  
    sudo -u bbs php /usr/local/lbbs/utils/bin/gen_section_menu.php  
