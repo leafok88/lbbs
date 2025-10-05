@@ -31,6 +31,7 @@
 #include <time.h>
 #include <unistd.h>
 #include <arpa/inet.h>
+#include <iconv.h>
 #include <libssh/libssh.h>
 #include <libssh/server.h>
 #include <libssh/callbacks.h>
@@ -53,6 +54,7 @@ struct _bbsnet_conf
 	char host2[40];
 	char ip[40];
 	in_port_t port;
+	char charset[20];
 } bbsnet_conf[MAXSTATION];
 
 MENU_SET bbsnet_menu;
@@ -63,7 +65,7 @@ int load_bbsnet_conf(const char *file_config)
 	MENU *p_menu;
 	MENU_ITEM *p_menu_item;
 	MENU_ITEM_ID menu_item_id;
-	char t[256], *t1, *t2, *t3, *t4, *saveptr;
+	char t[256], *t1, *t2, *t3, *t4, *t5, *saveptr;
 
 	fp = fopen(file_config, "r");
 	if (fp == NULL)
@@ -101,8 +103,9 @@ int load_bbsnet_conf(const char *file_config)
 		t2 = strtok_r(NULL, MENU_CONF_DELIM, &saveptr);
 		t3 = strtok_r(NULL, MENU_CONF_DELIM, &saveptr);
 		t4 = strtok_r(NULL, MENU_CONF_DELIM, &saveptr);
+		t5 = strtok_r(NULL, MENU_CONF_DELIM, &saveptr);
 
-		if (t1 == NULL || t2 == NULL || t3 == NULL || t4 == NULL || t[0] == '#' || t[0] == '*')
+		if (t1 == NULL || t2 == NULL || t3 == NULL || t4 == NULL || t5 == NULL || t[0] == '#' || t[0] == '*')
 		{
 			continue;
 		}
@@ -114,6 +117,8 @@ int load_bbsnet_conf(const char *file_config)
 		strncpy(bbsnet_conf[menu_item_id].ip, t3, sizeof(bbsnet_conf[menu_item_id].ip) - 1);
 		bbsnet_conf[menu_item_id].ip[sizeof(bbsnet_conf[menu_item_id].ip) - 1] = '\0';
 		bbsnet_conf[menu_item_id].port = (in_port_t)(t4 ? atoi(t4) : 23);
+		strncpy(bbsnet_conf[menu_item_id].charset, t5, sizeof(bbsnet_conf[menu_item_id].charset) - 1);
+		bbsnet_conf[menu_item_id].charset[sizeof(bbsnet_conf[menu_item_id].charset) - 1] = '\0';
 
 		p_menu_item = get_menu_item_by_id(&bbsnet_menu, menu_item_id);
 		if (p_menu_item == NULL)
@@ -188,6 +193,71 @@ void process_bar(int n, int len)
 	iflush();
 }
 
+int bbsnet_io_buf_conv(iconv_t cd, char *p_buf, int *p_buf_len, int *p_buf_offset, char *p_conv, size_t conv_size, int *p_conv_len)
+{
+	char *in_buf;
+	char *out_buf;
+	size_t in_bytes;
+	size_t out_bytes;
+	int ret;
+
+	in_buf = p_buf + *p_buf_offset;
+	in_bytes = (size_t)(*p_buf_len - *p_buf_offset);
+	out_buf = p_conv + *p_conv_len;
+	out_bytes = conv_size - (size_t)(*p_conv_len);
+
+	while (in_bytes > 0)
+	{
+		ret = (int)iconv(cd, &in_buf, &in_bytes, &out_buf, &out_bytes);
+		if (ret == -1)
+		{
+			if (errno == EINVAL) // Incomplete
+			{
+#ifdef _DEBUG
+				log_error("iconv(inbytes=%d, outbytes=%d) error: EINVAL\n", in_bytes, out_bytes);
+#endif
+				*p_buf_len = (int)(p_buf + *p_buf_len - in_buf);
+				*p_buf_offset = 0;
+				*p_conv_len = (int)(conv_size - out_bytes);
+				memmove(p_buf, in_buf, (size_t)(*p_buf_len));
+
+				break;
+			}
+			else if (errno == E2BIG)
+			{
+				log_error("iconv(inbytes=%d, outbytes=%d) error: E2BIG\n", in_bytes, out_bytes);
+				return -1;
+			}
+			else if (errno == EILSEQ)
+			{
+				if (in_bytes > out_bytes || out_bytes <= 0)
+				{
+					log_error("iconv(inbytes=%d, outbytes=%d) error: EILSEQ and E2BIG\n", in_bytes, out_bytes);
+					return -2;
+				}
+
+				*out_buf = *in_buf;
+				in_buf++;
+				out_buf++;
+				in_bytes--;
+				out_bytes--;
+
+				continue;
+			}
+		}
+		else
+		{
+			*p_buf_len = 0;
+			*p_buf_offset = 0;
+			*p_conv_len = (int)(conv_size - out_bytes);
+
+			break;
+		}
+	}
+
+	return 0;
+}
+
 int bbsnet_connect(int n)
 {
 	int sock, ret, loop, error;
@@ -203,6 +273,14 @@ int bbsnet_connect(int n)
 	int output_buf_len = 0;
 	int input_buf_offset = 0;
 	int output_buf_offset = 0;
+	iconv_t input_cd = NULL;
+	char input_conv[LINE_BUFFER_LEN * 2];
+	char output_conv[LINE_BUFFER_LEN * 2];
+	int input_conv_len = 0;
+	int output_conv_len = 0;
+	int input_conv_offset = 0;
+	int output_conv_offset = 0;
+	iconv_t output_cd = NULL;
 	struct epoll_event ev, events[MAX_EVENTS];
 	int nfds, epollfd;
 	int stdin_read_wait = 0;
@@ -396,6 +474,20 @@ int bbsnet_connect(int n)
 	iflush();
 	log_common("BBSNET connect to %s:%d\n", remote_addr, remote_port);
 
+	input_cd = iconv_open(bbsnet_conf[n].charset, "UTF-8");
+	if (input_cd == (iconv_t)(-1))
+	{
+		log_error("iconv_open(UTF8->GBK) error: %d\n", errno);
+		goto cleanup;
+	}
+	output_cd = iconv_open("UTF-8", bbsnet_conf[n].charset);
+	if (input_cd == (iconv_t)(-1))
+	{
+		log_error("iconv_open(GBK->UTF-8) error: %d\n", errno);
+		iconv_close(input_cd);
+		goto cleanup;
+	}
+
 	ev.events = EPOLLIN | EPOLLOUT | EPOLLET;
 	ev.data.fd = sock;
 	if (epoll_ctl(epollfd, EPOLL_CTL_MOD, sock, &ev) == -1)
@@ -542,9 +634,18 @@ int bbsnet_connect(int n)
 
 		if (sock_write_wait)
 		{
-			while (input_buf_offset < input_buf_len && !SYS_server_exit)
+			if (input_buf_offset < input_buf_len)
 			{
-				ret = (int)write(sock, input_buf + input_buf_offset, (size_t)(input_buf_len - input_buf_offset));
+				ret = bbsnet_io_buf_conv(input_cd, input_buf, &input_buf_len, &input_buf_offset, input_conv, sizeof(input_conv), &input_conv_len);
+				if (ret < 0)
+				{
+					log_error("bbsnet_io_buf_conv(input, %d, %d, %d) error\n", input_buf_len, input_buf_offset, input_conv_len);
+				}
+			}
+
+			while (input_conv_offset < input_conv_len && !SYS_server_exit)
+			{
+				ret = (int)write(sock, input_conv + input_conv_offset, (size_t)(input_conv_len - input_conv_offset));
 				if (ret < 0)
 				{
 					if (errno == EAGAIN || errno == EWOULDBLOCK)
@@ -574,11 +675,11 @@ int bbsnet_connect(int n)
 				}
 				else
 				{
-					input_buf_offset += ret;
-					if (input_buf_offset >= input_buf_len) // Output buffer complete
+					input_conv_offset += ret;
+					if (input_conv_offset >= input_conv_len) // Output buffer complete
 					{
-						input_buf_offset = 0;
-						input_buf_len = 0;
+						input_conv_offset = 0;
+						input_conv_len = 0;
 						break;
 					}
 					continue;
@@ -628,11 +729,20 @@ int bbsnet_connect(int n)
 
 		if (stdout_write_wait)
 		{
-			while (output_buf_offset < output_buf_len && !SYS_server_exit)
+			if (output_buf_offset < output_buf_len)
+			{
+				ret = bbsnet_io_buf_conv(output_cd, output_buf, &output_buf_len, &output_buf_offset, output_conv, sizeof(output_conv), &output_conv_len);
+				if (ret < 0)
+				{
+					log_error("bbsnet_io_buf_conv(output, %d, %d, %d) error\n", output_buf_len, output_buf_offset, output_conv_len);
+				}
+			}
+
+			while (output_conv_offset < output_conv_len && !SYS_server_exit)
 			{
 				if (SSH_v2)
 				{
-					ret = ssh_channel_write(SSH_channel, output_buf + output_buf_offset, (uint32_t)(output_buf_len - output_buf_offset));
+					ret = ssh_channel_write(SSH_channel, output_conv + output_conv_offset, (uint32_t)(output_conv_len - output_conv_offset));
 					if (ret == SSH_ERROR)
 					{
 						log_error("ssh_channel_write() error: %s\n", ssh_get_error(SSH_session));
@@ -642,7 +752,7 @@ int bbsnet_connect(int n)
 				}
 				else
 				{
-					ret = (int)write(STDOUT_FILENO, output_buf + output_buf_offset, (size_t)(output_buf_len - output_buf_offset));
+					ret = (int)write(STDOUT_FILENO, output_conv + output_conv_offset, (size_t)(output_conv_len - output_conv_offset));
 				}
 				if (ret < 0)
 				{
@@ -673,11 +783,11 @@ int bbsnet_connect(int n)
 				}
 				else
 				{
-					output_buf_offset += ret;
-					if (output_buf_offset >= output_buf_len) // Output buffer complete
+					output_conv_offset += ret;
+					if (output_conv_offset >= output_conv_len) // Output buffer complete
 					{
-						output_buf_offset = 0;
-						output_buf_len = 0;
+						output_conv_offset = 0;
+						output_conv_len = 0;
 						break;
 					}
 					continue;
@@ -685,6 +795,9 @@ int bbsnet_connect(int n)
 			}
 		}
 	}
+
+	iconv_close(input_cd);
+	iconv_close(output_cd);
 
 cleanup:
 	if (close(epollfd) < 0)
