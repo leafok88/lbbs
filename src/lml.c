@@ -152,7 +152,7 @@ inline static void lml_init(void)
 	}
 }
 
-int lml_plain(const char *str_in, char *str_out, int buf_len, int lml_tag)
+int lml_render(const char *str_in, char *str_out, int buf_len, int lml_tag)
 {
 	char c;
 	char tag_param_buf[LML_TAG_PARAM_BUF_LEN];
