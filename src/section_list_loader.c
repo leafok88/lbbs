@@ -151,7 +151,7 @@ int load_section_config_from_db(int update_gen_ex)
 		p_section->enable = (int8_t)atoi(row[6]);
 
 		// Update gen_ex menu set
-		if (update_gen_ex && p_section->enable && atoi(row[7]) > p_section->ex_menu_tm)
+		if (update_gen_ex && p_section->enable && atol(row[7] == NULL ? "0" : row[7]) > p_section->ex_menu_tm)
 		{
 			snprintf(ex_menu_conf, sizeof(ex_menu_conf), "%s/%d", VAR_GEN_EX_MENU_DIR, p_section->sid);
 
@@ -176,6 +176,10 @@ int load_section_config_from_db(int update_gen_ex)
 				log_common("Loaded gen_ex_menu of section %d [%s]\n", p_section->sid, p_section->sname);
 #endif
 			}
+		}
+		else
+		{
+			p_section->ex_menu_tm = 0;
 		}
 
 		// release rw lock
