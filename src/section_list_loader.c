@@ -177,10 +177,6 @@ int load_section_config_from_db(int update_gen_ex)
 #endif
 			}
 		}
-		else
-		{
-			p_section->ex_menu_tm = 0;
-		}
 
 		// release rw lock
 		ret = section_list_rw_unlock(p_section);
