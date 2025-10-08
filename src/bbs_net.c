@@ -48,6 +48,8 @@
 #define MAXSTATION 26 * 2
 #define STATION_PER_LINE 4
 
+#define BBS_NET_DEFAULT_CHARSET "UTF-8"
+
 struct _bbsnet_conf
 {
 	char host1[20];
@@ -474,16 +476,16 @@ int bbsnet_connect(int n)
 	iflush();
 	log_common("BBSNET connect to %s:%d\n", remote_addr, remote_port);
 
-	input_cd = iconv_open(bbsnet_conf[n].charset, "UTF-8");
+	input_cd = iconv_open(bbsnet_conf[n].charset, BBS_NET_DEFAULT_CHARSET);
 	if (input_cd == (iconv_t)(-1))
 	{
-		log_error("iconv_open(UTF8->GBK) error: %d\n", errno);
+		log_error("iconv_open(%s->%s) error: %d\n", BBS_NET_DEFAULT_CHARSET, bbsnet_conf[n].charset, errno);
 		goto cleanup;
 	}
-	output_cd = iconv_open("UTF-8", bbsnet_conf[n].charset);
+	output_cd = iconv_open(BBS_NET_DEFAULT_CHARSET, bbsnet_conf[n].charset);
 	if (input_cd == (iconv_t)(-1))
 	{
-		log_error("iconv_open(GBK->UTF-8) error: %d\n", errno);
+		log_error("iconv_open(%s->%s) error: %d\n", bbsnet_conf[n].charset, BBS_NET_DEFAULT_CHARSET, errno);
 		iconv_close(input_cd);
 		goto cleanup;
 	}
