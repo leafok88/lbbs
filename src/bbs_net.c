@@ -48,7 +48,7 @@
 #define MAXSTATION 26 * 2
 #define STATION_PER_LINE 4
 
-#define BBS_NET_DEFAULT_CHARSET "UTF-8"
+#define BBS_NET_DEFAULT_CHARSET "GBK"
 
 struct _bbsnet_conf
 {
