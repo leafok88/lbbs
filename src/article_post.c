@@ -118,7 +118,7 @@ int article_post(const SECTION_LIST *p_section, ARTICLE *p_article_new)
 			case 'T':
 				moveto(24, 1);
 				clrtoeol();
-				len = get_data(24, 1, "标题: ", title_input, sizeof(title_input), TITLE_INPUT_MAX_LEN, DOECHO);
+				len = get_data(24, 1, "标题: ", title_input, sizeof(title_input), TITLE_INPUT_MAX_LEN);
 				for (p = title_input; *p == ' '; p++)
 					;
 				for (q = title_input + len; q > p && *(q - 1) == ' '; q--)
@@ -921,7 +921,7 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 			case 'T':
 				moveto(24, 1);
 				clrtoeol();
-				len = get_data(24, 1, "标题: ", title_input, sizeof(title_input), TITLE_INPUT_MAX_LEN, DOECHO);
+				len = get_data(24, 1, "标题: ", title_input, sizeof(title_input), TITLE_INPUT_MAX_LEN);
 				for (p = title_input; *p == ' '; p++)
 					;
 				for (q = title_input + len; q > p && *(q - 1) == ' '; q--)

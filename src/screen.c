@@ -289,16 +289,279 @@ int str_input(char *buffer, int buf_size, int echo_mode)
 	return len;
 };
 
-int get_data(int row, int col, char *prompt, char *buffer, int buf_size, int max_display_len, int echo_mode)
+int get_data(int row, int col, char *prompt, char *buffer, int buf_size, int max_display_len)
 {
-	int len;
+	int len = 0;
+	int col_cur = 0;
+	int ch;
+	int offset = 0;
+	int eol;
+	int display_len;
+	char input_str[4];
+	int str_len = 0;
+	char c;
+
+	buffer[buf_size - 1] = '\0';
+	offset = split_line(buffer, max_display_len, &eol, &display_len, 0);
+	buffer[offset] = '\0';
+	len = offset;
+	col_cur = col + str_length(prompt, 1) + display_len;
 
 	moveto(row, col);
 	prints("%s", prompt);
 	prints("%s", buffer);
+	prints("%*s", max_display_len - display_len, "");
+	moveto(row, col_cur);
 	iflush();
 
-	len = _str_input(buffer, buf_size, max_display_len, echo_mode);
+	igetch_reset();
+
+	while (!SYS_server_exit)
+	{
+		ch = igetch_t(MIN(MAX_DELAY_TIME, 60));
+
+		if (ch == CR)
+		{
+			igetch_reset();
+			break;
+		}
+		else if (ch == KEY_TIMEOUT || ch == KEY_NULL) // timeout or broken pipe
+		{
+			return -1;
+		}
+		else if (ch == LF || ch == '\0')
+		{
+			continue;
+		}
+		else if (ch == BACKSPACE)
+		{
+			if (offset > 0)
+			{
+				str_len = 1;
+				offset--;
+				if (buffer[offset] < 0 || buffer[offset] > 127) // UTF8
+				{
+					while (offset > 0 && (buffer[offset] & 0b11000000) != 0b11000000)
+					{
+						str_len++;
+						offset--;
+					}
+					display_len--;
+					col_cur--;
+				}
+
+				memmove(buffer + offset, buffer + offset + str_len, (size_t)(len - offset - str_len));
+				len -= str_len;
+				buffer[len] = '\0';
+				display_len--;
+				col_cur--;
+
+				moveto(row, col_cur);
+				prints("%s", buffer + offset);
+				prints("%*s", max_display_len - display_len, "");
+				moveto(row, col_cur);
+				iflush();
+			}
+			continue;
+		}
+		else if (ch == KEY_DEL)
+		{
+			if (offset < len)
+			{
+				if ((buffer[offset] & 0x80) == 0x80) // head of multi-byte character
+				{
+					str_len = 0;
+					c = (char)(buffer[offset] & 0b11110000);
+					while (c & 0b10000000)
+					{
+						str_len++;
+						c = (c & 0b01111111) << 1;
+					}
+					display_len--;
+				}
+				else
+				{
+					str_len = 1;
+				}
+
+				memmove(buffer + offset, buffer + offset + str_len, (size_t)(len - offset - str_len));
+				len -= str_len;
+				buffer[len] = '\0';
+				display_len--;
+
+				moveto(row, col_cur);
+				prints("%s", buffer + offset);
+				prints("%*s", max_display_len - display_len, "");
+				moveto(row, col_cur);
+				iflush();
+			}
+			continue;
+		}
+		else if (ch == KEY_LEFT)
+		{
+			if (offset > 0)
+			{
+				str_len = 1;
+				offset--;
+				if (buffer[offset] < 0 || buffer[offset] > 127) // UTF8
+				{
+					while (offset > 0 && (buffer[offset] & 0b11000000) != 0b11000000)
+					{
+						str_len++;
+						offset--;
+					}
+					col_cur--;
+				}
+				col_cur--;
+
+				moveto(row, col_cur);
+				iflush();
+			}
+			continue;
+		}
+		else if (ch == KEY_RIGHT)
+		{
+			if (offset < len)
+			{
+				str_len = 0;
+				if ((buffer[offset] & 0x80) == 0x80) // head of multi-byte character
+				{
+					c = (char)(buffer[offset] & 0b11110000);
+					while (c & 0b10000000)
+					{
+						str_len++;
+						c = (c & 0b01111111) << 1;
+					}
+					col_cur++;
+				}
+				else
+				{
+					str_len = 1;
+				}
+
+				col_cur++;
+				offset += str_len;
+
+				moveto(row, col_cur);
+				iflush();
+			}
+			continue;
+		}
+		else if (ch == KEY_HOME || ch == KEY_UP)
+		{
+			if (offset > 0)
+			{
+				offset = 0;
+				col_cur = col + str_length(prompt, 1);
+
+				moveto(row, col_cur);
+				iflush();
+			}
+			continue;
+		}
+		else if (ch == KEY_END || ch == KEY_DOWN)
+		{
+			if (offset < len)
+			{
+				offset = len;
+				col_cur = col + str_length(prompt, 1) + display_len;
+
+				moveto(row, col_cur);
+				iflush();
+			}
+			continue;
+		}
+		else if (ch > 255 || iscntrl(ch))
+		{
+			continue;
+		}
+		else if ((ch & 0xff80) == 0x80) // head of multi-byte character
+		{
+			str_len = 0;
+			c = (char)(ch & 0b11110000);
+			while (c & 0b10000000)
+			{
+				input_str[str_len] = (char)(ch - 256);
+				str_len++;
+				c = (c & 0b01111111) << 1;
+
+				if ((c & 0b10000000) == 0) // Input completed
+				{
+					break;
+				}
+
+				// Expect additional bytes of input
+				ch = igetch(100);						 // 0.1 second
+				if (ch == KEY_NULL || ch == KEY_TIMEOUT) // Ignore received bytes if no futher input
+				{
+#ifdef _DEBUG
+					log_error("Ignore %d bytes of incomplete UTF8 character\n", str_len);
+#endif
+					str_len = 0;
+					break;
+				}
+			}
+
+			if (str_len == 0) // Incomplete input
+			{
+				continue;
+			}
+
+			if (len + str_len > buf_size - 1 || display_len + 2 > max_display_len) // No enough space for Chinese character
+			{
+				outc('\a');
+				iflush();
+				continue;
+			}
+
+			memmove(buffer + offset + str_len, buffer + offset, (size_t)(len - offset));
+			memcpy(buffer + offset, input_str, (size_t)str_len);
+			len += str_len;
+			buffer[len] = '\0';
+			display_len += 2;
+
+			moveto(row, col_cur);
+			prints("%s", buffer + offset);
+			prints("%*s", max_display_len - display_len, "");
+
+			col_cur += 2;
+
+			moveto(row, col_cur);
+			iflush();
+
+			offset += str_len;
+		}
+		else if (ch >= 32 && ch < 127) // Printable character
+		{
+			if (len + 1 > buf_size - 1 || display_len + 1 > max_display_len)
+			{
+				outc('\a');
+				iflush();
+				continue;
+			}
+
+			memmove(buffer + offset + 1, buffer + offset, (size_t)(len - offset));
+			buffer[offset] = (char)ch;
+			len++;
+			buffer[len] = '\0';
+			display_len++;
+
+			moveto(row, col_cur);
+			prints("%s", buffer + offset);
+			prints("%*s", max_display_len - display_len, "");
+
+			col_cur++;
+
+			moveto(row, col_cur);
+			iflush();
+
+			offset++;
+		}
+		else // Invalid character
+		{
+			continue;
+		}
+	}
 
 	return len;
 }
