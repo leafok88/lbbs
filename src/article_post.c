@@ -52,6 +52,7 @@ int article_post(const SECTION_LIST *p_section, ARTICLE *p_article_new)
 	int content_display_length;
 	char nickname_f[BBS_nickname_max_len * 2 + 1];
 	int sign_id = 0;
+	int reply_note = 1;
 	long len;
 	int ch;
 	char *p, *q;
@@ -89,7 +90,10 @@ int article_post(const SECTION_LIST *p_section, ARTICLE *p_article_new)
 	{
 		clearscr();
 		moveto(21, 1);
-		prints("发表文章于 %s[%s] 讨论区，类型: %s", p_section->stitle, p_section->sname, (p_article_new->transship ? "转载" : "原创"));
+		prints("发表文章于 %s[%s] 讨论区，类型: %s，通知：%s",
+			   p_section->stitle, p_section->sname,
+			   (p_article_new->transship ? "转载" : "原创"),
+			   (reply_note ? "开启" : "关闭"));
 		moveto(22, 1);
 		prints("标题: %s", (p_article_new->title[0] == '\0' ? "[无]" : p_article_new->title));
 		moveto(23, 1);
@@ -100,7 +104,9 @@ int article_post(const SECTION_LIST *p_section, ARTICLE *p_article_new)
 			prints("    按[1;32m0[m~[1;32m3[m选签名档(0表示不使用)");
 
 			moveto(24, 1);
-			prints("[1;32mT[m改标题, [1;32mC[m取消, [1;32mZ[m设为转载, [1;32mY[m设为原创, [1;32mEnter[m继续: ");
+			prints("[1;32mT[m改标题, [1;32mC[m取消, [1;32mZ[m设为%s, [1;32mN[m%s, [1;32mEnter[m继续: ",
+				   (p_article_new->transship ? "原创" : "转载"),
+				   (reply_note ? "通知关闭" : "通知开启"));
 			iflush();
 			ch = 0;
 		}
@@ -116,8 +122,6 @@ int article_post(const SECTION_LIST *p_section, ARTICLE *p_article_new)
 				igetch_reset();
 				break;
 			case 'T':
-				moveto(24, 1);
-				clrtoeol();
 				len = get_data(24, 1, "标题: ", title_input, sizeof(title_input), TITLE_INPUT_MAX_LEN);
 				for (p = title_input; *p == ' '; p++)
 					;
@@ -138,11 +142,11 @@ int article_post(const SECTION_LIST *p_section, ARTICLE *p_article_new)
 				prints("取消...");
 				press_any_key();
 				goto cleanup;
-			case 'Y':
-				p_article_new->transship = 0;
-				break;
 			case 'Z':
-				p_article_new->transship = 1;
+				p_article_new->transship = (p_article_new->transship ? 0 : 1);
+				break;
+			case 'N':
+				reply_note = (reply_note ? 0 : 1);
 				break;
 			case '0':
 			case '1':
@@ -330,9 +334,10 @@ int article_post(const SECTION_LIST *p_section, ARTICLE *p_article_new)
 	snprintf(sql, sizeof(sql),
 			 "INSERT INTO bbs(SID, TID, UID, username, nickname, title, CID, transship, "
 			 "sub_dt, sub_ip, reply_note, exp, last_reply_dt, icon, length) "
-			 "VALUES(%d, 0, %d, '%s', '%s', '%s', %d, %d, NOW(), '%s', 1, %d, NOW(), 1, %d)",
+			 "VALUES(%d, 0, %d, '%s', '%s', '%s', %d, %d, NOW(), '%s', %d, %d, NOW(), 1, %d)",
 			 p_section->sid, BBS_priv.uid, BBS_username, nickname_f, title_f,
-			 p_article_new->cid, p_article_new->transship, hostaddr_client, BBS_user_exp, content_display_length);
+			 p_article_new->cid, p_article_new->transship, hostaddr_client,
+			 reply_note, BBS_user_exp, content_display_length);
 
 	if (mysql_query(db, sql) != 0)
 	{
@@ -424,6 +429,7 @@ int article_modify(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTI
 	char *content_f = NULL;
 	long len_content;
 	int content_display_length;
+	int reply_note = 1;
 	int ch;
 	long ret = 0;
 	time_t now;
@@ -456,7 +462,7 @@ int article_modify(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTI
 	}
 
 	snprintf(sql, sizeof(sql),
-			 "SELECT bbs_content.CID, bbs_content.content "
+			 "SELECT bbs_content.CID, bbs_content.content, reply_note "
 			 "FROM bbs INNER JOIN bbs_content ON bbs.CID = bbs_content.CID "
 			 "WHERE bbs.AID = %d",
 			 p_article->aid);
@@ -500,6 +506,8 @@ int article_modify(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTI
 
 		free(content);
 		content = NULL;
+
+		reply_note = atoi(row[2]);
 	}
 	mysql_free_result(rs);
 	rs = NULL;
@@ -511,13 +519,15 @@ int article_modify(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTI
 	{
 		editor_display(p_editor_data);
 
-		clearscr();
-		moveto(1, 1);
-		prints("(S)保存, (C)取消 or (E)再编辑? [S]: ");
-		iflush();
-
-		for (ch = 0; !SYS_server_exit; ch = igetch_t(MAX_DELAY_TIME))
+		while (!SYS_server_exit)
 		{
+			clearscr();
+			moveto(1, 1);
+			prints("(S)保存, (C)取消, (N)通知%s or (E)再编辑? [S]: ",
+				   (reply_note ? "关闭" : "开启"));
+			iflush();
+
+			ch = igetch_t(MAX_DELAY_TIME);
 			switch (toupper(ch))
 			{
 			case KEY_NULL:
@@ -533,6 +543,9 @@ int article_modify(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTI
 				prints("取消...");
 				press_any_key();
 				goto cleanup;
+			case 'N':
+				reply_note = (reply_note ? 0 : 1);
+				continue;
 			case 'E':
 				break;
 			default: // Invalid selection
@@ -643,8 +656,8 @@ int article_modify(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTI
 
 	// Update article
 	snprintf(sql, sizeof(sql),
-			 "UPDATE bbs SET CID = %d, length = %d, excerption = 0 WHERE AID = %d", // Set excerption = 0 explictly in case of rare condition
-			 p_article_new->cid, content_display_length, p_article->aid);
+			 "UPDATE bbs SET CID = %d, length = %d, reply_note = %d, excerption = 0 WHERE AID = %d", // Set excerption = 0 explictly in case of rare condition
+			 p_article_new->cid, content_display_length, reply_note, p_article->aid);
 
 	if (mysql_query(db, sql) != 0)
 	{
@@ -721,6 +734,7 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 	int content_display_length;
 	char nickname_f[BBS_nickname_max_len * 2 + 1];
 	int sign_id = 0;
+	int reply_note = 1;
 	long len;
 	int ch;
 	char *p, *q;
@@ -895,7 +909,7 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 	{
 		clearscr();
 		moveto(21, 1);
-		prints("回复文章于 %s[%s] 讨论区", p_section->stitle, p_section->sname);
+		prints("回复文章于 %s[%s] 讨论区，通知：%s", p_section->stitle, p_section->sname, (reply_note ? "开启" : "关闭"));
 		moveto(22, 1);
 		prints("标题: %s", (p_article_new->title[0] == '\0' ? "[无]" : p_article_new->title));
 		moveto(23, 1);
@@ -906,7 +920,8 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 			prints("    按[1;32m0[m~[1;32m3[m选签名档(0表示不使用)");
 
 			moveto(24, 1);
-			prints("[1;32mT[m改标题, [1;32mC[m取消, [1;32mEnter[m继续: ");
+			prints("[1;32mT[m改标题, [1;32mC[m取消, [1;32mN[m%s, [1;32mEnter[m继续: ",
+				   (reply_note ? "通知关闭" : "通知开启"));
 			iflush();
 			ch = 0;
 		}
@@ -922,8 +937,6 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 				igetch_reset();
 				break;
 			case 'T':
-				moveto(24, 1);
-				clrtoeol();
 				len = get_data(24, 1, "标题: ", title_input, sizeof(title_input), TITLE_INPUT_MAX_LEN);
 				for (p = title_input; *p == ' '; p++)
 					;
@@ -944,6 +957,9 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 				prints("取消...");
 				press_any_key();
 				goto cleanup;
+			case 'N':
+				reply_note = (reply_note ? 0 : 1);
+				break;
 			case '0':
 			case '1':
 			case '2':
@@ -1130,10 +1146,11 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 	snprintf(sql, sizeof(sql),
 			 "INSERT INTO bbs(SID, TID, UID, username, nickname, title, CID, transship, "
 			 "sub_dt, sub_ip, reply_note, exp, last_reply_dt, icon, length) "
-			 "VALUES(%d, %d, %d, '%s', '%s', '%s', %d, 0, NOW(), '%s', 1, %d, NOW(), 1, %d)",
+			 "VALUES(%d, %d, %d, '%s', '%s', '%s', %d, 0, NOW(), '%s', %d, %d, NOW(), 1, %d)",
 			 p_section->sid, (p_article->tid == 0 ? p_article->aid : p_article->tid),
 			 BBS_priv.uid, BBS_username, nickname_f, title_f,
-			 p_article_new->cid, hostaddr_client, BBS_user_exp, content_display_length);
+			 p_article_new->cid, hostaddr_client,
+			 reply_note, BBS_user_exp, content_display_length);
 
 	if (mysql_query(db, sql) != 0)
 	{
