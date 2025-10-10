@@ -1211,7 +1211,7 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 	{
 		// Send notification message
 		len_msg = snprintf(msg, BBS_msg_max_len,
-						   "[hide]SYS_Reply_Article[/hide]有人回复了您所发表/回复的文章，快来"
+						   "有人回复了您所发表/回复的文章，快来"
 						   "[article %d]看看[/article]《%s》吧！\n",
 						   p_article_new->aid, title_f);
 
