@@ -734,7 +734,7 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 	int content_display_length;
 	char nickname_f[BBS_nickname_max_len * 2 + 1];
 	int sign_id = 0;
-	int reply_note = 1;
+	int reply_note = 0;
 	long len;
 	int ch;
 	char *p, *q;
