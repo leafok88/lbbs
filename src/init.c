@@ -71,6 +71,7 @@ int load_conf(const char *conf_file)
 	char *saveptr = NULL;
 	char *p, *q, *r;
 	char *y, *m, *d;
+	int v;
 	FILE *fin;
 
 	// Load configuration
@@ -175,6 +176,16 @@ int load_conf(const char *conf_file)
 				continue;
 			}
 			snprintf(BBS_start_dt, sizeof(BBS_start_dt), "%4s年%2s月%2s日", y, m, d);
+		}
+		else if (strcasecmp(p, "bbs_sys_id") == 0)
+		{
+			v = atoi(q);
+			if (v <= 0 || v > BBS_MAX_USER_LIMIT)
+			{
+				log_error("Ignore config bbs_sys_id with incorrect value %d\n", v);
+				continue;
+			}
+			BBS_sys_id = v;
 		}
 		else if (strcasecmp(p, "db_host") == 0)
 		{

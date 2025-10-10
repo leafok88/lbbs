@@ -730,6 +730,9 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 	long i;
 	long ret = 0;
 	int topic_locked = 0;
+	char msg[BBS_msg_max_len];
+	char msg_f[BBS_msg_max_len * 2 + 1];
+	int len_msg;
 
 	if (p_section == NULL || p_article == NULL)
 	{
@@ -1167,6 +1170,50 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 		ret = -1;
 		goto cleanup;
 	}
+
+	// Notify the authors of the topic / article which is replyed.
+	snprintf(sql, sizeof(sql),
+			 "SELECT DISTINCT UID FROM bbs WHERE (AID = %d OR AID = %d) "
+			 "AND visible AND reply_note AND UID <> %d",
+			 p_article->tid, p_article->aid, BBS_priv.uid);
+
+	if (mysql_query(db, sql) != 0)
+	{
+		log_error("Read reply info error: %s\n", mysql_error(db));
+		ret = -1;
+		goto cleanup;
+	}
+	if ((rs = mysql_store_result(db)) == NULL)
+	{
+		log_error("Get reply info failed\n");
+		ret = -1;
+		goto cleanup;
+	}
+
+	while ((row = mysql_fetch_row(rs)))
+	{
+		// Send notification message
+		len_msg = snprintf(msg, BBS_msg_max_len,
+						   "[hide]SYS_Reply_Article[/hide]有人回复了您所发表/回复的文章，快来"
+						   "[article %d]看看[/article]《%s》吧！\n",
+						   p_article_new->aid, title_f);
+
+		mysql_real_escape_string(db, msg_f, msg, (unsigned long)len_msg);
+
+		snprintf(sql, sizeof(sql),
+				 "INSERT INTO bbs_msg(fromUID, toUID, content, send_dt, send_ip) "
+				 "VALUES(%d, %d, '%s', NOW(), '%s')",
+				 BBS_sys_id, atoi(row[0]), msg_f, hostaddr_client);
+
+		if (mysql_query(db, sql) != 0)
+		{
+			log_error("Insert msg error: %s\n", mysql_error(db));
+			ret = -1;
+			goto cleanup;
+		}
+	}
+	mysql_free_result(rs);
+	rs = NULL;
 
 	// Add exp
 	if (checkpriv(&BBS_priv, p_section->sid, S_GETEXP)) // Except in test section

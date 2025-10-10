@@ -34,6 +34,7 @@ int BBS_max_client = MAX_CLIENT_LIMIT;
 int BBS_max_client_per_ip = MAX_CLIENT_PER_IP_LIMIT;
 int BBS_max_user = BBS_MAX_USER_LIMIT;
 char BBS_start_dt[BBS_start_dt_max_len + 1] = "2000年 1月 1日";
+int BBS_sys_id = 1;
 
 char BBS_username[BBS_username_max_len + 1];
 char BBS_nickname[BBS_nickname_max_len + 1];
