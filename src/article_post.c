@@ -90,7 +90,7 @@ int article_post(const SECTION_LIST *p_section, ARTICLE *p_article_new)
 	{
 		clearscr();
 		moveto(21, 1);
-		prints("发表文章于 %s[%s] 讨论区，类型: %s，通知：%s",
+		prints("发表文章于 %s[%s] 讨论区，类型: %s，回复通知：%s",
 			   p_section->stitle, p_section->sname,
 			   (p_article_new->transship ? "转载" : "原创"),
 			   (reply_note ? "开启" : "关闭"));
@@ -106,7 +106,7 @@ int article_post(const SECTION_LIST *p_section, ARTICLE *p_article_new)
 			moveto(24, 1);
 			prints("[1;32mT[m改标题, [1;32mC[m取消, [1;32mZ[m设为%s, [1;32mN[m%s, [1;32mEnter[m继续: ",
 				   (p_article_new->transship ? "原创" : "转载"),
-				   (reply_note ? "通知关闭" : "通知开启"));
+				   (reply_note ? "关闭回复通知" : "开启回复通知"));
 			iflush();
 			ch = 0;
 		}
@@ -523,7 +523,7 @@ int article_modify(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTI
 		{
 			clearscr();
 			moveto(1, 1);
-			prints("(S)保存, (C)取消, (N)通知%s or (E)再编辑? [S]: ",
+			prints("(S)保存, (C)取消, (N)%s回复通知 or (E)再编辑? [S]: ",
 				   (reply_note ? "关闭" : "开启"));
 			iflush();
 
@@ -909,7 +909,7 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 	{
 		clearscr();
 		moveto(21, 1);
-		prints("回复文章于 %s[%s] 讨论区，通知：%s", p_section->stitle, p_section->sname, (reply_note ? "开启" : "关闭"));
+		prints("回复文章于 %s[%s] 讨论区，回复通知：%s", p_section->stitle, p_section->sname, (reply_note ? "开启" : "关闭"));
 		moveto(22, 1);
 		prints("标题: %s", (p_article_new->title[0] == '\0' ? "[无]" : p_article_new->title));
 		moveto(23, 1);
@@ -921,7 +921,7 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 
 			moveto(24, 1);
 			prints("[1;32mT[m改标题, [1;32mC[m取消, [1;32mN[m%s, [1;32mEnter[m继续: ",
-				   (reply_note ? "通知关闭" : "通知开启"));
+				   (reply_note ? "关闭回复通知" : "开启回复通知"));
 			iflush();
 			ch = 0;
 		}
