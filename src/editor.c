@@ -49,7 +49,7 @@ int editor_memory_pool_init(void)
 	}
 
 	p_mp_editor_data = memory_pool_init(sizeof(EDITOR_DATA), 1, 1);
-	if (p_mp_data_line == NULL)
+	if (p_mp_editor_data == NULL)
 	{
 		log_error("Memory pool init error\n");
 		return -3;
