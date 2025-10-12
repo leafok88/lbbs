@@ -343,7 +343,7 @@ MENU;
 
 MENU;
 
-	// Generate menu of favourite sections
+	// Generate menu of favorite sections
 	$buffer .= <<<MENU
 #---------------------------------------------------------------------
 %menu M_FAVOUR
