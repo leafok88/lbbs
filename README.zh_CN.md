@@ -1,6 +1,6 @@
 # LBBS - LeafOK BBS 的经典风格终端服务器
 
-版权所有 (C) 2004-2025 by Leaflet  
+版权所有 (C) 2004-2025 Leaflet  
 电子邮箱 : leaflet@leafok.com  
 演示站点 : bbs.fenglin.info (Telnet 2323 / SSH2 2322)
 
@@ -16,9 +16,9 @@
 
 系统需求
 ==================
-1) GNU C Compiler  
-2) PHP ( Version >= 8.2 )  
-3) MySQL database ( Version >= 8.4 )  
+1) GCC编译器  
+2) PHP ( 版本 >= 8.2 )  
+3) MySQL数据库 ( 版本 >= 8.4 )  
 
 
 安装说明
