@@ -25,9 +25,9 @@ int main(int argc, char *argv[])
 
 	article_view_log_load(0, &view_log, 0);
 
-	for (i = MAX_AID_INC_CNT * 3; i > 0; i--)
+	for (i = MAX_VIEWED_AID_INC_CNT * 3; i > 0; i--)
 	{
-		if (i % MAX_AID_INC_CNT == 0 || i % MAX_AID_INC_CNT == MAX_AID_INC_CNT / 2)
+		if (i % MAX_VIEWED_AID_INC_CNT == 0 || i % MAX_VIEWED_AID_INC_CNT == MAX_VIEWED_AID_INC_CNT / 2)
 		{
 			printf("Base cnt = %d, Inc cnt = %d\n", view_log.aid_base_cnt, view_log.aid_inc_cnt);
 		}
