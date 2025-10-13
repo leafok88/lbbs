@@ -27,7 +27,7 @@ static const BBS_CMD bbs_cmd_list[] = {
 	{"COPYRIGHT", copyright},
 	{"RELOADCONF", reload_bbs_conf},
 	{"SHUTDOWN", shutdown_bbs},
-	{"M_FAVOR_SECTION", favour_section_filter},
+	{"M_FAVOR_SECTION", favor_section_filter},
 	{"VIEW_EX_ARTICLE", view_ex_article},
 	{"LIST_EX_SECTION", list_ex_section},
 	{"TOP10", top10_menu},

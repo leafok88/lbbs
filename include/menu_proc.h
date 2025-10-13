@@ -25,7 +25,7 @@ extern int license(void *param);
 extern int copyright(void *param);
 extern int reload_bbs_conf(void *param);
 extern int shutdown_bbs(void *param);
-extern int favour_section_filter(void *param);
+extern int favor_section_filter(void *param);
 extern int view_ex_article(void *param);
 extern int list_ex_section(void *param);
 extern int top10_menu(void *param);

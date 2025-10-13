@@ -141,7 +141,7 @@ int shutdown_bbs(void *param)
 	return REDRAW;
 }
 
-int favour_section_filter(void *param)
+int favor_section_filter(void *param)
 {
 	MENU_ITEM *p_menu_item = param;
 
