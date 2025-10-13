@@ -24,6 +24,7 @@
 #include "log.h"
 #include "login.h"
 #include "menu.h"
+#include "menu_proc.h"
 #include "section_list_display.h"
 #include "section_list_loader.h"
 #include "screen.h"
@@ -52,6 +53,7 @@ enum select_cmd_t
 	LAST_TOPIC_ARTICLE,
 	SCAN_NEW_ARTICLE,
 	VIEW_EX_DIR,
+	SHOW_TOP10,
 };
 
 static int section_list_draw_items(int page_id, ARTICLE *p_articles[], int article_count, int display_nickname, int ontop_start_offset)
@@ -364,6 +366,8 @@ static enum select_cmd_t section_list_select(int total_page, int item_count, int
 			return SHOW_HELP;
 		case 'x':
 			return VIEW_EX_DIR;
+		case Ctrl('H'):
+			return SHOW_TOP10;
 		default:
 		}
 
@@ -961,6 +965,14 @@ int section_list_display(const char *sname, int32_t aid)
 			{
 				log_error("section_list_ex_dir_display(sid=%d) error\n", p_section->sid);
 			}
+			if (section_list_draw_screen(sname, stitle, master_list, display_nickname) < 0)
+			{
+				log_error("section_list_draw_screen() error\n");
+				return -2;
+			}
+			break;
+		case SHOW_TOP10:
+			show_top10_menu(NULL);
 			if (section_list_draw_screen(sname, stitle, master_list, display_nickname) < 0)
 			{
 				log_error("section_list_draw_screen() error\n");

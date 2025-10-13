@@ -228,8 +228,15 @@ int list_ex_section(void *param)
 
 int show_top10_menu(void *param)
 {
+	static int show_top10 = 0;
 	int ch = 0;
 
+	if (show_top10)
+	{
+		return NOREDRAW;
+	}
+	show_top10 = 1;
+	
 	clearscr();
 	show_top("", BBS_name, "");
 	show_bottom("");
@@ -243,10 +250,12 @@ int show_top10_menu(void *param)
 			switch (ch)
 			{
 			case KEY_NULL: // broken pipe
+				show_top10 = 0;
 				return 0;
 			case KEY_TIMEOUT:
 				if (time(NULL) - BBS_last_access_tm >= MAX_DELAY_TIME)
 				{
+					show_top10 = 0;
 					return 0;
 				}
 				continue;
@@ -279,6 +288,7 @@ int show_top10_menu(void *param)
 		}
 	}
 	
+	show_top10 = 0;
 	return REDRAW;
 }
 
