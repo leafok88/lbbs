@@ -225,3 +225,35 @@ int list_ex_section(void *param)
 
 	return REDRAW;
 }
+
+int top10_menu(void *param)
+{
+	return REDRAW;
+}
+
+int locate_article(void *param)
+{
+	char *sname, *aid, *saveptr;
+
+	sname = strtok_r(param, " ", &saveptr);
+	aid = strtok_r(NULL, " ", &saveptr);
+
+	if (sname == NULL || aid == NULL)
+	{
+		log_error("top10_locate() error: invalid parameter\n", (const char *)param);
+		return NOREDRAW;
+	}
+
+	section_list_display(sname, atoi(aid));
+
+	return REDRAW;
+}
+
+int favor_topic(void *param)
+{
+	clearscr();
+	prints("此功能尚未实现");
+	press_any_key();
+
+	return REDRAW;
+}
