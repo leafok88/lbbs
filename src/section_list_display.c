@@ -793,7 +793,6 @@ int section_list_display(const char *sname, int32_t aid)
 
 			// Update current topic
 			section_topic_view_tid = (p_articles[selected_index]->tid == 0 ? p_articles[selected_index]->aid : p_articles[selected_index]->tid);
-			log_error("topic_view_tid=%d\n", section_topic_view_tid);
 
 			// Update current aid location
 			section_aid_locations[section_index] = p_articles[selected_index]->aid;
