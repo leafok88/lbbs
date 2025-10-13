@@ -31,6 +31,7 @@
 #define CONF_BBSD "conf/bbsd.conf"
 #define CONF_MENU "var/menu_merged.conf"
 #define CONF_BBSNET "conf/bbsnet.conf"
+#define CONF_TOP10_MENU "var/bbs_top_menu.conf"
 #define SSH_HOST_KEYFILE "conf/ssh_host_rsa_key"
 
 #define LOG_FILE_INFO "log/bbsd.log"

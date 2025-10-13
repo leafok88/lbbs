@@ -39,6 +39,7 @@
 #define MENU_SET_RESERVED_LENGTH (sizeof(int16_t) * 4)
 
 MENU_SET bbs_menu;
+MENU_SET top10_menu;
 
 int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 {

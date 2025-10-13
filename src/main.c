@@ -215,8 +215,15 @@ int main(int argc, char *argv[])
 	// Load menus
 	if (load_menu(&bbs_menu, CONF_MENU) < 0)
 	{
+		log_error("load_menu(%s) error\n", CONF_MENU);
 		goto cleanup;
 	}
+	if (load_menu(&top10_menu, CONF_TOP10_MENU) < 0)
+	{
+		log_error("load_menu(%s) error\n", CONF_TOP10_MENU);
+		goto cleanup;
+	}
+	top10_menu.allow_exit = 1;
 
 	// Load data files
 	if (file_loader_init() < 0)
@@ -292,6 +299,7 @@ cleanup:
 
 	// Cleanup menu
 	unload_menu(&bbs_menu);
+	unload_menu(&top10_menu);
 
 	// Cleanup data pools
 	section_list_cleanup();

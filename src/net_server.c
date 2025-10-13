@@ -280,6 +280,7 @@ int net_server(const char *hostaddr, in_port_t port[])
 	time_t tm_notify_child_exit = time(NULL);
 	int sd_notify_stopping = 0;
 	MENU_SET bbs_menu_new;
+	MENU_SET top10_menu_new;
 	int i, j;
 	pid_t pid;
 	int ssh_log_level = SSH_LOG_NOLOG;
@@ -473,13 +474,26 @@ int net_server(const char *hostaddr, in_port_t port[])
 			if (load_menu(&bbs_menu_new, CONF_MENU) < 0)
 			{
 				unload_menu(&bbs_menu_new);
-				log_error("Reload menu failed\n");
+				log_error("Reload bbs menu failed\n");
 			}
 			else
 			{
 				unload_menu(&bbs_menu);
 				memcpy(&bbs_menu, &bbs_menu_new, sizeof(bbs_menu_new));
-				log_common("Reload menu successfully\n");
+				log_common("Reload bbs menu successfully\n");
+			}
+
+			if (load_menu(&top10_menu_new, CONF_TOP10_MENU) < 0)
+			{
+				unload_menu(&top10_menu_new);
+				log_error("Reload top10 menu failed\n");
+			}
+			else
+			{
+				unload_menu(&top10_menu);
+				top10_menu_new.allow_exit = 1;
+				memcpy(&top10_menu, &top10_menu_new, sizeof(top10_menu_new));
+				log_common("Reload top10 menu successfully\n");
 			}
 
 			for (int i = 0; i < data_files_load_startup_count; i++)

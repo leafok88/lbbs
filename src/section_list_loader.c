@@ -717,6 +717,7 @@ int section_list_loader_launch(void)
 
 	// Detach menu in shared memory
 	detach_menu_shm(&bbs_menu);
+	detach_menu_shm(&top10_menu);
 
 	// Set signal handler
 	act.sa_handler = SIG_DFL;

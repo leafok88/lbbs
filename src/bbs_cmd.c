@@ -30,7 +30,7 @@ static const BBS_CMD bbs_cmd_list[] = {
 	{"M_FAVOR_SECTION", favor_section_filter},
 	{"VIEW_EX_ARTICLE", view_ex_article},
 	{"LIST_EX_SECTION", list_ex_section},
-	{"TOP10", top10_menu},
+	{"TOP10", show_top10_menu},
 	{"LOCATE_ARTICLE", locate_article},
 	{"FAVOR_TOPIC", favor_topic},
 };

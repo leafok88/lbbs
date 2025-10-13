@@ -389,6 +389,7 @@ cleanup:
 
 	// Detach menu in shared memory
 	detach_menu_shm(&bbs_menu);
+	detach_menu_shm(&top10_menu);
 
 	// Detach data pools shm
 	detach_section_list_shm();

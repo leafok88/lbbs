@@ -28,7 +28,7 @@ extern int shutdown_bbs(void *param);
 extern int favor_section_filter(void *param);
 extern int view_ex_article(void *param);
 extern int list_ex_section(void *param);
-extern int top10_menu(void *param);
+extern int show_top10_menu(void *param);
 extern int locate_article(void *param);
 extern int favor_topic(void *param);
 

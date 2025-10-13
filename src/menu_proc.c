@@ -226,21 +226,76 @@ int list_ex_section(void *param)
 	return REDRAW;
 }
 
-int top10_menu(void *param)
+int show_top10_menu(void *param)
 {
+	int ch = 0;
+
+	clearscr();
+	show_top("", BBS_name, "");
+	show_bottom("");
+
+	if (display_menu(&top10_menu) == 0)
+	{
+		while (!SYS_server_exit)
+		{
+			iflush();
+			ch = igetch(100);
+			switch (ch)
+			{
+			case KEY_NULL: // broken pipe
+				return 0;
+			case KEY_TIMEOUT:
+				if (time(NULL) - BBS_last_access_tm >= MAX_DELAY_TIME)
+				{
+					return 0;
+				}
+				continue;
+			case CR:
+				igetch_reset();
+			default:
+				switch (menu_control(&top10_menu, ch))
+				{
+				case EXITMENU:
+					ch = EXITMENU;
+					break;
+				case REDRAW:
+					clearscr();
+					show_bottom("");
+					display_menu(&top10_menu);
+					break;
+				case NOREDRAW:
+				case UNKNOWN_CMD:
+				default:
+					break;
+				}
+			}
+
+			BBS_last_access_tm = time(NULL);
+
+			if (ch == EXITMENU)
+			{
+				break;
+			}
+		}
+	}
+	
 	return REDRAW;
 }
 
 int locate_article(void *param)
 {
+	char buf[MAX_MENUITEM_NAME_LENGTH];
 	char *sname, *aid, *saveptr;
 
-	sname = strtok_r(param, " ", &saveptr);
-	aid = strtok_r(NULL, " ", &saveptr);
+	strncpy(buf, param, sizeof(buf) - 1);
+	buf[sizeof(buf) - 1] = '\0';
+
+	sname = strtok_r(buf, "|", &saveptr);
+	aid = strtok_r(NULL, "|", &saveptr);
 
 	if (sname == NULL || aid == NULL)
 	{
-		log_error("top10_locate() error: invalid parameter\n", (const char *)param);
+		log_error("top10_locate(%s) error: invalid parameter\n", param);
 		return NOREDRAW;
 	}
 
