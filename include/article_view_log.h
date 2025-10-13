@@ -19,14 +19,14 @@
 
 #include <stdint.h>
 
-#define MAX_AID_INC_CNT 1000
+#define MAX_VIEWED_AID_INC_CNT 1000
 
 struct article_view_log_t
 {
 	int uid;
 	int32_t *aid_base;
 	int aid_base_cnt;
-	int32_t aid_inc[MAX_AID_INC_CNT];
+	int32_t aid_inc[MAX_VIEWED_AID_INC_CNT];
 	int aid_inc_cnt;
 };
 typedef struct article_view_log_t ARTICLE_VIEW_LOG;

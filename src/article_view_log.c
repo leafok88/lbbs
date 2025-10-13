@@ -335,7 +335,7 @@ int article_view_log_set_viewed(int32_t aid, ARTICLE_VIEW_LOG *p_view_log)
 	}
 
 	// Merge if Inc is full
-	if (p_view_log->aid_inc_cnt >= MAX_AID_INC_CNT)
+	if (p_view_log->aid_inc_cnt >= MAX_VIEWED_AID_INC_CNT)
 	{
 		// Save incremental article view log
 		if (article_view_log_save_inc(p_view_log) < 0)
