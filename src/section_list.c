@@ -664,7 +664,7 @@ void section_list_reset_articles(SECTION_LIST *p_section)
 	p_section->ontop_article_count = 0;
 }
 
-SECTION_LIST *section_list_find_by_name(const char *sname)
+SECTION_LIST *section_list_find_by_name(const char *sname, int64_t *p_index)
 {
 	int64_t index;
 	int ret;
@@ -686,10 +686,15 @@ SECTION_LIST *section_list_find_by_name(const char *sname)
 		return NULL;
 	}
 
+	if (p_index != NULL)
+	{
+		*p_index = index;
+	}
+
 	return (p_section_list_pool->sections + index);
 }
 
-SECTION_LIST *section_list_find_by_sid(int32_t sid)
+SECTION_LIST *section_list_find_by_sid(int32_t sid, int64_t *p_index)
 {
 	int64_t index;
 	int ret;
@@ -712,6 +717,11 @@ SECTION_LIST *section_list_find_by_sid(int32_t sid)
 	else if (ret == 0)
 	{
 		return NULL;
+	}
+
+	if (p_index != NULL)
+	{
+		*p_index = index;
 	}
 
 	return (p_section_list_pool->sections + index);

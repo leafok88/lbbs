@@ -119,8 +119,8 @@ extern int detach_section_list_shm(void);
 
 extern SECTION_LIST *section_list_create(int32_t sid, const char *sname, const char *stitle, const char *master_list);
 extern void section_list_reset_articles(SECTION_LIST *p_section);
-extern SECTION_LIST *section_list_find_by_name(const char *sname);
-extern SECTION_LIST *section_list_find_by_sid(int32_t sid);
+extern SECTION_LIST *section_list_find_by_name(const char *sname, int64_t *p_index);
+extern SECTION_LIST *section_list_find_by_sid(int32_t sid, int64_t *p_index);
 extern int get_section_index(SECTION_LIST *p_section);
 
 extern int section_list_append_article(SECTION_LIST *p_section, const ARTICLE *p_article_src);

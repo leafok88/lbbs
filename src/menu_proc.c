@@ -37,7 +37,7 @@
 
 int list_section(void *param)
 {
-	section_list_display(param);
+	section_list_display(param, 0);
 
 	return REDRAW;
 }
@@ -211,7 +211,7 @@ int list_ex_section(void *param)
 {
 	SECTION_LIST *p_section;
 
-	p_section = section_list_find_by_name(param);
+	p_section = section_list_find_by_name(param, NULL);
 	if (p_section == NULL)
 	{
 		log_error("Section %s not found\n", (const char *)param);

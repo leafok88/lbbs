@@ -19,7 +19,7 @@
 
 #include "section_list.h"
 
-extern int section_list_display(const char *sname);
+extern int section_list_display(const char *sname, int32_t aid);
 
 extern int section_list_ex_dir_display(SECTION_LIST *p_section);
 
