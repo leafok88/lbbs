@@ -346,7 +346,7 @@ MENU;
 	// Generate menu of favorite sections
 	$buffer .= <<<MENU
 #---------------------------------------------------------------------
-%menu M_FAVOUR
+%menu M_FAVOR_SECTION
 title       0, 0, "[版块收藏]"
 screen      2, 0, S_BOARD
 use_filter
