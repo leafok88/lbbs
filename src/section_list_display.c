@@ -366,7 +366,7 @@ static enum select_cmd_t section_list_select(int total_page, int item_count, int
 			return SHOW_HELP;
 		case 'x':
 			return VIEW_EX_DIR;
-		case Ctrl('H'):
+		case 'H':
 			return SHOW_TOP10;
 		default:
 		}
