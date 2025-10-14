@@ -651,11 +651,15 @@ SECTION_LIST *section_list_create(int32_t sid, const char *sname, const char *st
 
 int section_list_update(SECTION_LIST *p_section, const char *sname, const char *stitle, const char *master_list)
 {
+	int64_t index;
+
 	if (p_section == NULL || sname == NULL || stitle == NULL || master_list == NULL)
 	{
 		log_error("NULL pointer error\n");
 		return -1;
 	}
+
+	index = get_section_index(p_section);
 
 	strncpy(p_section->sname, sname, sizeof(p_section->sname) - 1);
 	p_section->sname[sizeof(p_section->sname) - 1] = '\0';
@@ -666,9 +670,9 @@ int section_list_update(SECTION_LIST *p_section, const char *sname, const char *
 	strncpy(p_section->master_list, master_list, sizeof(p_section->master_list) - 1);
 	p_section->master_list[sizeof(p_section->master_list) - 1] = '\0';
 
-	if (trie_dict_set(p_section_list_pool->p_trie_dict_section_by_name, sname, p_section_list_pool->section_count) != 1)
+	if (trie_dict_set(p_section_list_pool->p_trie_dict_section_by_name, sname, index) < 0)
 	{
-		log_error("trie_dict_set(section, %s, %d) error\n", sname, p_section_list_pool->section_count);
+		log_error("trie_dict_set(section, %s, %d) error\n", sname, index);
 		return -2;
 	}
 
