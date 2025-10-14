@@ -211,7 +211,7 @@ int list_ex_section(void *param)
 {
 	SECTION_LIST *p_section;
 
-	p_section = section_list_find_by_name(param, NULL);
+	p_section = section_list_find_by_name(param);
 	if (p_section == NULL)
 	{
 		log_error("Section %s not found\n", (const char *)param);

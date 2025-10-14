@@ -109,7 +109,7 @@ int load_section_config_from_db(int update_gen_ex)
 		mysql_free_result(rs2);
 		rs2 = NULL;
 
-		p_section = section_list_find_by_sid(sid, NULL);
+		p_section = section_list_find_by_sid(sid);
 
 		if (p_section == NULL)
 		{
@@ -286,7 +286,7 @@ int append_articles_from_db(int32_t start_aid, int global_lock, int article_coun
 			}
 		}
 
-		if ((p_section = section_list_find_by_sid(article.sid, NULL)) == NULL)
+		if ((p_section = section_list_find_by_sid(article.sid)) == NULL)
 		{
 			log_error("section_list_find_by_sid(%d) error: unknown section, try reloading section config\n", article.sid);
 			ret = ERR_UNKNOWN_SECTION; // Unknown section found
@@ -465,7 +465,7 @@ int apply_article_op_log_from_db(int op_count_limit)
 			}
 		}
 
-		if ((p_section = section_list_find_by_sid(p_article->sid, NULL)) == NULL)
+		if ((p_section = section_list_find_by_sid(p_article->sid)) == NULL)
 		{
 			log_error("section_list_find_by_sid(%d) error: unknown section, try reloading section config\n", p_article->sid);
 			ret = ERR_UNKNOWN_SECTION; // Unknown section found
@@ -590,7 +590,7 @@ int apply_article_op_log_from_db(int op_count_limit)
 
 			if (sid_dest > 0 && sid_dest != p_article->sid)
 			{
-				p_section_dest = section_list_find_by_sid(sid_dest, NULL);
+				p_section_dest = section_list_find_by_sid(sid_dest);
 				if (p_section_dest == NULL)
 				{
 					ret = ERR_UNKNOWN_SECTION;

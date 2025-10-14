@@ -514,12 +514,14 @@ int section_list_display(const char *sname, int32_t aid)
 	int page_id_cur;
 	const ARTICLE *p_article_locate;
 
-	p_section = section_list_find_by_name(sname, &section_index);
+	p_section = section_list_find_by_name(sname);
 	if (p_section == NULL)
 	{
 		log_error("Section %s not found\n", sname);
 		return -1;
 	}
+
+	section_index = get_section_index(p_section);
 
 	if ((ret = section_list_rd_lock(p_section)) < 0)
 	{

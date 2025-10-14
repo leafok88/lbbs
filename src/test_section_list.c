@@ -146,7 +146,7 @@ int main(int argc, char *argv[])
 
 	for (i = 0; i < section_conf_count; i++)
 	{
-		if (section_list_find_by_name(sname[i], NULL) == NULL)
+		if (section_list_find_by_name(sname[i]) == NULL)
 		{
 			printf("section_list_find_by_name(%s) error\n", sname[i]);
 			return -3;
@@ -156,7 +156,7 @@ int main(int argc, char *argv[])
 	for (i = 0; i < section_count; i++)
 	{
 		sid = i * 3 + 1;
-		if (section_list_find_by_sid(sid, NULL) == NULL || section_list_find_by_sid(sid, NULL)->sid != sid)
+		if (section_list_find_by_sid(sid) == NULL || section_list_find_by_sid(sid)->sid != sid)
 		{
 			printf("section_list_find_by_sid(%d) error\n", sid);
 			return -3;
