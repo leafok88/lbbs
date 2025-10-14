@@ -49,7 +49,7 @@ inline static int article_cache_path(char *file_path, size_t buf_len, const char
 {
 	if (file_path == NULL || cache_dir == NULL || p_article == NULL)
 	{
-		log_error("article_cache_path() NULL pointer error\n");
+		log_error("NULL pointer error\n");
 		return -1;
 	}
 
@@ -76,7 +76,7 @@ int article_cache_generate(const char *cache_dir, const ARTICLE *p_article, cons
 
 	if (cache_dir == NULL || p_article == NULL || content == NULL)
 	{
-		log_error("article_cache_generate() NULL pointer error\n");
+		log_error("NULL pointer error\n");
 		return -1;
 	}
 
@@ -227,7 +227,7 @@ int article_cache_load(ARTICLE_CACHE *p_cache, const char *cache_dir, const ARTI
 
 	if (p_cache == NULL || cache_dir == NULL || p_article == NULL)
 	{
-		log_error("article_cache_load() NULL pointer error\n");
+		log_error("NULL pointer error\n");
 		return -1;
 	}
 
@@ -283,7 +283,7 @@ int article_cache_unload(ARTICLE_CACHE *p_cache)
 {
 	if (p_cache == NULL || p_cache->p_mmap == NULL)
 	{
-		log_error("article_cache_unload() NULL pointer error\n");
+		log_error("NULL pointer error\n");
 		return -1;
 	}
 

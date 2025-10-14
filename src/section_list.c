@@ -727,7 +727,7 @@ int section_list_append_article(SECTION_LIST *p_section, const ARTICLE *p_articl
 
 	if (p_section == NULL || p_article_src == NULL)
 	{
-		log_error("section_list_append_article() NULL pointer error\n");
+		log_error("NULL pointer error\n");
 		return -1;
 	}
 
@@ -1062,7 +1062,7 @@ ARTICLE *section_list_find_article_with_offset(SECTION_LIST *p_section, int32_t 
 
 	if (p_section == NULL)
 	{
-		log_error("section_list_find_article_with_offset() NULL pointer error\n");
+		log_error("NULL pointer error\n");
 		return NULL;
 	}
 
@@ -1154,7 +1154,7 @@ int section_list_calculate_page(SECTION_LIST *p_section, int32_t start_aid)
 
 	if (p_section == NULL)
 	{
-		log_error("section_list_calculate_page() NULL pointer error\n");
+		log_error("NULL pointer error\n");
 		return -1;
 	}
 
@@ -1313,7 +1313,7 @@ int section_list_move_topic(SECTION_LIST *p_section_src, SECTION_LIST *p_section
 
 	if (p_section_src == NULL || p_section_dest == NULL)
 	{
-		log_error("section_list_move_topic() NULL pointer error\n");
+		log_error("NULL pointer error\n");
 		return -1;
 	}
 

@@ -32,7 +32,7 @@ int article_view_log_load(int uid, ARTICLE_VIEW_LOG *p_view_log, int keep_inc)
 
 	if (p_view_log == NULL)
 	{
-		log_error("article_view_log_load() error: NULL pointer\n");
+		log_error("NULL pointer error\n");
 		return -1;
 	}
 
@@ -104,7 +104,7 @@ int article_view_log_unload(ARTICLE_VIEW_LOG *p_view_log)
 {
 	if (p_view_log == NULL)
 	{
-		log_error("article_view_log_unload() error: NULL pointer\n");
+		log_error("NULL pointer error\n");
 		return -1;
 	}
 
@@ -128,7 +128,7 @@ int article_view_log_save_inc(const ARTICLE_VIEW_LOG *p_view_log)
 
 	if (p_view_log == NULL)
 	{
-		log_error("article_view_log_save_inc() error: NULL pointer\n");
+		log_error("NULL pointer error\n");
 		return -1;
 	}
 
@@ -188,7 +188,7 @@ int article_view_log_merge_inc(ARTICLE_VIEW_LOG *p_view_log)
 
 	if (p_view_log == NULL)
 	{
-		log_error("article_view_log_merge_inc() error: NULL pointer\n");
+		log_error("NULL pointer error\n");
 		return -1;
 	}
 
@@ -248,7 +248,7 @@ int article_view_log_is_viewed(int32_t aid, const ARTICLE_VIEW_LOG *p_view_log)
 
 	if (p_view_log == NULL)
 	{
-		log_error("article_view_log_is_viewed() error: NULL pointer\n");
+		log_error("NULL pointer error\n");
 		return -1;
 	}
 
@@ -297,7 +297,7 @@ int article_view_log_set_viewed(int32_t aid, ARTICLE_VIEW_LOG *p_view_log)
 
 	if (p_view_log == NULL)
 	{
-		log_error("article_view_log_set_viewed() error: NULL pointer\n");
+		log_error("NULL pointer error\n");
 		return -1;
 	}
 
