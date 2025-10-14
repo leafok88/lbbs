@@ -132,7 +132,7 @@ int article_view_log_save_inc(const ARTICLE_VIEW_LOG *p_view_log)
 		return -1;
 	}
 
-	if (p_view_log->uid <= 0)
+	if (p_view_log->uid <= 0 || p_view_log->aid_inc_cnt == 0)
 	{
 		return 0;
 	}
