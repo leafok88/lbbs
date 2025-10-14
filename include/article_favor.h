@@ -17,6 +17,7 @@
 #ifndef _ARTICLE_FAVOR_H_
 #define _ARTICLE_FAVOR_H_
 
+#include "section_list.h"
 #include <stdint.h>
 
 #define MAX_FAVOR_AID_INC_CNT 1000
@@ -46,5 +47,8 @@ extern int article_favor_merge_inc(ARTICLE_FAVOR *p_favor);
 extern int article_favor_check(int32_t aid, const ARTICLE_FAVOR *p_favor);
 // Set specific article as favorite
 extern int article_favor_set(int32_t aid, ARTICLE_FAVOR *p_favor);
+
+extern int query_favor_articles(ARTICLE_FAVOR *p_favor, int page_id, ARTICLE **p_articles,
+								char p_snames[][BBS_section_name_max_len + 1], int *p_article_count, int *p_page_count);
 
 #endif //_ARTICLE_FAVOR_H_

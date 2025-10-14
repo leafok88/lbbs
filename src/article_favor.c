@@ -32,7 +32,7 @@ int article_favor_load(int uid, ARTICLE_FAVOR *p_favor, int keep_inc)
 
 	if (p_favor == NULL)
 	{
-		log_error("article_favor_load() error: NULL pointer\n");
+		log_error("NULL pointer error\n");
 		return -1;
 	}
 
@@ -104,7 +104,7 @@ int article_favor_unload(ARTICLE_FAVOR *p_favor)
 {
 	if (p_favor == NULL)
 	{
-		log_error("article_favor_unload() error: NULL pointer\n");
+		log_error("NULL pointer error\n");
 		return -1;
 	}
 
@@ -128,11 +128,11 @@ int article_favor_save_inc(const ARTICLE_FAVOR *p_favor)
 
 	if (p_favor == NULL)
 	{
-		log_error("article_favor_save_inc() error: NULL pointer\n");
+		log_error("NULL pointer error\n");
 		return -1;
 	}
 
-	if (p_favor->uid <= 0)
+	if (p_favor->uid <= 0 || p_favor->aid_inc_cnt == 0)
 	{
 		return 0;
 	}
@@ -188,7 +188,7 @@ int article_favor_merge_inc(ARTICLE_FAVOR *p_favor)
 
 	if (p_favor == NULL)
 	{
-		log_error("article_favor_merge_inc() error: NULL pointer\n");
+		log_error("NULL pointer error\n");
 		return -1;
 	}
 
@@ -248,7 +248,7 @@ int article_favor_check(int32_t aid, const ARTICLE_FAVOR *p_favor)
 
 	if (p_favor == NULL)
 	{
-		log_error("article_favor_check() error: NULL pointer\n");
+		log_error("NULL pointer error\n");
 		return -1;
 	}
 
@@ -297,7 +297,7 @@ int article_favor_set(int32_t aid, ARTICLE_FAVOR *p_favor)
 
 	if (p_favor == NULL)
 	{
-		log_error("article_favor_set() error: NULL pointer\n");
+		log_error("NULL pointer error\n");
 		return -1;
 	}
 
@@ -369,4 +369,84 @@ int article_favor_set(int32_t aid, ARTICLE_FAVOR *p_favor)
 	(p_favor->aid_inc_cnt)++;
 
 	return 1; // Set complete
+}
+
+int query_favor_articles(ARTICLE_FAVOR *p_favor, int page_id, ARTICLE **p_articles,
+						 char p_snames[][BBS_section_name_max_len + 1], int *p_article_count, int *p_page_count)
+{
+	SECTION_LIST *p_section;
+	int32_t aid;
+	int i;
+
+	if (p_favor == NULL || p_articles == NULL || p_article_count == NULL || p_page_count == NULL)
+	{
+		log_error("NULL pointer error\n");
+		return -1;
+	}
+
+	if (article_favor_save_inc(p_favor) < 0)
+	{
+		log_error("article_favor_save_inc() error\n");
+		return -2;
+	}
+	if (article_favor_merge_inc(p_favor) < 0)
+	{
+		log_error("article_favor_merge_inc() error\n");
+		return -2;
+	}
+
+	*p_page_count = p_favor->aid_base_cnt / BBS_article_limit_per_page + (p_favor->aid_base_cnt % BBS_article_limit_per_page == 0 ? 0 : 1);
+	*p_article_count = 0;
+
+	if (p_favor->aid_base_cnt == 0)
+	{
+		// empty list
+		return 0;
+	}
+
+	if (page_id < 0 || page_id >= *p_page_count)
+	{
+		log_error("Invalid page_id = %d, not in range [0, %d)\n", page_id, *p_page_count);
+		return -1;
+	}
+
+	for (i = 0;
+		 i < BBS_article_limit_per_page &&
+		 page_id * BBS_article_limit_per_page + i < p_favor->aid_base_cnt;
+		 i++)
+	{
+		aid = p_favor->aid_base[page_id * BBS_article_limit_per_page + i];
+		p_articles[i] = article_block_find_by_aid(aid);
+		if (p_articles[i] == NULL)
+		{
+			log_error("article_block_find_by_aid(aid=%d) error: page_id=%d, i=%d\n", aid, page_id, i);
+			return -3;
+		}
+
+		p_section = section_list_find_by_sid(p_articles[i]->sid);
+		if (p_section == NULL)
+		{
+			log_error("section_list_find_by_sid(%d) error\n", p_articles[i]->sid);
+			return -3;
+		}
+
+		// acquire lock of section
+		if (section_list_rd_lock(p_section) < 0)
+		{
+			log_error("section_list_rd_lock(sid = %d) error\n", p_section->sid);
+			return -4;
+		}
+
+		memcpy(p_snames[i], p_section->sname, sizeof(p_snames[i]));
+
+		// release lock of section
+		if (section_list_rd_unlock(p_section) < 0)
+		{
+			log_error("section_list_rd_unlock(sid = %d) error\n", p_section->sid);
+			return -4;
+		}
+	}
+	*p_article_count = i;
+
+	return 0;
 }

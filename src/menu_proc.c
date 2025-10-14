@@ -15,6 +15,7 @@
  ***************************************************************************/
 
 #include "article_cache.h"
+#include "article_favor_display.h"
 #include "article_view_log.h"
 #include "bbs.h"
 #include "bbs_cmd.h"
@@ -316,9 +317,10 @@ int locate_article(void *param)
 
 int favor_topic(void *param)
 {
-	clearscr();
-	prints("此功能尚未实现");
-	press_any_key();
+	if (article_favor_display(&BBS_article_favor) < 0)
+	{
+		log_error("article_favor_display() error\n");
+	}
 
 	return REDRAW;
 }
