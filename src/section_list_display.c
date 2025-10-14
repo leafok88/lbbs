@@ -521,6 +521,13 @@ int section_list_display(const char *sname, int32_t aid)
 		return -1;
 	}
 
+	if (!checkpriv(&BBS_priv, p_section->sid, S_LIST))
+	{
+		log_error("Forbid access to unauthorized section, sid=%d, uid=%d\n",
+				  p_section->sid, BBS_priv.uid);
+		return -1;
+	}
+
 	section_index = get_section_index(p_section);
 
 	if ((ret = section_list_rd_lock(p_section)) < 0)
