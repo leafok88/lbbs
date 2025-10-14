@@ -137,12 +137,12 @@ int load_section_config_from_db(int update_gen_ex)
 				break;
 			}
 
-			strncpy(p_section->sname, row[1], sizeof(p_section->sname) - 1);
-			p_section->sname[sizeof(p_section->sname) - 1] = '\0';
-			strncpy(p_section->stitle, row[2], sizeof(p_section->stitle) - 1);
-			p_section->stitle[sizeof(p_section->stitle) - 1] = '\0';
-			strncpy(p_section->master_list, master_list, sizeof(p_section->master_list) - 1);
-			p_section->master_list[sizeof(p_section->master_list) - 1] = '\0';
+			if (section_list_update(p_section, row[1], row[2], master_list) < 0)
+			{
+				log_error("section_list_update(sid=%d) error\n", p_section->sid);
+				ret = -4;
+				break;
+			}
 		}
 
 		p_section->class_id = atoi(row[3]);
