@@ -136,7 +136,7 @@ static int section_list_draw_items(int page_id, ARTICLE *p_articles[], int artic
 		}
 		strncat(title_f, p_articles[i]->title + j, sizeof(title_f) - 1 - strnlen(title_f, sizeof(title_f)));
 
-		len = split_line(title_f, 47 - (display_nickname ? 8 : 0), &eol, &title_f_len, 1);
+		len = split_line(title_f, 59 - (display_nickname ? BBS_nickname_max_len / 2 : BBS_username_max_len), &eol, &title_f_len, 1);
 		if (title_f[len] != '\0')
 		{
 			title_f[len] = '\0';
@@ -547,7 +547,7 @@ int section_list_display(const char *sname, int32_t aid)
 	else
 	{
 		aid_location = aid;
-	}	
+	}
 
 	// Locate at article with aid_locate
 	if (aid_location > 0)
