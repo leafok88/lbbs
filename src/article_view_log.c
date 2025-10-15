@@ -360,9 +360,11 @@ int article_view_log_set_viewed(int32_t aid, ARTICLE_VIEW_LOG *p_view_log)
 		right = left + 1;
 	}
 
-	for (i = p_view_log->aid_inc_cnt - 1; i >= right; i--)
+	if (p_view_log->aid_inc_cnt > right)
 	{
-		p_view_log->aid_inc[i + 1] = p_view_log->aid_inc[i];
+		memmove(p_view_log->aid_inc + right + 1,
+				p_view_log->aid_inc + right,
+				sizeof(int32_t) * (size_t)(p_view_log->aid_inc_cnt - right));
 	}
 
 	p_view_log->aid_inc[right] = aid;
