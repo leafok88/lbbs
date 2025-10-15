@@ -4,9 +4,12 @@ Copyright (C) 2004-2025 by Leaflet
 Email : leaflet@leafok.com
 
 
-2025-10  v1.4
+2025-10-15  v1.4
 =================
-Some minor enhancements
+Add major features
+
+1. Personal favorite topics  
+2. Menu of top 10 hot topics  
 
 
 2025-07-01  v1.3
