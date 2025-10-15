@@ -15,6 +15,7 @@
  ***************************************************************************/
 
 #include "article_favor_display.h"
+#include "article_view_log.h"
 #include "io.h"
 #include "log.h"
 #include "login.h"
@@ -22,6 +23,7 @@
 #include "str_process.h"
 #include "section_list.h"
 #include "section_list_display.h"
+#include "user_priv.h"
 #include <string.h>
 #include <time.h>
 #include <sys/param.h>
@@ -33,6 +35,7 @@ enum select_cmd_t
     CHANGE_PAGE,
     SHOW_HELP,
     SWITCH_NAME,
+    UNSET_FAVOR,
 };
 
 static int article_favor_draw_screen(int display_sname)
@@ -41,8 +44,8 @@ static int article_favor_draw_screen(int display_sname)
     show_top("[主题收藏]", BBS_name, "");
     moveto(2, 0);
     prints("返回[\033[1;32m←\033[0;37m,\033[1;32mESC\033[0;37m] 选择[\033[1;32m↑\033[0;37m,\033[1;32m↓\033[0;37m] "
-           "阅读[\033[1;32m→\033[0;37m,\033[1;32mENTER\033[0;37m] %s[\033[1;32mn\033[0;37m] "
-           "帮助[\033[1;32mh\033[0;37m]\033[m",
+           "定位[\033[1;32m→\033[0;37m,\033[1;32mENTER\033[0;37m] 移除[\033[1;32m-\033[0;37m\033[0;37m] "
+           "%s[\033[1;32mn\033[0;37m] 帮助[\033[1;32mh\033[0;37m]\033[m",
            (display_sname ? "用户名" : "版块名称"));
     moveto(3, 0);
     if (display_sname)
@@ -67,6 +70,8 @@ static int article_favor_draw_items(int page_id, ARTICLE *p_articles[], char p_s
     int eol;
     int len;
     int i;
+    char article_flag;
+	int is_viewed;
     time_t tm_now;
 
     time(&tm_now);
@@ -75,6 +80,33 @@ static int article_favor_draw_items(int page_id, ARTICLE *p_articles[], char p_s
 
     for (i = 0; i < article_count; i++)
     {
+		if (p_articles[i]->uid == BBS_priv.uid)
+		{
+			is_viewed = 1;
+		}
+		else
+		{
+			is_viewed = article_view_log_is_viewed(p_articles[i]->aid, &BBS_article_view_log);
+			if (is_viewed < 0)
+			{
+				log_error("article_view_log_is_viewed(aid=%d) error\n", p_articles[i]->aid);
+				is_viewed = 0;
+			}
+		}
+
+        if (p_articles[i]->excerption)
+		{
+			article_flag = (is_viewed ? 'm' : 'M');
+		}
+		else if (p_articles[i]->lock && is_viewed)
+		{
+			article_flag = 'x';
+		}
+		else
+		{
+			article_flag = (is_viewed ? ' ' : 'N');
+		}
+
         localtime_r(&p_articles[i]->sub_dt, &tm_sub);
         if (tm_now - p_articles[i]->sub_dt < 3600 * 24 * 365)
         {
@@ -88,6 +120,7 @@ static int article_favor_draw_items(int page_id, ARTICLE *p_articles[], char p_s
         strncpy(title_f, (p_articles[i]->tid == 0 ? "● " : ""), sizeof(title_f) - 1);
         title_f[sizeof(title_f) - 1] = '\0';
         strncat(title_f, (p_articles[i]->transship ? "[转载]" : ""), sizeof(title_f) - 1 - strnlen(title_f, sizeof(title_f)));
+		strncat(title_f, p_articles[i]->title, sizeof(title_f) - 1 - strnlen(title_f, sizeof(title_f)));
 
         len = split_line(title_f, 59 - (display_sname ? BBS_section_name_max_len : BBS_username_max_len), &eol, &title_f_len, 1);
         if (title_f[len] != '\0')
@@ -97,8 +130,9 @@ static int article_favor_draw_items(int page_id, ARTICLE *p_articles[], char p_s
 
         moveto(4 + i, 1);
 
-        prints("  %7d   %s%*s %s",
+        prints("  %7d %c %s%*s %s %s",
                p_articles[i]->aid,
+               article_flag,
                (display_sname ? p_snames[i] : p_articles[i]->username),
                (display_sname
                     ? BBS_section_name_max_len - str_length(p_snames[i], 1)
@@ -144,6 +178,13 @@ static enum select_cmd_t article_favor_select(int total_page, int item_count, in
         case 'n':
             BBS_last_access_tm = time(NULL);
             return SWITCH_NAME;
+        case '-':
+            if (item_count > 0)
+            {
+                BBS_last_access_tm = time(NULL);
+                return UNSET_FAVOR;
+            }
+            break;
         case CR:
             igetch_reset();
         case KEY_RIGHT:
@@ -308,6 +349,13 @@ int article_favor_display(ARTICLE_FAVOR *p_favor)
         {
         case EXIT_LIST:
             return 0;
+        case UNSET_FAVOR:
+            if (article_favor_set(p_articles[selected_index]->aid, &BBS_article_favor, 0) != 1)
+            {
+                log_error("article_favor_set(aid=%d, 0) error\n", p_articles[selected_index]->aid);
+                break;
+            }
+            // continue to refresh list
         case CHANGE_PAGE:
             ret = query_favor_articles(p_favor, page_id, p_articles, snames, &article_count, &page_count);
             if (ret < 0)
