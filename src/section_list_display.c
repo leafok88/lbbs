@@ -15,6 +15,7 @@
  ***************************************************************************/
 
 #include "article_cache.h"
+#include "article_favor.h"
 #include "article_op.h"
 #include "article_post.h"
 #include "article_view_log.h"
@@ -49,6 +50,8 @@ enum select_cmd_t
 	EDIT_ARTICLE,
 	DELETE_ARTICLE,
 	QUERY_ARTICLE,
+	SET_FAVOR_ARTICLE,
+	UNSET_FAVOR_ARTICLE,
 	FIRST_TOPIC_ARTICLE,
 	LAST_TOPIC_ARTICLE,
 	SCAN_NEW_ARTICLE,
@@ -68,6 +71,7 @@ static int section_list_draw_items(int page_id, ARTICLE *p_articles[], int artic
 	size_t j;
 	char article_flag;
 	int is_viewed;
+	int is_favor;
 	time_t tm_now;
 
 	time(&tm_now);
@@ -88,6 +92,20 @@ static int section_list_draw_items(int page_id, ARTICLE *p_articles[], int artic
 				log_error("article_view_log_is_viewed(aid=%d) error\n", p_articles[i]->aid);
 				is_viewed = 0;
 			}
+		}
+
+		if (p_articles[i]->tid == 0)
+		{
+			is_favor = article_favor_check(p_articles[i]->aid, &BBS_article_favor);
+			if (is_favor < 0)
+			{
+				log_error("article_favor_check(aid=%d) error\n", p_articles[i]->aid);
+				is_favor = 0;
+			}
+		}
+		else
+		{
+			is_favor = 0;
 		}
 
 		if (p_articles[i]->excerption)
@@ -145,7 +163,8 @@ static int section_list_draw_items(int page_id, ARTICLE *p_articles[], int artic
 		moveto(4 + i, 1);
 		if (i >= ontop_start_offset)
 		{
-			prints("   \033[1;33m[提示]\033[m %c %s%*s %s %s%s\033[m",
+			prints("   \033[1;33m[提示]\033[m%c%c %s%*s %s %s%s\033[m",
+				   (is_favor ? '@' : ' '),
 				   article_flag,
 				   (display_nickname ? p_articles[i]->nickname : p_articles[i]->username),
 				   (display_nickname ? BBS_nickname_max_len / 2 - str_length(p_articles[i]->nickname, 1)
@@ -161,13 +180,14 @@ static int section_list_draw_items(int page_id, ARTICLE *p_articles[], int artic
 		}
 		else
 		{
-			prints("  %s%7d\033[m %c %s%*s %s %s%s\033[m",
+			prints("  %s%7d\033[m%c%c %s%*s %s %s%s\033[m",
 				   (p_articles[i]->aid == section_topic_view_tid
 						? "\033[1;33m"
 						: (p_articles[i]->tid == section_topic_view_tid
 							   ? "\033[1;36m"
 							   : "")),
 				   p_articles[i]->aid,
+				   (is_favor ? '@' : ' '),
 				   article_flag,
 				   (display_nickname ? p_articles[i]->nickname : p_articles[i]->username),
 				   (display_nickname ? BBS_nickname_max_len / 2 - str_length(p_articles[i]->nickname, 1)
@@ -279,6 +299,18 @@ static enum select_cmd_t section_list_select(int total_page, int item_count, int
 			if (item_count > 0)
 			{
 				return QUERY_ARTICLE;
+			}
+			break;
+		case 'F':
+			if (item_count > 0)
+			{
+				return SET_FAVOR_ARTICLE;
+			}
+			break;
+		case '-':
+			if (item_count > 0)
+			{
+				return UNSET_FAVOR_ARTICLE;
 			}
 			break;
 		case KEY_HOME:
@@ -905,6 +937,28 @@ int section_list_display(const char *sname, int32_t aid)
 			{
 				log_error("section_list_draw_screen() error\n");
 				return -2;
+			}
+			break;
+		case SET_FAVOR_ARTICLE:
+			ret = article_favor_set(p_articles[selected_index]->tid == 0
+										? p_articles[selected_index]->aid
+										: p_articles[selected_index]->tid,
+									&BBS_article_favor, 1);
+			if (ret < 0)
+			{
+				log_error("article_favor_set(aid=%d, 1) error\n",
+						  p_articles[selected_index]->tid == 0 ? p_articles[selected_index]->aid : p_articles[selected_index]->tid);
+			}
+			break;
+		case UNSET_FAVOR_ARTICLE:
+			ret = article_favor_set(p_articles[selected_index]->tid == 0
+										? p_articles[selected_index]->aid
+										: p_articles[selected_index]->tid,
+									&BBS_article_favor, 0);
+			if (ret < 0)
+			{
+				log_error("article_favor_set(aid=%d, 0) error\n",
+						  p_articles[selected_index]->tid == 0 ? p_articles[selected_index]->aid : p_articles[selected_index]->tid);
 			}
 			break;
 		case FIRST_TOPIC_ARTICLE:
