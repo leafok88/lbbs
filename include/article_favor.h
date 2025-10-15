@@ -20,12 +20,13 @@
 #include "section_list.h"
 #include <stdint.h>
 
+#define MAX_FAVOR_AID_BASE_CNT 10000
 #define MAX_FAVOR_AID_INC_CNT 1000
 
 struct article_favor_t
 {
 	int uid;
-	int32_t *aid_base;
+	int32_t aid_base[MAX_FAVOR_AID_BASE_CNT];
 	int aid_base_cnt;
 	int32_t aid_inc[MAX_FAVOR_AID_INC_CNT];
 	int aid_inc_cnt;

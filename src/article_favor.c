@@ -41,7 +41,6 @@ int article_favor_load(int uid, ARTICLE_FAVOR *p_favor, int keep_inc)
 	if (uid == 0)
 	{
 		p_favor->aid_base_cnt = 0;
-		p_favor->aid_base = NULL;
 
 		if (!keep_inc)
 		{
@@ -66,25 +65,24 @@ int article_favor_load(int uid, ARTICLE_FAVOR *p_favor, int keep_inc)
 		log_error("Query article_favorite error: %s\n", mysql_error(db));
 		return -3;
 	}
-	if ((rs = mysql_store_result(db)) == NULL)
+	if ((rs = mysql_use_result(db)) == NULL)
 	{
 		log_error("Get article_favorite data failed\n");
 		return -3;
 	}
 
 	p_favor->aid_base_cnt = 0;
-	p_favor->aid_base = malloc(sizeof(int32_t) * mysql_num_rows(rs));
-	if (p_favor->aid_base == NULL)
-	{
-		log_error("malloc(INT32 * %d) error: OOM\n", mysql_num_rows(rs));
-		mysql_free_result(rs);
-		mysql_close(db);
-		return -4;
-	}
 
 	while ((row = mysql_fetch_row(rs)))
 	{
-		p_favor->aid_base[(p_favor->aid_base_cnt)++] = atoi(row[0]);
+		p_favor->aid_base[p_favor->aid_base_cnt] = atoi(row[0]);
+		(p_favor->aid_base_cnt)++;
+		if (p_favor->aid_base_cnt >= MAX_FAVOR_AID_BASE_CNT)
+		{
+			log_error("Too many article_favorite records for uid=%d\n",
+					  uid);
+			break;
+		}
 	}
 	mysql_free_result(rs);
 
@@ -108,12 +106,7 @@ int article_favor_unload(ARTICLE_FAVOR *p_favor)
 		return -1;
 	}
 
-	if (p_favor->aid_base != NULL)
-	{
-		free(p_favor->aid_base);
-		p_favor->aid_base = NULL;
-		p_favor->aid_base_cnt = 0;
-	}
+	p_favor->aid_base_cnt = 0;
 
 	return 0;
 }
@@ -232,8 +225,7 @@ int article_favor_save_inc(const ARTICLE_FAVOR *p_favor)
 
 int article_favor_merge_inc(ARTICLE_FAVOR *p_favor)
 {
-	int32_t *aid_new;
-	int aid_new_cnt;
+	int32_t aid_new[MAX_FAVOR_AID_BASE_CNT];
 	int i, j, k;
 
 	if (p_favor == NULL)
@@ -247,16 +239,7 @@ int article_favor_merge_inc(ARTICLE_FAVOR *p_favor)
 		return 0;
 	}
 
-	aid_new_cnt = p_favor->aid_base_cnt + p_favor->aid_inc_cnt;
-
-	aid_new = malloc(sizeof(int32_t) * (size_t)aid_new_cnt);
-	if (aid_new == NULL)
-	{
-		log_error("malloc(INT32 * %d) error: OOM\n", aid_new_cnt);
-		return -2;
-	}
-
-	for (i = 0, j = 0, k = 0; i < p_favor->aid_base_cnt && j < p_favor->aid_inc_cnt;)
+	for (i = 0, j = 0, k = 0; i < p_favor->aid_base_cnt && j < p_favor->aid_inc_cnt && k < MAX_FAVOR_AID_BASE_CNT;)
 	{
 		if (p_favor->aid_base[i] == p_favor->aid_inc[j]) // XOR - discard duplicate pair
 		{
@@ -273,15 +256,27 @@ int article_favor_merge_inc(ARTICLE_FAVOR *p_favor)
 		}
 	}
 
-	memcpy(aid_new + k, p_favor->aid_base + i, sizeof(int32_t) * (size_t)(p_favor->aid_base_cnt - i));
-	k += (p_favor->aid_base_cnt - i);
-	memcpy(aid_new + k, p_favor->aid_inc + j, sizeof(int32_t) * (size_t)(p_favor->aid_inc_cnt - j));
-	k += (p_favor->aid_inc_cnt - j);
+	while (i < p_favor->aid_base_cnt && k < MAX_FAVOR_AID_BASE_CNT)
+	{
+		aid_new[k++] = p_favor->aid_base[i++];
+	}
+	if (i < p_favor->aid_base_cnt)
+	{
+		log_error("Too many base aids, %d will be discarded\n", p_favor->aid_base_cnt - i);
+	}
 
-	free(p_favor->aid_base);
-	p_favor->aid_base = aid_new;
+	while (j < p_favor->aid_inc_cnt && k < MAX_FAVOR_AID_BASE_CNT)
+	{
+		aid_new[k++] = p_favor->aid_inc[j++];
+	}
+	if (j < p_favor->aid_inc_cnt)
+	{
+		log_error("Too many inc aids, %d will be discarded\n", p_favor->aid_inc_cnt - j);
+	}
+
+	memcpy(p_favor->aid_base, aid_new, sizeof(int32_t) * (size_t)k);
+
 	p_favor->aid_base_cnt = k;
-
 	p_favor->aid_inc_cnt = 0;
 
 	return 0;

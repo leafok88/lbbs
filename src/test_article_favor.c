@@ -114,6 +114,12 @@ int main(int argc, char *argv[])
 		}
 
 		aid = i * 5 + 7;
+		if (article_favor_check(aid, &favor) != 1)
+		{
+			printf("article_favor_check(%d) != 1\n", aid);
+			break;
+		}
+
 		if (article_favor_set(aid, &favor, 1) != 0)
 		{
 			printf("article_favor_set(%d, 1) != 0\n", aid);
