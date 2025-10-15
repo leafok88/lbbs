@@ -20,6 +20,7 @@
 #include "log.h"
 #include <stdlib.h>
 #include <string.h>
+#include <sys/param.h>
 
 ARTICLE_FAVOR BBS_article_favor;
 
@@ -227,6 +228,7 @@ int article_favor_merge_inc(ARTICLE_FAVOR *p_favor)
 {
 	int32_t aid_new[MAX_FAVOR_AID_BASE_CNT];
 	int i, j, k;
+	int len;
 
 	if (p_favor == NULL)
 	{
@@ -256,18 +258,26 @@ int article_favor_merge_inc(ARTICLE_FAVOR *p_favor)
 		}
 	}
 
-	while (i < p_favor->aid_base_cnt && k < MAX_FAVOR_AID_BASE_CNT)
+	len = MIN(p_favor->aid_base_cnt - i, MAX_FAVOR_AID_BASE_CNT - k);
+	if (len > 0)
 	{
-		aid_new[k++] = p_favor->aid_base[i++];
+		memcpy(aid_new + k, p_favor->aid_base + i,
+			   sizeof(int32_t) * (size_t)len);
+		i += len;
+		k += len;
 	}
 	if (i < p_favor->aid_base_cnt)
 	{
 		log_error("Too many base aids, %d will be discarded\n", p_favor->aid_base_cnt - i);
 	}
 
-	while (j < p_favor->aid_inc_cnt && k < MAX_FAVOR_AID_BASE_CNT)
+	len = MIN(p_favor->aid_inc_cnt - j, MAX_FAVOR_AID_BASE_CNT - k);
+	if (len > 0)
 	{
-		aid_new[k++] = p_favor->aid_inc[j++];
+		memcpy(aid_new + k, p_favor->aid_inc + j,
+			   sizeof(int32_t) * (size_t)len);
+		j += len;
+		k += len;
 	}
 	if (j < p_favor->aid_inc_cnt)
 	{
@@ -388,9 +398,11 @@ int article_favor_set(int32_t aid, ARTICLE_FAVOR *p_favor, int state)
 
 	if (aid == p_favor->aid_inc[left] && p_favor->aid_inc_cnt > 0) // Unset
 	{
-		for (i = left; i < p_favor->aid_inc_cnt - 1; i++)
+		if (p_favor->aid_inc_cnt > left + 1)
 		{
-			p_favor->aid_inc[i] = p_favor->aid_inc[i + 1];
+			memmove(p_favor->aid_inc + left,
+					p_favor->aid_inc + left + 1,
+					sizeof(int32_t) * (size_t)(p_favor->aid_inc_cnt - left - 1));
 		}
 
 		(p_favor->aid_inc_cnt)--;
@@ -424,9 +436,11 @@ int article_favor_set(int32_t aid, ARTICLE_FAVOR *p_favor, int state)
 		right = left + 1;
 	}
 
-	for (i = p_favor->aid_inc_cnt - 1; i >= right; i--)
+	if (p_favor->aid_inc_cnt > right)
 	{
-		p_favor->aid_inc[i + 1] = p_favor->aid_inc[i];
+		memmove(p_favor->aid_inc + right + 1,
+				p_favor->aid_inc + right,
+				sizeof(int32_t) * (size_t)(p_favor->aid_inc_cnt - right));
 	}
 
 	p_favor->aid_inc[right] = aid;
