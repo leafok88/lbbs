@@ -49,7 +49,7 @@ int editor_memory_pool_init(void)
 	}
 
 	p_mp_editor_data = memory_pool_init(sizeof(EDITOR_DATA), 1, 1);
-	if (p_mp_data_line == NULL)
+	if (p_mp_editor_data == NULL)
 	{
 		log_error("Memory pool init error\n");
 		return -3;
@@ -83,7 +83,7 @@ EDITOR_DATA *editor_data_load(const char *p_data)
 
 	if (p_data == NULL)
 	{
-		log_error("editor_data_load() error: NULL pointer\n");
+		log_error("NULL pointer error\n");
 		return NULL;
 	}
 
@@ -150,7 +150,7 @@ long editor_data_save(const EDITOR_DATA *p_editor_data, char *p_data, size_t buf
 
 	if (p_editor_data == NULL || p_data == NULL)
 	{
-		log_error("editor_data_save() error: NULL pointer\n");
+		log_error("NULL pointer error\n");
 		return -1;
 	}
 
@@ -224,7 +224,7 @@ int editor_data_insert(EDITOR_DATA *p_editor_data, long *p_display_line, long *p
 
 	if (p_editor_data == NULL || p_last_updated_line == NULL)
 	{
-		log_error("editor_data_op() error: NULL pointer\n");
+		log_error("NULL pointer error\n");
 		return -1;
 	}
 
@@ -462,7 +462,7 @@ int editor_data_delete(EDITOR_DATA *p_editor_data, long *p_display_line, long *p
 
 	if (p_editor_data == NULL || p_last_updated_line == NULL)
 	{
-		log_error("editor_data_op() error: NULL pointer\n");
+		log_error("NULL pointer error\n");
 		return -1;
 	}
 

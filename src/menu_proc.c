@@ -15,6 +15,7 @@
  ***************************************************************************/
 
 #include "article_cache.h"
+#include "article_favor_display.h"
 #include "article_view_log.h"
 #include "bbs.h"
 #include "bbs_cmd.h"
@@ -37,7 +38,7 @@
 
 int list_section(void *param)
 {
-	section_list_display(param);
+	section_list_display(param, 0);
 
 	return REDRAW;
 }
@@ -141,7 +142,7 @@ int shutdown_bbs(void *param)
 	return REDRAW;
 }
 
-int favour_section_filter(void *param)
+int favor_section_filter(void *param)
 {
 	MENU_ITEM *p_menu_item = param;
 
@@ -221,6 +222,104 @@ int list_ex_section(void *param)
 	if (section_list_ex_dir_display(p_section) < 0)
 	{
 		log_error("section_list_ex_dir_display(sid=%d) error\n", p_section->sid);
+	}
+
+	return REDRAW;
+}
+
+int show_top10_menu(void *param)
+{
+	static int show_top10 = 0;
+	int ch = 0;
+
+	if (show_top10)
+	{
+		return NOREDRAW;
+	}
+	show_top10 = 1;
+	
+	clearscr();
+	show_top("", BBS_name, "");
+	show_bottom("");
+
+	if (display_menu(&top10_menu) == 0)
+	{
+		while (!SYS_server_exit)
+		{
+			iflush();
+			ch = igetch(100);
+			switch (ch)
+			{
+			case KEY_NULL: // broken pipe
+				show_top10 = 0;
+				return 0;
+			case KEY_TIMEOUT:
+				if (time(NULL) - BBS_last_access_tm >= MAX_DELAY_TIME)
+				{
+					show_top10 = 0;
+					return 0;
+				}
+				continue;
+			case CR:
+				igetch_reset();
+			default:
+				switch (menu_control(&top10_menu, ch))
+				{
+				case EXITMENU:
+					ch = EXITMENU;
+					break;
+				case REDRAW:
+					clearscr();
+					show_bottom("");
+					display_menu(&top10_menu);
+					break;
+				case NOREDRAW:
+				case UNKNOWN_CMD:
+				default:
+					break;
+				}
+			}
+
+			BBS_last_access_tm = time(NULL);
+
+			if (ch == EXITMENU)
+			{
+				break;
+			}
+		}
+	}
+	
+	show_top10 = 0;
+	return REDRAW;
+}
+
+int locate_article(void *param)
+{
+	char buf[MAX_MENUITEM_NAME_LENGTH];
+	char *sname, *aid, *saveptr;
+
+	strncpy(buf, param, sizeof(buf) - 1);
+	buf[sizeof(buf) - 1] = '\0';
+
+	sname = strtok_r(buf, "|", &saveptr);
+	aid = strtok_r(NULL, "|", &saveptr);
+
+	if (sname == NULL || aid == NULL)
+	{
+		log_error("top10_locate(%s) error: invalid parameter\n", param);
+		return NOREDRAW;
+	}
+
+	section_list_display(sname, atoi(aid));
+
+	return REDRAW;
+}
+
+int favor_topic(void *param)
+{
+	if (article_favor_display(&BBS_article_favor) < 0)
+	{
+		log_error("article_favor_display() error\n");
 	}
 
 	return REDRAW;

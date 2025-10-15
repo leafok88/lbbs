@@ -26,7 +26,8 @@ To install LBBS, please perform the following steps:
    sudo useradd bbs
 
 5) Install binary files and data files  
-   sudo make install
+   sudo make install  
+   chown -R bbs:bbs /usr/local/lbbs
 
 6) Modify following configuration files  
    Default configuration files is saved as *.default, you should rename them first.  
@@ -41,9 +42,14 @@ To install LBBS, please perform the following steps:
    ssh-keygen -t rsa -C "Your Server Name" -f ssh_host_rsa_key
 
 9) Startup  
-   sudo /usr/local/lbbs/bin/bbsd
+   sudo -u bbs /usr/local/lbbs/bin/bbsd
 
 10) Set up systemd  
    Create your own /usr/lib/systemd/system/lbbs.service from the sample at conf/lbbs.service.default, and make any change if necessary.  
    Reload daemon config and start the service.  
 
+11) Cleanup on abnormal service termination  
+   In case of any unexpected failure or improper operation which results in abnormal termination of lbbs process, manual cleanup of shared memory / semaphore might be required before re-launch the process. Run the following command to check first:  
+   sudo -u bbs ipcs  
+   There should be no item owned by bbs. Otherwise, run the following command to cleanup:  
+   sudo -u bbs ipcrm -a

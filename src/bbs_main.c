@@ -14,6 +14,7 @@
  *                                                                         *
  ***************************************************************************/
 
+#include "article_favor.h"
 #include "article_view_log.h"
 #include "bbs.h"
 #include "bbs_cmd.h"
@@ -339,6 +340,13 @@ int bbs_main()
 		goto cleanup;
 	}
 
+	// Load article favorite
+	if (article_favor_load(BBS_priv.uid, &BBS_article_favor, 0) < 0)
+	{
+		log_error("article_favor_load() error\n");
+		goto cleanup;
+	}
+
 	// Init editor memory pool
 	if (editor_memory_pool_init() < 0)
 	{
@@ -363,6 +371,12 @@ int bbs_main()
 		log_error("article_view_log_save_inc() error\n");
 	}
 
+	// Save incremental article favorite
+	if (article_favor_save_inc(&BBS_article_favor) < 0)
+	{
+		log_error("article_favor_save_inc() error\n");
+	}
+
 cleanup:
 	// Cleanup editor memory pool
 	editor_memory_pool_cleanup();
@@ -370,8 +384,12 @@ cleanup:
 	// Unload article view log
 	article_view_log_unload(&BBS_article_view_log);
 
+	// Unload article favor
+	article_favor_unload(&BBS_article_favor);
+
 	// Detach menu in shared memory
 	detach_menu_shm(&bbs_menu);
+	detach_menu_shm(&top10_menu);
 
 	// Detach data pools shm
 	detach_section_list_shm();

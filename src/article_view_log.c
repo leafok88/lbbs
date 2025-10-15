@@ -32,7 +32,7 @@ int article_view_log_load(int uid, ARTICLE_VIEW_LOG *p_view_log, int keep_inc)
 
 	if (p_view_log == NULL)
 	{
-		log_error("article_view_log_load() error: NULL pointer\n");
+		log_error("NULL pointer error\n");
 		return -1;
 	}
 
@@ -104,7 +104,7 @@ int article_view_log_unload(ARTICLE_VIEW_LOG *p_view_log)
 {
 	if (p_view_log == NULL)
 	{
-		log_error("article_view_log_unload() error: NULL pointer\n");
+		log_error("NULL pointer error\n");
 		return -1;
 	}
 
@@ -128,11 +128,11 @@ int article_view_log_save_inc(const ARTICLE_VIEW_LOG *p_view_log)
 
 	if (p_view_log == NULL)
 	{
-		log_error("article_view_log_save_inc() error: NULL pointer\n");
+		log_error("NULL pointer error\n");
 		return -1;
 	}
 
-	if (p_view_log->uid <= 0)
+	if (p_view_log->uid <= 0 || p_view_log->aid_inc_cnt == 0)
 	{
 		return 0;
 	}
@@ -185,10 +185,11 @@ int article_view_log_merge_inc(ARTICLE_VIEW_LOG *p_view_log)
 	int32_t *aid_new;
 	int aid_new_cnt;
 	int i, j, k;
+	int len;
 
 	if (p_view_log == NULL)
 	{
-		log_error("article_view_log_merge_inc() error: NULL pointer\n");
+		log_error("NULL pointer error\n");
 		return -1;
 	}
 
@@ -225,10 +226,20 @@ int article_view_log_merge_inc(ARTICLE_VIEW_LOG *p_view_log)
 		}
 	}
 
-	memcpy(aid_new + k, p_view_log->aid_base + i, sizeof(int32_t) * (size_t)(p_view_log->aid_base_cnt - i));
-	k += (p_view_log->aid_base_cnt - i);
-	memcpy(aid_new + k, p_view_log->aid_inc + j, sizeof(int32_t) * (size_t)(p_view_log->aid_inc_cnt - j));
-	k += (p_view_log->aid_inc_cnt - j);
+	len = p_view_log->aid_base_cnt - i;
+	if (len > 0)
+	{
+		memcpy(aid_new + k, p_view_log->aid_base + i,
+			   sizeof(int32_t) * (size_t)len);
+		k += len;
+	}
+	len = p_view_log->aid_inc_cnt - j;
+	if (len > 0)
+	{
+		memcpy(aid_new + k, p_view_log->aid_inc + j,
+			   sizeof(int32_t) * (size_t)len);
+		k += len;
+	}
 
 	free(p_view_log->aid_base);
 	p_view_log->aid_base = aid_new;
@@ -248,7 +259,7 @@ int article_view_log_is_viewed(int32_t aid, const ARTICLE_VIEW_LOG *p_view_log)
 
 	if (p_view_log == NULL)
 	{
-		log_error("article_view_log_is_viewed() error: NULL pointer\n");
+		log_error("NULL pointer error\n");
 		return -1;
 	}
 
@@ -297,7 +308,7 @@ int article_view_log_set_viewed(int32_t aid, ARTICLE_VIEW_LOG *p_view_log)
 
 	if (p_view_log == NULL)
 	{
-		log_error("article_view_log_set_viewed() error: NULL pointer\n");
+		log_error("NULL pointer error\n");
 		return -1;
 	}
 
@@ -335,7 +346,7 @@ int article_view_log_set_viewed(int32_t aid, ARTICLE_VIEW_LOG *p_view_log)
 	}
 
 	// Merge if Inc is full
-	if (p_view_log->aid_inc_cnt >= MAX_AID_INC_CNT)
+	if (p_view_log->aid_inc_cnt >= MAX_VIEWED_AID_INC_CNT)
 	{
 		// Save incremental article view log
 		if (article_view_log_save_inc(p_view_log) < 0)
@@ -360,9 +371,11 @@ int article_view_log_set_viewed(int32_t aid, ARTICLE_VIEW_LOG *p_view_log)
 		right = left + 1;
 	}
 
-	for (i = p_view_log->aid_inc_cnt - 1; i >= right; i--)
+	if (p_view_log->aid_inc_cnt > right)
 	{
-		p_view_log->aid_inc[i + 1] = p_view_log->aid_inc[i];
+		memmove(p_view_log->aid_inc + right + 1,
+				p_view_log->aid_inc + right,
+				sizeof(int32_t) * (size_t)(p_view_log->aid_inc_cnt - right));
 	}
 
 	p_view_log->aid_inc[right] = aid;

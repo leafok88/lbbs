@@ -39,6 +39,7 @@
 #define MENU_SET_RESERVED_LENGTH (sizeof(int16_t) * 4)
 
 MENU_SET bbs_menu;
+MENU_SET top10_menu;
 
 int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 {
@@ -1167,14 +1168,7 @@ int menu_control(MENU_SET *p_menu_set, int key)
 		if (p_menu_set->choose_step > 0)
 		{
 			p_menu_set->choose_step--;
-			if (p_menu_set->choose_step == 0)
-			{
-				return REDRAW;
-			}
-			if (display_menu(p_menu_set) != 0)
-			{
-				return menu_control(p_menu_set, KEY_LEFT);
-			}
+			return REDRAW;
 		}
 		else
 		{

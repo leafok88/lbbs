@@ -15,6 +15,7 @@
  ***************************************************************************/
 
 #include "article_cache.h"
+#include "article_favor.h"
 #include "article_op.h"
 #include "article_post.h"
 #include "article_view_log.h"
@@ -24,6 +25,7 @@
 #include "log.h"
 #include "login.h"
 #include "menu.h"
+#include "menu_proc.h"
 #include "section_list_display.h"
 #include "section_list_loader.h"
 #include "screen.h"
@@ -33,6 +35,7 @@
 #include <time.h>
 #include <sys/param.h>
 
+static int section_aid_locations[BBS_max_section] = {0};
 static int section_topic_view_mode = 0;
 static int section_topic_view_tid = -1;
 
@@ -47,10 +50,13 @@ enum select_cmd_t
 	EDIT_ARTICLE,
 	DELETE_ARTICLE,
 	QUERY_ARTICLE,
+	SET_FAVOR_ARTICLE,
+	UNSET_FAVOR_ARTICLE,
 	FIRST_TOPIC_ARTICLE,
 	LAST_TOPIC_ARTICLE,
 	SCAN_NEW_ARTICLE,
 	VIEW_EX_DIR,
+	SHOW_TOP10,
 };
 
 static int section_list_draw_items(int page_id, ARTICLE *p_articles[], int article_count, int display_nickname, int ontop_start_offset)
@@ -65,6 +71,7 @@ static int section_list_draw_items(int page_id, ARTICLE *p_articles[], int artic
 	size_t j;
 	char article_flag;
 	int is_viewed;
+	int is_favor;
 	time_t tm_now;
 
 	time(&tm_now);
@@ -85,6 +92,20 @@ static int section_list_draw_items(int page_id, ARTICLE *p_articles[], int artic
 				log_error("article_view_log_is_viewed(aid=%d) error\n", p_articles[i]->aid);
 				is_viewed = 0;
 			}
+		}
+
+		if (p_articles[i]->tid == 0)
+		{
+			is_favor = article_favor_check(p_articles[i]->aid, &BBS_article_favor);
+			if (is_favor < 0)
+			{
+				log_error("article_favor_check(aid=%d) error\n", p_articles[i]->aid);
+				is_favor = 0;
+			}
+		}
+		else
+		{
+			is_favor = 0;
 		}
 
 		if (p_articles[i]->excerption)
@@ -133,7 +154,7 @@ static int section_list_draw_items(int page_id, ARTICLE *p_articles[], int artic
 		}
 		strncat(title_f, p_articles[i]->title + j, sizeof(title_f) - 1 - strnlen(title_f, sizeof(title_f)));
 
-		len = split_line(title_f, 47 - (display_nickname ? 8 : 0), &eol, &title_f_len, 1);
+		len = split_line(title_f, 59 - (display_nickname ? BBS_nickname_max_len / 2 : BBS_username_max_len), &eol, &title_f_len, 1);
 		if (title_f[len] != '\0')
 		{
 			title_f[len] = '\0';
@@ -142,7 +163,8 @@ static int section_list_draw_items(int page_id, ARTICLE *p_articles[], int artic
 		moveto(4 + i, 1);
 		if (i >= ontop_start_offset)
 		{
-			prints("   \033[1;33m[提示]\033[m %c %s%*s %s %s%s\033[m",
+			prints("   \033[1;33m[提示]\033[m%c%c %s%*s %s %s%s\033[m",
+				   (is_favor ? '@' : ' '),
 				   article_flag,
 				   (display_nickname ? p_articles[i]->nickname : p_articles[i]->username),
 				   (display_nickname ? BBS_nickname_max_len / 2 - str_length(p_articles[i]->nickname, 1)
@@ -158,13 +180,14 @@ static int section_list_draw_items(int page_id, ARTICLE *p_articles[], int artic
 		}
 		else
 		{
-			prints("  %s%7d\033[m %c %s%*s %s %s%s\033[m",
+			prints("  %s%7d\033[m%c%c %s%*s %s %s%s\033[m",
 				   (p_articles[i]->aid == section_topic_view_tid
 						? "\033[1;33m"
 						: (p_articles[i]->tid == section_topic_view_tid
 							   ? "\033[1;36m"
 							   : "")),
 				   p_articles[i]->aid,
+				   (is_favor ? '@' : ' '),
 				   article_flag,
 				   (display_nickname ? p_articles[i]->nickname : p_articles[i]->username),
 				   (display_nickname ? BBS_nickname_max_len / 2 - str_length(p_articles[i]->nickname, 1)
@@ -278,6 +301,18 @@ static enum select_cmd_t section_list_select(int total_page, int item_count, int
 				return QUERY_ARTICLE;
 			}
 			break;
+		case 'F':
+			if (item_count > 0)
+			{
+				return SET_FAVOR_ARTICLE;
+			}
+			break;
+		case '-':
+			if (item_count > 0)
+			{
+				return UNSET_FAVOR_ARTICLE;
+			}
+			break;
 		case KEY_HOME:
 			*p_page_id = 0;
 		case 'P':
@@ -363,6 +398,8 @@ static enum select_cmd_t section_list_select(int total_page, int item_count, int
 			return SHOW_HELP;
 		case 'x':
 			return VIEW_EX_DIR;
+		case 'H':
+			return SHOW_TOP10;
 		default:
 		}
 
@@ -485,11 +522,13 @@ static int display_article_key_handler(int *p_key, DISPLAY_CTX *p_ctx)
 	return 0;
 }
 
-int section_list_display(const char *sname)
+int section_list_display(const char *sname, int32_t aid)
 {
 	static int display_nickname = 0;
 
 	SECTION_LIST *p_section;
+	int64_t section_index;
+	int32_t aid_location;
 	char stitle[BBS_section_title_max_len + 1];
 	char master_list[(BBS_username_max_len + 1) * 3 + 1];
 	char page_info_str[LINE_BUFFER_LEN];
@@ -505,7 +544,7 @@ int section_list_display(const char *sname)
 	int direction;
 	ARTICLE article_new;
 	int page_id_cur;
-	const ARTICLE *p_article_unread;
+	const ARTICLE *p_article_locate;
 
 	p_section = section_list_find_by_name(sname);
 	if (p_section == NULL)
@@ -513,6 +552,15 @@ int section_list_display(const char *sname)
 		log_error("Section %s not found\n", sname);
 		return -1;
 	}
+
+	if (!checkpriv(&BBS_priv, p_section->sid, S_LIST))
+	{
+		log_error("Forbid access to unauthorized section, sid=%d, uid=%d\n",
+				  p_section->sid, BBS_priv.uid);
+		return -1;
+	}
+
+	section_index = get_section_index(p_section);
 
 	if ((ret = section_list_rd_lock(p_section)) < 0)
 	{
@@ -531,6 +579,35 @@ int section_list_display(const char *sname)
 		return -2;
 	}
 
+	if (aid == 0)
+	{
+		aid_location = section_aid_locations[section_index];
+	}
+	else
+	{
+		aid_location = aid;
+	}
+
+	// Locate at article with aid_locate
+	if (aid_location > 0)
+	{
+		p_article_locate = article_block_find_by_aid(aid_location);
+		if (p_article_locate == NULL)
+		{
+			log_error("article_block_find_by_aid(%d) error\n", aid_location);
+			return -3;
+		}
+
+		ret = locate_article_in_section(p_section, p_article_locate, 0, 0,
+										&page_id, &selected_index, &article_count);
+		if (ret < 0)
+		{
+			log_error("locate_article_in_section(sid=%d, aid=%d, direction=0, step=0) error\n",
+					  p_section->sid, p_article_locate->aid);
+			return -3;
+		}
+	}
+
 	if (section_list_draw_screen(sname, stitle, master_list, display_nickname) < 0)
 	{
 		log_error("section_list_draw_screen() error\n");
@@ -544,9 +621,19 @@ int section_list_display(const char *sname)
 		return -3;
 	}
 
+	section_topic_view_tid = -1;
+
 	if (article_count == 0) // empty section
 	{
 		selected_index = 0;
+	}
+	else if (aid > 0)
+	{
+		// Update current topic
+		section_topic_view_tid = (p_articles[selected_index]->tid == 0 ? p_articles[selected_index]->aid : p_articles[selected_index]->tid);
+
+		// Update current aid location
+		section_aid_locations[section_index] = p_articles[selected_index]->aid;
 	}
 
 	while (!SYS_server_exit)
@@ -752,6 +839,9 @@ int section_list_display(const char *sname)
 			// Update current topic
 			section_topic_view_tid = (p_articles[selected_index]->tid == 0 ? p_articles[selected_index]->aid : p_articles[selected_index]->tid);
 
+			// Update current aid location
+			section_aid_locations[section_index] = p_articles[selected_index]->aid;
+
 			if (section_list_draw_screen(sname, stitle, master_list, display_nickname) < 0)
 			{
 				log_error("section_list_draw_screen() error\n");
@@ -849,6 +939,28 @@ int section_list_display(const char *sname)
 				return -2;
 			}
 			break;
+		case SET_FAVOR_ARTICLE:
+			ret = article_favor_set(p_articles[selected_index]->tid == 0
+										? p_articles[selected_index]->aid
+										: p_articles[selected_index]->tid,
+									&BBS_article_favor, 1);
+			if (ret < 0)
+			{
+				log_error("article_favor_set(aid=%d, 1) error\n",
+						  p_articles[selected_index]->tid == 0 ? p_articles[selected_index]->aid : p_articles[selected_index]->tid);
+			}
+			break;
+		case UNSET_FAVOR_ARTICLE:
+			ret = article_favor_set(p_articles[selected_index]->tid == 0
+										? p_articles[selected_index]->aid
+										: p_articles[selected_index]->tid,
+									&BBS_article_favor, 0);
+			if (ret < 0)
+			{
+				log_error("article_favor_set(aid=%d, 0) error\n",
+						  p_articles[selected_index]->tid == 0 ? p_articles[selected_index]->aid : p_articles[selected_index]->tid);
+			}
+			break;
 		case FIRST_TOPIC_ARTICLE:
 		case LAST_TOPIC_ARTICLE:
 			page_id_cur = page_id;
@@ -872,7 +984,7 @@ int section_list_display(const char *sname)
 			}
 			break;
 		case SCAN_NEW_ARTICLE:
-			ret = scan_unread_article_in_section(p_section, p_articles[selected_index], &p_article_unread);
+			ret = scan_unread_article_in_section(p_section, p_articles[selected_index], &p_article_locate);
 			if (ret < 0)
 			{
 				log_error("scan_unread_article_in_section(sid=%d, aid=%d) error\n",
@@ -884,12 +996,12 @@ int section_list_display(const char *sname)
 				break;
 			}
 			page_id_cur = page_id;
-			ret = locate_article_in_section(p_section, p_article_unread, 0, 0,
+			ret = locate_article_in_section(p_section, p_article_locate, 0, 0,
 											&page_id, &selected_index, &article_count);
 			if (ret < 0)
 			{
 				log_error("locate_article_in_section(sid=%d, aid=%d, direction=0, step=0) error\n",
-						  p_section->sid, p_article_unread->aid);
+						  p_section->sid, p_article_locate->aid);
 				return -3;
 			}
 			else if (ret > 0 && page_id != page_id_cur) // found and page changed
@@ -916,6 +1028,14 @@ int section_list_display(const char *sname)
 			{
 				log_error("section_list_ex_dir_display(sid=%d) error\n", p_section->sid);
 			}
+			if (section_list_draw_screen(sname, stitle, master_list, display_nickname) < 0)
+			{
+				log_error("section_list_draw_screen() error\n");
+				return -2;
+			}
+			break;
+		case SHOW_TOP10:
+			show_top10_menu(NULL);
 			if (section_list_draw_screen(sname, stitle, master_list, display_nickname) < 0)
 			{
 				log_error("section_list_draw_screen() error\n");

@@ -293,6 +293,9 @@ int bbsnet_connect(int n)
 	int tos;
 	char remote_addr[IP_ADDR_LEN];
 	int remote_port;
+	char local_addr[IP_ADDR_LEN];
+	int local_port;
+	socklen_t sock_len;
 	time_t t_used = time(NULL);
 	struct tm *tm_used;
 	int ch;
@@ -472,9 +475,21 @@ int bbsnet_connect(int n)
 		log_error("setsockopt IP_TOS=%d error (%d)\n", tos, errno);
 	}
 
+	sock_len = sizeof(sin);
+	if (getsockname(sock, (struct sockaddr *)&sin, &sock_len) < 0)
+	{
+		log_error("getsockname() error: %d", errno);
+		goto cleanup;
+	}
+
+	strncpy(local_addr, inet_ntoa(sin.sin_addr), sizeof(local_addr) - 1);
+	local_addr[sizeof(local_addr) - 1] = '\0';
+	local_port = ntohs(sin.sin_port);
+
 	prints("\033[1;31m连接成功！\033[m\r\n");
 	iflush();
-	log_common("BBSNET connect to %s:%d\n", remote_addr, remote_port);
+	log_common("BBSNET connect to %s:%d from %s:%d by [%s]\n",
+			   remote_addr, remote_port, local_addr, local_port, BBS_username);
 
 	input_cd = iconv_open(bbsnet_conf[n].charset, BBS_NET_DEFAULT_CHARSET);
 	if (input_cd == (iconv_t)(-1))

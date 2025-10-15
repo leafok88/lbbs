@@ -29,6 +29,8 @@
 #define BBS_nickname_max_len 40
 #define BBS_user_tz_max_len 50
 
+#define BBS_msg_max_len 1024
+
 #define BBS_id_max_len 20
 #define BBS_name_max_len 50
 #define BBS_server_max_len 255
@@ -46,6 +48,7 @@ extern int BBS_max_client;
 extern int BBS_max_client_per_ip;
 extern int BBS_max_user;
 extern char BBS_start_dt[BBS_start_dt_max_len + 1];
+extern int BBS_sys_id;
 
 // Session
 #define MAX_DELAY_TIME 600 // 10 minutes

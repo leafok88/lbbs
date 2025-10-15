@@ -38,7 +38,7 @@
 
 #define STR_TOP_LEFT_MAX_LEN 80
 #define STR_TOP_MIDDLE_MAX_LEN 40
-#define STR_TOP_RIGHT_MAX_LEN 40
+#define STR_TOP_RIGHT_MAX_LEN 80
 
 static const char *get_time_str(char *s, size_t len)
 {

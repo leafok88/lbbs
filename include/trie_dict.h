@@ -21,7 +21,7 @@
 
 #define TRIE_CHILDREN 256
 #define TRIE_MAX_KEY_LEN 1023
-#define TRIE_NODE_PER_POOL 2000
+#define TRIE_NODE_PER_POOL 5000
 
 struct trie_node_t
 {

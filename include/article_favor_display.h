@@ -1,5 +1,5 @@
 /***************************************************************************
-				  test_article_view_log.c  -  description
+					article_favor_display.h  -  description
 							 -------------------
 	Copyright            : (C) 2004-2025 by Leaflet
 	Email                : leaflet@leafok.com
@@ -14,40 +14,11 @@
  *                                                                         *
  ***************************************************************************/
 
-#include "article_view_log.h"
-#include <stdio.h>
+#ifndef _ARTICLE_FAVOR_DISPLAY_H_
+#define _ARTICLE_FAVOR_DISPLAY_H_
 
-int main(int argc, char *argv[])
-{
-	ARTICLE_VIEW_LOG view_log;
-	int32_t aid;
-	int i;
+#include "article_favor.h"
 
-	article_view_log_load(0, &view_log, 0);
+extern int article_favor_display(ARTICLE_FAVOR *p_favor);
 
-	for (i = MAX_VIEWED_AID_INC_CNT * 3; i > 0; i--)
-	{
-		if (i % MAX_VIEWED_AID_INC_CNT == 0 || i % MAX_VIEWED_AID_INC_CNT == MAX_VIEWED_AID_INC_CNT / 2)
-		{
-			printf("Base cnt = %d, Inc cnt = %d\n", view_log.aid_base_cnt, view_log.aid_inc_cnt);
-		}
-
-		aid = i * 5 + 7;
-		if (article_view_log_is_viewed(aid, &view_log) != 0)
-		{
-			printf("article_view_log_is_viewed(%d) != 0\n", aid);
-			break;
-		}
-		if (article_view_log_set_viewed(aid, &view_log) != 1)
-		{
-			printf("article_view_log_set_viewed(%d) != 1\n", aid);
-			break;
-		}
-	}
-
-	printf("Base cnt = %d, Inc cnt = %d\n", view_log.aid_base_cnt, view_log.aid_inc_cnt);
-
-	article_view_log_unload(&view_log);
-	
-	return 0;
-}
+#endif //_ARTICLE_FAVOR_DISPLAY_H_

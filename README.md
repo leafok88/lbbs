@@ -1,5 +1,8 @@
 # LBBS - Classical terminal server of LeafOK BBS
 
+中文版本的README.md位于[README.zh_CN.md](README.zh_CN.md)
+
+
 Copyright (C) 2004-2025 by Leaflet  
 Email : leaflet@leafok.com  
 Demo site : bbs.fenglin.info (Telnet 2323 / SSH2 2322)
@@ -24,3 +27,4 @@ System Requirement
 Installation
 ==================
 See guide in [INSTALL.md](INSTALL.md)
+
