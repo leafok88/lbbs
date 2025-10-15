@@ -121,10 +121,15 @@ int article_favor_unload(ARTICLE_FAVOR *p_favor)
 int article_favor_save_inc(const ARTICLE_FAVOR *p_favor)
 {
 	MYSQL *db = NULL;
-	char sql[SQL_BUFFER_LEN];
+	char sql_add[SQL_BUFFER_LEN];
+	char sql_del[SQL_BUFFER_LEN];
 	char tuple_tmp[LINE_BUFFER_LEN];
 	int i;
-	int affected_record = 0;
+	int j;
+	int cnt_pending_add = 0;
+	int cnt_pending_del = 0;
+	int cnt_total_add = 0;
+	int cnt_total_del = 0;
 
 	if (p_favor == NULL)
 	{
@@ -143,37 +148,82 @@ int article_favor_save_inc(const ARTICLE_FAVOR *p_favor)
 		return -2;
 	}
 
-	snprintf(sql, sizeof(sql),
+	snprintf(sql_add, sizeof(sql_add),
 			 "INSERT IGNORE INTO article_favorite(AID, UID) VALUES ");
+	snprintf(sql_del, sizeof(sql_add),
+			 "DELETE FROM article_favorite WHERE UID = %d AND AID IN (",
+			 p_favor->uid);
 
-	for (i = 0; i < p_favor->aid_inc_cnt; i++)
+	for (i = 0, j = 0; i < p_favor->aid_base_cnt && j < p_favor->aid_inc_cnt;)
 	{
-		snprintf(tuple_tmp, sizeof(tuple_tmp),
-				 "(%d, %d)",
-				 p_favor->aid_inc[i], p_favor->uid);
-		strncat(sql, tuple_tmp, sizeof(sql) - 1 - strnlen(sql, sizeof(sql)));
-
-		if ((i + 1) % 100 == 0 || (i + 1) == p_favor->aid_inc_cnt) // Insert 100 records per query
+		if (p_favor->aid_base[i] == p_favor->aid_inc[j]) // XOR - delete record
 		{
-			if (mysql_query(db, sql) != 0)
+			snprintf(tuple_tmp, sizeof(tuple_tmp), "%d, ", p_favor->aid_inc[j]);
+			strncat(sql_del, tuple_tmp, sizeof(sql_del) - 1 - strnlen(sql_del, sizeof(sql_del)));
+
+			cnt_pending_del++;
+			i++;
+			j++;
+		}
+		else if (p_favor->aid_base[i] < p_favor->aid_inc[j]) // skip existing record
+		{
+			i++;
+		}
+		else // if (p_favor->aid_base[i] > p_favor->aid_inc[j])
+		{
+			snprintf(tuple_tmp, sizeof(tuple_tmp),
+					 "(%d, %d), ",
+					 p_favor->aid_inc[j], p_favor->uid);
+			strncat(sql_add, tuple_tmp, sizeof(sql_add) - 1 - strnlen(sql_add, sizeof(sql_add)));
+
+			cnt_pending_add++;
+			j++;
+		}
+
+		if ((cnt_pending_add >= 100 || (j + 1) >= p_favor->aid_inc_cnt) && cnt_pending_add > 0)
+		{
+			// Add
+			sql_add[strnlen(sql_add, sizeof(sql_add)) - 2] = '\0'; // remove last ", "
+
+			if (mysql_query(db, sql_add) != 0)
 			{
 				log_error("Add article_favorite error: %s\n", mysql_error(db));
+				log_error("%s\n", sql_add);
 				mysql_close(db);
 				return -3;
 			}
 
-			affected_record += (int)mysql_affected_rows(db);
+			cnt_total_add += (int)mysql_affected_rows(db);
+			cnt_pending_add = 0;
 
-			snprintf(sql, sizeof(sql),
+			snprintf(sql_add, sizeof(sql_add),
 					 "INSERT IGNORE INTO article_favorite(AID, UID) VALUES ");
 		}
-		else
+
+		if ((cnt_pending_del >= 100 || (j + 1) >= p_favor->aid_inc_cnt) && cnt_pending_del > 0)
 		{
-			strncat(sql, ", ", sizeof(sql) - 1 - strnlen(sql, sizeof(sql)));
+			// Delete
+			sql_del[strnlen(sql_del, sizeof(sql_del)) - 2] = ')'; // replace last ", " with ") "
+
+			if (mysql_query(db, sql_del) != 0)
+			{
+				log_error("Delete article_favorite error: %s\n", mysql_error(db));
+				log_error("%s\n", sql_del);
+				mysql_close(db);
+				return -3;
+			}
+
+			cnt_total_del += (int)mysql_affected_rows(db);
+			cnt_pending_del = 0;
+
+			snprintf(sql_del, sizeof(sql_add),
+					 "DELETE FROM article_favorite WHERE UID = %d AND AID IN (",
+					 p_favor->uid);
 		}
 	}
 
-	log_common("Saved %d article_favorite records for uid=%d\n", affected_record, p_favor->uid);
+	log_common("Saved %d and deleted %d article_favorite records for uid=%d\n",
+			   cnt_total_add, cnt_total_del, p_favor->uid);
 
 	mysql_close(db);
 
@@ -208,18 +258,16 @@ int article_favor_merge_inc(ARTICLE_FAVOR *p_favor)
 
 	for (i = 0, j = 0, k = 0; i < p_favor->aid_base_cnt && j < p_favor->aid_inc_cnt;)
 	{
-		if (p_favor->aid_base[i] <= p_favor->aid_inc[j])
+		if (p_favor->aid_base[i] == p_favor->aid_inc[j]) // XOR - discard duplicate pair
 		{
-			if (p_favor->aid_base[i] == p_favor->aid_inc[j])
-			{
-				log_error("Duplicate aid = %d found in both Base (offset = %d) and Inc (offset = %d)\n",
-						  p_favor->aid_base[i], i, j);
-				j++; // Skip duplicate one in Inc
-			}
-
+			i++;
+			j++;
+		}
+		else if (p_favor->aid_base[i] < p_favor->aid_inc[j])
+		{
 			aid_new[k++] = p_favor->aid_base[i++];
 		}
-		else if (p_favor->aid_base[i] > p_favor->aid_inc[j])
+		else // if (p_favor->aid_base[i] > p_favor->aid_inc[j])
 		{
 			aid_new[k++] = p_favor->aid_inc[j++];
 		}
@@ -245,6 +293,7 @@ int article_favor_check(int32_t aid, const ARTICLE_FAVOR *p_favor)
 	int right;
 	int mid;
 	int i;
+	int is_set = 0;
 
 	if (p_favor == NULL)
 	{
@@ -275,25 +324,27 @@ int article_favor_check(int32_t aid, const ARTICLE_FAVOR *p_favor)
 			}
 			else // if (aid == p_favor->aid_base[mid])
 			{
-				return 1;
+				left = mid;
+				break;
 			}
 		}
 
-		if (aid == (i == 0 ? p_favor->aid_base[left] : p_favor->aid_inc[left])) // Found
+		if (aid == (i == 0 ? p_favor->aid_base[left] : p_favor->aid_inc[left]))
 		{
-			return 1;
+			is_set = (is_set ? 0 : 1);
 		}
 	}
 
-	return 0;
+	return is_set;
 }
 
-int article_favor_set(int32_t aid, ARTICLE_FAVOR *p_favor)
+int article_favor_set(int32_t aid, ARTICLE_FAVOR *p_favor, int state)
 {
 	int left;
 	int right;
 	int mid;
 	int i;
+	int is_set = 0;
 
 	if (p_favor == NULL)
 	{
@@ -324,14 +375,32 @@ int article_favor_set(int32_t aid, ARTICLE_FAVOR *p_favor)
 			}
 			else // if (aid == p_favor->aid_base[mid])
 			{
-				return 0; // Already set
+				left = mid;
+				break;
 			}
 		}
 
-		if (aid == (i == 0 ? p_favor->aid_base[left] : p_favor->aid_inc[left])) // Found
+		if (aid == (i == 0 ? p_favor->aid_base[left] : p_favor->aid_inc[left]))
 		{
-			return 0; // Already set
+			is_set = (is_set ? 0 : 1);
 		}
+	}
+
+	if ((is_set ^ (state ? 1 : 0)) == 0) // No change
+	{
+		return 0;
+	}
+
+	if (aid == p_favor->aid_inc[left] && p_favor->aid_inc_cnt > 0) // Unset
+	{
+		for (i = left; i < p_favor->aid_inc_cnt - 1; i++)
+		{
+			p_favor->aid_inc[i] = p_favor->aid_inc[i + 1];
+		}
+
+		(p_favor->aid_inc_cnt)--;
+
+		return 2; // Unset complete
 	}
 
 	// Merge if Inc is full

@@ -46,7 +46,7 @@ extern int article_favor_merge_inc(ARTICLE_FAVOR *p_favor);
 // Check if specific article was set as favorite
 extern int article_favor_check(int32_t aid, const ARTICLE_FAVOR *p_favor);
 // Set specific article as favorite
-extern int article_favor_set(int32_t aid, ARTICLE_FAVOR *p_favor);
+extern int article_favor_set(int32_t aid, ARTICLE_FAVOR *p_favor, int state);
 
 extern int query_favor_articles(ARTICLE_FAVOR *p_favor, int page_id, ARTICLE **p_articles,
 								char p_snames[][BBS_section_name_max_len + 1], int *p_article_count, int *p_page_count);
