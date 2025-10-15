@@ -185,6 +185,7 @@ int article_view_log_merge_inc(ARTICLE_VIEW_LOG *p_view_log)
 	int32_t *aid_new;
 	int aid_new_cnt;
 	int i, j, k;
+	int len;
 
 	if (p_view_log == NULL)
 	{
@@ -225,10 +226,20 @@ int article_view_log_merge_inc(ARTICLE_VIEW_LOG *p_view_log)
 		}
 	}
 
-	memcpy(aid_new + k, p_view_log->aid_base + i, sizeof(int32_t) * (size_t)(p_view_log->aid_base_cnt - i));
-	k += (p_view_log->aid_base_cnt - i);
-	memcpy(aid_new + k, p_view_log->aid_inc + j, sizeof(int32_t) * (size_t)(p_view_log->aid_inc_cnt - j));
-	k += (p_view_log->aid_inc_cnt - j);
+	len = p_view_log->aid_base_cnt - i;
+	if (len > 0)
+	{
+		memcpy(aid_new + k, p_view_log->aid_base + i,
+			   sizeof(int32_t) * (size_t)len);
+		k += len;
+	}
+	len = p_view_log->aid_inc_cnt - j;
+	if (len > 0)
+	{
+		memcpy(aid_new + k, p_view_log->aid_inc + j,
+			   sizeof(int32_t) * (size_t)len);
+		k += len;
+	}
 
 	free(p_view_log->aid_base);
 	p_view_log->aid_base = aid_new;
