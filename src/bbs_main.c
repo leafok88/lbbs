@@ -342,6 +342,7 @@ int bbs_main()
 	{
 		goto cleanup;
 	}
+	log_common("User [%s] login\n", BBS_username);
 
 	// Load article view log
 	if (article_view_log_load(BBS_priv.uid, &BBS_article_view_log, 0) < 0)
