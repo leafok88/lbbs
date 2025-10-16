@@ -529,11 +529,10 @@ int user_online_exp(MYSQL *db)
 	// +1 exp for every 5 minutes online since last logout
 	// but at most 24 hours worth of exp can be gained in Telnet session
 	snprintf(sql, sizeof(sql),
-			"UPDATE user_pubinfo SET exp = exp + "
-			"FLOOR((UNIX_TIMESTAMP() - GREATEST(IF(last_logout_dt IS NULL, 0, UNIX_TIMESTAMP(last_logout_dt)), %ld)) / 60 / 5), "
-			"last_logout_dt = NOW() "
+			"UPDATE user_pubinfo SET exp = exp + FLOOR(LEAST(TIMESTAMPDIFF("
+			"SECOND, GREATEST(last_login_dt, IF(last_logout_dt IS NULL, last_login_dt, last_logout_dt)), NOW()"
+			") / 60 / 5, 12 * 24)), last_logout_dt = NOW() "
 			"WHERE UID = %d",
-			MAX(BBS_login_tm, time(NULL) - 60 * 60 * 24),
 			BBS_priv.uid);
 	if (mysql_query(db, sql) != 0)
 	{
