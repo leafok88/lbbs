@@ -181,9 +181,14 @@ int bbs_logout(void)
 		return -1;
 	}
 
-	if (user_online_del(db) < 0)
+	if (user_online_exp(db) < 0)
 	{
 		return -2;
+	}
+
+	if (user_online_del(db) < 0)
+	{
+		return -3;
 	}
 
 	mysql_close(db);

@@ -36,6 +36,7 @@ extern int load_guest_info(void);
 
 extern int user_online_add(MYSQL *db);
 extern int user_online_del(MYSQL *db);
+extern int user_online_exp(MYSQL *db);
 
 extern int user_online_update(const char *action);
 
