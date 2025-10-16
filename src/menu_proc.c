@@ -237,7 +237,7 @@ int show_top10_menu(void *param)
 		return NOREDRAW;
 	}
 	show_top10 = 1;
-	
+
 	clearscr();
 	show_top("", BBS_name, "");
 	show_bottom("");
@@ -248,14 +248,22 @@ int show_top10_menu(void *param)
 		{
 			iflush();
 			ch = igetch(100);
+
+			if (ch != KEY_NULL && ch != KEY_TIMEOUT)
+			{
+				BBS_last_access_tm = time(NULL);
+			}
+
 			switch (ch)
 			{
 			case KEY_NULL: // broken pipe
+				log_error("KEY_NULL\n");
 				show_top10 = 0;
 				return 0;
 			case KEY_TIMEOUT:
 				if (time(NULL) - BBS_last_access_tm >= MAX_DELAY_TIME)
 				{
+					log_error("User input timeout\n");
 					show_top10 = 0;
 					return 0;
 				}
@@ -280,15 +288,13 @@ int show_top10_menu(void *param)
 				}
 			}
 
-			BBS_last_access_tm = time(NULL);
-
 			if (ch == EXITMENU)
 			{
 				break;
 			}
 		}
 	}
-	
+
 	show_top10 = 0;
 	return REDRAW;
 }

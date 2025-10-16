@@ -653,6 +653,11 @@ int display_data(const void *p_data, long display_line_total, const long *p_line
 				ch = igetch_t(MAX_DELAY_TIME);
 				input_ok = 1;
 
+				if (ch != KEY_NULL && ch != KEY_TIMEOUT)
+				{
+					BBS_last_access_tm = time(NULL);
+				}
+
 				// extended key handler
 				if (key_handler(&ch, &ctx) != 0)
 				{
@@ -662,7 +667,10 @@ int display_data(const void *p_data, long display_line_total, const long *p_line
 				switch (ch)
 				{
 				case KEY_NULL:
+					log_error("KEY_NULL\n");
+					goto cleanup;
 				case KEY_TIMEOUT:
+					log_error("User input timeout\n");
 					goto cleanup;
 				case KEY_HOME:
 					if (line_current - output_current_row < 0) // Reach begin
@@ -765,8 +773,6 @@ int display_data(const void *p_data, long display_line_total, const long *p_line
 					input_ok = 0;
 					break;
 				}
-
-				BBS_last_access_tm = time(NULL);
 			}
 
 			continue;

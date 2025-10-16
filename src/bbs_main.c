@@ -219,6 +219,11 @@ int bbs_center()
 	{
 		ch = igetch(100);
 
+        if (ch != KEY_NULL && ch != KEY_TIMEOUT)
+        {
+            BBS_last_access_tm = time(NULL);
+        }
+
 		if (bbs_menu.choose_step == 0 && time(NULL) - t_last_action >= 10)
 		{
 			t_last_action = time(NULL);
@@ -237,10 +242,12 @@ int bbs_center()
 		switch (ch)
 		{
 		case KEY_NULL: // broken pipe
+			log_error("KEY_NULL\n");
 			return 0;
 		case KEY_TIMEOUT:
 			if (time(NULL) - BBS_last_access_tm >= MAX_DELAY_TIME)
 			{
+				log_error("User input timeout\n");
 				return 0;
 			}
 			continue;
@@ -267,8 +274,6 @@ int bbs_center()
 			}
 			iflush();
 		}
-
-		BBS_last_access_tm = time(NULL);
 	}
 
 	return 0;
