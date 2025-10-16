@@ -195,7 +195,7 @@ int bbs_logout(void)
 
 	display_file(DATA_GOODBYE, 1);
 
-	log_common("User logout\n");
+	log_common("User [%s] logout\n", BBS_username);
 
 	return 0;
 }
