@@ -540,10 +540,6 @@ int user_online_exp(MYSQL *db)
 		log_error("Update user_pubinfo error: %s\n", mysql_error(db));
 		return -1;
 	}
-	else
-	{
-		log_error("SQL: %s\n", sql);
-	}
 
 	return 0;
 }
