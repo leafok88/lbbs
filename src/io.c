@@ -314,7 +314,8 @@ int igetch(int timeout)
 							else if (ret == 0)
 							{
 								out = 0;
-								break; // Check whether channel is still open
+								loop = 0;
+								break;
 							}
 						}
 						else
