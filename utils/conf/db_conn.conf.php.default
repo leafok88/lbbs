@@ -1,4 +1,4 @@
-<?
+<?php
 	$DB_hostname			=	"localhost";
 	$DB_username			=	"";
 	$DB_password			=	"";

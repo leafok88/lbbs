@@ -148,9 +148,9 @@ int article_favor_save_inc(const ARTICLE_FAVOR *p_favor)
 			 "DELETE FROM article_favorite WHERE UID = %d AND AID IN (",
 			 p_favor->uid);
 
-	for (i = 0, j = 0; i < p_favor->aid_base_cnt && j < p_favor->aid_inc_cnt;)
+	for (i = 0, j = 0; j < p_favor->aid_inc_cnt;)
 	{
-		if (p_favor->aid_base[i] == p_favor->aid_inc[j]) // XOR - delete record
+		if (i < p_favor->aid_base_cnt && p_favor->aid_base[i] == p_favor->aid_inc[j]) // XOR - delete record
 		{
 			snprintf(tuple_tmp, sizeof(tuple_tmp), "%d, ", p_favor->aid_inc[j]);
 			strncat(sql_del, tuple_tmp, sizeof(sql_del) - 1 - strnlen(sql_del, sizeof(sql_del)));
@@ -159,11 +159,11 @@ int article_favor_save_inc(const ARTICLE_FAVOR *p_favor)
 			i++;
 			j++;
 		}
-		else if (p_favor->aid_base[i] < p_favor->aid_inc[j]) // skip existing record
+		else if (i < p_favor->aid_base_cnt && p_favor->aid_base[i] < p_favor->aid_inc[j]) // skip existing record
 		{
 			i++;
 		}
-		else // if (p_favor->aid_base[i] > p_favor->aid_inc[j])
+		else // if (i >= p_favor->aid_base_cnt || p_favor->aid_base[i] > p_favor->aid_inc[j])
 		{
 			snprintf(tuple_tmp, sizeof(tuple_tmp),
 					 "(%d, %d), ",
