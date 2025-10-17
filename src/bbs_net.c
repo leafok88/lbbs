@@ -930,7 +930,6 @@ int bbs_net()
 		case Ctrl('C'): // user cancel
 			goto cleanup;
 		case CR:
-			igetch_reset();
 			bbsnet_connect(bbsnet_menu.menu_item_pos[0]);
 			bbsnet_refresh();
 			display_menu(&bbsnet_menu);

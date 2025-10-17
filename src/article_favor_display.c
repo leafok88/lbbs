@@ -190,7 +190,6 @@ static enum select_cmd_t article_favor_select(int total_page, int item_count, in
             }
             break;
         case CR:
-            igetch_reset();
         case KEY_RIGHT:
             if (item_count > 0)
             {

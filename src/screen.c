@@ -118,16 +118,13 @@ void set_input_echo(int echo)
 	if (echo)
 	{
 		outc('\x83'); // ASCII code 131
-		iflush();
 	}
 	else
 	{
-		//    outc ('\x85'); // ASCII code 133
+		// outc ('\x85'); // ASCII code 133
 		prints("\xff\xfb\x01\xff\xfb\x03");
-		iflush();
-		igetch(0);
-		igetch_reset();
 	}
+	iflush();
 }
 
 static int _str_input(char *buffer, int buf_size, int max_display_len, int echo_mode)
@@ -151,7 +148,6 @@ static int _str_input(char *buffer, int buf_size, int max_display_len, int echo_
 
 		if (ch == CR)
 		{
-			igetch_reset();
 			break;
 		}
 		else if (ch == KEY_TIMEOUT || ch == KEY_NULL) // timeout or broken pipe
@@ -322,7 +318,6 @@ int get_data(int row, int col, char *prompt, char *buffer, int buf_size, int max
 
 		if (ch == CR)
 		{
-			igetch_reset();
 			break;
 		}
 		else if (ch == KEY_TIMEOUT || ch == KEY_NULL) // timeout or broken pipe
@@ -704,7 +699,6 @@ int display_data(const void *p_data, long display_line_total, const long *p_line
 					output_end_row = SCREEN_ROWS - 1; // Legacy Fterm only works with this line
 					break;
 				case CR:
-					igetch_reset();
 				case KEY_SPACE:
 				case KEY_DOWN:
 					if (line_current + (screen_row_total - (output_current_row - screen_begin_row)) >= display_line_total) // Reach end

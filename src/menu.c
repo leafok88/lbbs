@@ -1141,7 +1141,6 @@ int menu_control(MENU_SET *p_menu_set, int key)
 	switch (key)
 	{
 	case CR:
-		igetch_reset();
 	case KEY_RIGHT:
 		if (p_menu_item->submenu)
 		{

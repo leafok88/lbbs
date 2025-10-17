@@ -252,7 +252,6 @@ int bbs_center()
 			}
 			continue;
 		case CR:
-			igetch_reset();
 		default:
 			switch (menu_control(&bbs_menu, ch))
 			{

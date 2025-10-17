@@ -269,7 +269,6 @@ int show_top10_menu(void *param)
 				}
 				continue;
 			case CR:
-				igetch_reset();
 			default:
 				switch (menu_control(&top10_menu, ch))
 				{

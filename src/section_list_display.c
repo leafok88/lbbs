@@ -278,7 +278,6 @@ static enum select_cmd_t section_list_select(int total_page, int item_count, int
 		case 'n':
 			return CHANGE_NAME_DISPLAY;
 		case CR:
-			igetch_reset();
 		case 'r':
 		case KEY_RIGHT:
 			if (item_count > 0)
@@ -1113,7 +1112,6 @@ int section_list_ex_dir_display(SECTION_LIST *p_section)
 				}
 				continue;
 			case CR:
-				igetch_reset();
 			default:
 				switch (menu_control(&ex_menu_set, ch))
 				{
