@@ -859,6 +859,6 @@ void igetch_reset()
 	int ch;
 	do
 	{
-		ch = igetch(0);
+		ch = igetch(100);
 	} while (ch != KEY_NULL && ch != KEY_TIMEOUT);
 }

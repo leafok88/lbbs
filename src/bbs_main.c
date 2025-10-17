@@ -336,6 +336,7 @@ int bbs_main()
 	{
 		prints("\033[1m%s 欢迎使用ssh方式访问 \033[1;33m按任意键继续...\033[m", BBS_username);
 		iflush();
+		igetch_reset();
 		igetch_t(MAX_DELAY_TIME);
 	}
 	else if (bbs_login() < 0)
