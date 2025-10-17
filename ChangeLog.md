@@ -14,7 +14,8 @@ Add major features
 
 2025-07-01  v1.3
 =================
-Support UTF8 instead of GBK
+1. Support UTF8 instead of GBK
+2. Support charset conversion in BBSNET
 
 
 2025-06-28  v1.2
