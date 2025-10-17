@@ -110,6 +110,13 @@ int copyright(void *param)
 	return REDRAW;
 }
 
+int version(void *param)
+{
+	display_file(DATA_VERSION, 1);
+
+	return REDRAW;
+}
+
 int reload_bbs_conf(void *param)
 {
 	clearscr();

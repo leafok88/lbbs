@@ -23,6 +23,7 @@ extern int exit_bbs(void *param);
 extern int bbsnet(void *param);
 extern int license(void *param);
 extern int copyright(void *param);
+extern int version(void *param);
 extern int reload_bbs_conf(void *param);
 extern int shutdown_bbs(void *param);
 extern int favor_section_filter(void *param);
