@@ -110,8 +110,6 @@ int press_any_key()
 	prints("                           \033[1;33m按任意键继续...\033[0;37m");
 	iflush();
 
-	igetch_reset();
-	
 	return igetch_t(MIN(MAX_DELAY_TIME, 60));
 }
 
