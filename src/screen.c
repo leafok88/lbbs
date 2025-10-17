@@ -104,13 +104,24 @@ void clearscr()
 
 int press_any_key()
 {
+	int ch = 0;
+	int wait_seconds = 60;
+	int duration = 0;
+	time_t t_begin = time(NULL);
+
 	moveto(SCREEN_ROWS, 0);
 	clrtoeol();
 
 	prints("                           \033[1;33m按任意键继续...\033[0;37m");
 	iflush();
 
-	return igetch_t(MIN(MAX_DELAY_TIME, 60));
+	do
+	{
+		ch = igetch_t(wait_seconds - duration);
+		duration = (int)(time(NULL) - t_begin);
+	} while (!SYS_server_exit && ch == 0 && duration < 60);
+
+	return ch;
 }
 
 void set_input_echo(int echo)
