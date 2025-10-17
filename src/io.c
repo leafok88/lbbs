@@ -314,7 +314,8 @@ int igetch(int timeout)
 							else if (ret == 0)
 							{
 								out = 0;
-								break; // Check whether channel is still open
+								loop = 0;
+								break;
 							}
 						}
 						else
@@ -858,6 +859,6 @@ void igetch_reset()
 	int ch;
 	do
 	{
-		ch = igetch(0);
+		ch = igetch(100);
 	} while (ch != KEY_NULL && ch != KEY_TIMEOUT);
 }

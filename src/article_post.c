@@ -119,7 +119,6 @@ int article_post(const SECTION_LIST *p_section, ARTICLE *p_article_new)
 			case KEY_TIMEOUT:
 				goto cleanup;
 			case CR:
-				igetch_reset();
 				break;
 			case 'T':
 				len = get_data(24, 1, "标题: ", title_input, sizeof(title_input), TITLE_INPUT_MAX_LEN);
@@ -183,7 +182,6 @@ int article_post(const SECTION_LIST *p_section, ARTICLE *p_article_new)
 				case KEY_TIMEOUT:
 					goto cleanup;
 				case CR:
-					igetch_reset();
 				case 'S':
 					break;
 				case 'C':
@@ -534,7 +532,6 @@ int article_modify(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTI
 			case KEY_TIMEOUT:
 				goto cleanup;
 			case CR:
-				igetch_reset();
 			case 'S':
 				break;
 			case 'C':
@@ -934,7 +931,6 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 			case KEY_TIMEOUT:
 				goto cleanup;
 			case CR:
-				igetch_reset();
 				break;
 			case 'T':
 				len = get_data(24, 1, "标题: ", title_input, sizeof(title_input), TITLE_INPUT_MAX_LEN);
@@ -995,7 +991,6 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 				case KEY_TIMEOUT:
 					goto cleanup;
 				case CR:
-					igetch_reset();
 				case 'S':
 					break;
 				case 'C':

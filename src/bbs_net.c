@@ -900,8 +900,6 @@ int bbs_net()
 
 	load_bbsnet_conf(CONF_BBSNET);
 
-	BBS_last_access_tm = time(NULL);
-
 	clearscr();
 	bbsnet_refresh();
 	display_menu(&bbsnet_menu);
@@ -911,20 +909,27 @@ int bbs_net()
 	{
 		ch = igetch(100);
 
+        if (ch != KEY_NULL && ch != KEY_TIMEOUT)
+        {
+            BBS_last_access_tm = time(NULL);
+        }
+
 		switch (ch)
 		{
 		case KEY_NULL: // broken pipe
-		case KEY_ESC:
-		case Ctrl('C'): // user cancel
+			log_error("KEY_NULL\n");
 			goto cleanup;
 		case KEY_TIMEOUT:
 			if (time(NULL) - BBS_last_access_tm >= MAX_DELAY_TIME)
 			{
+				log_error("User input timeout\n");
 				goto cleanup;
 			}
 			continue;
+		case KEY_ESC:
+		case Ctrl('C'): // user cancel
+			goto cleanup;
 		case CR:
-			igetch_reset();
 			bbsnet_connect(bbsnet_menu.menu_item_pos[0]);
 			bbsnet_refresh();
 			display_menu(&bbsnet_menu);
@@ -967,7 +972,6 @@ int bbs_net()
 			bbsnet_selchange();
 			break;
 		}
-		BBS_last_access_tm = time(NULL);
 	}
 
 cleanup:

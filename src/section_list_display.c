@@ -255,29 +255,33 @@ static enum select_cmd_t section_list_select(int total_page, int item_count, int
 	{
 		ch = igetch(100);
 
+		if (ch != KEY_NULL && ch != KEY_TIMEOUT)
+		{
+			BBS_last_access_tm = time(NULL);
+		}
+
 		switch (ch)
 		{
-		case KEY_ESC:
-		case KEY_LEFT:
-			BBS_last_access_tm = time(NULL);
 		case KEY_NULL:			 // broken pipe
-			return EXIT_SECTION; // exit section
+			log_error("KEY_NULL\n");
+			return EXIT_SECTION;
 		case KEY_TIMEOUT:
 			if (time(NULL) - BBS_last_access_tm >= MAX_DELAY_TIME)
 			{
-				return EXIT_SECTION; // exit section
+				log_error("User input timeout\n");
+				return EXIT_SECTION;
 			}
 			continue;
+		case KEY_ESC:
+		case KEY_LEFT:
+			return EXIT_SECTION;
 		case 'n':
-			BBS_last_access_tm = time(NULL);
 			return CHANGE_NAME_DISPLAY;
 		case CR:
-			igetch_reset();
 		case 'r':
 		case KEY_RIGHT:
 			if (item_count > 0)
 			{
-				BBS_last_access_tm = time(NULL);
 				return VIEW_ARTICLE;
 			}
 			break;
@@ -425,7 +429,6 @@ static enum select_cmd_t section_list_select(int total_page, int item_count, int
 			old_selected_index = *p_selected_index;
 		}
 
-		BBS_last_access_tm = time(NULL);
 		if (BBS_last_access_tm - last_refresh_tm >= BBS_section_list_load_interval)
 		{
 			return CHANGE_PAGE; // force section list refresh
@@ -1090,18 +1093,25 @@ int section_list_ex_dir_display(SECTION_LIST *p_section)
 		{
 			iflush();
 			ch = igetch(100);
+
+			if (ch != KEY_NULL && ch != KEY_TIMEOUT)
+			{
+				BBS_last_access_tm = time(NULL);
+			}
+
 			switch (ch)
 			{
 			case KEY_NULL: // broken pipe
+				log_error("KEY_NULL\n");
 				return 0;
 			case KEY_TIMEOUT:
 				if (time(NULL) - BBS_last_access_tm >= MAX_DELAY_TIME)
 				{
+					log_error("User input timeout\n");
 					return 0;
 				}
 				continue;
 			case CR:
-				igetch_reset();
 			default:
 				switch (menu_control(&ex_menu_set, ch))
 				{
@@ -1119,8 +1129,6 @@ int section_list_ex_dir_display(SECTION_LIST *p_section)
 					break;
 				}
 			}
-
-			BBS_last_access_tm = time(NULL);
 
 			if (ch == EXITMENU)
 			{

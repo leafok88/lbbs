@@ -63,7 +63,6 @@ int article_del(const SECTION_LIST *p_section, const ARTICLE *p_article)
 		case KEY_TIMEOUT:
 			goto cleanup;
 		case CR:
-			igetch_reset();
 		case KEY_ESC:
 		case 'N':
 			return 0;

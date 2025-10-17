@@ -30,6 +30,7 @@
 #include <regex.h>
 #include <unistd.h>
 #include <mysql/mysql.h>
+#include <sys/param.h>
 
 int bbs_login(void)
 {
@@ -515,6 +516,27 @@ int user_online_del(MYSQL *db)
 	if (mysql_query(db, sql) != 0)
 	{
 		log_error("Delete user_online error: %s\n", mysql_error(db));
+		return -1;
+	}
+
+	return 0;
+}
+
+int user_online_exp(MYSQL *db)
+{
+	char sql[SQL_BUFFER_LEN];
+
+	// +1 exp for every 5 minutes online since last logout
+	// but at most 24 hours worth of exp can be gained in Telnet session
+	snprintf(sql, sizeof(sql),
+			"UPDATE user_pubinfo SET exp = exp + FLOOR(LEAST(TIMESTAMPDIFF("
+			"SECOND, GREATEST(last_login_dt, IF(last_logout_dt IS NULL, last_login_dt, last_logout_dt)), NOW()"
+			") / 60 / 5, 12 * 24)), last_logout_dt = NOW() "
+			"WHERE UID = %d",
+			BBS_priv.uid);
+	if (mysql_query(db, sql) != 0)
+	{
+		log_error("Update user_pubinfo error: %s\n", mysql_error(db));
 		return -1;
 	}
 

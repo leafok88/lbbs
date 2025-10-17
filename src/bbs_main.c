@@ -181,16 +181,21 @@ int bbs_logout(void)
 		return -1;
 	}
 
-	if (user_online_del(db) < 0)
+	if (user_online_exp(db) < 0)
 	{
 		return -2;
+	}
+
+	if (user_online_del(db) < 0)
+	{
+		return -3;
 	}
 
 	mysql_close(db);
 
 	display_file(DATA_GOODBYE, 1);
 
-	log_common("User logout\n");
+	log_common("User [%s] logout\n", BBS_username);
 
 	return 0;
 }
@@ -214,6 +219,11 @@ int bbs_center()
 	{
 		ch = igetch(100);
 
+        if (ch != KEY_NULL && ch != KEY_TIMEOUT)
+        {
+            BBS_last_access_tm = time(NULL);
+        }
+
 		if (bbs_menu.choose_step == 0 && time(NULL) - t_last_action >= 10)
 		{
 			t_last_action = time(NULL);
@@ -232,15 +242,16 @@ int bbs_center()
 		switch (ch)
 		{
 		case KEY_NULL: // broken pipe
+			log_error("KEY_NULL\n");
 			return 0;
 		case KEY_TIMEOUT:
 			if (time(NULL) - BBS_last_access_tm >= MAX_DELAY_TIME)
 			{
+				log_error("User input timeout\n");
 				return 0;
 			}
 			continue;
 		case CR:
-			igetch_reset();
 		default:
 			switch (menu_control(&bbs_menu, ch))
 			{
@@ -262,8 +273,6 @@ int bbs_center()
 			}
 			iflush();
 		}
-
-		BBS_last_access_tm = time(NULL);
 	}
 
 	return 0;
@@ -326,12 +335,14 @@ int bbs_main()
 	{
 		prints("\033[1m%s 欢迎使用ssh方式访问 \033[1;33m按任意键继续...\033[m", BBS_username);
 		iflush();
+		igetch_reset();
 		igetch_t(MAX_DELAY_TIME);
 	}
 	else if (bbs_login() < 0)
 	{
 		goto cleanup;
 	}
+	log_common("User [%s] login\n", BBS_username);
 
 	// Load article view log
 	if (article_view_log_load(BBS_priv.uid, &BBS_article_view_log, 0) < 0)

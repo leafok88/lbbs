@@ -162,35 +162,37 @@ static enum select_cmd_t article_favor_select(int total_page, int item_count, in
     {
         ch = igetch(100);
 
+        if (ch != KEY_NULL && ch != KEY_TIMEOUT)
+        {
+            BBS_last_access_tm = time(NULL);
+        }
+
         switch (ch)
         {
         case KEY_ESC:
         case KEY_LEFT:
-            BBS_last_access_tm = time(NULL);
         case KEY_NULL:        // broken pipe
+			log_error("KEY_NULL\n");
             return EXIT_LIST; // exit list
         case KEY_TIMEOUT:
             if (time(NULL) - BBS_last_access_tm >= MAX_DELAY_TIME)
             {
+				log_error("User input timeout\n");
                 return EXIT_LIST; // exit list
             }
             continue;
         case 'n':
-            BBS_last_access_tm = time(NULL);
             return SWITCH_NAME;
         case '-':
             if (item_count > 0)
             {
-                BBS_last_access_tm = time(NULL);
                 return UNSET_FAVOR;
             }
             break;
         case CR:
-            igetch_reset();
         case KEY_RIGHT:
             if (item_count > 0)
             {
-                BBS_last_access_tm = time(NULL);
                 return LOCATE_ARTICLE;
             }
             break;
@@ -283,8 +285,6 @@ static enum select_cmd_t article_favor_select(int total_page, int item_count, in
 
             old_selected_index = *p_selected_index;
         }
-
-        BBS_last_access_tm = time(NULL);
     }
 
     return EXIT_LIST;

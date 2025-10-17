@@ -705,6 +705,11 @@ int editor_display(EDITOR_DATA *p_editor_data)
 			ch = igetch_t(MAX_DELAY_TIME);
 			while (!SYS_server_exit)
 			{
+				if (ch != KEY_NULL && ch != KEY_TIMEOUT)
+				{
+					BBS_last_access_tm = time(NULL);
+				}
+
 				// extended key handler
 				if (editor_display_key_handler(&ch, &ctx) != 0)
 				{
@@ -742,8 +747,6 @@ int editor_display(EDITOR_DATA *p_editor_data)
 				if ((ch >= 32 && ch < 127) || str_len >= 2 || // Printable character or multi-byte character
 					ch == CR || ch == KEY_ESC)				  // Special character
 				{
-					BBS_last_access_tm = time(NULL);
-
 					// Refresh current action while user input
 					if (user_online_update(NULL) < 0)
 					{
@@ -837,8 +840,6 @@ int editor_display(EDITOR_DATA *p_editor_data)
 				}
 				else if (ch == KEY_DEL || ch == BACKSPACE) // Del
 				{
-					BBS_last_access_tm = time(NULL);
-
 					// Refresh current action while user input
 					if (user_online_update(NULL) < 0)
 					{
@@ -930,7 +931,10 @@ int editor_display(EDITOR_DATA *p_editor_data)
 				switch (ch)
 				{
 				case KEY_NULL:
+					log_error("KEY_NULL\n");
+					goto cleanup;
 				case KEY_TIMEOUT:
+					log_error("User input timeout\n");
 					goto cleanup;
 				case Ctrl('W'):
 				case Ctrl('X'):
@@ -1133,8 +1137,6 @@ int editor_display(EDITOR_DATA *p_editor_data)
 					input_ok = 0;
 					break;
 				}
-
-				BBS_last_access_tm = time(NULL);
 
 				// Refresh current action while user input
 				if (user_online_update(NULL) < 0)
