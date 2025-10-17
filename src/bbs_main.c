@@ -219,10 +219,10 @@ int bbs_center()
 	{
 		ch = igetch(100);
 
-        if (ch != KEY_NULL && ch != KEY_TIMEOUT)
-        {
-            BBS_last_access_tm = time(NULL);
-        }
+		if (ch != KEY_NULL && ch != KEY_TIMEOUT)
+		{
+			BBS_last_access_tm = time(NULL);
+		}
 
 		if (bbs_menu.choose_step == 0 && time(NULL) - t_last_action >= 10)
 		{
@@ -281,6 +281,7 @@ int bbs_center()
 int bbs_main()
 {
 	struct sigaction act = {0};
+	char msg[LINE_BUFFER_LEN];
 
 	// Set signal handler
 	act.sa_handler = SIG_IGN;
@@ -333,10 +334,8 @@ int bbs_main()
 	// User login
 	if (SSH_v2)
 	{
-		prints("\033[1m%s 欢迎使用ssh方式访问 \033[1;33m按任意键继续...\033[m", BBS_username);
-		iflush();
-		igetch_reset();
-		igetch_t(MAX_DELAY_TIME);
+		snprintf(msg, sizeof(msg), "\033[1m%s 欢迎使用ssh方式访问 \033[1;33m按任意键继续...\033[m", BBS_username);
+		press_any_key_ex(msg);
 	}
 	else if (bbs_login() < 0)
 	{
