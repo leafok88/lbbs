@@ -102,7 +102,12 @@ void clearscr()
 	moveto(0, 0);
 }
 
-int press_any_key()
+inline int press_any_key()
+{
+	return press_any_key_ex("                           \033[1;33m按任意键继续...\033[m");
+}
+
+int press_any_key_ex(const char *msg)
 {
 	int ch = 0;
 	int wait_seconds = 60;
@@ -112,7 +117,7 @@ int press_any_key()
 	moveto(SCREEN_ROWS, 0);
 	clrtoeol();
 
-	prints("                           \033[1;33m按任意键继续...\033[0;37m");
+	prints(msg);
 	iflush();
 
 	do

@@ -41,6 +41,7 @@ extern void clrtobot(int line_begin);
 extern void clearscr();
 
 extern int press_any_key();
+extern int press_any_key_ex(const char *msg);
 
 extern void set_input_echo(int echo);
 
