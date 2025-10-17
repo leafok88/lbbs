@@ -25,6 +25,7 @@ static const BBS_CMD bbs_cmd_list[] = {
 	{"EXITBBS", exit_bbs},
 	{"LICENSE", license},
 	{"COPYRIGHT", copyright},
+	{"VERSION", version},
 	{"RELOADCONF", reload_bbs_conf},
 	{"SHUTDOWN", shutdown_bbs},
 	{"M_FAVOR_SECTION", favor_section_filter},
@@ -35,7 +36,7 @@ static const BBS_CMD bbs_cmd_list[] = {
 	{"FAVOR_TOPIC", favor_topic},
 };
 
-static const int bbs_cmd_count = 13;
+static const int bbs_cmd_count = 14;
 
 static TRIE_NODE *p_bbs_cmd_dict;
 

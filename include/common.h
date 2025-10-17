@@ -42,6 +42,7 @@
 #define DATA_GOODBYE "data/goodbye.txt"
 #define DATA_LICENSE "data/license.txt"
 #define DATA_COPYRIGHT "data/copyright.txt"
+#define DATA_VERSION "data/version.txt"
 #define DATA_LOGIN_ERROR "data/login_error.txt"
 #define DATA_ACTIVE_BOARD "data/active_board.txt"
 #define DATA_READ_HELP "data/read_help.txt"

@@ -23,11 +23,12 @@ const char *data_files_load_startup[] = {
 	DATA_GOODBYE,
 	DATA_LICENSE,
 	DATA_COPYRIGHT,
+	DATA_VERSION,
 	DATA_LOGIN_ERROR,
 	DATA_ACTIVE_BOARD,
 	DATA_READ_HELP,
 	VAR_BBS_TOP};
-int data_files_load_startup_count = 9; // Count of data_files_load_startup[]
+int data_files_load_startup_count = 10; // Count of data_files_load_startup[]
 
 // Global declaration for sockets
 int socket_server[2];
