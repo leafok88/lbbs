@@ -103,7 +103,8 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 	p_menu_set->shmid = shmget(key, size, IPC_CREAT | IPC_EXCL | 0600);
 	if (p_menu_set->shmid == -1)
 	{
-		log_error("shmget(conf_file=%s, proj_id=%d, size = %d) error (%d)\n", conf_file, proj_id, size, errno);
+		log_error("shmget(conf_file=%s, proj_id=%d, key=%d, size=%d) error (%d)\n",
+				  conf_file, proj_id, key, size, errno);
 		return -3;
 	}
 	p_menu_set->p_reserved = shmat(p_menu_set->shmid, NULL, 0);

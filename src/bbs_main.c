@@ -195,7 +195,7 @@ int bbs_logout(void)
 
 	display_file(DATA_GOODBYE, 1);
 
-	log_common("User [%s] logout\n", BBS_username);
+	log_common("User [%s] logout, idle for %ld seconds since last input\n", BBS_username, time(NULL) - BBS_last_access_tm);
 
 	return 0;
 }
