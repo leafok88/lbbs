@@ -104,13 +104,12 @@ void clearscr()
 
 inline int press_any_key()
 {
-	return press_any_key_ex("                           \033[1;33m按任意键继续...\033[m");
+	return press_any_key_ex("                           \033[1;33m按任意键继续...\033[m", 60);
 }
 
-int press_any_key_ex(const char *msg)
+int press_any_key_ex(const char *msg, int sec)
 {
 	int ch = 0;
-	int wait_seconds = 60;
 	int duration = 0;
 	time_t t_begin = time(NULL);
 
@@ -120,9 +119,11 @@ int press_any_key_ex(const char *msg)
 	prints(msg);
 	iflush();
 
+	igetch_reset();
+
 	do
 	{
-		ch = igetch_t(wait_seconds - duration);
+		ch = igetch_t(sec - duration);
 		duration = (int)(time(NULL) - t_begin);
 	} while (!SYS_server_exit && ch == 0 && duration < 60);
 

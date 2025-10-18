@@ -31,9 +31,25 @@
 #include <libssh/libssh.h>
 #include <libssh/server.h>
 
+char stdio_charset[20] = BBS_DEFAULT_CHARSET;
+
+// static input / output buffer
+static char stdin_buf[LINE_BUFFER_LEN];
+static char stdin_conv[LINE_BUFFER_LEN];
+static int stdin_buf_len = 0;
+static int stdin_conv_len = 0;
+static int stdin_buf_offset = 0;
+static int stdin_conv_offset = 0;
+
 static char stdout_buf[BUFSIZ];
+static char stdout_conv[BUFSIZ];
 static int stdout_buf_len = 0;
+static int stdout_conv_len = 0;
 static int stdout_buf_offset = 0;
+static int stdout_conv_offset = 0;
+
+static iconv_t stdin_cd = NULL;
+static iconv_t stdout_cd = NULL;
 
 int prints(const char *format, ...)
 {
@@ -148,11 +164,20 @@ int iflush(void)
 		{
 			if (events[i].data.fd == STDOUT_FILENO)
 			{
-				while (stdout_buf_offset < stdout_buf_len && !SYS_server_exit) // write until complete or error
+				if (stdout_buf_offset < stdout_buf_len)
+				{
+					ret = io_buf_conv(stdout_cd, stdout_buf, &stdout_buf_len, &stdout_buf_offset, stdout_conv, sizeof(stdout_conv), &stdout_conv_len);
+					if (ret < 0)
+					{
+						log_error("io_buf_conv(stdout, %d, %d, %d) error\n", stdout_buf_len, stdout_buf_offset, stdout_conv_len);
+					}
+				}
+
+				while (stdout_conv_offset < stdout_conv_len && !SYS_server_exit) // write until complete or error
 				{
 					if (SSH_v2)
 					{
-						ret = ssh_channel_write(SSH_channel, stdout_buf + stdout_buf_offset, (uint32_t)(stdout_buf_len - stdout_buf_offset));
+						ret = ssh_channel_write(SSH_channel, stdout_conv + stdout_conv_offset, (uint32_t)(stdout_conv_len - stdout_conv_offset));
 						if (ret == SSH_ERROR)
 						{
 							log_error("ssh_channel_write() error: %s\n", ssh_get_error(SSH_session));
@@ -162,7 +187,7 @@ int iflush(void)
 					}
 					else
 					{
-						ret = (int)write(STDOUT_FILENO, stdout_buf + stdout_buf_offset, (size_t)(stdout_buf_len - stdout_buf_offset));
+						ret = (int)write(STDOUT_FILENO, stdout_conv + stdout_conv_offset, (size_t)(stdout_conv_len - stdout_conv_offset));
 					}
 					if (ret < 0)
 					{
@@ -190,12 +215,12 @@ int iflush(void)
 					}
 					else
 					{
-						stdout_buf_offset += ret;
-						if (stdout_buf_offset >= stdout_buf_len) // flush buffer completely
+						stdout_conv_offset += ret;
+						if (stdout_conv_offset >= stdout_conv_len) // flush buffer completely
 						{
 							ret = 0;
-							stdout_buf_offset = 0;
-							stdout_buf_len = 0;
+							stdout_conv_offset = 0;
+							stdout_conv_len = 0;
 							retry = 0;
 							break;
 						}
@@ -219,11 +244,6 @@ int iflush(void)
 
 int igetch(int timeout)
 {
-	// static input buffer
-	static unsigned char buf[LINE_BUFFER_LEN];
-	static int len = 0;
-	static int pos = 0;
-
 	struct epoll_event ev, events[MAX_EVENTS];
 	int nfds, epollfd;
 	int ret;
@@ -237,10 +257,10 @@ int igetch(int timeout)
 	int i = 0;
 	int flags;
 
-	if (pos >= len)
+	if (stdin_conv_offset >= stdin_conv_len)
 	{
-		len = 0;
-		pos = 0;
+		stdin_conv_len = 0;
+		stdin_conv_offset = 0;
 
 		epollfd = epoll_create1(0);
 		if (epollfd < 0)
@@ -265,7 +285,7 @@ int igetch(int timeout)
 		flags = fcntl(STDIN_FILENO, F_GETFL, 0);
 		fcntl(STDIN_FILENO, F_SETFL, flags | O_NONBLOCK);
 
-		for (loop = 1; loop && pos >= len && !SYS_server_exit;)
+		for (loop = 1; loop && stdin_conv_offset >= stdin_conv_len && !SYS_server_exit;)
 		{
 			if (SSH_v2 && ssh_channel_is_closed(SSH_channel))
 			{
@@ -295,11 +315,11 @@ int igetch(int timeout)
 			{
 				if (events[i].data.fd == STDIN_FILENO)
 				{
-					while (len < sizeof(buf) && !SYS_server_exit) // read until complete or error
+					while (stdin_buf_len < sizeof(stdin_buf) && !SYS_server_exit) // read until complete or error
 					{
 						if (SSH_v2)
 						{
-							ret = ssh_channel_read_nonblocking(SSH_channel, buf + len, sizeof(buf) - (uint32_t)len, 0);
+							ret = ssh_channel_read_nonblocking(SSH_channel, stdin_buf + stdin_buf_len, sizeof(stdin_buf) - (uint32_t)stdin_buf_len, 0);
 							if (ret == SSH_ERROR)
 							{
 								log_error("ssh_channel_read_nonblocking() error: %s\n", ssh_get_error(SSH_session));
@@ -320,7 +340,7 @@ int igetch(int timeout)
 						}
 						else
 						{
-							ret = (int)read(STDIN_FILENO, buf + len, sizeof(buf) - (size_t)len);
+							ret = (int)read(STDIN_FILENO, stdin_buf + stdin_buf_len, sizeof(stdin_buf) - (size_t)stdin_buf_len);
 						}
 						if (ret < 0)
 						{
@@ -350,7 +370,7 @@ int igetch(int timeout)
 						}
 						else
 						{
-							len += ret;
+							stdin_buf_len += ret;
 							continue;
 						}
 					}
@@ -359,9 +379,9 @@ int igetch(int timeout)
 
 			// For debug
 #ifdef _DEBUG
-			for (int j = pos; j < len; j++)
+			for (int j = stdin_buf_offset; j < stdin_buf_len; j++)
 			{
-				log_common("Debug: <--[%u]\n", (buf[j] + 256) % 256);
+				log_common("Debug: <--[%u]\n", (stdin_buf[j] + 256) % 256);
 			}
 #endif
 		}
@@ -372,16 +392,25 @@ int igetch(int timeout)
 		{
 			log_error("close(epoll) error (%d)\n");
 		}
+
+		if (stdin_buf_offset < stdin_buf_len)
+		{
+			ret = io_buf_conv(stdin_cd, stdin_buf, &stdin_buf_len, &stdin_buf_offset, stdin_conv, sizeof(stdin_conv), &stdin_conv_len);
+			if (ret < 0)
+			{
+				log_error("io_buf_conv(stdin, %d, %d, %d) error\n", stdin_buf_len, stdin_buf_offset, stdin_conv_len);
+			}
+		}
 	}
 
-	while (pos < len)
+	while (stdin_conv_offset < stdin_conv_len)
 	{
-		unsigned char c = buf[pos++];
+		unsigned char c = (unsigned char)stdin_conv[stdin_conv_offset++];
 
 		// Convert \r\n to \r
-		if (c == CR && pos < len && buf[pos] == LF)
+		if (c == CR && stdin_conv_offset < stdin_conv_len && stdin_conv[stdin_conv_offset] == LF)
 		{
-			pos++;
+			stdin_conv_offset++;
 		}
 
 		// Convert single \n to \r
@@ -871,6 +900,12 @@ int io_buf_conv(iconv_t cd, char *p_buf, int *p_buf_len, int *p_buf_offset, char
 	size_t out_bytes;
 	int ret;
 
+	if (cd == NULL || p_buf == NULL || p_buf_len == NULL || p_buf_offset == NULL || p_conv == NULL || p_conv_len == NULL)
+	{
+		log_error("NULL pointer error\n");
+		return -1;
+	}
+
 	in_buf = p_buf + *p_buf_offset;
 	in_bytes = (size_t)(*p_buf_len - *p_buf_offset);
 	out_buf = p_conv + *p_conv_len;
@@ -923,6 +958,52 @@ int io_buf_conv(iconv_t cd, char *p_buf, int *p_buf_len, int *p_buf_offset, char
 
 			break;
 		}
+	}
+
+	return 0;
+}
+
+int io_conv_init(const char *charset)
+{
+	if (charset == NULL)
+	{
+		log_error("NULL pointer error\n");
+		return -1;
+	}
+
+	io_conv_cleanup();
+
+	strncpy(stdio_charset, charset, sizeof(stdio_charset) - 1);
+	stdio_charset[sizeof(stdio_charset) - 1] = '\0';
+
+	stdin_cd = iconv_open(BBS_DEFAULT_CHARSET, stdio_charset);
+	if (stdin_cd == (iconv_t)(-1))
+	{
+		log_error("iconv_open(%s->%s) error: %d\n", stdio_charset, BBS_DEFAULT_CHARSET, errno);
+		return -2;
+	}
+	stdout_cd = iconv_open(stdio_charset, BBS_DEFAULT_CHARSET);
+	if (stdout_cd == (iconv_t)(-1))
+	{
+		log_error("iconv_open(%s->%s) error: %d\n", BBS_DEFAULT_CHARSET, stdio_charset, errno);
+		iconv_close(stdin_cd);
+		return -2;
+	}
+
+	return 0;
+}
+
+int io_conv_cleanup(void)
+{
+	if (stdin_cd != NULL)
+	{
+		iconv_close(stdin_cd);
+		stdin_cd = NULL;
+	}
+	if (stdout_cd != NULL)
+	{
+		iconv_close(stdout_cd);
+		stdout_cd = NULL;
 	}
 
 	return 0;

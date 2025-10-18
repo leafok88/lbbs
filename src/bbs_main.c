@@ -278,6 +278,35 @@ int bbs_center()
 	return 0;
 }
 
+int bbs_charset_select()
+{
+	char msg[LINE_BUFFER_LEN];
+	int ch;
+
+	snprintf(msg, sizeof(msg),
+			 "\rChoose character set in 5 seconds [UTF-8, GBK]: [U/g]");
+
+	ch = press_any_key_ex(msg, 5);
+	switch (ch)
+	{
+	case 'g':
+	case 'G':
+		if (io_conv_init("GBK") < 0)
+		{
+			log_error("io_conv_init(%s) error\n", "GBK");
+			return -1;
+		}
+		break;
+	default:
+		log_error("Debug: %d\n", ch);
+	}
+
+	prints("\r\n");
+	iflush();
+
+	return 0;
+}
+
 int bbs_main()
 {
 	struct sigaction act = {0};
@@ -317,7 +346,17 @@ int bbs_main()
 		goto cleanup;
 	}
 
+	// Set default charset
+	if (io_conv_init(BBS_DEFAULT_CHARSET) < 0)
+	{
+		log_error("io_conv_init(%s) error\n", BBS_DEFAULT_CHARSET);
+		goto cleanup;
+	}
+
 	set_input_echo(0);
+
+	// Set user charset
+	bbs_charset_select();
 
 	// System info
 	if (bbs_info() < 0)
@@ -335,7 +374,7 @@ int bbs_main()
 	if (SSH_v2)
 	{
 		snprintf(msg, sizeof(msg), "\033[1m%s 欢迎使用ssh方式访问 \033[1;33m按任意键继续...\033[m", BBS_username);
-		press_any_key_ex(msg);
+		press_any_key_ex(msg, 60);
 	}
 	else if (bbs_login() < 0)
 	{
@@ -388,6 +427,9 @@ int bbs_main()
 	}
 
 cleanup:
+	// Cleanup iconv
+	io_conv_cleanup();
+
 	// Cleanup editor memory pool
 	editor_memory_pool_cleanup();
 

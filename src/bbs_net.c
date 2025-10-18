@@ -47,8 +47,6 @@
 #define MAXSTATION 26 * 2
 #define STATION_PER_LINE 4
 
-#define BBS_NET_DEFAULT_CHARSET "UTF-8"
-
 struct _bbsnet_conf
 {
 	char host1[20];
@@ -209,13 +207,13 @@ int bbsnet_connect(int n)
 	int output_buf_len = 0;
 	int input_buf_offset = 0;
 	int output_buf_offset = 0;
-	iconv_t input_cd = NULL;
 	char input_conv[LINE_BUFFER_LEN * 2];
 	char output_conv[LINE_BUFFER_LEN * 2];
 	int input_conv_len = 0;
 	int output_conv_len = 0;
 	int input_conv_offset = 0;
 	int output_conv_offset = 0;
+	iconv_t input_cd = NULL;
 	iconv_t output_cd = NULL;
 	struct epoll_event ev, events[MAX_EVENTS];
 	int nfds, epollfd;
@@ -425,16 +423,16 @@ int bbsnet_connect(int n)
 	log_common("BBSNET connect to %s:%d from %s:%d by [%s]\n",
 			   remote_addr, remote_port, local_addr, local_port, BBS_username);
 
-	input_cd = iconv_open(bbsnet_conf[n].charset, BBS_NET_DEFAULT_CHARSET);
+	input_cd = iconv_open(bbsnet_conf[n].charset, stdio_charset);
 	if (input_cd == (iconv_t)(-1))
 	{
-		log_error("iconv_open(%s->%s) error: %d\n", BBS_NET_DEFAULT_CHARSET, bbsnet_conf[n].charset, errno);
+		log_error("iconv_open(%s->%s) error: %d\n", stdio_charset, bbsnet_conf[n].charset, errno);
 		goto cleanup;
 	}
-	output_cd = iconv_open(BBS_NET_DEFAULT_CHARSET, bbsnet_conf[n].charset);
-	if (input_cd == (iconv_t)(-1))
+	output_cd = iconv_open(stdio_charset, bbsnet_conf[n].charset);
+	if (output_cd == (iconv_t)(-1))
 	{
-		log_error("iconv_open(%s->%s) error: %d\n", bbsnet_conf[n].charset, BBS_NET_DEFAULT_CHARSET, errno);
+		log_error("iconv_open(%s->%s) error: %d\n", bbsnet_conf[n].charset, stdio_charset, errno);
 		iconv_close(input_cd);
 		goto cleanup;
 	}
