@@ -21,6 +21,7 @@
 #include "article_view_log.h"
 #include "article_del.h"
 #include "common.h"
+#include "display_user_info.h"
 #include "io.h"
 #include "log.h"
 #include "login.h"

@@ -326,8 +326,12 @@ int display_user_info(int32_t uid)
 	moveto(line_no++, 1);
 	prints("\033[1;36m个人说明档如下：\033[0m\n");
 	if(user_introduction[0]){
-		moveto(line_no++, 1);
-		prints("%s\n",user_introduction);
+		char *token = strtok(user_introduction, "\n");  
+		while(token != NULL && token[0]) {    		
+			moveto(line_no++, 1);
+			prints("%s", token);
+    		token = strtok(NULL, "\n");
+		}		
 	}
 
 	mysql_close(db);	
