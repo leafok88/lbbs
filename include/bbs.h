@@ -28,6 +28,7 @@
 #define BBS_password_max_len 12
 #define BBS_nickname_max_len 40
 #define BBS_user_tz_max_len 50
+#define BBS_inroduction_max_len 500
 
 #define BBS_msg_max_len 1024
 

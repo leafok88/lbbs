@@ -50,6 +50,7 @@ enum select_cmd_t
 	EDIT_ARTICLE,
 	DELETE_ARTICLE,
 	QUERY_ARTICLE,
+	QUERY_USER,
 	SET_FAVOR_ARTICLE,
 	UNSET_FAVOR_ARTICLE,
 	FIRST_TOPIC_ARTICLE,
@@ -305,6 +306,12 @@ static enum select_cmd_t section_list_select(int total_page, int item_count, int
 				return QUERY_ARTICLE;
 			}
 			break;
+		case Ctrl('A'):
+			if (item_count > 0)
+			{
+				return QUERY_USER;
+			}
+			break;	
 		case 'F':
 			if (item_count > 0)
 			{
@@ -942,6 +949,17 @@ int section_list_display(const char *sname, int32_t aid)
 				return -2;
 			}
 			break;
+		case QUERY_USER:
+			if ((ret = display_user_info(p_articles[selected_index]->uid)) < 0)
+			{
+				log_error("display_user_info(uid=%d) error\n", p_articles[selected_index]->uid);
+			}
+			if (section_list_draw_screen(sname, stitle, master_list, display_nickname) < 0)
+			{
+				log_error("section_list_draw_screen() error\n");
+				return -2;
+			}
+			break;	
 		case SET_FAVOR_ARTICLE:
 			ret = article_favor_set(p_articles[selected_index]->tid == 0
 										? p_articles[selected_index]->aid
