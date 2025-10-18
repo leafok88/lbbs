@@ -70,7 +70,7 @@ size_t iStrnLen(const char *str){
 	return strnlen(str,size);
 }
 int iStrnCat(char *dest, const char *src){
-	size_t size=iStrnLen(dest) - iStrnLen(src) - 1;
+	size_t size= 255 - iStrnLen(src) - 1;
 	if(size>0){
 		strncat(dest, src, size);
 		return 0;
@@ -296,8 +296,7 @@ int display_user_info(int32_t uid)
 		press_any_key();
 		return 0;	
 	}
-
-	strncpy(user_action,"",sizeof(user_action));
+	
 	while ((row = mysql_fetch_row(rs))){
 		strncpy(tmp_action,"",sizeof(tmp_action));
 		
@@ -310,7 +309,7 @@ int display_user_info(int32_t uid)
 			}
 			if(iStrnLen(user_action)+iStrnLen(tmp_action)>80) break;
 			else{
-				if(strstr(tmp_action,"]")) iStrnCat(user_action,tmp_action);			
+				if(strstr(tmp_action,"]")) iStrnCat(user_action,tmp_action);				
 			}
 		}else{
 			if(iStrnLen(user_action)+iStrnLen("[Web浏览]")>80) break; 		
