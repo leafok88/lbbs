@@ -43,10 +43,15 @@ int list_section(void *param)
 	return REDRAW;
 }
 
+typedef union exec_handler_t{
+	void *p;
+	int (*handler)();
+} exec_handler;
+
 int exec_mbem(void *param)
 {
 	void *hdll;
-	int (*func)();
+	exec_handler func;
 	char *c, *s;
 	char buf[FILE_PATH_LEN];
 
@@ -69,8 +74,10 @@ int exec_mbem(void *param)
 		{
 			char *error;
 
-			if ((func = dlsym(hdll, c ? c : "mod_main")) != NULL)
-				func();
+			if ((func.p = dlsym(hdll, c ? c : "mod_main")) != NULL)
+			{
+				func.handler();
+			}
 			else if ((error = dlerror()) != NULL)
 			{
 				clearscr();

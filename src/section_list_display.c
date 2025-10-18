@@ -413,6 +413,7 @@ static enum select_cmd_t section_list_select(int total_page, int item_count, int
 		case 'H':
 			return SHOW_TOP10;
 		default:
+			break;
 		}
 
 		if (old_page_id != *p_page_id)
