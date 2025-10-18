@@ -22,6 +22,9 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y libssh-dev libsystemd-dev
           
+    - name: Display GCC version
+      run: gcc -v
+
     - name: configure
       run: ./configure
 
