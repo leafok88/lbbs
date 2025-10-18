@@ -98,11 +98,11 @@ inline static void *memory_pool_add_chunk(MEMORY_POOL *p_pool)
 	}
 
 	p_node = p_pool->p_free;
-	memcpy(p_chunk + (p_pool->node_count_per_chunk - 1) * p_pool->node_size, &p_node, sizeof(p_node));
+	memcpy((char *)p_chunk + (p_pool->node_count_per_chunk - 1) * p_pool->node_size, &p_node, sizeof(p_node));
 	for (i = 0; i < p_pool->node_count_per_chunk - 1; i++)
 	{
-		p_node = p_chunk + (i + 1) * p_pool->node_size;
-		memcpy(p_chunk + i * p_pool->node_size, &p_node, sizeof(p_node));
+		p_node = (char *)p_chunk + (i + 1) * p_pool->node_size;
+		memcpy((char *)p_chunk + i * p_pool->node_size, &p_node, sizeof(p_node));
 	}
 
 	p_pool->p_chunks[p_pool->chunk_count] = p_chunk;
@@ -175,16 +175,16 @@ int memory_pool_check_node(MEMORY_POOL *p_pool, void *p_node)
 
 	for (i = 0; i < p_pool->chunk_count; i++)
 	{
-		if (p_node >= p_pool->p_chunks[i] && p_node < p_pool->p_chunks[i] + chunk_size)
+		if (p_node >= p_pool->p_chunks[i] && (char *)p_node < (char *)(p_pool->p_chunks[i]) + chunk_size)
 		{
-			if ((size_t)(p_node - p_pool->p_chunks[i]) % p_pool->node_size == 0)
+			if ((size_t)((char *)p_node - (char *)(p_pool->p_chunks[i])) % p_pool->node_size == 0)
 			{
 				return 0; // OK
 			}
 			else
 			{
 				log_error("Address of node (%p) is not aligned with border of chunk %d [%p, %p)\n",
-						  i, p_node >= p_pool->p_chunks[i], p_pool->p_chunks[i] + chunk_size);
+						  i, p_node >= p_pool->p_chunks[i], (char *)(p_pool->p_chunks[i]) + chunk_size);
 				return -3;
 			}
 		}
