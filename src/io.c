@@ -862,3 +862,68 @@ void igetch_reset()
 		ch = igetch(100);
 	} while (ch != KEY_NULL && ch != KEY_TIMEOUT);
 }
+
+int io_buf_conv(iconv_t cd, char *p_buf, int *p_buf_len, int *p_buf_offset, char *p_conv, size_t conv_size, int *p_conv_len)
+{
+	char *in_buf;
+	char *out_buf;
+	size_t in_bytes;
+	size_t out_bytes;
+	int ret;
+
+	in_buf = p_buf + *p_buf_offset;
+	in_bytes = (size_t)(*p_buf_len - *p_buf_offset);
+	out_buf = p_conv + *p_conv_len;
+	out_bytes = conv_size - (size_t)(*p_conv_len);
+
+	while (in_bytes > 0)
+	{
+		ret = (int)iconv(cd, &in_buf, &in_bytes, &out_buf, &out_bytes);
+		if (ret == -1)
+		{
+			if (errno == EINVAL) // Incomplete
+			{
+#ifdef _DEBUG
+				log_error("iconv(inbytes=%d, outbytes=%d) error: EINVAL\n", in_bytes, out_bytes);
+#endif
+				*p_buf_len = (int)(p_buf + *p_buf_len - in_buf);
+				*p_buf_offset = 0;
+				*p_conv_len = (int)(conv_size - out_bytes);
+				memmove(p_buf, in_buf, (size_t)(*p_buf_len));
+
+				break;
+			}
+			else if (errno == E2BIG)
+			{
+				log_error("iconv(inbytes=%d, outbytes=%d) error: E2BIG\n", in_bytes, out_bytes);
+				return -1;
+			}
+			else if (errno == EILSEQ)
+			{
+				if (in_bytes > out_bytes || out_bytes <= 0)
+				{
+					log_error("iconv(inbytes=%d, outbytes=%d) error: EILSEQ and E2BIG\n", in_bytes, out_bytes);
+					return -2;
+				}
+
+				*out_buf = *in_buf;
+				in_buf++;
+				out_buf++;
+				in_bytes--;
+				out_bytes--;
+
+				continue;
+			}
+		}
+		else
+		{
+			*p_buf_len = 0;
+			*p_buf_offset = 0;
+			*p_conv_len = (int)(conv_size - out_bytes);
+
+			break;
+		}
+	}
+
+	return 0;
+}
