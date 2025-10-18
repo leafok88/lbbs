@@ -62,7 +62,7 @@ int main(int argc, char *argv[])
 	printf("Test #1: lml_tag = 1\n");
 	for (i = 0; i < str_cnt; i++)
 	{
-		j = lml_render(str_in[i], str_out_buf, sizeof(str_out_buf), 1);
+		j = lml_render(str_in[i], str_out_buf, sizeof(str_out_buf), 0);
 
 		printf("Input(len=%ld): %s\nOutput(len=%d): %s\n", strlen(str_in[i]), str_in[i], j, str_out_buf);
 	}
@@ -71,7 +71,7 @@ int main(int argc, char *argv[])
 	printf("Test #2: lml_tag = 0\n");
 	for (i = 0; i < str_cnt; i++)
 	{
-		j = lml_render(str_in[i], str_out_buf, sizeof(str_out_buf), 0);
+		j = lml_render(str_in[i], str_out_buf, sizeof(str_out_buf), 1);
 
 		printf("Input(len=%ld): %s\nOutput(len=%d): %s\n", strlen(str_in[i]), str_in[i], j, str_out_buf);
 	}
