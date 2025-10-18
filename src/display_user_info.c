@@ -97,6 +97,7 @@ int display_user_info(int32_t uid)
 	int p_post=0;
 	int p_msg=0;
 	char user_action[80]={'\0'};
+	char tmp_action[15]={'\0'};
     int ip_mask_level=2; //default mask level
     long leave_days=0;
     struct tm temp_tm;   
@@ -290,25 +291,20 @@ int display_user_info(int32_t uid)
 		return 0;	
 	}
 
-	while ((row = mysql_fetch_row(rs))){
-		if(strstr(row[1],"Telnet")&&row[4]){
-			if(user_action[0]=='\0'){
-				user_action[0]='[';
-				iStrnCat(user_action,row[4]);
-				iStrnCat(user_action,"]");
-			}else{
-				iStrnCat(user_action," [");
-				iStrnCat(user_action,row[4]);
-				iStrnCat(user_action,"]");
-			}
+	while ((row = mysql_fetch_row(rs))){		
+		tmp_action[0]='\0';
+		if(strstr(row[1],"Telnet")&&row[4]){			
+			iStrnCat(tmp_action,"[");
+			if(strlen(row[4])+strlen(tmp_action)>7) break;
+			iStrnCat(tmp_action,row[4]);
+			iStrnCat(tmp_action,"]");
+			if(strlen(user_action)+strlen(tmp_action)>30) break; 
+			iStrnCat(user_action,tmp_action);
+			
 		}else{
-			if(user_action[0]=='\0'){
-				user_action[0]='[';
-				iStrnCat(user_action,"Web浏览]");		
-			}else{
-				iStrnCat(user_action,"[Web浏览]");			
-			}
-		}
+			if(strlen(user_action)+strlen("[Web浏览]")>30) break; 		
+			iStrnCat(user_action,"[Web浏览]");	
+		}		
 	}
 
 	moveto(line_no++, 1);
