@@ -283,26 +283,31 @@ int bbs_charset_select()
 	char msg[LINE_BUFFER_LEN];
 	int ch;
 
-	snprintf(msg, sizeof(msg),
-			 "\rChoose character set in 5 seconds [UTF-8, GBK]: [U/g]");
-
-	ch = press_any_key_ex(msg, 5);
-	switch (ch)
+	while (!SYS_server_exit)
 	{
-	case 'g':
-	case 'G':
-		if (io_conv_init("GBK") < 0)
-		{
-			log_error("io_conv_init(%s) error\n", "GBK");
-			return -1;
-		}
-		break;
-	default:
-		log_error("Debug: %d\n", ch);
-	}
+		snprintf(msg, sizeof(msg),
+				 "\rChoose character set in 5 seconds [UTF-8, GBK]: [U/g]");
 
-	prints("\r\n");
-	iflush();
+		ch = press_any_key_ex(msg, 5);
+		switch (ch)
+		{
+		case KEY_TIMEOUT:
+		case CR:
+		case 'u':
+		case 'U':
+			return 0;
+		case 'g':
+		case 'G':
+			if (io_conv_init("GBK") < 0)
+			{
+				log_error("io_conv_init(%s) error\n", "GBK");
+				return -1;
+			}
+			return 0;
+		default:
+			continue;
+		}
+	}
 
 	return 0;
 }
