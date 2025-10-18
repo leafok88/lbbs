@@ -283,14 +283,16 @@ int bbs_charset_select()
 	char msg[LINE_BUFFER_LEN];
 	int ch;
 
+	snprintf(msg, sizeof(msg),
+			 "\rChoose character set in 5 seconds [UTF-8, GBK]: [U/g]");
+
 	while (!SYS_server_exit)
 	{
-		snprintf(msg, sizeof(msg),
-				 "\rChoose character set in 5 seconds [UTF-8, GBK]: [U/g]");
-
 		ch = press_any_key_ex(msg, 5);
 		switch (ch)
 		{
+		case KEY_NULL:
+			return -1;
 		case KEY_TIMEOUT:
 		case CR:
 		case 'u':
