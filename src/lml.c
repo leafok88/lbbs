@@ -103,7 +103,7 @@ static int lml_tag_disable_filter(const char *tag_name, const char *tag_param_bu
 {
 	lml_tag_disabled = 1;
 
-	return snprintf(tag_output_buf, tag_output_buf_len, "%s", (quote_mode ? "" : "[plain]"));
+	return snprintf(tag_output_buf, tag_output_buf_len, "%s", (quote_mode ? "[plain]" : ""));
 }
 
 typedef struct lml_tag_def_t
@@ -193,7 +193,7 @@ int lml_render(const char *str_in, char *str_out, int buf_len, int quote_mode)
 
 	for (i = 0; str_in[i] != '\0'; i++)
 	{
-		if (quote_mode && !lml_tag_disabled && new_line)
+		if (!quote_mode && !lml_tag_disabled && new_line)
 		{
 			if (fb_quote_level > 0)
 			{
@@ -308,28 +308,36 @@ int lml_render(const char *str_in, char *str_out, int buf_len, int quote_mode)
 								strncpy(tag_param_buf, lml_tag_def[k].default_param, LML_TAG_PARAM_BUF_LEN - 1);
 								tag_param_buf[LML_TAG_PARAM_BUF_LEN - 1] = '\0';
 							}
-							if (quote_mode)
+							if (!quote_mode)
 							{
 								if (lml_tag_def[k].tag_output != NULL)
 								{
 									tag_output_len = snprintf(tag_output_buf, LML_TAG_OUTPUT_BUF_LEN, lml_tag_def[k].tag_output, tag_param_buf);
 								}
-								else
+								else if (lml_tag_def[k].tag_filter_cb != NULL)
 								{
 									tag_output_len = lml_tag_def[k].tag_filter_cb(
-										lml_tag_def[k].tag_name, tag_param_buf, tag_output_buf, LML_TAG_OUTPUT_BUF_LEN, quote_mode);
+										lml_tag_def[k].tag_name, tag_param_buf, tag_output_buf, LML_TAG_OUTPUT_BUF_LEN, 0);
+								}
+								else
+								{
+									tag_output_len = 0;
 								}
 							}
-							else
+							else // quote mode
 							{
 								if (lml_tag_def[k].quote_mode_output != NULL)
 								{
 									tag_output_len = snprintf(tag_output_buf, LML_TAG_OUTPUT_BUF_LEN, lml_tag_def[k].quote_mode_output, tag_param_buf);
 								}
-								else
+								else if (lml_tag_def[k].tag_filter_cb != NULL)
 								{
 									tag_output_len = lml_tag_def[k].tag_filter_cb(
-										lml_tag_def[k].tag_name, tag_param_buf, tag_output_buf, LML_TAG_OUTPUT_BUF_LEN, quote_mode);
+										lml_tag_def[k].tag_name, tag_param_buf, tag_output_buf, LML_TAG_OUTPUT_BUF_LEN, 1);
+								}
+								else
+								{
+									tag_output_len = 0;
 								}
 							}
 							if (j + tag_output_len >= buf_len)
@@ -389,7 +397,7 @@ int lml_render(const char *str_in, char *str_out, int buf_len, int quote_mode)
 		}
 	}
 
-	if (quote_mode && !lml_tag_disabled && lml_tag_quote_level > 0)
+	if (!quote_mode && !lml_tag_disabled && lml_tag_quote_level > 0)
 	{
 		tag_output_len = snprintf(tag_output_buf, LML_TAG_OUTPUT_BUF_LEN, "\033[m");
 		if (j + tag_output_len >= buf_len)
