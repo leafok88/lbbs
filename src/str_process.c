@@ -46,13 +46,13 @@ int str_length(const char *str, int skip_ctrl_seq)
 		}
 
 		// Process UTF-8 Chinese characters
-		if (c & 0b10000000) // head of multi-byte character
+		if (c & 0x80) // head of multi-byte character
 		{
-			c = (c & 0b01110000) << 1;
-			while (c & 0b10000000)
+			c = (c & 0x70) << 1;
+			while (c & 0x80)
 			{
 				i++;
-				c = (c & 0b01111111) << 1;
+				c = (c & 0x7f) << 1;
 			}
 
 			ret += 2;
@@ -92,18 +92,18 @@ int split_line(const char *buffer, int max_display_len, int *p_eol, int *p_displ
 			continue;
 		}
 
-		if (c & 0b10000000) // head of multi-byte character
+		if (c & 0x80) // head of multi-byte character
 		{
 			if (*p_display_len + 2 > max_display_len)
 			{
 				break;
 			}
 
-			c = (c & 0b01110000) << 1;
-			while (c & 0b10000000)
+			c = (c & 0x70) << 1;
+			while (c & 0x80)
 			{
 				i++;
-				c = (c & 0b01111111) << 1;
+				c = (c & 0x7f) << 1;
 			}
 
 			(*p_display_len) += 2;

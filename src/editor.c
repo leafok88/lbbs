@@ -504,14 +504,14 @@ int editor_data_delete(EDITOR_DATA *p_editor_data, long *p_display_line, long *p
 	{
 		str_len = 1;
 	}
-	else if (p_data_line[offset_data_line] & 0b10000000) // head of multi-byte character
+	else if (p_data_line[offset_data_line] & 0x80) // head of multi-byte character
 	{
 		str_len = 1;
-		c = (p_data_line[offset_data_line] & 0b01110000) << 1;
-		while (c & 0b10000000)
+		c = (p_data_line[offset_data_line] & 0x70) << 1;
+		while (c & 0x80)
 		{
 			str_len++;
-			c = (c & 0b01111111) << 1;
+			c = (c & 0x7f) << 1;
 		}
 	}
 	else
@@ -716,17 +716,17 @@ int editor_display(EDITOR_DATA *p_editor_data)
 					goto cleanup;
 				}
 
-				if (ch < 256 && (ch & 0b10000000)) // head of multi-byte character
+				if (ch < 256 && (ch & 0x80)) // head of multi-byte character
 				{
 					str_len = 0;
-					c = (char)(ch & 0b11110000);
-					while (c & 0b10000000)
+					c = (char)(ch & 0xf0);
+					while (c & 0x80)
 					{
 						input_str[str_len] = (char)(ch - 256);
 						str_len++;
-						c = (c & 0b01111111) << 1;
+						c = (c & 0x7f) << 1;
 
-						if ((c & 0b10000000) == 0) // Input completed
+						if ((c & 0x80) == 0) // Input completed
 						{
 							break;
 						}

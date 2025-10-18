@@ -149,7 +149,7 @@ int load_file(const char *filename)
 	((struct shm_header_t *)p_shm)->shmid = shmid;
 	((struct shm_header_t *)p_shm)->data_len = data_len;
 	((struct shm_header_t *)p_shm)->line_total = line_total;
-	memcpy(p_shm + sizeof(struct shm_header_t), p_data, data_len);
+	memcpy((char *)p_shm + sizeof(struct shm_header_t), p_data, data_len);
 
 	if (munmap(p_data, data_len) < 0)
 	{
@@ -157,8 +157,8 @@ int load_file(const char *filename)
 		return -2;
 	}
 
-	p_data = p_shm + sizeof(struct shm_header_t);
-	p_line_offsets = p_data + data_len + 1;
+	p_data = (char *)p_shm + sizeof(struct shm_header_t);
+	p_line_offsets = (long *)((char *)p_data + data_len + 1);
 	memcpy(p_line_offsets, line_offsets, sizeof(long) * (size_t)(line_total + 1));
 
 	if (shmdt(p_shm) == -1)
@@ -241,8 +241,8 @@ const void *get_file_shm_readonly(const char *filename, size_t *p_data_len, long
 
 	*p_data_len = ((struct shm_header_t *)p_shm)->data_len;
 	*p_line_total = ((struct shm_header_t *)p_shm)->line_total;
-	*pp_data = p_shm + sizeof(struct shm_header_t);
-	*pp_line_offsets = *pp_data + *p_data_len + 1;
+	*pp_data = (char *)p_shm + sizeof(struct shm_header_t);
+	*pp_line_offsets = (const long *)((const char *)(*pp_data) + *p_data_len + 1);
 
 	return p_shm;
 }

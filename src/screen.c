@@ -182,7 +182,7 @@ static int _str_input(char *buffer, int buf_size, int max_display_len, int echo_
 				offset--;
 				if (buffer[offset] < 0 || buffer[offset] > 127) // UTF8
 				{
-					while (offset > 0 && (buffer[offset] & 0b11000000) != 0b11000000)
+					while (offset > 0 && (buffer[offset] & 0xc0) != 0xc0)
 					{
 						offset--;
 					}
@@ -203,14 +203,14 @@ static int _str_input(char *buffer, int buf_size, int max_display_len, int echo_
 		else if ((ch & 0xff80) == 0x80) // head of multi-byte character
 		{
 			str_len = 0;
-			c = (char)(ch & 0b11110000);
-			while (c & 0b10000000)
+			c = (char)(ch & 0xf0);
+			while (c & 0x80)
 			{
 				input_str[str_len] = (char)(ch - 256);
 				str_len++;
-				c = (c & 0b01111111) << 1;
+				c = (c & 0x7f) << 1;
 
-				if ((c & 0b10000000) == 0) // Input completed
+				if ((c & 0x80) == 0) // Input completed
 				{
 					break;
 				}
@@ -300,7 +300,7 @@ int str_input(char *buffer, int buf_size, int echo_mode)
 	iflush();
 
 	return len;
-};
+}
 
 int get_data(int row, int col, char *prompt, char *buffer, int buf_size, int max_display_len)
 {
@@ -353,7 +353,7 @@ int get_data(int row, int col, char *prompt, char *buffer, int buf_size, int max
 				offset--;
 				if (buffer[offset] < 0 || buffer[offset] > 127) // UTF8
 				{
-					while (offset > 0 && (buffer[offset] & 0b11000000) != 0b11000000)
+					while (offset > 0 && (buffer[offset] & 0xc0) != 0xc0)
 					{
 						str_len++;
 						offset--;
@@ -383,11 +383,11 @@ int get_data(int row, int col, char *prompt, char *buffer, int buf_size, int max
 				if ((buffer[offset] & 0x80) == 0x80) // head of multi-byte character
 				{
 					str_len = 0;
-					c = (char)(buffer[offset] & 0b11110000);
-					while (c & 0b10000000)
+					c = (char)(buffer[offset] & 0xf0);
+					while (c & 0x80)
 					{
 						str_len++;
-						c = (c & 0b01111111) << 1;
+						c = (c & 0x7f) << 1;
 					}
 					display_len--;
 				}
@@ -417,7 +417,7 @@ int get_data(int row, int col, char *prompt, char *buffer, int buf_size, int max
 				offset--;
 				if (buffer[offset] < 0 || buffer[offset] > 127) // UTF8
 				{
-					while (offset > 0 && (buffer[offset] & 0b11000000) != 0b11000000)
+					while (offset > 0 && (buffer[offset] & 0xc0) != 0xc0)
 					{
 						str_len++;
 						offset--;
@@ -438,11 +438,11 @@ int get_data(int row, int col, char *prompt, char *buffer, int buf_size, int max
 				str_len = 0;
 				if ((buffer[offset] & 0x80) == 0x80) // head of multi-byte character
 				{
-					c = (char)(buffer[offset] & 0b11110000);
-					while (c & 0b10000000)
+					c = (char)(buffer[offset] & 0xf0);
+					while (c & 0x80)
 					{
 						str_len++;
-						c = (c & 0b01111111) << 1;
+						c = (c & 0x7f) << 1;
 					}
 					col_cur++;
 				}
@@ -490,14 +490,14 @@ int get_data(int row, int col, char *prompt, char *buffer, int buf_size, int max
 		else if ((ch & 0xff80) == 0x80) // head of multi-byte character
 		{
 			str_len = 0;
-			c = (char)(ch & 0b11110000);
-			while (c & 0b10000000)
+			c = (char)(ch & 0xf0);
+			while (c & 0x80)
 			{
 				input_str[str_len] = (char)(ch - 256);
 				str_len++;
-				c = (c & 0b01111111) << 1;
+				c = (c & 0x7f) << 1;
 
-				if ((c & 0b10000000) == 0) // Input completed
+				if ((c & 0x80) == 0) // Input completed
 				{
 					break;
 				}

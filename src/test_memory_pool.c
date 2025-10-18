@@ -84,7 +84,7 @@ int main(int argc, char *argv[])
 			{
 				for (k = (int)sizeof(void *); k < NODE_SIZE; k++)
 				{
-					if ((*(char *)(p_nodes[i] + k)) != 'A' + j - 1)
+					if ((*((char *)p_nodes[i] + k)) != 'A' + j - 1)
 					{
 						printf("Value of node[%d] at offset %d not equal to value set %c\n",
 							   i, k, 'A' + j - 1);
