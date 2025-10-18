@@ -96,7 +96,7 @@ int display_user_info(int32_t uid)
 	int p_login=0;
 	int p_post=0;
 	int p_msg=0;
-	char user_action[60]={'\0'};
+	char user_action[80]={'\0'};
     int ip_mask_level=2; //default mask level
     long leave_days=0;
     struct tm temp_tm;   
