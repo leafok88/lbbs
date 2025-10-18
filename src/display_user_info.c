@@ -65,10 +65,16 @@ int getBBS_level_from_exp(int exp){
 	}
 	return l;
 }
-
+size_t iStrnLen(const char *str){
+	size_t size=1024;
+	return strnlen(str,size);
+}
 int iStrnCat(char *dest, const char *src){
-	strncat(dest, src, sizeof(dest) - strlen(dest) - 1);
-	return 0;
+	size_t size=iStrnLen(dest) - iStrnLen(src) - 1;
+	if(size>0){
+		strncat(dest, src, size);
+		return 0;
+	}else return -1;
 }
 
 int display_user_info(int32_t uid)
@@ -96,8 +102,8 @@ int display_user_info(int32_t uid)
 	int p_login=0;
 	int p_post=0;
 	int p_msg=0;
-	char user_action[80]={'\0'};
-	char tmp_action[15]={'\0'};
+	char user_action[255]={'\0'};
+	char tmp_action[32]={'\0'};
     int ip_mask_level=2; //default mask level
     long leave_days=0;
     struct tm temp_tm;   
@@ -291,19 +297,24 @@ int display_user_info(int32_t uid)
 		return 0;	
 	}
 
-	while ((row = mysql_fetch_row(rs))){		
-		tmp_action[0]='\0';
+	strncpy(user_action,"",sizeof(user_action));
+	while ((row = mysql_fetch_row(rs))){
+		strncpy(tmp_action,"",sizeof(tmp_action));
+		
 		if(strstr(row[1],"Telnet")&&row[4]){			
 			iStrnCat(tmp_action,"[");
-			if(strlen(row[4])+strlen(tmp_action)>7) break;
-			iStrnCat(tmp_action,row[4]);
-			iStrnCat(tmp_action,"]");
-			if(strlen(user_action)+strlen(tmp_action)>30) break; 
-			iStrnCat(user_action,tmp_action);
+			if(iStrnLen(row[4])+iStrnLen(tmp_action)>24) break;
+			else{
+				iStrnCat(tmp_action,row[4]);
+				iStrnCat(tmp_action,"]");
+			}
+			if(iStrnLen(user_action)+iStrnLen(tmp_action)>80) break;
+			else if(strchr(tmp_action,']')==NULL) break;
+			else iStrnCat(user_action,tmp_action);
 			
 		}else{
-			if(strlen(user_action)+strlen("[Web浏览]")>30) break; 		
-			iStrnCat(user_action,"[Web浏览]");	
+			if(iStrnLen(user_action)+iStrnLen("[Web浏览]")>80) break; 		
+			else iStrnCat(user_action,"[Web浏览]");	
 		}		
 	}
 
