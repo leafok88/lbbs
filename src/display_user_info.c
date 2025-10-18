@@ -179,7 +179,7 @@ int display_user_info(int32_t uid)
 		user_gender_pub=atoi(row[9]);
 		gender_color=user_gender_pub==1?(user_gender=='M'?36:35):37;
 
-		snprintf(user_introduction, sizeof(user_introduction),"%s",row[12]);
+		snprintf(user_introduction, sizeof(user_introduction),"%s",row[12]?row[12]:"");
 		
         //user_reg_tm=atol(row[10]);
         //temp_t = localtime(&user_reg_tm);
@@ -301,7 +301,7 @@ int display_user_info(int32_t uid)
 	while ((row = mysql_fetch_row(rs))){
 		strncpy(tmp_action,"",sizeof(tmp_action));
 		
-		if(strstr(row[1],"Telnet")&&row[4]){			
+		if(strstr(row[1],"Telnet")&&row[4]&&row[4][0]){			
 			iStrnCat(tmp_action,"[");
 			if(iStrnLen(row[4])+iStrnLen(tmp_action)>24) break;
 			else{
@@ -309,9 +309,9 @@ int display_user_info(int32_t uid)
 				iStrnCat(tmp_action,"]");
 			}
 			if(iStrnLen(user_action)+iStrnLen(tmp_action)>80) break;
-			else if(strchr(tmp_action,']')==NULL) break;
-			else iStrnCat(user_action,tmp_action);
-			
+			else{
+				if(strstr(tmp_action,"]")) iStrnCat(user_action,tmp_action);			
+			}
 		}else{
 			if(iStrnLen(user_action)+iStrnLen("[Web浏览]")>80) break; 		
 			else iStrnCat(user_action,"[Web浏览]");	
