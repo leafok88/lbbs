@@ -1,7 +1,6 @@
 # Changelog of LBBS - Classical terminal server of LeafOK BBS
 
-Copyright (C) 2004-2025 by Leaflet  
-Email : leaflet@leafok.com
+中文版本的ChangeLog.md位于[ChangeLog.zh_CN.md](ChangeLog.zh_CN.md)
 
 
 2025-10-15  v1.4
