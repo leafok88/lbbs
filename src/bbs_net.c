@@ -215,6 +215,7 @@ int bbsnet_connect(int n)
 	int output_conv_offset = 0;
 	iconv_t input_cd = NULL;
 	iconv_t output_cd = NULL;
+	char tocode[32];
 	struct epoll_event ev, events[MAX_EVENTS];
 	int nfds, epollfd;
 	int stdin_read_wait = 0;
@@ -423,16 +424,19 @@ int bbsnet_connect(int n)
 	log_common("BBSNET connect to %s:%d from %s:%d by [%s]\n",
 			   remote_addr, remote_port, local_addr, local_port, BBS_username);
 
-	input_cd = iconv_open(bbsnet_conf[n].charset, stdio_charset);
+	snprintf(tocode, sizeof(tocode), "%s//TRANSLIT", bbsnet_conf[n].charset);
+	input_cd = iconv_open(tocode, stdio_charset);
 	if (input_cd == (iconv_t)(-1))
 	{
-		log_error("iconv_open(%s->%s) error: %d\n", stdio_charset, bbsnet_conf[n].charset, errno);
+		log_error("iconv_open(%s->%s) error: %d\n", stdio_charset, tocode, errno);
 		goto cleanup;
 	}
+
+	snprintf(tocode, sizeof(tocode), "%s//TRANSLIT", stdio_charset);
 	output_cd = iconv_open(stdio_charset, bbsnet_conf[n].charset);
 	if (output_cd == (iconv_t)(-1))
 	{
-		log_error("iconv_open(%s->%s) error: %d\n", bbsnet_conf[n].charset, stdio_charset, errno);
+		log_error("iconv_open(%s->%s) error: %d\n", bbsnet_conf[n].charset, tocode, errno);
 		iconv_close(input_cd);
 		goto cleanup;
 	}

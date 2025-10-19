@@ -101,7 +101,7 @@
 
 #define BBS_DEFAULT_CHARSET "UTF-8"
 
-extern char stdio_charset[32];
+extern char stdio_charset[20];
 
 extern int prints(const char *format, ...);
 extern int outc(char c);

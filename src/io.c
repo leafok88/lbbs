@@ -31,7 +31,7 @@
 #include <libssh/libssh.h>
 #include <libssh/server.h>
 
-char stdio_charset[32] = BBS_DEFAULT_CHARSET;
+char stdio_charset[20] = BBS_DEFAULT_CHARSET;
 
 // static input / output buffer
 static char stdin_buf[LINE_BUFFER_LEN];
@@ -1012,6 +1012,8 @@ int io_buf_conv(iconv_t cd, char *p_buf, int *p_buf_len, int *p_buf_offset, char
 
 int io_conv_init(const char *charset)
 {
+	char tocode[32];
+
 	if (charset == NULL)
 	{
 		log_error("NULL pointer error\n");
@@ -1020,18 +1022,21 @@ int io_conv_init(const char *charset)
 
 	io_conv_cleanup();
 
-	snprintf(stdio_charset, sizeof(stdio_charset), "%s//TRANSLIT", charset);
+	strncpy(stdio_charset, charset, sizeof(stdio_charset) - 1);
+	stdio_charset[sizeof(stdio_charset) - 1] = '\0';
 
-	stdin_cd = iconv_open(BBS_DEFAULT_CHARSET, stdio_charset);
+	stdin_cd = iconv_open(BBS_DEFAULT_CHARSET "//TRANSLIT", stdio_charset);
 	if (stdin_cd == (iconv_t)(-1))
 	{
-		log_error("iconv_open(%s->%s) error: %d\n", stdio_charset, BBS_DEFAULT_CHARSET, errno);
+		log_error("iconv_open(%s->%s) error: %d\n", stdio_charset, BBS_DEFAULT_CHARSET "//TRANSLIT", errno);
 		return -2;
 	}
-	stdout_cd = iconv_open(stdio_charset, BBS_DEFAULT_CHARSET);
+
+	snprintf(tocode, sizeof(tocode), "%s//TRANSLIT", stdio_charset);
+	stdout_cd = iconv_open(tocode, BBS_DEFAULT_CHARSET);
 	if (stdout_cd == (iconv_t)(-1))
 	{
-		log_error("iconv_open(%s->%s) error: %d\n", BBS_DEFAULT_CHARSET, stdio_charset, errno);
+		log_error("iconv_open(%s->%s) error: %d\n", BBS_DEFAULT_CHARSET, tocode, errno);
 		iconv_close(stdin_cd);
 		return -2;
 	}
