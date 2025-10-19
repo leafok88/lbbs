@@ -42,6 +42,21 @@ char BBS_Status[][16]={
 	"副管理员",
 	"正管理员"
 };
+int astro_date[] = {21, 20, 21, 21, 22, 22, 23, 24, 24, 24, 23, 22};
+char astro[][7] ={"摩羯", "水瓶", "双鱼", "白羊", "金牛", "双子", "巨蟹", "狮子", "处女", "天秤", "天蝎", "射手", "摩羯"};
+char *Date2Astro(int month, int date){
+	if (month < 1 || month >12 || date < 1 || date > 31)
+	{
+		return astro[0];
+	}
+
+	if (date < astro_date[month - 1])
+	{
+		return astro[month];
+	}
+
+	return astro[month+1];
+}
 char *getUserStatus(int level){
 	if(level&P_ADMIN_M) return BBS_Status[6];
 	else if(level&P_ADMIN_S) return BBS_Status[5];
@@ -103,6 +118,8 @@ int display_user_info(int32_t uid)
     long leave_days=0;
 	char last_login_date[20]={'\0'};	
 	char user_reg_date[20]={'\0'};
+	int user_birth_date=0;
+	int user_birth_month=0;	
 	struct tm temp_tm;   
 	time_t temp_t=0;
 
@@ -143,7 +160,7 @@ int display_user_info(int32_t uid)
 	snprintf(sql, sizeof(sql),
 			 "SELECT u.username,u.p_login,u.p_post,u.p_msg,p.nickname,"
              "p.life,p.exp,p.visit_count,p.gender,p.gender_pub,"
-             "UNIX_TIMESTAMP(r.signup_dt),r.signup_ip,p.introduction "
+             "UNIX_TIMESTAMP(r.signup_dt),r.signup_ip,p.introduction,UNIX_TIMESTAMP(r.birthday) "
              //"r.signup_dt,r.signup_ip "
              "FROM user_list u "
              "Left Join user_pubinfo p ON u.uid=p.uid "
@@ -195,6 +212,11 @@ int display_user_info(int32_t uid)
 		temp_t=atol(row[10]);
 		localtime_r(&temp_t, &temp_tm);
 		strftime(user_reg_date, sizeof(user_reg_date), "%Y-%m-%d %H:%M:%S", &temp_tm);
+
+		temp_t=atol(row[13]);
+		localtime_r(&temp_t, &temp_tm);
+		user_birth_month=temp_tm.tm_mon;
+		user_birth_date=temp_tm.tm_mday;
         //snprintf(user_reg_date, sizeof(user_reg_date),"%s",row[10]);
 	}else{
 		prints("用户不存在\n");
@@ -323,16 +345,22 @@ int display_user_info(int32_t uid)
 	}
 
 	moveto(line_no++, 1);
-	prints("%s (%s) 上站 [%d] 发文 [%d]\n",username,nickname,visit_count,user_post_count);
+	prints("%s (%s) 上站 [%d] 发文 [%d]",username,nickname,visit_count,user_post_count);
+
 	moveto(line_no++, 1);
-	prints("上次在 [%s] 从 [%s] 访问本站 经验值 [%d]\n",last_login_date,last_login_ip,user_exp);
+	prints("上次在 [%s] 从 [%s] 访问本站",last_login_date,last_login_ip,user_exp);
+
 	moveto(line_no++, 1);
-	prints("注册时间 [%s] 生命值 [%d] 等级 [%s(%d)] 身份 [\033[1;%dm%s\033[0m]\n", user_reg_date, user_life, BBS_level[user_level], user_level, gender_color, user_status);
+	prints("注册时间 [%s] 生命值 [%d] 身份 [%s]", user_reg_date, user_life, user_status);
+
+	moveto(line_no++, 1);
+	prints("经验值 [%d] 等级 [%s(%d)] 星座 [\033[1;%dm%s座\033[0m]",user_exp, BBS_level[user_level], user_level, gender_color,Date2Astro(user_birth_month,user_birth_date));
+
 	if(user_action[0]){
 		moveto(line_no++, 1);
 		prints("目前在站上，状态如下：");
 		moveto(line_no++, 1);
-		prints("%s\n",user_action);		
+		prints("%s",user_action);		
 	}
 	moveto(line_no++, 1);
 	prints("\033[1;36m个人说明档如下：\033[0m\n");
