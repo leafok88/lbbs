@@ -1060,8 +1060,6 @@ int editor_display(EDITOR_DATA *p_editor_data)
 					output_end_row = SCREEN_ROWS - 1; // Legacy Fterm only works with this line
 					col_pos = MIN(col_pos, MAX(1, p_editor_data->display_line_widths[line_current - output_current_row + row_pos]));
 					break;
-				case KEY_SPACE:
-					break;
 				case KEY_RIGHT:
 					offset_in = split_line(p_editor_data->p_display_lines[line_current - output_current_row + row_pos],
 										   (int)col_pos - 1, &eol, &display_len, 0);
@@ -1133,13 +1131,13 @@ int editor_display(EDITOR_DATA *p_editor_data)
 					break;
 				case Ctrl('Q'):
 				case KEY_F1:
-					if (!show_help) // Not reentrant
+					if (!show_help) // Not re-entrant
 					{
 						break;
 					}
 					// Display help information
 					show_help = 0;
-					display_file(DATA_READ_HELP, 1);
+					display_file(DATA_EDITOR_HELP, 1);
 					show_help = 1;
 				case KEY_F5:
 					// Refresh after display help information

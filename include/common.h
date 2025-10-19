@@ -46,6 +46,7 @@
 #define DATA_LOGIN_ERROR "data/login_error.txt"
 #define DATA_ACTIVE_BOARD "data/active_board.txt"
 #define DATA_READ_HELP "data/read_help.txt"
+#define DATA_EDITOR_HELP "data/editor_help.txt"
 
 #define VAR_BBS_TOP "var/bbs_top.txt"
 
