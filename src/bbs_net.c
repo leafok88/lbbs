@@ -433,7 +433,7 @@ int bbsnet_connect(int n)
 	}
 
 	snprintf(tocode, sizeof(tocode), "%s//TRANSLIT", stdio_charset);
-	output_cd = iconv_open(stdio_charset, bbsnet_conf[n].charset);
+	output_cd = iconv_open(tocode, bbsnet_conf[n].charset);
 	if (output_cd == (iconv_t)(-1))
 	{
 		log_error("iconv_open(%s->%s) error: %d\n", bbsnet_conf[n].charset, tocode, errno);
