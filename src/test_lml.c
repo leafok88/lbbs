@@ -29,7 +29,7 @@ const char *str_in[] = {
 	"A[url BC DE]测试a网址[/url]FG",
 	"AB[email CDE]F[/eMAil]G01[emaiL]23456[/email]789",
 	"A[user DE]BC[/User]FG",
-	"[article A B CD]EF[  /article]G",
+	"[article A B CD]EF[  /article]G[article]123[/article]456",
 	"A[ image  BCD]EFG",
 	"AB[ Flash  CDE ]FG",
 	"AB[bwf]CDEFG",
