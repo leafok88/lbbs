@@ -35,17 +35,17 @@ char stdio_charset[32] = BBS_DEFAULT_CHARSET;
 
 // static input / output buffer
 static char stdin_buf[LINE_BUFFER_LEN];
-static char stdin_conv[LINE_BUFFER_LEN];
-static int stdin_buf_len = 0;
-static int stdin_conv_len = 0;
-static int stdin_buf_offset = 0;
-static int stdin_conv_offset = 0;
-
 static char stdout_buf[BUFSIZ];
-static char stdout_conv[BUFSIZ];
+static int stdin_buf_len = 0;
 static int stdout_buf_len = 0;
-static int stdout_conv_len = 0;
+static int stdin_buf_offset = 0;
 static int stdout_buf_offset = 0;
+
+static char stdin_conv[LINE_BUFFER_LEN * 2];
+static char stdout_conv[BUFSIZ * 2];
+static int stdin_conv_len = 0;
+static int stdout_conv_len = 0;
+static int stdin_conv_offset = 0;
 static int stdout_conv_offset = 0;
 
 static iconv_t stdin_cd = NULL;
@@ -285,7 +285,7 @@ int igetch(int timeout)
 		flags = fcntl(STDIN_FILENO, F_GETFL, 0);
 		fcntl(STDIN_FILENO, F_SETFL, flags | O_NONBLOCK);
 
-		for (loop = 1; loop && stdin_conv_offset >= stdin_conv_len && !SYS_server_exit;)
+		for (loop = 1; loop && stdin_buf_len < sizeof(stdin_buf) && stdin_conv_offset >= stdin_conv_len && !SYS_server_exit;)
 		{
 			if (SSH_v2 && ssh_channel_is_closed(SSH_channel))
 			{
