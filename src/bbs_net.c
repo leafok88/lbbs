@@ -424,7 +424,7 @@ int bbsnet_connect(int n)
 	log_common("BBSNET connect to %s:%d from %s:%d by [%s]\n",
 			   remote_addr, remote_port, local_addr, local_port, BBS_username);
 
-	snprintf(tocode, sizeof(tocode), "%s//TRANSLIT", bbsnet_conf[n].charset);
+	snprintf(tocode, sizeof(tocode), "%s//IGNORE", bbsnet_conf[n].charset);
 	input_cd = iconv_open(tocode, stdio_charset);
 	if (input_cd == (iconv_t)(-1))
 	{

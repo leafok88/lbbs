@@ -988,6 +988,12 @@ int io_buf_conv(iconv_t cd, char *p_buf, int *p_buf_len, int *p_buf_offset, char
 					return -2;
 				}
 
+				// reset in_bytes when "//IGNORE" is applied
+				if (in_bytes == 0)
+				{
+					in_bytes = (size_t)(*p_buf_len - *p_buf_offset);
+				}
+
 				*out_buf = *in_buf;
 				in_buf++;
 				out_buf++;
@@ -1025,10 +1031,10 @@ int io_conv_init(const char *charset)
 	strncpy(stdio_charset, charset, sizeof(stdio_charset) - 1);
 	stdio_charset[sizeof(stdio_charset) - 1] = '\0';
 
-	stdin_cd = iconv_open(BBS_DEFAULT_CHARSET "//TRANSLIT", stdio_charset);
+	stdin_cd = iconv_open(BBS_DEFAULT_CHARSET "//IGNORE", stdio_charset);
 	if (stdin_cd == (iconv_t)(-1))
 	{
-		log_error("iconv_open(%s->%s) error: %d\n", stdio_charset, BBS_DEFAULT_CHARSET "//TRANSLIT", errno);
+		log_error("iconv_open(%s->%s) error: %d\n", stdio_charset, BBS_DEFAULT_CHARSET "//IGNORE", errno);
 		return -2;
 	}
 
