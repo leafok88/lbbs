@@ -103,7 +103,8 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 	p_menu_set->shmid = shmget(key, size, IPC_CREAT | IPC_EXCL | 0600);
 	if (p_menu_set->shmid == -1)
 	{
-		log_error("shmget(size = %d) error (%d)\n", size, errno);
+		log_error("shmget(conf_file=%s, proj_id=%d, key=%d, size=%d) error (%d)\n",
+				  conf_file, proj_id, key, size, errno);
 		return -3;
 	}
 	p_menu_set->p_reserved = shmat(p_menu_set->shmid, NULL, 0);
@@ -112,10 +113,10 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 		log_error("shmat() error (%d)\n", errno);
 		return -3;
 	}
-	p_menu_set->p_menu_pool = p_menu_set->p_reserved + MENU_SET_RESERVED_LENGTH;
-	p_menu_set->p_menu_item_pool = p_menu_set->p_menu_pool + sizeof(MENU) * MAX_MENUS;
-	p_menu_set->p_menu_screen_pool = p_menu_set->p_menu_item_pool + sizeof(MENU_ITEM) * MAX_MENUITEMS;
-	p_menu_set->p_menu_screen_buf = p_menu_set->p_menu_screen_pool + sizeof(MENU_SCREEN) * MAX_MENUS;
+	p_menu_set->p_menu_pool = (char *)(p_menu_set->p_reserved) + MENU_SET_RESERVED_LENGTH;
+	p_menu_set->p_menu_item_pool = (char *)(p_menu_set->p_menu_pool) + sizeof(MENU) * MAX_MENUS;
+	p_menu_set->p_menu_screen_pool = (char *)(p_menu_set->p_menu_item_pool) + sizeof(MENU_ITEM) * MAX_MENUITEMS;
+	p_menu_set->p_menu_screen_buf = (char *)(p_menu_set->p_menu_screen_pool) + sizeof(MENU_SCREEN) * MAX_MENUS;
 	p_menu_set->p_menu_screen_buf_free = p_menu_set->p_menu_screen_buf;
 
 	p_menu_set->menu_count = 0;
@@ -989,7 +990,7 @@ int display_menu(MENU_SET *p_menu_set)
 		return EXITMENU;
 	}
 
-	if(p_menu->item_count <= 0) // empty menu
+	if (p_menu->item_count <= 0) // empty menu
 	{
 		moveto(p_menu->screen_row, p_menu->screen_col);
 		clrtoeol();
@@ -1395,10 +1396,10 @@ int get_menu_shm_readonly(MENU_SET *p_menu_set)
 	}
 
 	p_menu_set->p_reserved = p_shm;
-	p_menu_set->p_menu_pool = p_menu_set->p_reserved + MENU_SET_RESERVED_LENGTH;
-	p_menu_set->p_menu_item_pool = p_menu_set->p_menu_pool + sizeof(MENU) * MAX_MENUS;
-	p_menu_set->p_menu_screen_pool = p_menu_set->p_menu_item_pool + sizeof(MENU_ITEM) * MAX_MENUITEMS;
-	p_menu_set->p_menu_screen_buf = p_menu_set->p_menu_screen_pool + sizeof(MENU_SCREEN) * MAX_MENUS;
+	p_menu_set->p_menu_pool = (char *)(p_menu_set->p_reserved) + MENU_SET_RESERVED_LENGTH;
+	p_menu_set->p_menu_item_pool = (char *)(p_menu_set->p_menu_pool) + sizeof(MENU) * MAX_MENUS;
+	p_menu_set->p_menu_screen_pool = (char *)(p_menu_set->p_menu_item_pool) + sizeof(MENU_ITEM) * MAX_MENUITEMS;
+	p_menu_set->p_menu_screen_buf = (char *)(p_menu_set->p_menu_screen_pool) + sizeof(MENU_SCREEN) * MAX_MENUS;
 	p_menu_set->p_menu_screen_buf_free = p_menu_set->p_menu_screen_buf;
 
 	p_menu_set->choose_step = 0;

@@ -17,6 +17,7 @@
 #ifndef _IO_H_
 #define _IO_H_
 
+#include <iconv.h>
 #include <stdio.h>
 
 #define CR '\r'
@@ -98,16 +99,20 @@
 #define DOECHO (1)
 #define NOECHO (0)
 
+#define BBS_DEFAULT_CHARSET "UTF-8"
+
+extern char stdio_charset[32];
+
 extern int prints(const char *format, ...);
-
 extern int outc(char c);
-
 extern int iflush(void);
 
 extern int igetch(int timeout);
-
 extern int igetch_t(int sec);
-
 extern void igetch_reset(void);
+
+extern int io_buf_conv(iconv_t cd, char *p_buf, int *p_buf_len, int *p_buf_offset, char *p_conv, size_t conv_size, int *p_conv_len);
+extern int io_conv_init(const char *charset);
+extern int io_conv_cleanup(void);
 
 #endif //_IO_H_

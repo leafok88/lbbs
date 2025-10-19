@@ -195,7 +195,7 @@ int bbs_logout(void)
 
 	display_file(DATA_GOODBYE, 1);
 
-	log_common("User [%s] logout\n", BBS_username);
+	log_common("User [%s] logout, idle for %ld seconds since last input\n", BBS_username, time(NULL) - BBS_last_access_tm);
 
 	return 0;
 }
@@ -278,6 +278,42 @@ int bbs_center()
 	return 0;
 }
 
+int bbs_charset_select()
+{
+	char msg[LINE_BUFFER_LEN];
+	int ch;
+
+	snprintf(msg, sizeof(msg),
+			 "\rChoose character set in 5 seconds [UTF-8, GBK]: [U/g]");
+
+	while (!SYS_server_exit)
+	{
+		ch = press_any_key_ex(msg, 5);
+		switch (ch)
+		{
+		case KEY_NULL:
+			return -1;
+		case KEY_TIMEOUT:
+		case CR:
+		case 'u':
+		case 'U':
+			return 0;
+		case 'g':
+		case 'G':
+			if (io_conv_init("GBK") < 0)
+			{
+				log_error("io_conv_init(%s) error\n", "GBK");
+				return -1;
+			}
+			return 0;
+		default:
+			continue;
+		}
+	}
+
+	return 0;
+}
+
 int bbs_main()
 {
 	struct sigaction act = {0};
@@ -317,7 +353,17 @@ int bbs_main()
 		goto cleanup;
 	}
 
+	// Set default charset
+	if (io_conv_init(BBS_DEFAULT_CHARSET) < 0)
+	{
+		log_error("io_conv_init(%s) error\n", BBS_DEFAULT_CHARSET);
+		goto cleanup;
+	}
+
 	set_input_echo(0);
+
+	// Set user charset
+	bbs_charset_select();
 
 	// System info
 	if (bbs_info() < 0)
@@ -335,7 +381,7 @@ int bbs_main()
 	if (SSH_v2)
 	{
 		snprintf(msg, sizeof(msg), "\033[1m%s 欢迎使用ssh方式访问 \033[1;33m按任意键继续...\033[m", BBS_username);
-		press_any_key_ex(msg);
+		press_any_key_ex(msg, 60);
 	}
 	else if (bbs_login() < 0)
 	{
@@ -388,6 +434,9 @@ int bbs_main()
 	}
 
 cleanup:
+	// Cleanup iconv
+	io_conv_cleanup();
+
 	// Cleanup editor memory pool
 	editor_memory_pool_cleanup();
 

@@ -86,7 +86,7 @@ int trie_dict_init(const char *filename, int node_count_limit)
 	p_trie_node_pool->node_count_limit = node_count_limit;
 	p_trie_node_pool->node_count = 0;
 
-	p_trie_nodes = p_shm + sizeof(TRIE_NODE_POOL);
+	p_trie_nodes = (TRIE_NODE *)((char *)p_shm + sizeof(TRIE_NODE_POOL));
 	p_trie_node_pool->p_node_free_list = &(p_trie_nodes[0]);
 	for (i = 0; i < node_count_limit - 1; i++)
 	{

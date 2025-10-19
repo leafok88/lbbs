@@ -135,7 +135,7 @@ int article_cache_generate(const char *cache_dir, const ARTICLE *p_article, cons
 	}
 
 	// Apply LML render to content body
-	cache.data_len = header_len + (size_t)lml_render(content, content_f, ARTICLE_CONTENT_MAX_LEN, 1);
+	cache.data_len = header_len + (size_t)lml_render(content, content_f, ARTICLE_CONTENT_MAX_LEN, 0);
 
 	cache.line_total = header_line_cnt +
 					   split_data_lines(content_f, SCREEN_COLS, cache.line_offsets + header_line_cnt, MAX_SPLIT_FILE_LINES - header_line_cnt, 1, NULL);
@@ -274,7 +274,7 @@ int article_cache_load(ARTICLE_CACHE *p_cache, const char *cache_dir, const ARTI
 	memcpy((void *)p_cache, p_mmap, (size_t)(((ARTICLE_CACHE *)p_mmap)->mmap_len - ((ARTICLE_CACHE *)p_mmap)->data_len));
 
 	p_cache->p_mmap = p_mmap;
-	p_cache->p_data = p_mmap + (p_cache->mmap_len - p_cache->data_len);
+	p_cache->p_data = (char *)p_mmap + (p_cache->mmap_len - p_cache->data_len);
 
 	return 0;
 }

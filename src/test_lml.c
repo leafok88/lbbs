@@ -29,7 +29,7 @@ const char *str_in[] = {
 	"A[url BC DE]测试a网址[/url]FG",
 	"AB[email CDE]F[/eMAil]G01[emaiL]23456[/email]789",
 	"A[user DE]BC[/User]FG",
-	"[article A B CD]EF[  /article]G",
+	"[article A B CD]EF[  /article]G[article]123[/article]456",
 	"A[ image  BCD]EFG",
 	"AB[ Flash  CDE ]FG",
 	"AB[bwf]CDEFG",
@@ -62,7 +62,7 @@ int main(int argc, char *argv[])
 	printf("Test #1: lml_tag = 1\n");
 	for (i = 0; i < str_cnt; i++)
 	{
-		j = lml_render(str_in[i], str_out_buf, sizeof(str_out_buf), 1);
+		j = lml_render(str_in[i], str_out_buf, sizeof(str_out_buf), 0);
 
 		printf("Input(len=%ld): %s\nOutput(len=%d): %s\n", strlen(str_in[i]), str_in[i], j, str_out_buf);
 	}
@@ -71,7 +71,7 @@ int main(int argc, char *argv[])
 	printf("Test #2: lml_tag = 0\n");
 	for (i = 0; i < str_cnt; i++)
 	{
-		j = lml_render(str_in[i], str_out_buf, sizeof(str_out_buf), 0);
+		j = lml_render(str_in[i], str_out_buf, sizeof(str_out_buf), 1);
 
 		printf("Input(len=%ld): %s\nOutput(len=%d): %s\n", strlen(str_in[i]), str_in[i], j, str_out_buf);
 	}
