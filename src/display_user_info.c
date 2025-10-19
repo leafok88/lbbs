@@ -82,9 +82,10 @@ int display_user_info(int32_t uid)
 	MYSQL *db = NULL;
 	MYSQL_RES *rs = NULL;
 	MYSQL_ROW row;
-    char username[BBS_username_max_len + 1];
-    char nickname[BBS_nickname_max_len + 1];
 	char sql[SQL_BUFFER_LEN];
+
+    char username[BBS_username_max_len + 1];
+    char nickname[BBS_nickname_max_len + 1];	
 	long user_life=0;
 	int user_exp=0;
 	int user_level=0;
@@ -94,23 +95,27 @@ int display_user_info(int32_t uid)
 	int gender_color=37;
 	char user_introduction[BBS_inroduction_max_len+1]={'\0'};
 	int user_post_count=0;
+
 	char last_login_ip[16];
-	time_t last_login_t;
-	char last_login_date[20];	
-	char user_reg_date[20];
-	char user_status[16];
+    int ip_mask_level=2; //default mask level
+
+	time_t last_login_t=0;
+    long leave_days=0;
+	char last_login_date[20]={'\0'};	
+	char user_reg_date[20]={'\0'};
+	struct tm temp_tm;   
+	time_t temp_t=0;
+
+	char user_status[16]={'\0'};
 	int p_login=0;
 	int p_post=0;
 	int p_msg=0;
 	char user_action[255]={'\0'};
 	char tmp_action[32]={'\0'};
-    int ip_mask_level=2; //default mask level
-    long leave_days=0;
-    struct tm temp_tm;   
-	time_t temp_t=0;
+    
 	BBS_user_priv q_user_priv;
 
-	int line_no=1;
+	int line_no=2;
 	
 	clearscr();
 	//moveto(line_no++, 1);
@@ -298,11 +303,11 @@ int display_user_info(int32_t uid)
 	}
 	
 	while ((row = mysql_fetch_row(rs))){
-		strncpy(tmp_action,"",sizeof(tmp_action));
+		if(tmp_action[0]) strncpy(tmp_action,"",sizeof(tmp_action));
 		
 		if(strstr(row[1],"Telnet")&&row[4]&&row[4][0]){			
 			iStrnCat(tmp_action,"[");
-			if(iStrnLen(row[4])+iStrnLen(tmp_action)>24) break;
+			if(iStrnLen(row[4])+iStrnLen(tmp_action)>32) break;
 			else{
 				iStrnCat(tmp_action,row[4]);
 				iStrnCat(tmp_action,"]");
@@ -332,12 +337,25 @@ int display_user_info(int32_t uid)
 	moveto(line_no++, 1);
 	prints("\033[1;36m个人说明档如下：\033[0m\n");
 	if(user_introduction[0]){
-		char *token = strtok(user_introduction, "\n");  
-		while(token != NULL && token[0]) {    		
-			moveto(line_no++, 1);
-			prints("%s", token);
-    		token = strtok(NULL, "\n");
-		}		
+		char *start=user_introduction;
+		char *end=start+iStrnLen(user_introduction);
+		
+		while ((end = strchr(start, '\n')) != NULL) {
+        // 计算当前行的长度
+        size_t length = (size_t)(end - start);
+        // 创建一个缓冲区来存储当前行（包括空行）
+        char line[255]; // 假设一行最多255个字符
+        // 复制当前行的内容，如果length为0，则得到空字符串
+        strncpy(line, start, length);
+        line[length] = '\0'; // 添加字符串结束符
+		moveto(line_no++, 1);
+        prints("%s", line);
+        // 移动到下一个字符（跳过换行符）
+        start = end + 1;
+    	}
+		moveto(line_no++, 1);
+    	// 处理最后一个行（换行符之后的部分）
+    	prints("%s", start);		
 	}
 
 	mysql_close(db);	
