@@ -1,0 +1,25 @@
+                              文本编辑器功能键说明
+
+
+快捷键              功能说明
+=================================
+Ins                 插入/改写切换
+Del                 删除光标处字符
+Backspace           删除光标前字符
+
+Ctrl-W, Ctrl-X      保存编辑
+Ctrl-K              从光标起始，删除所在行到行末
+Ctrl-Y              删除光标所在行
+
+Ctrl-S, Ctrl-Left   定位到当前行起始位置
+Ctrl-E, Ctrl-Right  定位到当前行结束位置
+Ctrl-T, Ctrl-Up     定位到当前屏幕首行
+Ctrl-B, Ctrl-Down   定位到当前屏幕末行
+
+Home                定位到文本开头
+End                 定位到文本末尾
+PgUp                上翻一页
+PgDn                下翻一页
+
+F1, Ctrl-Q          显示帮助信息
+F5                  刷新屏幕
