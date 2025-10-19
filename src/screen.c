@@ -716,7 +716,6 @@ int display_data(const void *p_data, long display_line_total, const long *p_line
 					output_end_row = SCREEN_ROWS - 1; // Legacy Fterm only works with this line
 					break;
 				case CR:
-				case KEY_SPACE:
 				case KEY_DOWN:
 					if (line_current + (screen_row_total - (output_current_row - screen_begin_row)) >= display_line_total) // Reach end
 					{
@@ -744,6 +743,7 @@ int display_data(const void *p_data, long display_line_total, const long *p_line
 					output_end_row = SCREEN_ROWS - 1;
 					clrline(output_current_row, SCREEN_ROWS);
 					break;
+				case KEY_SPACE:
 				case KEY_PGDN:
 					if (line_current + screen_row_total - (output_current_row - screen_begin_row) >= display_line_total) // Reach end
 					{

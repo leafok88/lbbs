@@ -31,21 +31,21 @@
 #include <libssh/libssh.h>
 #include <libssh/server.h>
 
-char stdio_charset[20] = BBS_DEFAULT_CHARSET;
+char stdio_charset[32] = BBS_DEFAULT_CHARSET;
 
 // static input / output buffer
 static char stdin_buf[LINE_BUFFER_LEN];
-static char stdin_conv[LINE_BUFFER_LEN];
-static int stdin_buf_len = 0;
-static int stdin_conv_len = 0;
-static int stdin_buf_offset = 0;
-static int stdin_conv_offset = 0;
-
 static char stdout_buf[BUFSIZ];
-static char stdout_conv[BUFSIZ];
+static int stdin_buf_len = 0;
 static int stdout_buf_len = 0;
-static int stdout_conv_len = 0;
+static int stdin_buf_offset = 0;
 static int stdout_buf_offset = 0;
+
+static char stdin_conv[LINE_BUFFER_LEN * 2];
+static char stdout_conv[BUFSIZ * 2];
+static int stdin_conv_len = 0;
+static int stdout_conv_len = 0;
+static int stdin_conv_offset = 0;
 static int stdout_conv_offset = 0;
 
 static iconv_t stdin_cd = NULL;
@@ -285,7 +285,7 @@ int igetch(int timeout)
 		flags = fcntl(STDIN_FILENO, F_GETFL, 0);
 		fcntl(STDIN_FILENO, F_SETFL, flags | O_NONBLOCK);
 
-		for (loop = 1; loop && stdin_conv_offset >= stdin_conv_len && !SYS_server_exit;)
+		for (loop = 1; loop && stdin_buf_len < sizeof(stdin_buf) && stdin_conv_offset >= stdin_conv_len && !SYS_server_exit;)
 		{
 			if (SSH_v2 && ssh_channel_is_closed(SSH_channel))
 			{
@@ -381,7 +381,7 @@ int igetch(int timeout)
 #ifdef _DEBUG
 			for (int j = stdin_buf_offset; j < stdin_buf_len; j++)
 			{
-				log_common("Debug: <--[%u]\n", (stdin_buf[j] + 256) % 256);
+				log_error("Debug input: <--[%u]\n", (stdin_buf[j] + 256) % 256);
 			}
 #endif
 		}
@@ -400,6 +400,14 @@ int igetch(int timeout)
 			{
 				log_error("io_buf_conv(stdin, %d, %d, %d) error\n", stdin_buf_len, stdin_buf_offset, stdin_conv_len);
 			}
+
+			// For debug
+#ifdef _DEBUG
+			for (int j = stdin_conv_offset; j < stdin_conv_len; j++)
+			{
+				log_error("Debug input_conv: <--[%u]\n", (stdin_conv[j] + 256) % 256);
+			}
+#endif
 		}
 	}
 
@@ -863,7 +871,7 @@ int igetch(int timeout)
 #ifdef _DEBUG
 	if (out != KEY_TIMEOUT && out != KEY_NULL)
 	{
-		log_common("Debug: -->[0x %x]\n", out);
+		log_error("Debug: -->[0x %x]\n", out);
 	}
 #endif
 
@@ -899,6 +907,8 @@ int io_buf_conv(iconv_t cd, char *p_buf, int *p_buf_len, int *p_buf_offset, char
 	size_t in_bytes;
 	size_t out_bytes;
 	int ret;
+	int in_control = 0;
+	size_t i = 0;
 
 	if (cd == NULL || p_buf == NULL || p_buf_len == NULL || p_buf_offset == NULL || p_conv == NULL || p_conv_len == NULL)
 	{
@@ -913,18 +923,55 @@ int io_buf_conv(iconv_t cd, char *p_buf, int *p_buf_len, int *p_buf_offset, char
 
 	while (in_bytes > 0)
 	{
+		if ((unsigned char)(*in_buf) == KEY_CONTROL)
+		{
+			if (in_control == 0)
+			{
+				in_control = 1;
+				i = 0;
+			}
+		}
+
+		if (in_control)
+		{
+			if (out_bytes <= 0)
+			{
+				log_error("iconv(inbytes=%d, outbytes=%d) error: EILSEQ and E2BIG\n", in_bytes, out_bytes);
+				return -2;
+			}
+
+			*out_buf = *in_buf;
+			in_buf++;
+			out_buf++;
+			in_bytes--;
+			out_bytes--;
+
+			(*p_buf_offset)++;
+			*p_conv_len = (int)(conv_size - out_bytes);
+
+			i++;
+			if (i >= 2)
+			{
+				in_control = 0;
+			}
+			continue;
+		}
+
 		ret = (int)iconv(cd, &in_buf, &in_bytes, &out_buf, &out_bytes);
 		if (ret == -1)
 		{
 			if (errno == EINVAL) // Incomplete
 			{
 #ifdef _DEBUG
-				log_error("iconv(inbytes=%d, outbytes=%d) error: EINVAL\n", in_bytes, out_bytes);
+				log_error("iconv(inbytes=%d, outbytes=%d) error: EINVAL, in_buf[0]=%d\n", in_bytes, out_bytes, in_buf[0]);
 #endif
-				*p_buf_len = (int)(p_buf + *p_buf_len - in_buf);
-				*p_buf_offset = 0;
-				*p_conv_len = (int)(conv_size - out_bytes);
-				memmove(p_buf, in_buf, (size_t)(*p_buf_len));
+				if (p_buf != in_buf)
+				{
+					*p_buf_len = (int)(p_buf + *p_buf_len - in_buf);
+					*p_buf_offset = 0;
+					*p_conv_len = (int)(conv_size - out_bytes);
+					memmove(p_buf, in_buf, (size_t)(*p_buf_len));
+				}
 
 				break;
 			}
@@ -973,8 +1020,7 @@ int io_conv_init(const char *charset)
 
 	io_conv_cleanup();
 
-	strncpy(stdio_charset, charset, sizeof(stdio_charset) - 1);
-	stdio_charset[sizeof(stdio_charset) - 1] = '\0';
+	snprintf(stdio_charset, sizeof(stdio_charset), "%s//TRANSLIT", charset);
 
 	stdin_cd = iconv_open(BBS_DEFAULT_CHARSET, stdio_charset);
 	if (stdin_cd == (iconv_t)(-1))

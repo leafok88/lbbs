@@ -300,9 +300,9 @@ int bbs_charset_select()
 			return 0;
 		case 'g':
 		case 'G':
-			if (io_conv_init("GBK////TRANSLIT") < 0)
+			if (io_conv_init("GBK") < 0)
 			{
-				log_error("io_conv_init(%s) error\n", "GBK////TRANSLIT");
+				log_error("io_conv_init(%s) error\n", "GBK");
 				return -1;
 			}
 			return 0;

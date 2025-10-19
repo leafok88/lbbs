@@ -53,6 +53,6 @@ extern int editor_data_insert(EDITOR_DATA *p_editor_data, long *p_display_line, 
 							  const char *str, int str_len, long *p_last_updated_line);
 
 extern int editor_data_delete(EDITOR_DATA *p_editor_data, long *p_display_line, long *p_offset,
-							  long *p_last_updated_line);
+							  long *p_last_updated_line, int del_line);
 
 #endif //_EDITOR_H_
