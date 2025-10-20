@@ -28,8 +28,8 @@ AC_PROG_EGREP
 
 AC_HEADER_RESOLV
 AC_HEADER_SYS_WAIT
-AC_CHECK_HEADERS([arpa/inet.h dflcn.h fcntl.h libssh/libssh.h libssh/server.h memory.h mysql/mysql.h net/if.h netdb.h netinet/in.h signal.h \
-					stdint.h stdlib.h string.h sys/epoll.h sys/ioctl.h sys/ipc.h sys/mman.h sys/param.h sys/socket.h \
+AC_CHECK_HEADERS([arpa/inet.h dflcn.h fcntl.h iconv.h libssh/libssh.h libssh/server.h memory.h mysql/mysql.h net/if.h netdb.h netinet/in.h \
+					signal.h stdint.h stdlib.h string.h sys/epoll.h sys/ioctl.h sys/ipc.h sys/mman.h sys/param.h sys/socket.h \
 					sys/time.h sys/types.h sys/sem.h sys/shm.h sys/stat.h sys/syscall.h sys/wait.h systemd/sd-daemon.h unistd.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
@@ -57,4 +57,10 @@ AC_CONFIG_FILES([Makefile
 		src/Makefile
 		utils/Makefile
         utils/game/Makefile])
+
+AC_ARG_ENABLE([debug],
+  [AS_HELP_STRING([--enable-debug], [Enable debug log])],
+  [AS_IF([test "x$enable_debug" = xyes],
+    [AC_DEFINE([_DEBUG], [1], [Define if debug log is enabled])])])
+
 AC_OUTPUT
