@@ -536,6 +536,10 @@ int bbsnet_connect(int n)
 					}
 					else if (ret == 0)
 					{
+						// Send NO-OP to remote server
+						input_buf[input_buf_len] = '\0';
+						input_buf_len++;
+
 						stdin_read_wait = 0;
 						break; // Check whether channel is still open
 					}
@@ -591,12 +595,28 @@ int bbsnet_connect(int n)
 		{
 			if (input_buf_offset < input_buf_len)
 			{
+				// For debug
+#ifdef _DEBUG
+				for (int j = input_buf_offset; j < input_buf_len; j++)
+				{
+					log_error("Debug input: <--[%u]\n", (input_buf[j] + 256) % 256);
+				}
+#endif
+
 				ret = io_buf_conv(input_cd, input_buf, &input_buf_len, &input_buf_offset, input_conv, sizeof(input_conv), &input_conv_len);
 				if (ret < 0)
 				{
 					log_error("io_buf_conv(input, %d, %d, %d) error\n", input_buf_len, input_buf_offset, input_conv_len);
 					input_buf_len = input_buf_offset; // Discard invalid sequence
 				}
+
+				// For debug
+#ifdef _DEBUG
+				for (int j = input_conv_offset; j < input_conv_len; j++)
+				{
+					log_error("Debug input_conv: <--[%u]\n", (input_conv[j] + 256) % 256);
+				}
+#endif
 			}
 
 			while (input_conv_offset < input_conv_len && !SYS_server_exit)
@@ -780,6 +800,8 @@ cleanup:
 	log_common("BBSNET disconnect, %d days %d hours %d minutes %d seconds used\n",
 			   tm_used->tm_mday - 1, tm_used->tm_hour, tm_used->tm_min,
 			   tm_used->tm_sec);
+
+	BBS_last_access_tm = time(NULL);
 
 	return 0;
 }
