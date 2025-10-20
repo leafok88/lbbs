@@ -539,6 +539,7 @@ int bbsnet_connect(int n)
 						// Send NO-OP to remote server
 						input_buf[input_buf_len] = '\0';
 						input_buf_len++;
+						BBS_last_access_tm = time(NULL);
 
 						stdin_read_wait = 0;
 						break; // Check whether channel is still open
