@@ -595,6 +595,7 @@ int bbsnet_connect(int n)
 				if (ret < 0)
 				{
 					log_error("io_buf_conv(input, %d, %d, %d) error\n", input_buf_len, input_buf_offset, input_conv_len);
+					input_buf_len = input_buf_offset; // Discard invalid sequence
 				}
 			}
 
@@ -690,6 +691,7 @@ int bbsnet_connect(int n)
 				if (ret < 0)
 				{
 					log_error("io_buf_conv(output, %d, %d, %d) error\n", output_buf_len, output_buf_offset, output_conv_len);
+					output_buf_len = output_buf_offset; // Discard invalid sequence
 				}
 			}
 
