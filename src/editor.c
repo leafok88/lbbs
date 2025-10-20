@@ -445,7 +445,7 @@ int editor_data_insert(EDITOR_DATA *p_editor_data, long *p_display_line, long *p
 }
 
 int editor_data_delete(EDITOR_DATA *p_editor_data, long *p_display_line, long *p_offset,
-					   long *p_last_updated_line)
+					   long *p_last_updated_line, int del_line)
 {
 	long display_line = *p_display_line;
 	long offset = *p_offset;
@@ -500,7 +500,11 @@ int editor_data_delete(EDITOR_DATA *p_editor_data, long *p_display_line, long *p
 	}
 
 	// Check str to be deleted
-	if (p_data_line[offset_data_line] > 0 && p_data_line[offset_data_line] < 127)
+	if (del_line)
+	{
+		str_len = (int)(p_editor_data->display_line_lengths[display_line] - offset);
+	}
+	else if (p_data_line[offset_data_line] > 0 && p_data_line[offset_data_line] < 127)
 	{
 		str_len = 1;
 	}
@@ -523,7 +527,8 @@ int editor_data_delete(EDITOR_DATA *p_editor_data, long *p_display_line, long *p
 
 	// Current display line is (almost) empty
 	if (offset_data_line + str_len > len_data_line ||
-		(offset_data_line + str_len == len_data_line && p_data_line[offset_data_line] == '\n'))
+		(offset_data_line + str_len == len_data_line &&
+		 p_data_line[del_line ? len_data_line - 1 : offset_data_line] == '\n'))
 	{
 		if (display_line + 1 >= p_editor_data->display_line_total) // No additional display line (data line)
 		{
@@ -663,6 +668,7 @@ int editor_display(EDITOR_DATA *p_editor_data)
 	int key_insert = 1;
 	int i, j;
 	char *p_str;
+	int del_line;
 
 	clrline(output_current_row, SCREEN_ROWS);
 
@@ -769,7 +775,7 @@ int editor_display(EDITOR_DATA *p_editor_data)
 					if (!key_insert) // overwrite
 					{
 						if (editor_data_delete(p_editor_data, &display_line_out, &offset_out,
-											   &last_updated_line) < 0)
+											   &last_updated_line, 0) < 0)
 						{
 							log_error("editor_data_delete() error\n");
 						}
@@ -838,13 +844,15 @@ int editor_display(EDITOR_DATA *p_editor_data)
 					str_len = 0;
 					continue;
 				}
-				else if (ch == KEY_DEL || ch == BACKSPACE) // Del
+				else if (ch == KEY_DEL || ch == BACKSPACE || ch == Ctrl('K') || ch == Ctrl('Y')) // Del
 				{
 					// Refresh current action while user input
 					if (user_online_update(NULL) < 0)
 					{
 						log_error("user_online_update(NULL) error\n");
 					}
+
+					del_line = 0;
 
 					if (ch == BACKSPACE)
 					{
@@ -870,6 +878,15 @@ int editor_display(EDITOR_DATA *p_editor_data)
 							col_pos = MAX(1, p_editor_data->display_line_widths[line_current - output_current_row + row_pos]);
 						}
 					}
+					else if (ch == Ctrl('K'))
+					{
+						del_line = 1;
+					}
+					else if (ch == Ctrl('Y'))
+					{
+						col_pos = 1;
+						del_line = 1;
+					}
 
 					display_line_in = line_current - output_current_row + row_pos;
 					offset_in = split_line(p_editor_data->p_display_lines[display_line_in], (int)col_pos - 1, &eol, &display_len, 0);
@@ -877,9 +894,9 @@ int editor_display(EDITOR_DATA *p_editor_data)
 					offset_out = offset_in;
 
 					if ((str_len = editor_data_delete(p_editor_data, &display_line_out, &offset_out,
-													  &last_updated_line)) < 0)
+													  &last_updated_line, del_line)) < 0)
 					{
-						log_error("editor_data_delete() error\n");
+						log_error("editor_data_delete() error: %d\n", str_len);
 					}
 					else
 					{
@@ -1043,8 +1060,6 @@ int editor_display(EDITOR_DATA *p_editor_data)
 					output_end_row = SCREEN_ROWS - 1; // Legacy Fterm only works with this line
 					col_pos = MIN(col_pos, MAX(1, p_editor_data->display_line_widths[line_current - output_current_row + row_pos]));
 					break;
-				case KEY_SPACE:
-					break;
 				case KEY_RIGHT:
 					offset_in = split_line(p_editor_data->p_display_lines[line_current - output_current_row + row_pos],
 										   (int)col_pos - 1, &eol, &display_len, 0);
@@ -1116,13 +1131,13 @@ int editor_display(EDITOR_DATA *p_editor_data)
 					break;
 				case Ctrl('Q'):
 				case KEY_F1:
-					if (!show_help) // Not reentrant
+					if (!show_help) // Not re-entrant
 					{
 						break;
 					}
 					// Display help information
 					show_help = 0;
-					display_file(DATA_READ_HELP, 1);
+					display_file(DATA_EDITOR_HELP, 1);
 					show_help = 1;
 				case KEY_F5:
 					// Refresh after display help information

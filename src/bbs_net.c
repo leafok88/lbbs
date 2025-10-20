@@ -215,6 +215,7 @@ int bbsnet_connect(int n)
 	int output_conv_offset = 0;
 	iconv_t input_cd = NULL;
 	iconv_t output_cd = NULL;
+	char tocode[32];
 	struct epoll_event ev, events[MAX_EVENTS];
 	int nfds, epollfd;
 	int stdin_read_wait = 0;
@@ -423,16 +424,21 @@ int bbsnet_connect(int n)
 	log_common("BBSNET connect to %s:%d from %s:%d by [%s]\n",
 			   remote_addr, remote_port, local_addr, local_port, BBS_username);
 
-	input_cd = iconv_open(bbsnet_conf[n].charset, stdio_charset);
+	snprintf(tocode, sizeof(tocode), "%s%s", bbsnet_conf[n].charset,
+			 (strcasecmp(stdio_charset, bbsnet_conf[n].charset) == 0 ? "" : "//IGNORE"));
+	input_cd = iconv_open(tocode, stdio_charset);
 	if (input_cd == (iconv_t)(-1))
 	{
-		log_error("iconv_open(%s->%s) error: %d\n", stdio_charset, bbsnet_conf[n].charset, errno);
+		log_error("iconv_open(%s->%s) error: %d\n", stdio_charset, tocode, errno);
 		goto cleanup;
 	}
-	output_cd = iconv_open(stdio_charset, bbsnet_conf[n].charset);
+
+	snprintf(tocode, sizeof(tocode), "%s%s", stdio_charset,
+			 (strcasecmp(bbsnet_conf[n].charset, stdio_charset) == 0 ? "" : "//TRANSLIT"));
+	output_cd = iconv_open(tocode, bbsnet_conf[n].charset);
 	if (output_cd == (iconv_t)(-1))
 	{
-		log_error("iconv_open(%s->%s) error: %d\n", bbsnet_conf[n].charset, stdio_charset, errno);
+		log_error("iconv_open(%s->%s) error: %d\n", bbsnet_conf[n].charset, tocode, errno);
 		iconv_close(input_cd);
 		goto cleanup;
 	}
@@ -589,6 +595,7 @@ int bbsnet_connect(int n)
 				if (ret < 0)
 				{
 					log_error("io_buf_conv(input, %d, %d, %d) error\n", input_buf_len, input_buf_offset, input_conv_len);
+					input_buf_len = input_buf_offset; // Discard invalid sequence
 				}
 			}
 
@@ -684,6 +691,7 @@ int bbsnet_connect(int n)
 				if (ret < 0)
 				{
 					log_error("io_buf_conv(output, %d, %d, %d) error\n", output_buf_len, output_buf_offset, output_conv_len);
+					output_buf_len = output_buf_offset; // Discard invalid sequence
 				}
 			}
 
@@ -841,10 +849,10 @@ int bbs_net()
 	{
 		ch = igetch(100);
 
-        if (ch != KEY_NULL && ch != KEY_TIMEOUT)
-        {
-            BBS_last_access_tm = time(NULL);
-        }
+		if (ch != KEY_NULL && ch != KEY_TIMEOUT)
+		{
+			BBS_last_access_tm = time(NULL);
+		}
 
 		switch (ch)
 		{
