@@ -10,6 +10,7 @@ Add major features
 1. Personal favorite topics  
 2. Menu of top 10 hot topics  
 3. Allow charset selection (UTF-8 or GBK) by user  
+4. Support full / partial line deletion in text editor
 
 
 2025-07-01  v1.3
