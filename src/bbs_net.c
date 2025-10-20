@@ -424,7 +424,8 @@ int bbsnet_connect(int n)
 	log_common("BBSNET connect to %s:%d from %s:%d by [%s]\n",
 			   remote_addr, remote_port, local_addr, local_port, BBS_username);
 
-	snprintf(tocode, sizeof(tocode), "%s//IGNORE", bbsnet_conf[n].charset);
+	snprintf(tocode, sizeof(tocode), "%s%s", bbsnet_conf[n].charset,
+			 (strcasecmp(stdio_charset, bbsnet_conf[n].charset) == 0 ? "" : "//IGNORE"));
 	input_cd = iconv_open(tocode, stdio_charset);
 	if (input_cd == (iconv_t)(-1))
 	{
@@ -432,7 +433,8 @@ int bbsnet_connect(int n)
 		goto cleanup;
 	}
 
-	snprintf(tocode, sizeof(tocode), "%s//TRANSLIT", stdio_charset);
+	snprintf(tocode, sizeof(tocode), "%s%s", stdio_charset,
+			 (strcasecmp(bbsnet_conf[n].charset, stdio_charset) == 0 ? "" : "//TRANSLIT"));
 	output_cd = iconv_open(tocode, bbsnet_conf[n].charset);
 	if (output_cd == (iconv_t)(-1))
 	{
@@ -845,10 +847,10 @@ int bbs_net()
 	{
 		ch = igetch(100);
 
-        if (ch != KEY_NULL && ch != KEY_TIMEOUT)
-        {
-            BBS_last_access_tm = time(NULL);
-        }
+		if (ch != KEY_NULL && ch != KEY_TIMEOUT)
+		{
+			BBS_last_access_tm = time(NULL);
+		}
 
 		switch (ch)
 		{

@@ -1031,14 +1031,17 @@ int io_conv_init(const char *charset)
 	strncpy(stdio_charset, charset, sizeof(stdio_charset) - 1);
 	stdio_charset[sizeof(stdio_charset) - 1] = '\0';
 
-	stdin_cd = iconv_open(BBS_DEFAULT_CHARSET "//IGNORE", stdio_charset);
+	snprintf(tocode, sizeof(tocode), "%s%s", BBS_DEFAULT_CHARSET,
+			 (strcasecmp(stdio_charset, BBS_DEFAULT_CHARSET) == 0 ? "" : "//IGNORE"));
+	stdin_cd = iconv_open(tocode, stdio_charset);
 	if (stdin_cd == (iconv_t)(-1))
 	{
-		log_error("iconv_open(%s->%s) error: %d\n", stdio_charset, BBS_DEFAULT_CHARSET "//IGNORE", errno);
+		log_error("iconv_open(%s->%s) error: %d\n", stdio_charset, tocode, errno);
 		return -2;
 	}
 
-	snprintf(tocode, sizeof(tocode), "%s//TRANSLIT", stdio_charset);
+	snprintf(tocode, sizeof(tocode), "%s%s", stdio_charset,
+			 (strcasecmp(BBS_DEFAULT_CHARSET, stdio_charset) == 0 ? "" : "//TRANSLIT"));
 	stdout_cd = iconv_open(tocode, BBS_DEFAULT_CHARSET);
 	if (stdout_cd == (iconv_t)(-1))
 	{
