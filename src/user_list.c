@@ -520,3 +520,60 @@ cleanup:
 
     return ret;
 }
+
+int query_user_info(int32_t uid, USER_INFO *p_user)
+{
+    int left;
+    int right;
+    int mid;
+    int ret = 0;
+
+    if (p_user == NULL)
+    {
+        log_error("NULL pointer error\n");
+        return -1;
+    }
+
+    // acquire lock of user list
+    if (user_list_rd_lock() < 0)
+    {
+        log_error("user_list_rd_lock() error\n");
+        return -2;
+    }
+
+    left = 0;
+    right = p_user_list_pool->p_current->user_count - 1;
+
+    while (left < right)
+    {
+        mid = (left + right) / 2;
+        if (uid < p_user_list_pool->p_current->users[mid].uid)
+        {
+            right = mid;
+        }
+        else if (uid > p_user_list_pool->p_current->users[mid].uid)
+        {
+            left = mid + 1;
+        }
+        else // if (uid == p_user_list_pool->p_current->users[mid].uid)
+        {
+            left = mid;
+            break;
+        }
+    }
+
+    if (uid == p_user_list_pool->p_current->users[left].uid) // Found
+    {
+        *p_user = p_user_list_pool->p_current->users[left];
+        ret = 1;
+    }
+
+    // release lock of user list
+    if (user_list_rd_unlock() < 0)
+    {
+        log_error("user_list_rd_unlock() error\n");
+        ret = -1;
+    }
+
+    return ret;
+}

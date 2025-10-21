@@ -244,6 +244,7 @@ int user_list_display(void)
 {
 	char page_info_str[LINE_BUFFER_LEN];
 	USER_INFO users[BBS_user_limit_per_page];
+	USER_INFO user_info;
 	int user_count;
 	int page_count;
 	int page_id = 0;
@@ -308,9 +309,24 @@ int user_list_display(void)
 			}
 			break;
 		case VIEW_USER:
-			clearscr();
-			press_any_key_ex("功能不可用，按任意键返回", 60);
-			user_list_draw_screen();
+			if ((ret = query_user_info(users[selected_index].uid, &user_info)) < 0)
+			{
+				log_error("query_user_info(uid=%d) error: %d\n", users[selected_index].uid, ret);
+			}
+			else if (ret == 0)
+			{
+				log_error("query_user_info(uid=%d) error: user not found\n", users[selected_index].uid);
+			}
+			else if (users[selected_index].uid != user_info.uid)
+			{
+				log_error("query_user_info(uid=%d) error: inconsistent uid=%d\n", users[selected_index].uid, user_info.uid);
+			}
+			else
+			{
+				clearscr();
+				press_any_key_ex("功能不可用，按任意键返回", 60);
+				user_list_draw_screen();
+			}
 			break;
 		case SHOW_HELP:
 			// Display help information

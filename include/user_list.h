@@ -62,4 +62,6 @@ extern int user_list_rw_lock(void);
 
 extern int query_user_list(int page_id, USER_INFO *p_users, int *p_user_count, int *p_page_count);
 
+extern int query_user_info(int32_t uid, USER_INFO *p_user);
+
 #endif //_USER_LIST_H_
