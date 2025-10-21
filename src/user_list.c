@@ -274,7 +274,6 @@ int user_list_pool_reload(void)
 {
     MYSQL *db = NULL;
     USER_LIST *p_tmp;
-    int ret = 0;
 
     if (p_user_list_pool == NULL)
     {
@@ -289,17 +288,18 @@ int user_list_pool_reload(void)
         return -1;
     }
 
-    if (user_list_rw_lock() < 0)
+    if (user_list_load(db, p_user_list_pool->p_new) < 0)
     {
         log_error("user_list_rw_lock() error\n");
         return -2;
     }
 
-    if (user_list_load(db, p_user_list_pool->p_new) < 0)
+    mysql_close(db);
+
+    if (user_list_rw_lock() < 0)
     {
         log_error("user_list_rw_lock() error\n");
-        ret = -3;
-        goto cleanup;
+        return -3;
     }
 
     // Swap p_current and p_new
@@ -307,16 +307,13 @@ int user_list_pool_reload(void)
     p_user_list_pool->p_current = p_user_list_pool->p_new;
     p_user_list_pool->p_new = p_tmp;
 
-cleanup:
     if (user_list_rw_unlock() < 0)
     {
         log_error("user_list_rw_unlock() error\n");
-        ret = -2;
+        return -3;
     }
 
-    mysql_close(db);
-
-    return ret;
+    return 0;
 }
 
 int user_list_try_rd_lock(int wait_sec)
