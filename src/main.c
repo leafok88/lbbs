@@ -23,6 +23,7 @@
 #include "menu.h"
 #include "net_server.h"
 #include "section_list_loader.h"
+#include "user_list.h"
 #include <errno.h>
 #include <libgen.h>
 #include <signal.h>
@@ -171,12 +172,6 @@ int main(int argc, char *argv[])
 	}
 
 	// Initialize data pools
-	if ((fp = fopen(VAR_TRIE_DICT_SHM, "w")) == NULL)
-	{
-		log_error("fopen(%s) error\n", VAR_TRIE_DICT_SHM);
-		goto cleanup;
-	}
-	fclose(fp);
 	if ((fp = fopen(VAR_ARTICLE_BLOCK_SHM, "w")) == NULL)
 	{
 		log_error("fopen(%s) error\n", VAR_ARTICLE_BLOCK_SHM);
@@ -186,6 +181,18 @@ int main(int argc, char *argv[])
 	if ((fp = fopen(VAR_SECTION_LIST_SHM, "w")) == NULL)
 	{
 		log_error("fopen(%s) error\n", VAR_SECTION_LIST_SHM);
+		goto cleanup;
+	}
+	fclose(fp);
+	if ((fp = fopen(VAR_TRIE_DICT_SHM, "w")) == NULL)
+	{
+		log_error("fopen(%s) error\n", VAR_TRIE_DICT_SHM);
+		goto cleanup;
+	}
+	fclose(fp);
+	if ((fp = fopen(VAR_USER_LIST_SHM, "w")) == NULL)
+	{
+		log_error("fopen(%s) error\n", VAR_USER_LIST_SHM);
 		goto cleanup;
 	}
 	fclose(fp);
@@ -263,6 +270,13 @@ int main(int argc, char *argv[])
 
 	log_common("Initially load %d articles, last_aid = %d\n", article_block_article_count(), article_block_last_aid());
 
+	// Load user list
+	if (user_list_pool_init() < 0)
+	{
+		log_error("user_list_pool_init() error\n");
+		goto cleanup;
+	}
+
 	// Set signal handler
 	act.sa_handler = sig_hup_handler;
 	if (sigaction(SIGHUP, &act, NULL) == -1)
@@ -305,16 +319,21 @@ cleanup:
 	section_list_cleanup();
 	article_block_cleanup();
 	trie_dict_cleanup();
+	user_list_pool_cleanup();
 
-	if (unlink(VAR_TRIE_DICT_SHM) < 0)
-	{
-		log_error("unlink(%s) error\n", VAR_TRIE_DICT_SHM);
-	}
 	if (unlink(VAR_ARTICLE_BLOCK_SHM) < 0)
 	{
 		log_error("unlink(%s) error\n", VAR_ARTICLE_BLOCK_SHM);
 	}
 	if (unlink(VAR_SECTION_LIST_SHM) < 0)
+	{
+		log_error("unlink(%s) error\n", VAR_SECTION_LIST_SHM);
+	}
+	if (unlink(VAR_TRIE_DICT_SHM) < 0)
+	{
+		log_error("unlink(%s) error\n", VAR_TRIE_DICT_SHM);
+	}
+	if (unlink(VAR_USER_LIST_SHM) < 0)
 	{
 		log_error("unlink(%s) error\n", VAR_SECTION_LIST_SHM);
 	}

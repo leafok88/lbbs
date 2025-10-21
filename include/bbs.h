@@ -46,12 +46,15 @@ extern char BBS_address[BBS_address_max_len + 1];
 extern in_port_t BBS_port[2];
 extern int BBS_max_client;
 extern int BBS_max_client_per_ip;
-extern int BBS_max_user;
 extern char BBS_start_dt[BBS_start_dt_max_len + 1];
 extern int BBS_sys_id;
 
+// User
+#define BBS_max_user_count 100000
+#define BBS_user_list_load_interval 60 // second
+
 // Session
-#define MAX_DELAY_TIME 600 // 10 minutes
+#define MAX_DELAY_TIME 600	  // 10 minutes
 #define BBS_user_off_line 900 // 15 minutes
 
 extern char BBS_username[BBS_username_max_len + 1];

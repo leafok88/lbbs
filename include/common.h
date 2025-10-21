@@ -53,6 +53,7 @@
 #define VAR_ARTICLE_BLOCK_SHM "var/article_block_shm.~"
 #define VAR_SECTION_LIST_SHM "var/section_list_shm.~"
 #define VAR_TRIE_DICT_SHM "var/trie_dict_shm.~"
+#define VAR_USER_LIST_SHM "var/user_list_shm.~"
 
 #define VAR_ARTICLE_CACHE_DIR "var/articles/"
 #define VAR_GEN_EX_MENU_DIR "var/gen_ex/"
@@ -70,9 +71,6 @@ extern int data_files_load_startup_count;
 #define MAX_CLIENT_PER_IP_LIMIT 100
 #define IP_ADDR_LEN 50
 #define MAX_EVENTS 10
-
-// User
-#define BBS_MAX_USER_LIMIT 100000
 
 extern int socket_server[2];
 extern int socket_client;

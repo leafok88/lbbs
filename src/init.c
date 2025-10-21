@@ -155,15 +155,6 @@ int load_conf(const char *conf_file)
 				BBS_max_client_per_ip = MAX_CLIENT_PER_IP_LIMIT;
 			}
 		}
-		else if (strcasecmp(p, "bbs_max_user") == 0)
-		{
-			BBS_max_user = atoi(q);
-			if (BBS_max_user <= 0 || BBS_max_user > BBS_MAX_USER_LIMIT)
-			{
-				log_error("Ignore config bbs_max_client with incorrect value %d\n", BBS_max_user);
-				BBS_max_user = BBS_MAX_USER_LIMIT;
-			}
-		}
 		else if (strcasecmp(p, "bbs_start_dt") == 0)
 		{
 			y = strtok_r(q, "-", &saveptr);
@@ -180,7 +171,7 @@ int load_conf(const char *conf_file)
 		else if (strcasecmp(p, "bbs_sys_id") == 0)
 		{
 			v = atoi(q);
-			if (v <= 0 || v > BBS_MAX_USER_LIMIT)
+			if (v <= 0)
 			{
 				log_error("Ignore config bbs_sys_id with incorrect value %d\n", v);
 				continue;
