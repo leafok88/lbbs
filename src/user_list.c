@@ -54,6 +54,13 @@ typedef struct user_list_pool_t USER_LIST_POOL;
 
 static USER_LIST_POOL *p_user_list_pool = NULL;
 
+static int user_list_try_rd_lock(int semid, int wait_sec);
+static int user_list_try_rw_lock(int semid, int wait_sec);
+static int user_list_rd_unlock(int semid);
+static int user_list_rw_unlock(int semid);
+static int user_list_rd_lock(int semid);
+static int user_list_rw_lock(int semid);
+
 int user_list_load(MYSQL *db, USER_LIST *p_list)
 {
     MYSQL_RES *rs = NULL;
@@ -296,7 +303,7 @@ int user_list_pool_reload(void)
 
     mysql_close(db);
 
-    if (user_list_rw_lock() < 0)
+    if (user_list_rw_lock(p_user_list_pool->semid) < 0)
     {
         log_error("user_list_rw_lock() error\n");
         return -3;
@@ -307,7 +314,7 @@ int user_list_pool_reload(void)
     p_user_list_pool->p_current = p_user_list_pool->p_new;
     p_user_list_pool->p_new = p_tmp;
 
-    if (user_list_rw_unlock() < 0)
+    if (user_list_rw_unlock(p_user_list_pool->semid) < 0)
     {
         log_error("user_list_rw_unlock() error\n");
         return -3;
@@ -316,7 +323,7 @@ int user_list_pool_reload(void)
     return 0;
 }
 
-int user_list_try_rd_lock(int wait_sec)
+int user_list_try_rd_lock(int semid, int wait_sec)
 {
     struct sembuf sops[2];
     struct timespec timeout;
@@ -333,7 +340,7 @@ int user_list_try_rd_lock(int wait_sec)
     timeout.tv_sec = wait_sec;
     timeout.tv_nsec = 0;
 
-    ret = semtimedop(p_user_list_pool->semid, sops, 2, &timeout);
+    ret = semtimedop(semid, sops, 2, &timeout);
     if (ret == -1 && errno != EAGAIN && errno != EINTR)
     {
         log_error("semtimedop(lock read) error %d\n", errno);
@@ -342,7 +349,7 @@ int user_list_try_rd_lock(int wait_sec)
     return ret;
 }
 
-int user_list_try_rw_lock(int wait_sec)
+int user_list_try_rw_lock(int semid, int wait_sec)
 {
     struct sembuf sops[3];
     struct timespec timeout;
@@ -363,7 +370,7 @@ int user_list_try_rw_lock(int wait_sec)
     timeout.tv_sec = wait_sec;
     timeout.tv_nsec = 0;
 
-    ret = semtimedop(p_user_list_pool->semid, sops, 3, &timeout);
+    ret = semtimedop(semid, sops, 3, &timeout);
     if (ret == -1 && errno != EAGAIN && errno != EINTR)
     {
         log_error("semtimedop(lock write) error %d\n", errno);
@@ -372,7 +379,7 @@ int user_list_try_rw_lock(int wait_sec)
     return ret;
 }
 
-int user_list_rd_unlock(void)
+int user_list_rd_unlock(int semid)
 {
     struct sembuf sops[2];
     int ret;
@@ -381,7 +388,7 @@ int user_list_rd_unlock(void)
     sops[0].sem_op = -1;                     // unlock
     sops[0].sem_flg = IPC_NOWAIT | SEM_UNDO; // no wait
 
-    ret = semop(p_user_list_pool->semid, sops, 1);
+    ret = semop(semid, sops, 1);
     if (ret == -1 && errno != EAGAIN && errno != EINTR)
     {
         log_error("semop(unlock read) error %d\n", errno);
@@ -390,7 +397,7 @@ int user_list_rd_unlock(void)
     return ret;
 }
 
-int user_list_rw_unlock(void)
+int user_list_rw_unlock(int semid)
 {
     struct sembuf sops[1];
     int ret;
@@ -399,7 +406,7 @@ int user_list_rw_unlock(void)
     sops[0].sem_op = -1;                     // unlock
     sops[0].sem_flg = IPC_NOWAIT | SEM_UNDO; // no wait
 
-    ret = semop(p_user_list_pool->semid, sops, 1);
+    ret = semop(semid, sops, 1);
     if (ret == -1 && errno != EAGAIN && errno != EINTR)
     {
         log_error("semop(unlock write) error %d\n", errno);
@@ -408,14 +415,14 @@ int user_list_rw_unlock(void)
     return ret;
 }
 
-int user_list_rd_lock(void)
+int user_list_rd_lock(int semid)
 {
     int timer = 0;
     int ret = -1;
 
     while (!SYS_server_exit)
     {
-        ret = user_list_try_rd_lock(USER_LIST_TRY_LOCK_WAIT_TIME);
+        ret = user_list_try_rd_lock(semid, USER_LIST_TRY_LOCK_WAIT_TIME);
         if (ret == 0) // success
         {
             break;
@@ -438,14 +445,14 @@ int user_list_rd_lock(void)
     return ret;
 }
 
-int user_list_rw_lock(void)
+int user_list_rw_lock(int semid)
 {
     int timer = 0;
     int ret = -1;
 
     while (!SYS_server_exit)
     {
-        ret = user_list_try_rw_lock(USER_LIST_TRY_LOCK_WAIT_TIME);
+        ret = user_list_try_rw_lock(semid, USER_LIST_TRY_LOCK_WAIT_TIME);
         if (ret == 0) // success
         {
             break;
@@ -479,7 +486,7 @@ int query_user_list(int page_id, USER_INFO *p_users, int *p_user_count, int *p_p
     }
 
     // acquire lock of user list
-    if (user_list_rd_lock() < 0)
+    if (user_list_rd_lock(p_user_list_pool->semid) < 0)
     {
         log_error("user_list_rd_lock() error\n");
         return -2;
@@ -512,7 +519,7 @@ int query_user_list(int page_id, USER_INFO *p_users, int *p_user_count, int *p_p
 
 cleanup:
     // release lock of user list
-    if (user_list_rd_unlock() < 0)
+    if (user_list_rd_unlock(p_user_list_pool->semid) < 0)
     {
         log_error("user_list_rd_unlock() error\n");
         ret = -1;
@@ -535,7 +542,7 @@ int query_user_info(int32_t uid, USER_INFO *p_user)
     }
 
     // acquire lock of user list
-    if (user_list_rd_lock() < 0)
+    if (user_list_rd_lock(p_user_list_pool->semid) < 0)
     {
         log_error("user_list_rd_lock() error\n");
         return -2;
@@ -569,7 +576,7 @@ int query_user_info(int32_t uid, USER_INFO *p_user)
     }
 
     // release lock of user list
-    if (user_list_rd_unlock() < 0)
+    if (user_list_rd_unlock(p_user_list_pool->semid) < 0)
     {
         log_error("user_list_rd_unlock() error\n");
         ret = -1;
