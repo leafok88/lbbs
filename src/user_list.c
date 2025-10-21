@@ -24,6 +24,7 @@
 #include <time.h>
 #include <sys/ipc.h>
 #include <sys/mman.h>
+#include <sys/param.h>
 #include <sys/sem.h>
 #include <sys/shm.h>
 
@@ -105,6 +106,11 @@ int user_list_load(MYSQL *db, USER_LIST *p_list)
         p_list->users[i].birthday = (row[9] == NULL ? 0 : atol(row[9]));
 
         i++;
+        if (i >= BBS_max_user_count)
+        {
+            log_error("Too many users, exceed limit %d\n", BBS_max_user_count);
+            break;
+        }
     }
     mysql_free_result(rs);
     rs = NULL;
@@ -460,6 +466,59 @@ int user_list_rw_lock(void)
             log_error("user_list_try_rw_lock() failed\n");
             break;
         }
+    }
+
+    return ret;
+}
+
+int query_user_list(int page_id, USER_INFO *p_users, int *p_user_count, int *p_page_count)
+{
+    int ret = 0;
+
+    if (p_users == NULL || p_user_count == NULL || p_page_count == NULL)
+    {
+        log_error("NULL pointer error\n");
+        return -1;
+    }
+
+    // acquire lock of user list
+    if (user_list_rd_lock() < 0)
+    {
+        log_error("user_list_rd_lock() error\n");
+        return -2;
+    }
+
+    if (p_user_list_pool->p_current->user_count == 0)
+    {
+        // empty list
+        ret = 0;
+        goto cleanup;
+    }
+
+    *p_page_count = p_user_list_pool->p_current->user_count / BBS_user_limit_per_page +
+                    (p_user_list_pool->p_current->user_count % BBS_user_limit_per_page == 0 ? 0 : 1);
+
+    if (page_id < 0 || page_id >= *p_page_count)
+    {
+        log_error("Invalid page_id = %d, not in range [0, %d)\n", page_id, *p_page_count);
+        ret = -3;
+        goto cleanup;
+    }
+
+    *p_user_count = MIN(BBS_user_limit_per_page,
+                        p_user_list_pool->p_current->user_count -
+                            page_id * BBS_user_limit_per_page);
+
+    memcpy(p_users,
+           p_user_list_pool->p_current->users + page_id * BBS_user_limit_per_page,
+           sizeof(USER_INFO) * (size_t)(*p_user_count));
+
+cleanup:
+    // release lock of user list
+    if (user_list_rd_unlock() < 0)
+    {
+        log_error("user_list_rd_unlock() error\n");
+        ret = -1;
     }
 
     return ret;

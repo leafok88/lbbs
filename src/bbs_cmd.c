@@ -34,9 +34,10 @@ static const BBS_CMD bbs_cmd_list[] = {
 	{"TOP10", show_top10_menu},
 	{"LOCATE_ARTICLE", locate_article},
 	{"FAVOR_TOPIC", favor_topic},
+	{"USER_LIST", user_list},
 };
 
-static const int bbs_cmd_count = 14;
+static const int bbs_cmd_count = 15;
 
 static TRIE_NODE *p_bbs_cmd_dict;
 

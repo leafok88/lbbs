@@ -26,6 +26,7 @@
 #include "menu.h"
 #include "section_list_display.h"
 #include "screen.h"
+#include "user_list_display.h"
 #include "user_priv.h"
 #include <dlfcn.h>
 #include <errno.h>
@@ -339,6 +340,16 @@ int favor_topic(void *param)
 	if (article_favor_display(&BBS_article_favor) < 0)
 	{
 		log_error("article_favor_display() error\n");
+	}
+
+	return REDRAW;
+}
+
+int user_list(void *param)
+{
+	if (user_list_display() < 0)
+	{
+		log_error("user_list_display() error\n");
 	}
 
 	return REDRAW;

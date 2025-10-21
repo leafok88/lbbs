@@ -20,6 +20,8 @@
 #include "bbs.h"
 #include <mysql/mysql.h>
 
+#define BBS_user_limit_per_page 20
+
 struct user_info_t
 {
 	int32_t uid;
@@ -57,5 +59,7 @@ extern int user_list_rd_unlock(void);
 extern int user_list_rw_unlock(void);
 extern int user_list_rd_lock(void);
 extern int user_list_rw_lock(void);
+
+extern int query_user_list(int page_id, USER_INFO *p_users, int *p_user_count, int *p_page_count);
 
 #endif //_USER_LIST_H_
