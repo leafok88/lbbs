@@ -19,6 +19,6 @@
 
 #include "user_list.h"
 
-extern int user_list_display(void);
+extern int user_list_display(int online_user);
 
 #endif //_USER_LIST_DISPLAY_H_

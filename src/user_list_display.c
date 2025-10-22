@@ -35,23 +35,30 @@ enum select_cmd_t
 	SHOW_HELP,
 };
 
-static int user_list_draw_screen()
+static int user_list_draw_screen(int online_user)
 {
 	clearscr();
-	show_top("[已注册用户]", BBS_name, "");
+	show_top((online_user ? "[在线用户]" : "[已注册用户]"), BBS_name, "");
 	moveto(2, 0);
 	prints("返回[\033[1;32m←\033[0;37m,\033[1;32mESC\033[0;37m] 选择[\033[1;32m↑\033[0;37m,\033[1;32m↓\033[0;37m] "
 		   "查看[\033[1;32m→\033[0;37m,\033[1;32mENTER\033[0;37m] 帮助[\033[1;32mh\033[0;37m]\033[m");
 	moveto(3, 0);
-	prints("\033[44;37m  \033[1;37m 编  号   用户名       昵称                 上次登陆距今                        \033[m");
+
+	if (online_user)
+	{
+		prints("\033[44;37m \033[1;37m 编  号  用户名       昵称                 在线时长 空闲   最后活动            \033[m");
+	}
+	else
+	{
+		prints("\033[44;37m \033[1;37m 编  号  用户名       昵称                 上次登陆距今                        \033[m");
+	}
 
 	return 0;
 }
 
-static int user_list_draw_items(int page_id, USER_INFO *p_users,
-								int user_count)
+static int user_list_draw_items(int page_id, USER_INFO *p_users, int user_count)
 {
-	char str_time[LINE_BUFFER_LEN];
+	char str_time_login[LINE_BUFFER_LEN];
 	time_t tm_now;
 	time_t tm_duration;
 	struct tm *p_tm;
@@ -65,30 +72,35 @@ static int user_list_draw_items(int page_id, USER_INFO *p_users,
 	{
 		tm_duration = tm_now - p_users[i].last_login_dt;
 		p_tm = gmtime(&tm_duration);
-		if (p_tm->tm_year > 70)
+		if (p_tm == NULL)
 		{
-			snprintf(str_time, sizeof(str_time),
+			log_error("Invalid time duration\n");
+			str_time_login[0] = '\0';
+		}
+		else if (p_tm->tm_year > 70)
+		{
+			snprintf(str_time_login, sizeof(str_time_login),
 					 "%d年", p_tm->tm_year - 70);
 		}
-		else if (p_tm->tm_yday > 1)
+		else if (p_tm->tm_yday > 0)
 		{
-			snprintf(str_time, sizeof(str_time),
+			snprintf(str_time_login, sizeof(str_time_login),
 					 "%d天", p_tm->tm_yday);
 		}
 		else if (p_tm->tm_hour > 0)
 		{
-			snprintf(str_time, sizeof(str_time),
+			snprintf(str_time_login, sizeof(str_time_login),
 					 "%d时%d分", p_tm->tm_hour, p_tm->tm_min);
 		}
 		else
 		{
-			snprintf(str_time, sizeof(str_time),
+			snprintf(str_time_login, sizeof(str_time_login),
 					 "%d分%d秒", p_tm->tm_min, p_tm->tm_sec);
 		}
 
 		moveto(4 + i, 1);
 
-		prints("  %7d   %s%*s %s%*s %s",
+		prints("  %6d  %s%*s %s%*s %s",
 			   p_users[i].uid,
 			   p_users[i].username,
 			   BBS_username_max_len - str_length(p_users[i].username, 1),
@@ -96,7 +108,90 @@ static int user_list_draw_items(int page_id, USER_INFO *p_users,
 			   p_users[i].nickname,
 			   BBS_nickname_max_len / 2 - str_length(p_users[i].nickname, 1),
 			   "",
-			   str_time);
+			   str_time_login);
+	}
+
+	return 0;
+}
+
+static int user_online_list_draw_items(int page_id, USER_ONLINE_INFO *p_users, int user_count)
+{
+	char str_time_login[LINE_BUFFER_LEN];
+	char str_time_idle[LINE_BUFFER_LEN];
+	const char *p_action_title;
+	time_t tm_now;
+	time_t tm_duration;
+	struct tm *p_tm;
+	int i;
+
+	clrline(4, 23);
+
+	time(&tm_now);
+
+	for (i = 0; i < user_count; i++)
+	{
+		tm_duration = tm_now - p_users[i].login_tm;
+		p_tm = gmtime(&tm_duration);
+		if (p_tm == NULL)
+		{
+			log_error("Invalid time duration\n");
+			str_time_login[0] = '\0';
+		}
+		else if (p_tm->tm_yday > 0)
+		{
+			snprintf(str_time_login, sizeof(str_time_login),
+					 "%d天%d时", p_tm->tm_yday, p_tm->tm_hour);
+		}
+		else if (p_tm->tm_hour > 0)
+		{
+			snprintf(str_time_login, sizeof(str_time_login),
+					 "%d时%d分", p_tm->tm_hour, p_tm->tm_min);
+		}
+		else
+		{
+			snprintf(str_time_login, sizeof(str_time_login),
+					 "%d\'%d\"", p_tm->tm_min, p_tm->tm_sec);
+		}
+
+		tm_duration = tm_now - p_users[i].last_tm;
+		p_tm = gmtime(&tm_duration);
+		if (p_tm == NULL)
+		{
+			log_error("Invalid time duration\n");
+			str_time_idle[0] = '\0';
+		}
+		else if (p_tm->tm_min > 0)
+		{
+			snprintf(str_time_idle, sizeof(str_time_idle),
+					 "%d\'%d\"", p_tm->tm_min, p_tm->tm_sec);
+		}
+		else
+		{
+			snprintf(str_time_idle, sizeof(str_time_idle),
+					 "%d\"", p_tm->tm_sec);
+		}
+
+		p_action_title = (p_users[i].current_action_title != NULL
+							  ? p_users[i].current_action_title
+							  : p_users[i].current_action);
+
+		moveto(4 + i, 1);
+
+		prints("  %6d  %s%*s %s%*s %s%*s %s%*s %s",
+			   p_users[i].user_info.uid,
+			   p_users[i].user_info.username,
+			   BBS_username_max_len - str_length(p_users[i].user_info.username, 1),
+			   "",
+			   p_users[i].user_info.nickname,
+			   BBS_nickname_max_len / 2 - str_length(p_users[i].user_info.nickname, 1),
+			   "",
+			   str_time_login,
+			   8 - str_length(str_time_login, 1),
+			   "",
+			   str_time_idle,
+			   6 - str_length(str_time_idle, 1),
+			   "",
+			   p_action_title);
 	}
 
 	return 0;
@@ -240,24 +335,36 @@ static enum select_cmd_t user_list_select(int total_page, int item_count, int *p
 	return EXIT_LIST;
 }
 
-int user_list_display(void)
+int user_list_display(int online_user)
 {
 	char page_info_str[LINE_BUFFER_LEN];
 	USER_INFO users[BBS_user_limit_per_page];
-	USER_INFO user_info;
+	USER_ONLINE_INFO online_users[BBS_user_limit_per_page];
 	int user_count;
 	int page_count;
 	int page_id = 0;
 	int selected_index = 0;
 	int ret;
 
-	user_list_draw_screen();
+	user_list_draw_screen(online_user);
 
-	ret = query_user_list(page_id, users, &user_count, &page_count);
-	if (ret < 0)
+	if (online_user)
 	{
-		log_error("query_user_list(page_id=%d) error\n", page_id);
-		return -2;
+		ret = query_user_online_list(page_id, online_users, &user_count, &page_count);
+		if (ret < 0)
+		{
+			log_error("query_user_online_list(page_id=%d) error\n", page_id);
+			return -2;
+		}
+	}
+	else
+	{
+		ret = query_user_list(page_id, users, &user_count, &page_count);
+		if (ret < 0)
+		{
+			log_error("query_user_list(page_id=%d) error\n", page_id);
+			return -2;
+		}
 	}
 
 	if (user_count == 0) // empty list
@@ -267,11 +374,23 @@ int user_list_display(void)
 
 	while (!SYS_server_exit)
 	{
-		ret = user_list_draw_items(page_id, users, user_count);
-		if (ret < 0)
+		if (online_user)
 		{
-			log_error("user_list_draw_items(page_id=%d) error\n", page_id);
-			return -3;
+			ret = user_online_list_draw_items(page_id, online_users, user_count);
+			if (ret < 0)
+			{
+				log_error("user_online_list_draw_items(page_id=%d) error\n", page_id);
+				return -3;
+			}
+		}
+		else
+		{
+			ret = user_list_draw_items(page_id, users, user_count);
+			if (ret < 0)
+			{
+				log_error("user_list_draw_items(page_id=%d) error\n", page_id);
+				return -3;
+			}
 		}
 
 		snprintf(page_info_str, sizeof(page_info_str),
@@ -281,9 +400,10 @@ int user_list_display(void)
 		show_bottom(page_info_str);
 		iflush();
 
-		if (user_online_update("USER_LIST") < 0)
+		if (user_online_update(online_user ? "USER_ONLINE" : "USER_LIST") < 0)
 		{
-			log_error("user_online_update(USER_LIST) error\n");
+			log_error("user_online_update(%s) error\n",
+					  (online_user ? "USER_ONLINE" : "USER_LIST"));
 		}
 
 		ret = user_list_select(page_count, user_count, &page_id, &selected_index);
@@ -309,29 +429,16 @@ int user_list_display(void)
 			}
 			break;
 		case VIEW_USER:
-			if ((ret = query_user_info(users[selected_index].uid, &user_info)) < 0)
-			{
-				log_error("query_user_info(uid=%d) error: %d\n", users[selected_index].uid, ret);
-			}
-			else if (ret == 0)
-			{
-				log_error("query_user_info(uid=%d) error: user not found\n", users[selected_index].uid);
-			}
-			else if (users[selected_index].uid != user_info.uid)
-			{
-				log_error("query_user_info(uid=%d) error: inconsistent uid=%d\n", users[selected_index].uid, user_info.uid);
-			}
-			else
-			{
-				clearscr();
-				press_any_key_ex("功能不可用，按任意键返回", 60);
-				user_list_draw_screen();
-			}
+			log_error("View user (uid=%d)\n",
+					  (online_user ? online_users[selected_index].user_info.uid : users[selected_index].uid));
+			clearscr();
+			press_any_key_ex("功能不可用，按任意键返回", 60);
+			user_list_draw_screen(online_user);
 			break;
 		case SHOW_HELP:
 			// Display help information
 			display_file(DATA_READ_HELP, 1);
-			user_list_draw_screen();
+			user_list_draw_screen(online_user);
 			break;
 		default:
 			log_error("Unknown command %d\n", ret);

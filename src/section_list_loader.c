@@ -692,6 +692,7 @@ int section_list_loader_launch(void)
 	int last_mid;
 	time_t tm_section_list_reload = 0;
 	time_t tm_user_list_reload = 0;
+	time_t tm_user_online_list_reload = 0;
 
 	if (section_list_loader_pid != 0)
 	{
@@ -806,11 +807,21 @@ int section_list_loader_launch(void)
 		// Reload user list
 		if (time(NULL) - tm_user_list_reload >= BBS_user_list_load_interval)
 		{
-			if (user_list_pool_reload() < 0)
+			if (user_list_pool_reload(0) < 0)
 			{
-				log_error("user_list_pool_reload() error\n");
+				log_error("user_list_pool_reload(all_user) error\n");
 			}
 			tm_user_list_reload = time(NULL);
+		}
+
+		// Reload user online list
+		if (time(NULL) - tm_user_online_list_reload >= BBS_user_online_list_load_interval)
+		{
+			if (user_list_pool_reload(1) < 0)
+			{
+				log_error("user_list_pool_reload(online_user) error\n");
+			}
+			tm_user_online_list_reload = time(NULL);
 		}
 
 		// Wait for BBS_section_list_load_interval seconds

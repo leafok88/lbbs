@@ -345,11 +345,21 @@ int favor_topic(void *param)
 	return REDRAW;
 }
 
-int user_list(void *param)
+int list_user(void *param)
 {
-	if (user_list_display() < 0)
+	if (user_list_display(0) < 0)
 	{
-		log_error("user_list_display() error\n");
+		log_error("user_list_display(all_user) error\n");
+	}
+
+	return REDRAW;
+}
+
+int list_online_user(void *param)
+{
+	if (user_list_display(1) < 0)
+	{
+		log_error("user_list_display(online_user) error\n");
 	}
 
 	return REDRAW;

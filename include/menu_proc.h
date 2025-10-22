@@ -32,6 +32,7 @@ extern int list_ex_section(void *param);
 extern int show_top10_menu(void *param);
 extern int locate_article(void *param);
 extern int favor_topic(void *param);
-extern int user_list(void *param);
+extern int list_user(void *param);
+extern int list_online_user(void *param);
 
 #endif //_MENU_PROC_H_
