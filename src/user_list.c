@@ -106,6 +106,14 @@ static int user_info_index_uid_comp(const void *ptr1, const void *ptr2)
 	{
 		return 1;
 	}
+	else if (p1->id < p2->id)
+	{
+		return -1;
+	}
+	else if (p1->id > p2->id)
+	{
+		return 1;
+	}
 	return 0;
 }
 
@@ -116,11 +124,17 @@ int user_list_load(MYSQL *db, USER_LIST *p_list)
 	char sql[SQL_BUFFER_LEN];
 	int ret = 0;
 	int i;
+	int32_t last_uid = -1;
 
 	if (db == NULL || p_list == NULL)
 	{
 		log_error("NULL pointer error\n");
 		return -1;
+	}
+
+	if (p_list->user_count > 0)
+	{
+		last_uid = p_list->users[p_list->user_count - 1].uid;
 	}
 
 	snprintf(sql, sizeof(sql),
@@ -176,10 +190,16 @@ int user_list_load(MYSQL *db, USER_LIST *p_list)
 	mysql_free_result(rs);
 	rs = NULL;
 
-	p_list->user_count = i;
-
 	// Sort index
-	qsort(p_list->index_uid, (size_t)i, sizeof(USER_INFO_INDEX_UID), user_info_index_uid_comp);
+	if (i != p_list->user_count || p_list->users[i - 1].uid != last_uid) // Count of users changed
+	{
+		qsort(p_list->index_uid, (size_t)i, sizeof(USER_INFO_INDEX_UID), user_info_index_uid_comp);
+#ifdef _DEBUG
+		log_error("Rebuild index of %d users, last_uid=%d\n", i, p_list->users[i - 1].uid);
+#endif
+	}
+
+	p_list->user_count = i;
 
 #ifdef _DEBUG
 	log_error("Loaded %d users\n", p_list->user_count);
@@ -263,6 +283,10 @@ int user_online_list_load(MYSQL *db, USER_ONLINE_LIST *p_list)
 		p_list->users[i].login_tm = (row[4] == NULL ? 0 : atol(row[4]));
 		p_list->users[i].last_tm = (row[5] == NULL ? 0 : atol(row[5]));
 
+		// index
+		p_list->index_uid[i].uid = p_list->users[i].user_info.uid;
+		p_list->index_uid[i].id = i;
+
 		i++;
 		if (i >= BBS_max_user_online_count)
 		{
@@ -273,10 +297,19 @@ int user_online_list_load(MYSQL *db, USER_ONLINE_LIST *p_list)
 	mysql_free_result(rs);
 	rs = NULL;
 
+	// Sort index
+	if (i > 0)
+	{
+		qsort(p_list->index_uid, (size_t)i, sizeof(USER_INFO_INDEX_UID), user_info_index_uid_comp);
+#ifdef _DEBUG
+		log_error("Rebuild index of %d online users\n", i);
+#endif
+	}
+
 	p_list->user_count = i;
 
 #ifdef _DEBUG
-	log_error("Loaded %d users\n", p_list->user_count);
+	log_error("Loaded %d online users\n", p_list->user_count);
 #endif
 
 cleanup:
@@ -478,6 +511,12 @@ int user_list_pool_reload(int online_user)
 		{
 			log_error("user_online_list_load() error\n");
 			return -2;
+		}
+
+		// No online user, no need to swap lists
+		if (p_user_list_pool->p_online_current->user_count == 0 && p_user_list_pool->p_online_new->user_count == 0)
+		{
+			return 0;
 		}
 	}
 	else
