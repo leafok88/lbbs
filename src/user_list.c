@@ -208,7 +208,7 @@ int user_online_list_load(MYSQL *db, USER_ONLINE_LIST *p_list)
 	snprintf(sql, sizeof(sql),
 			 "SELECT SID, UID, ip, current_action, UNIX_TIMESTAMP(login_tm), "
 			 "UNIX_TIMESTAMP(last_tm) FROM user_online "
-			 "WHERE last_tm >= SUBDATE(NOW(), INTERVAL %d SECOND) "
+			 "WHERE last_tm >= SUBDATE(NOW(), INTERVAL %d SECOND) AND UID <> 0 "
 			 "ORDER BY last_tm DESC",
 			 BBS_user_off_line);
 
@@ -238,21 +238,9 @@ int user_online_list_load(MYSQL *db, USER_ONLINE_LIST *p_list)
 			log_error("query_user_info(%d) error\n", atoi(row[1]));
 			continue;
 		}
-		else if (ret == 0) // Guest
+		else if (ret == 0) // skip Guest
 		{
-			p_list->users[i].user_info.id = -1;
-			p_list->users[i].user_info.uid = 0;
-			strncpy(p_list->users[i].user_info.username, "guest", sizeof(p_list->users[i].user_info.username) - 1);
-			p_list->users[i].user_info.username[sizeof(p_list->users[i].user_info.username) - 1] = '\0';
-			strncpy(p_list->users[i].user_info.nickname, "Guest", sizeof(p_list->users[i].user_info.nickname) - 1);
-			p_list->users[i].user_info.nickname[sizeof(p_list->users[i].user_info.nickname) - 1] = '\0';
-			p_list->users[i].user_info.gender = 'M';
-			p_list->users[i].user_info.gender_pub = 0;
-			p_list->users[i].user_info.life = 150;
-			p_list->users[i].user_info.exp = 0;
-			p_list->users[i].user_info.signup_dt = 0;
-			p_list->users[i].user_info.last_login_dt = 0;
-			p_list->users[i].user_info.birthday = 0;
+			continue;
 		}
 
 		strncpy(p_list->users[i].ip, row[2], sizeof(p_list->users[i].ip) - 1);

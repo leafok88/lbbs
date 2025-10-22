@@ -39,7 +39,7 @@ enum select_cmd_t
 static int user_list_draw_screen(int online_user)
 {
 	clearscr();
-	show_top((online_user ? "[在线用户]" : "[已注册用户]"), BBS_name, "");
+	show_top((online_user ? "[线上使用者]" : "[已注册用户]"), BBS_name, "");
 	moveto(2, 0);
 	prints("返回[\033[1;32m←\033[0;37m,\033[1;32mESC\033[0;37m] 选择[\033[1;32m↑\033[0;37m,\033[1;32m↓\033[0;37m] "
 		   "查看[\033[1;32m→\033[0;37m,\033[1;32mENTER\033[0;37m] 帮助[\033[1;32mh\033[0;37m]\033[m");
