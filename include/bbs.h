@@ -38,7 +38,7 @@
 #define BBS_address_max_len 50
 #define BBS_start_dt_max_len 50
 
-#define BBS_section_list_load_interval 10 // second
+extern const int BBS_section_list_load_interval;
 
 extern char BBS_id[BBS_id_max_len + 1];
 extern char BBS_name[BBS_name_max_len + 1];
@@ -47,13 +47,18 @@ extern char BBS_address[BBS_address_max_len + 1];
 extern in_port_t BBS_port[2];
 extern int BBS_max_client;
 extern int BBS_max_client_per_ip;
-extern int BBS_max_user;
 extern char BBS_start_dt[BBS_start_dt_max_len + 1];
 extern int BBS_sys_id;
 
+// User
+#define BBS_max_user_count 100000
+#define BBS_max_user_online_count 10000
+extern const int BBS_user_list_load_interval;
+extern const int BBS_user_online_list_load_interval;
+
 // Session
 #define MAX_DELAY_TIME 600 // 10 minutes
-#define BBS_user_off_line 900 // 15 minutes
+extern const int BBS_user_off_line;
 
 extern char BBS_username[BBS_username_max_len + 1];
 extern char BBS_nickname[BBS_nickname_max_len + 1];
@@ -67,7 +72,7 @@ extern time_t BBS_last_access_tm;
 
 extern char BBS_current_action[BBS_current_action_max_len + 1];
 extern time_t BBS_current_action_tm;
-#define BBS_current_action_refresh_interval 60 // 1 minute
+extern const int BBS_current_action_refresh_interval;
 
 extern char *setuserfile(char *buf, size_t len, const char *filename);
 

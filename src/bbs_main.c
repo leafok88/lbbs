@@ -29,6 +29,7 @@
 #include "screen.h"
 #include "section_list.h"
 #include "trie_dict.h"
+#include "user_list.h"
 #include "user_priv.h"
 #include <errno.h>
 #include <signal.h>
@@ -164,7 +165,7 @@ int bbs_welcome(void)
 		   "注册用户数[\033[36m%d/%d\033[32m]\r\n"
 		   "从 [\033[36m%s\033[32m] 起，累计访问人次：[\033[36m%d\033[32m]\033[m\r\n",
 		   BBS_name, u_online, BBS_max_client, u_anonymous, u_total,
-		   BBS_max_user, BBS_start_dt, u_login_count);
+		   BBS_max_user_count, BBS_start_dt, u_login_count);
 
 	iflush();
 
@@ -346,6 +347,10 @@ int bbs_main()
 	{
 		goto cleanup;
 	}
+	if (set_user_list_pool_shm_readonly() < 0)
+	{
+		goto cleanup;
+	}
 
 	// Load menu in shared memory
 	if (set_menu_shm_readonly(&bbs_menu) < 0)
@@ -451,6 +456,7 @@ cleanup:
 	detach_menu_shm(&top10_menu);
 
 	// Detach data pools shm
+	detach_user_list_pool_shm();
 	detach_section_list_shm();
 	detach_article_block_shm();
 	detach_trie_dict_shm();

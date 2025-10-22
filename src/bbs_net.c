@@ -424,7 +424,8 @@ int bbsnet_connect(int n)
 	log_common("BBSNET connect to %s:%d from %s:%d by [%s]\n",
 			   remote_addr, remote_port, local_addr, local_port, BBS_username);
 
-	snprintf(tocode, sizeof(tocode), "%s//IGNORE", bbsnet_conf[n].charset);
+	snprintf(tocode, sizeof(tocode), "%s%s", bbsnet_conf[n].charset,
+			 (strcasecmp(stdio_charset, bbsnet_conf[n].charset) == 0 ? "" : "//IGNORE"));
 	input_cd = iconv_open(tocode, stdio_charset);
 	if (input_cd == (iconv_t)(-1))
 	{
@@ -432,8 +433,9 @@ int bbsnet_connect(int n)
 		goto cleanup;
 	}
 
-	snprintf(tocode, sizeof(tocode), "%s//TRANSLIT", stdio_charset);
-	output_cd = iconv_open(stdio_charset, bbsnet_conf[n].charset);
+	snprintf(tocode, sizeof(tocode), "%s%s", stdio_charset,
+			 (strcasecmp(bbsnet_conf[n].charset, stdio_charset) == 0 ? "" : "//TRANSLIT"));
+	output_cd = iconv_open(tocode, bbsnet_conf[n].charset);
 	if (output_cd == (iconv_t)(-1))
 	{
 		log_error("iconv_open(%s->%s) error: %d\n", bbsnet_conf[n].charset, tocode, errno);
@@ -534,6 +536,11 @@ int bbsnet_connect(int n)
 					}
 					else if (ret == 0)
 					{
+						// Send NO-OP to remote server
+						input_buf[input_buf_len] = '\0';
+						input_buf_len++;
+						BBS_last_access_tm = time(NULL);
+
 						stdin_read_wait = 0;
 						break; // Check whether channel is still open
 					}
@@ -589,11 +596,28 @@ int bbsnet_connect(int n)
 		{
 			if (input_buf_offset < input_buf_len)
 			{
+				// For debug
+#ifdef _DEBUG
+				for (int j = input_buf_offset; j < input_buf_len; j++)
+				{
+					log_error("Debug input: <--[%u]\n", (input_buf[j] + 256) % 256);
+				}
+#endif
+
 				ret = io_buf_conv(input_cd, input_buf, &input_buf_len, &input_buf_offset, input_conv, sizeof(input_conv), &input_conv_len);
 				if (ret < 0)
 				{
 					log_error("io_buf_conv(input, %d, %d, %d) error\n", input_buf_len, input_buf_offset, input_conv_len);
+					input_buf_len = input_buf_offset; // Discard invalid sequence
 				}
+
+				// For debug
+#ifdef _DEBUG
+				for (int j = input_conv_offset; j < input_conv_len; j++)
+				{
+					log_error("Debug input_conv: <--[%u]\n", (input_conv[j] + 256) % 256);
+				}
+#endif
 			}
 
 			while (input_conv_offset < input_conv_len && !SYS_server_exit)
@@ -688,6 +712,7 @@ int bbsnet_connect(int n)
 				if (ret < 0)
 				{
 					log_error("io_buf_conv(output, %d, %d, %d) error\n", output_buf_len, output_buf_offset, output_conv_len);
+					output_buf_len = output_buf_offset; // Discard invalid sequence
 				}
 			}
 
@@ -777,6 +802,8 @@ cleanup:
 			   tm_used->tm_mday - 1, tm_used->tm_hour, tm_used->tm_min,
 			   tm_used->tm_sec);
 
+	BBS_last_access_tm = time(NULL);
+
 	return 0;
 }
 
@@ -845,10 +872,10 @@ int bbs_net()
 	{
 		ch = igetch(100);
 
-        if (ch != KEY_NULL && ch != KEY_TIMEOUT)
-        {
-            BBS_last_access_tm = time(NULL);
-        }
+		if (ch != KEY_NULL && ch != KEY_TIMEOUT)
+		{
+			BBS_last_access_tm = time(NULL);
+		}
 
 		switch (ch)
 		{

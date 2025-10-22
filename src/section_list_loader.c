@@ -22,6 +22,7 @@
 #include "log.h"
 #include "menu.h"
 #include "section_list_loader.h"
+#include "user_list.h"
 #include "user_priv.h"
 #include <errno.h>
 #include <signal.h>
@@ -689,7 +690,9 @@ int section_list_loader_launch(void)
 	int article_count;
 	int load_count;
 	int last_mid;
-	int i;
+	time_t tm_section_list_reload = 0;
+	time_t tm_user_list_reload = 0;
+	time_t tm_user_online_list_reload = 0;
 
 	if (section_list_loader_pid != 0)
 	{
@@ -734,6 +737,8 @@ int section_list_loader_launch(void)
 	// Do section data loader periodically
 	while (!SYS_server_exit)
 	{
+		tm_section_list_reload = time(NULL);
+
 		if (SYS_conf_reload)
 		{
 			SYS_conf_reload = 0;
@@ -799,12 +804,28 @@ int section_list_loader_launch(void)
 			log_common("Proceeded %d article logs, last_mid = %d\n", last_article_op_log_mid - last_mid, last_article_op_log_mid);
 		}
 
-		if (SYS_conf_reload)
+		// Reload user list
+		if (time(NULL) - tm_user_list_reload >= BBS_user_list_load_interval)
 		{
-			continue;
+			if (user_list_pool_reload(0) < 0)
+			{
+				log_error("user_list_pool_reload(all_user) error\n");
+			}
+			tm_user_list_reload = time(NULL);
 		}
 
-		for (i = 0; i < BBS_section_list_load_interval && !SYS_server_exit && !SYS_conf_reload; i++)
+		// Reload user online list
+		if (time(NULL) - tm_user_online_list_reload >= BBS_user_online_list_load_interval)
+		{
+			if (user_list_pool_reload(1) < 0)
+			{
+				log_error("user_list_pool_reload(online_user) error\n");
+			}
+			tm_user_online_list_reload = time(NULL);
+		}
+
+		// Wait for BBS_section_list_load_interval seconds
+		while (!SYS_server_exit && time(NULL) - tm_section_list_reload < BBS_section_list_load_interval)
 		{
 			sleep(1);
 		}
@@ -821,6 +842,7 @@ int section_list_loader_launch(void)
 	detach_section_list_shm();
 	detach_article_block_shm();
 	detach_trie_dict_shm();
+	detach_user_list_pool_shm();
 
 	log_common("Section list loader process exit normally\n");
 	log_end();

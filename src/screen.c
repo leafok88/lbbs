@@ -925,11 +925,11 @@ int show_bottom(const char *msg)
 
 	time_online = time(NULL) - BBS_login_tm;
 	tm_online = gmtime(&time_online);
-	if (tm_online->tm_mday > 1)
+	if (tm_online->tm_mday > 0)
 	{
 		snprintf(str_tm_online, sizeof(str_tm_online),
 				 "\033[36m%2d\033[33m天\033[36m%2d\033[33m时",
-				 tm_online->tm_mday - 1, tm_online->tm_hour);
+				 tm_online->tm_yday, tm_online->tm_hour);
 	}
 	else
 	{

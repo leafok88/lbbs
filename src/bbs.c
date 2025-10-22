@@ -32,9 +32,15 @@ char BBS_address[BBS_address_max_len + 1] = "0.0.0.0";
 in_port_t BBS_port[2] = {BBS_port_default, BBS_ssh_port_default};
 int BBS_max_client = MAX_CLIENT_LIMIT;
 int BBS_max_client_per_ip = MAX_CLIENT_PER_IP_LIMIT;
-int BBS_max_user = BBS_MAX_USER_LIMIT;
 char BBS_start_dt[BBS_start_dt_max_len + 1] = "2000年 1月 1日";
 int BBS_sys_id = 1;
+
+const int BBS_section_list_load_interval = 5; // second
+
+// User
+const int BBS_user_list_load_interval = 60;		  // second
+const int BBS_user_online_list_load_interval = 5; // second
+const int BBS_user_off_line = 900;				  // 15 minutes
 
 char BBS_username[BBS_username_max_len + 1];
 char BBS_nickname[BBS_nickname_max_len + 1];
@@ -46,6 +52,8 @@ time_t BBS_last_access_tm;
 
 char BBS_current_action[BBS_current_action_max_len + 1];
 time_t BBS_current_action_tm;
+
+const int BBS_current_action_refresh_interval = 60; // 1 minute
 
 char *setuserfile(char *buf, size_t len, const char *filename)
 {

@@ -170,6 +170,7 @@ int iflush(void)
 					if (ret < 0)
 					{
 						log_error("io_buf_conv(stdout, %d, %d, %d) error\n", stdout_buf_len, stdout_buf_offset, stdout_conv_len);
+						stdout_buf_len = stdout_buf_offset; // Discard invalid sequence
 					}
 				}
 
@@ -399,6 +400,7 @@ int igetch(int timeout)
 			if (ret < 0)
 			{
 				log_error("io_buf_conv(stdin, %d, %d, %d) error\n", stdin_buf_len, stdin_buf_offset, stdin_conv_len);
+				stdin_buf_len = stdin_buf_offset; // Discard invalid sequence
 			}
 
 			// For debug
@@ -936,7 +938,7 @@ int io_buf_conv(iconv_t cd, char *p_buf, int *p_buf_len, int *p_buf_offset, char
 		{
 			if (out_bytes <= 0)
 			{
-				log_error("iconv(inbytes=%d, outbytes=%d) error: EILSEQ and E2BIG\n", in_bytes, out_bytes);
+				log_error("No enough free space in p_conv, conv_len=%d, conv_size=%d\n", *p_conv_len, conv_size);
 				return -2;
 			}
 
@@ -1031,14 +1033,17 @@ int io_conv_init(const char *charset)
 	strncpy(stdio_charset, charset, sizeof(stdio_charset) - 1);
 	stdio_charset[sizeof(stdio_charset) - 1] = '\0';
 
-	stdin_cd = iconv_open(BBS_DEFAULT_CHARSET "//IGNORE", stdio_charset);
+	snprintf(tocode, sizeof(tocode), "%s%s", BBS_DEFAULT_CHARSET,
+			 (strcasecmp(stdio_charset, BBS_DEFAULT_CHARSET) == 0 ? "" : "//IGNORE"));
+	stdin_cd = iconv_open(tocode, stdio_charset);
 	if (stdin_cd == (iconv_t)(-1))
 	{
-		log_error("iconv_open(%s->%s) error: %d\n", stdio_charset, BBS_DEFAULT_CHARSET "//IGNORE", errno);
+		log_error("iconv_open(%s->%s) error: %d\n", stdio_charset, tocode, errno);
 		return -2;
 	}
 
-	snprintf(tocode, sizeof(tocode), "%s//TRANSLIT", stdio_charset);
+	snprintf(tocode, sizeof(tocode), "%s%s", stdio_charset,
+			 (strcasecmp(BBS_DEFAULT_CHARSET, stdio_charset) == 0 ? "" : "//TRANSLIT"));
 	stdout_cd = iconv_open(tocode, BBS_DEFAULT_CHARSET);
 	if (stdout_cd == (iconv_t)(-1))
 	{
