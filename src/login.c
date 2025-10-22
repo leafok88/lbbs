@@ -503,8 +503,8 @@ int user_online_add(MYSQL *db)
 	}
 
 	snprintf(sql, sizeof(sql),
-			 "INSERT INTO user_online(SID, UID, ip, login_tm, last_tm) "
-			 "VALUES('Telnet_Process_%d', %d, '%s', NOW(), NOW())",
+			 "INSERT INTO user_online(SID, UID, ip, current_action, login_tm, last_tm) "
+			 "VALUES('Telnet_Process_%d', %d, '%s', 'LOGIN', NOW(), NOW())",
 			 getpid(), BBS_priv.uid, hostaddr_client);
 	if (mysql_query(db, sql) != 0)
 	{

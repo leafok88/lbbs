@@ -71,15 +71,17 @@ const USER_ACTION_MAP user_action_map[] =
 		{"BBS_NET", "站点穿梭"},
 		{"CHICKEN", "电子小鸡"},
 		{"EDIT_ARTICLE", "修改文章"},
+		{"LOGIN", "进入大厅"},
 		{"MENU", "菜单选择"},
 		{"POST_ARTICLE", "撰写文章"},
 		{"REPLY_ARTICLE", "回复文章"},
 		{"USER_LIST", "查花名册"},
 		{"USER_ONLINE", "环顾四周"},
 		{"VIEW_ARTICLE", "阅读文章"},
-		{"VIEW_FILE", "查看文档"}};
+		{"VIEW_FILE", "查看文档"},
+		{"WWW", "Web浏览"}};
 
-const int user_action_map_size = 11;
+const int user_action_map_size = sizeof(user_action_map) / sizeof(USER_ACTION_MAP);
 
 static int user_list_try_rd_lock(int semid, int wait_sec);
 static int user_list_try_rw_lock(int semid, int wait_sec);
@@ -205,10 +207,25 @@ int user_online_list_load(MYSQL *db, USER_ONLINE_LIST *p_list)
 		strncpy(p_list->users[i].session_id, row[0], sizeof(p_list->users[i].session_id) - 1);
 
 		p_list->users[i].session_id[sizeof(p_list->users[i].session_id) - 1] = '\0';
-		if (query_user_info(atoi(row[1]), &(p_list->users[i].user_info)) <= 0)
+		if ((ret = query_user_info(atoi(row[1]), &(p_list->users[i].user_info))) < 0)
 		{
 			log_error("query_user_info(%d) error\n", atoi(row[1]));
 			continue;
+		}
+		else if (ret == 0) // Guest
+		{
+			p_list->users[i].user_info.uid = 0;
+			strncpy(p_list->users[i].user_info.username, "guest", sizeof(p_list->users[i].user_info.username) - 1);
+			p_list->users[i].user_info.username[sizeof(p_list->users[i].user_info.username) - 1] = '\0';
+			strncpy(p_list->users[i].user_info.nickname, "Guest", sizeof(p_list->users[i].user_info.nickname) - 1);
+			p_list->users[i].user_info.nickname[sizeof(p_list->users[i].user_info.nickname) - 1] = '\0';
+			p_list->users[i].user_info.gender = 'M';
+			p_list->users[i].user_info.gender_pub = 0;
+			p_list->users[i].user_info.life = 150;
+			p_list->users[i].user_info.exp = 0;
+			p_list->users[i].user_info.signup_dt = 0;
+			p_list->users[i].user_info.last_login_dt = 0;
+			p_list->users[i].user_info.birthday = 0;
 		}
 
 		strncpy(p_list->users[i].ip, row[2], sizeof(p_list->users[i].ip) - 1);
@@ -219,7 +236,7 @@ int user_online_list_load(MYSQL *db, USER_ONLINE_LIST *p_list)
 		p_list->users[i].current_action_title = NULL;
 		if (p_list->users[i].current_action[0] == '\0')
 		{
-			p_list->users[i].current_action_title = "Web浏览";
+			p_list->users[i].current_action_title = "";
 		}
 		else if (trie_dict_get(p_trie_action_dict, p_list->users[i].current_action, (int64_t *)(&(p_list->users[i].current_action_title))) < 0)
 		{

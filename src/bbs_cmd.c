@@ -38,7 +38,7 @@ static const BBS_CMD bbs_cmd_list[] = {
 	{"LIST_ONLINE_USER", list_online_user},
 };
 
-static const int bbs_cmd_count = 16;
+static const int bbs_cmd_count = sizeof(bbs_cmd_list) / sizeof(BBS_CMD);
 
 static TRIE_NODE *p_bbs_cmd_dict;
 
