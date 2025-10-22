@@ -38,8 +38,8 @@ int BBS_sys_id = 1;
 const int BBS_section_list_load_interval = 5; // second
 
 // User
-const int BBS_user_list_load_interval = 60;		  // second
-const int BBS_user_online_list_load_interval = 5; // second
+const int BBS_user_list_load_interval = 60;		  // 1 minute
+const int BBS_user_online_list_load_interval = 5; // 5 seconds
 const int BBS_user_off_line = 900;				  // 15 minutes
 
 char BBS_username[BBS_username_max_len + 1];

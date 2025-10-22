@@ -124,8 +124,10 @@ int user_list_load(MYSQL *db, USER_LIST *p_list)
 	MYSQL_ROW row;
 	char sql[SQL_BUFFER_LEN];
 	int ret = 0;
-	int i;
+	int i = 0;
 	int32_t last_uid = -1;
+	size_t intro_buf_offset = 0L;
+	size_t intro_len;
 
 	if (db == NULL || p_list == NULL)
 	{
@@ -139,8 +141,8 @@ int user_list_load(MYSQL *db, USER_LIST *p_list)
 	}
 
 	snprintf(sql, sizeof(sql),
-			 "SELECT user_list.UID AS UID, username, nickname, gender, gender_pub, life, exp, "
-			 "UNIX_TIMESTAMP(signup_dt), UNIX_TIMESTAMP(last_login_dt), UNIX_TIMESTAMP(birthday) "
+			 "SELECT user_list.UID AS UID, username, nickname, gender, gender_pub, life, exp, visit_count, "
+			 "UNIX_TIMESTAMP(signup_dt), UNIX_TIMESTAMP(last_login_dt), UNIX_TIMESTAMP(birthday), `introduction` "
 			 "FROM user_list INNER JOIN user_pubinfo ON user_list.UID = user_pubinfo.UID "
 			 "INNER JOIN user_reginfo ON user_list.UID = user_reginfo.UID "
 			 "WHERE enable ORDER BY username");
@@ -159,6 +161,7 @@ int user_list_load(MYSQL *db, USER_LIST *p_list)
 		goto cleanup;
 	}
 
+	intro_buf_offset = 0;
 	i = 0;
 	while ((row = mysql_fetch_row(rs)))
 	{
@@ -173,9 +176,21 @@ int user_list_load(MYSQL *db, USER_LIST *p_list)
 		p_list->users[i].gender_pub = (int8_t)(row[4] == NULL ? 0 : atoi(row[4]));
 		p_list->users[i].life = (row[5] == NULL ? 0 : atoi(row[5]));
 		p_list->users[i].exp = (row[6] == NULL ? 0 : atoi(row[6]));
-		p_list->users[i].signup_dt = (row[7] == NULL ? 0 : atol(row[7]));
-		p_list->users[i].last_login_dt = (row[8] == NULL ? 0 : atol(row[8]));
-		p_list->users[i].birthday = (row[9] == NULL ? 0 : atol(row[9]));
+		p_list->users[i].visit_count = (row[7] == NULL ? 0 : atoi(row[7]));
+		p_list->users[i].signup_dt = (row[8] == NULL ? 0 : atol(row[8]));
+		p_list->users[i].last_login_dt = (row[9] == NULL ? 0 : atol(row[9]));
+		p_list->users[i].birthday = (row[10] == NULL ? 0 : atol(row[10]));
+		intro_len = strlen((row[11] == NULL ? "" : row[11]));
+		if (intro_len >= sizeof(p_list->user_intro_buf) - 1 - intro_buf_offset)
+		{
+			log_error("OOM for user introduction: len=%d, i=%d\n", intro_len, i);
+			break;
+		}
+		memcpy(p_list->user_intro_buf + intro_buf_offset,
+			   (row[11] == NULL ? "" : row[11]),
+			   intro_len + 1);
+		p_list->users[i].intro = p_list->user_intro_buf + intro_buf_offset;
+		intro_buf_offset += (intro_len + 1);
 
 		// index
 		index_uid[i].uid = p_list->users[i].uid;

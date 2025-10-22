@@ -29,7 +29,8 @@ const char *data_files_load_startup[] = {
 	DATA_READ_HELP,
 	DATA_EDITOR_HELP,
 	VAR_BBS_TOP};
-int data_files_load_startup_count = 11; // Count of data_files_load_startup[]
+
+const int data_files_load_startup_count = sizeof(data_files_load_startup) / sizeof(const char *);
 
 // Global declaration for sockets
 int socket_server[2];

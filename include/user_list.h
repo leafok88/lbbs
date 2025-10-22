@@ -23,6 +23,8 @@
 #define BBS_user_limit_per_page 20
 #define BBS_session_id_length 32
 
+#define BBS_user_intro_avg_len 256
+
 struct user_info_t
 {
 	int32_t id;
@@ -33,9 +35,11 @@ struct user_info_t
 	int8_t gender_pub;
 	int32_t life;
 	int32_t exp;
+	int32_t visit_count;
 	time_t signup_dt;
 	time_t last_login_dt;
 	time_t birthday;
+	const char *intro;
 };
 typedef struct user_info_t USER_INFO;
 
@@ -51,6 +55,7 @@ struct user_list_t
 	USER_INFO users[BBS_max_user_count];
 	USER_INFO_INDEX_UID index_uid[BBS_max_user_count];
 	int32_t user_count;
+	char user_intro_buf[BBS_user_intro_avg_len * BBS_max_user_count];
 };
 typedef struct user_list_t USER_LIST;
 

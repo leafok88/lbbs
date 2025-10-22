@@ -60,7 +60,7 @@
 
 // File loader
 extern const char *data_files_load_startup[];
-extern int data_files_load_startup_count;
+extern const int data_files_load_startup_count;
 
 // Screen
 #define SCREEN_ROWS 24
