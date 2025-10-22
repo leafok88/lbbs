@@ -1,6 +1,14 @@
 # Changelog of LBBS - Classical terminal server of LeafOK BBS
 
 
+2025-10-22  v1.5
+=================
+新增功能
+
+1. 全部用户列表显示  
+2. 在线用户列表显示  
+
+
 2025-10-15  v1.4
 =================
 新增功能

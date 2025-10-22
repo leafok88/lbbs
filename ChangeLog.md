@@ -3,6 +3,14 @@
 中文版本的ChangeLog.md位于[ChangeLog.zh_CN.md](ChangeLog.zh_CN.md)
 
 
+2025-10-22  v1.5
+=================
+Add major features
+
+1. Display of all user list  
+2. Display of online user list  
+
+
 2025-10-15  v1.4
 =================
 Add major features
