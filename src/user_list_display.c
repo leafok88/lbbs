@@ -32,6 +32,7 @@ enum select_cmd_t
 	EXIT_LIST = 0,
 	VIEW_USER,
 	CHANGE_PAGE,
+	REFRESH_LIST,
 	SHOW_HELP,
 };
 
@@ -101,7 +102,7 @@ static int user_list_draw_items(int page_id, USER_INFO *p_users, int user_count)
 		moveto(4 + i, 1);
 
 		prints("  %6d  %s%*s %s%*s %s",
-			   p_users[i].uid,
+			   p_users[i].id + 1,
 			   p_users[i].username,
 			   BBS_username_max_len - str_length(p_users[i].username, 1),
 			   "",
@@ -178,7 +179,7 @@ static int user_online_list_draw_items(int page_id, USER_ONLINE_INFO *p_users, i
 		moveto(4 + i, 1);
 
 		prints("  %6d  %s%*s %s%*s %s%*s %s%*s %s",
-			   p_users[i].user_info.uid,
+			   p_users[i].id + 1,
 			   p_users[i].user_info.username,
 			   BBS_username_max_len - str_length(p_users[i].user_info.username, 1),
 			   "",
@@ -303,6 +304,8 @@ static enum select_cmd_t user_list_select(int total_page, int item_count, int *p
 				(*p_selected_index)++;
 			}
 			break;
+		case KEY_F5:
+			return REFRESH_LIST;
 		case 'h':
 			return SHOW_HELP;
 		default:
@@ -411,12 +414,25 @@ int user_list_display(int online_user)
 		{
 		case EXIT_LIST:
 			return 0;
+		case REFRESH_LIST:
 		case CHANGE_PAGE:
-			ret = query_user_list(page_id, users, &user_count, &page_count);
-			if (ret < 0)
+			if (online_user)
 			{
-				log_error("query_favor_articles(page_id=%d) error\n", page_id);
-				return -2;
+				ret = query_user_online_list(page_id, online_users, &user_count, &page_count);
+				if (ret < 0)
+				{
+					log_error("query_user_online_list(page_id=%d) error\n", page_id);
+					return -2;
+				}
+			}
+			else
+			{
+				ret = query_user_list(page_id, users, &user_count, &page_count);
+				if (ret < 0)
+				{
+					log_error("query_user_list(page_id=%d) error\n", page_id);
+					return -2;
+				}
 			}
 
 			if (user_count == 0) // empty list
@@ -429,10 +445,11 @@ int user_list_display(int online_user)
 			}
 			break;
 		case VIEW_USER:
-			log_error("View user (uid=%d)\n",
-					  (online_user ? online_users[selected_index].user_info.uid : users[selected_index].uid));
 			clearscr();
-			press_any_key_ex("功能不可用，按任意键返回", 60);
+			prints("已选中用户 [%s]\n", online_user
+											? online_users[selected_index].user_info.username
+											: users[selected_index].username);
+			press_any_key();
 			user_list_draw_screen(online_user);
 			break;
 		case SHOW_HELP:

@@ -25,6 +25,7 @@
 
 struct user_info_t
 {
+	int32_t id;
 	int32_t uid;
 	char username[BBS_username_max_len + 1];
 	char nickname[BBS_nickname_max_len + 1];
@@ -38,15 +39,24 @@ struct user_info_t
 };
 typedef struct user_info_t USER_INFO;
 
+struct user_info_index_uid_t
+{
+	int32_t uid;
+	int32_t id;
+};
+typedef struct user_info_index_uid_t USER_INFO_INDEX_UID;
+
 struct user_list_t
 {
 	USER_INFO users[BBS_max_user_count];
+	USER_INFO_INDEX_UID index_uid[BBS_max_user_count];
 	int32_t user_count;
 };
 typedef struct user_list_t USER_LIST;
 
 struct user_online_info_t
 {
+	int32_t id;
 	char session_id[BBS_session_id_length + 1];
 	USER_INFO user_info;
 	char ip[IP_ADDR_LEN];
@@ -74,6 +84,8 @@ extern int user_list_pool_reload(int online_user);
 extern int query_user_list(int page_id, USER_INFO *p_users, int *p_user_count, int *p_page_count);
 extern int query_user_online_list(int page_id, USER_ONLINE_INFO *p_online_users, int *p_user_count, int *p_page_count);
 
-extern int query_user_info(int32_t uid, USER_INFO *p_user);
+extern int query_user_info(int32_t id, USER_INFO *p_user);
+extern int query_user_info_by_uid(int32_t uid, USER_INFO *p_user);
+extern int query_user_online_info(int32_t id, USER_ONLINE_INFO *p_user);
 
 #endif //_USER_LIST_H_
