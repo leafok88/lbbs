@@ -880,11 +880,6 @@ int query_user_info_by_uid(int32_t uid, USER_INFO *p_user)
 		return -2;
 	}
 
-	if (p_user_list_pool->p_current->index_uid[0].uid != 1)
-	{
-		log_error("Incorrect index\n");
-	}
-
 	left = 0;
 	right = p_user_list_pool->p_current->user_count - 1;
 
@@ -1017,13 +1012,13 @@ int query_user_online_info_by_uid(int32_t uid, USER_ONLINE_INFO *p_users, int *p
 			}
 		}
 
-		for (id = left, i = 0;
-			 id < p_user_list_pool->p_online_current->user_count && i < *p_user_cnt &&
-			 uid == p_user_list_pool->p_online_current->index_uid[id].uid;
-			 id++, i++)
+		for (i = 0;
+			 left < p_user_list_pool->p_online_current->user_count && i < *p_user_cnt &&
+			 uid == p_user_list_pool->p_online_current->index_uid[left].uid;
+			 left++, i++)
 		{
+			id = p_user_list_pool->p_online_current->index_uid[left].id;
 			p_users[i] = p_user_list_pool->p_online_current->users[id];
-			log_error("Debug: i=%d id=%d users[i].id=%d\n", i, id, p_users[i].id);
 		}
 
 		if (i > 0)
