@@ -70,7 +70,7 @@ typedef struct user_online_info_t USER_ONLINE_INFO;
 struct user_online_list_t
 {
 	USER_ONLINE_INFO users[BBS_max_user_online_count];
-	USER_INFO_INDEX_UID index_uid[BBS_max_user_count];
+	USER_INFO_INDEX_UID index_uid[BBS_max_user_online_count];
 	int32_t user_count;
 };
 typedef struct user_online_list_t USER_ONLINE_LIST;

@@ -343,11 +343,11 @@ int user_list_display(int online_user)
 	char page_info_str[LINE_BUFFER_LEN];
 	USER_INFO users[BBS_user_limit_per_page];
 	USER_ONLINE_INFO online_users[BBS_user_limit_per_page];
-	int user_count;
-	int page_count;
+	int user_count = 0;
+	int page_count = 0;
 	int page_id = 0;
 	int selected_index = 0;
-	int ret;
+	int ret = 0;
 
 	user_list_draw_screen(online_user);
 
@@ -448,23 +448,24 @@ int user_list_display(int online_user)
 			clearscr();
 			if (online_user)
 			{
-				USER_ONLINE_INFO users[5];
-				int user_cnt = 5;
-				prints("已选中用户 [%s]", online_users[selected_index].user_info.username);
-				ret = query_user_online_info_by_uid(online_users[selected_index].user_info.uid, users, &user_cnt, 0);
-				if (ret <= 0)
-				{
-					log_error("query_user_online_info_by_uid(uid=%d, cnt=%d) error: %d\n",
-							  online_users[selected_index].user_info.uid, user_cnt, ret);
-				}
-				else
-				{
-					for (int i = 0; i < user_cnt; i++)
-					{
-						moveto(2 + i, 1);
-						prints("会话%d", users[i].id);
-					}
-				}
+				prints("已选中用户 [%s] 会话 %d", online_users[selected_index].user_info.username, online_users[selected_index].id);
+
+				// USER_ONLINE_INFO users[5];
+				// int user_cnt = 5;
+				// ret = query_user_online_info_by_uid(online_users[selected_index].user_info.uid, users, &user_cnt, 0);
+				// if (ret <= 0)
+				// {
+				// 	log_error("query_user_online_info_by_uid(uid=%d, cnt=%d) error: %d\n",
+				// 			  online_users[selected_index].user_info.uid, user_cnt, ret);
+				// }
+				// else
+				// {
+				// 	for (int i = 0; i < user_cnt; i++)
+				// 	{
+				// 		moveto(2 + i, 1);
+				// 		prints("会话%d", users[i].id);
+				// 	}
+				// }
 			}
 			else
 			{
