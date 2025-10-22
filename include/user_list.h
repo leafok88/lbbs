@@ -87,6 +87,8 @@ extern int query_user_online_list(int page_id, USER_ONLINE_INFO *p_online_users,
 
 extern int query_user_info(int32_t id, USER_INFO *p_user);
 extern int query_user_info_by_uid(int32_t uid, USER_INFO *p_user);
+
 extern int query_user_online_info(int32_t id, USER_ONLINE_INFO *p_user);
+extern int query_user_online_info_by_uid(int32_t uid, USER_ONLINE_INFO *p_users, int *p_user_cnt, int start_id);
 
 #endif //_USER_LIST_H_

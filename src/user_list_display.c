@@ -446,9 +446,30 @@ int user_list_display(int online_user)
 			break;
 		case VIEW_USER:
 			clearscr();
-			prints("已选中用户 [%s]\n", online_user
-											? online_users[selected_index].user_info.username
-											: users[selected_index].username);
+			if (online_user)
+			{
+				USER_ONLINE_INFO users[5];
+				int user_cnt = 5;
+				prints("已选中用户 [%s]", online_users[selected_index].user_info.username);
+				ret = query_user_online_info_by_uid(online_users[selected_index].user_info.uid, users, &user_cnt, 0);
+				if (ret <= 0)
+				{
+					log_error("query_user_online_info_by_uid(uid=%d, cnt=%d) error: %d\n",
+							  online_users[selected_index].user_info.uid, user_cnt, ret);
+				}
+				else
+				{
+					for (int i = 0; i < user_cnt; i++)
+					{
+						moveto(2 + i, 1);
+						prints("会话%d", users[i].id);
+					}
+				}
+			}
+			else
+			{
+				prints("已选中用户 [%s]", users[selected_index].username);
+			}
 			press_any_key();
 			user_list_draw_screen(online_user);
 			break;

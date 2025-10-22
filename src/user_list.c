@@ -491,6 +491,7 @@ int user_list_pool_reload(int online_user)
 	MYSQL *db = NULL;
 	USER_LIST *p_tmp;
 	USER_ONLINE_LIST *p_online_tmp;
+	int ret = 0;
 
 	if (p_user_list_pool == NULL)
 	{
@@ -510,13 +511,14 @@ int user_list_pool_reload(int online_user)
 		if (user_online_list_load(db, p_user_list_pool->p_online_new) < 0)
 		{
 			log_error("user_online_list_load() error\n");
-			return -2;
+			ret = -2;
+			goto cleanup;
 		}
 
 		// No online user, no need to swap lists
 		if (p_user_list_pool->p_online_current->user_count == 0 && p_user_list_pool->p_online_new->user_count == 0)
 		{
-			return 0;
+			goto cleanup;
 		}
 	}
 	else
@@ -524,16 +526,19 @@ int user_list_pool_reload(int online_user)
 		if (user_list_load(db, p_user_list_pool->p_new) < 0)
 		{
 			log_error("user_list_load() error\n");
-			return -2;
+			ret = -2;
+			goto cleanup;
 		}
 	}
 
 	mysql_close(db);
+	db = NULL;
 
 	if (user_list_rw_lock(p_user_list_pool->semid) < 0)
 	{
 		log_error("user_list_rw_lock() error\n");
-		return -3;
+		ret = -3;
+		goto cleanup;
 	}
 
 	if (online_user)
@@ -554,10 +559,14 @@ int user_list_pool_reload(int online_user)
 	if (user_list_rw_unlock(p_user_list_pool->semid) < 0)
 	{
 		log_error("user_list_rw_unlock() error\n");
-		return -3;
+		ret = -3;
+		goto cleanup;
 	}
 
-	return 0;
+cleanup:
+	mysql_close(db);
+
+	return ret;
 }
 
 int user_list_try_rd_lock(int semid, int wait_sec)
@@ -937,6 +946,97 @@ int query_user_online_info(int32_t id, USER_ONLINE_INFO *p_user)
 	{
 		*p_user = p_user_list_pool->p_online_current->users[id];
 		ret = 1;
+	}
+
+	// release lock of user list
+	if (user_list_rd_unlock(p_user_list_pool->semid) < 0)
+	{
+		log_error("user_list_rd_unlock() error\n");
+		ret = -1;
+	}
+
+	return ret;
+}
+
+int query_user_online_info_by_uid(int32_t uid, USER_ONLINE_INFO *p_users, int *p_user_cnt, int start_id)
+{
+	int left;
+	int right;
+	int mid;
+	int32_t id;
+	int ret = 0;
+	int i;
+
+	if (p_users == NULL || p_user_cnt == NULL)
+	{
+		log_error("NULL pointer error\n");
+		return -1;
+	}
+
+	// acquire lock of user list
+	if (user_list_rd_lock(p_user_list_pool->semid) < 0)
+	{
+		log_error("user_list_rd_lock() error\n");
+		return -2;
+	}
+
+	left = start_id;
+	right = p_user_list_pool->p_online_current->user_count - 1;
+
+	while (left < right)
+	{
+		mid = (left + right) / 2;
+		if (uid < p_user_list_pool->p_online_current->index_uid[mid].uid)
+		{
+			right = mid;
+		}
+		else if (uid > p_user_list_pool->p_online_current->index_uid[mid].uid)
+		{
+			left = mid + 1;
+		}
+		else // if (uid == p_user_list_pool->p_online_current->index_uid[mid].uid)
+		{
+			left = mid;
+			break;
+		}
+	}
+
+	if (uid == p_user_list_pool->p_online_current->index_uid[left].uid)
+	{
+		right = left;
+		left = start_id;
+
+		while (left < right)
+		{
+			mid = (left + right) / 2;
+			if (uid - 1 < p_user_list_pool->p_online_current->index_uid[mid].uid)
+			{
+				right = mid;
+			}
+			else // if (uid - 1 >= p_user_list_pool->p_online_current->index_uid[mid].uid)
+			{
+				left = mid + 1;
+			}
+		}
+
+		for (id = left, i = 0;
+			 id < p_user_list_pool->p_online_current->user_count && i < *p_user_cnt &&
+			 uid == p_user_list_pool->p_online_current->index_uid[id].uid;
+			 id++, i++)
+		{
+			if ((ret = query_user_online_info(id, &(p_users[i]))) <= 0)
+			{
+				log_error("query_user_info(id=%d) error: %d\n", id, ret);
+				ret = -3;
+				break;
+			}
+		}
+
+		if (ret > 0 && i > 0)
+		{
+			*p_user_cnt = i;
+			ret = 1;
+		}
 	}
 
 	// release lock of user list
