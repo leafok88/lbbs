@@ -119,6 +119,7 @@ static int user_info_index_uid_comp(const void *ptr1, const void *ptr2)
 
 int user_list_load(MYSQL *db, USER_LIST *p_list)
 {
+	USER_INFO_INDEX_UID index_uid[BBS_max_user_count];
 	MYSQL_RES *rs = NULL;
 	MYSQL_ROW row;
 	char sql[SQL_BUFFER_LEN];
@@ -177,8 +178,8 @@ int user_list_load(MYSQL *db, USER_LIST *p_list)
 		p_list->users[i].birthday = (row[9] == NULL ? 0 : atol(row[9]));
 
 		// index
-		p_list->index_uid[i].uid = p_list->users[i].uid;
-		p_list->index_uid[i].id = i;
+		index_uid[i].uid = p_list->users[i].uid;
+		index_uid[i].id = i;
 
 		i++;
 		if (i >= BBS_max_user_count)
@@ -193,7 +194,9 @@ int user_list_load(MYSQL *db, USER_LIST *p_list)
 	// Sort index
 	if (i != p_list->user_count || p_list->users[i - 1].uid != last_uid) // Count of users changed
 	{
-		qsort(p_list->index_uid, (size_t)i, sizeof(USER_INFO_INDEX_UID), user_info_index_uid_comp);
+		qsort(index_uid, (size_t)i, sizeof(USER_INFO_INDEX_UID), user_info_index_uid_comp);
+		memcpy(p_list->index_uid, index_uid, sizeof(USER_INFO_INDEX_UID) * (size_t)i);
+
 #ifdef _DEBUG
 		log_error("Rebuild index of %d users, last_uid=%d\n", i, p_list->users[i - 1].uid);
 #endif
@@ -253,13 +256,9 @@ int user_online_list_load(MYSQL *db, USER_ONLINE_LIST *p_list)
 		strncpy(p_list->users[i].session_id, row[0], sizeof(p_list->users[i].session_id) - 1);
 		p_list->users[i].session_id[sizeof(p_list->users[i].session_id) - 1] = '\0';
 
-		if ((ret = query_user_info_by_uid(atoi(row[1]), &(p_list->users[i].user_info))) < 0)
+		if ((ret = query_user_info_by_uid(atoi(row[1]), &(p_list->users[i].user_info))) <= 0)
 		{
-			log_error("query_user_info(%d) error\n", atoi(row[1]));
-			continue;
-		}
-		else if (ret == 0) // skip Guest
-		{
+			log_error("query_user_info_by_uid(%d) error\n", atoi(row[1]));
 			continue;
 		}
 
@@ -514,12 +513,6 @@ int user_list_pool_reload(int online_user)
 			ret = -2;
 			goto cleanup;
 		}
-
-		// No online user, no need to swap lists
-		if (p_user_list_pool->p_online_current->user_count == 0 && p_user_list_pool->p_online_new->user_count == 0)
-		{
-			goto cleanup;
-		}
 	}
 	else
 	{
@@ -731,6 +724,9 @@ int query_user_list(int page_id, USER_INFO *p_users, int *p_user_count, int *p_p
 		return -1;
 	}
 
+	*p_user_count = 0;
+	*p_page_count = 0;
+
 	// acquire lock of user list
 	if (user_list_rd_lock(p_user_list_pool->semid) < 0)
 	{
@@ -783,6 +779,9 @@ int query_user_online_list(int page_id, USER_ONLINE_INFO *p_online_users, int *p
 		log_error("NULL pointer error\n");
 		return -1;
 	}
+
+	*p_user_count = 0;
+	*p_page_count = 0;
 
 	// acquire lock of user list
 	if (user_list_rd_lock(p_user_list_pool->semid) < 0)
@@ -905,14 +904,8 @@ int query_user_info_by_uid(int32_t uid, USER_INFO *p_user)
 	if (uid == p_user_list_pool->p_current->index_uid[left].uid) // Found
 	{
 		id = p_user_list_pool->p_current->index_uid[left].id;
-		if ((ret = query_user_info(id, p_user)) <= 0)
-		{
-			log_error("query_user_info(id=%d) error: %d\n", id, ret);
-		}
-		else
-		{
-			ret = 1;
-		}
+		*p_user = p_user_list_pool->p_current->users[id];
+		ret = 1;
 	}
 
 	// release lock of user list
@@ -1019,20 +1012,16 @@ int query_user_online_info_by_uid(int32_t uid, USER_ONLINE_INFO *p_users, int *p
 			}
 		}
 
-		for (id = left, i = 0;
-			 id < p_user_list_pool->p_online_current->user_count && i < *p_user_cnt &&
-			 uid == p_user_list_pool->p_online_current->index_uid[id].uid;
-			 id++, i++)
+		for (i = 0;
+			 left < p_user_list_pool->p_online_current->user_count && i < *p_user_cnt &&
+			 uid == p_user_list_pool->p_online_current->index_uid[left].uid;
+			 left++, i++)
 		{
-			if ((ret = query_user_online_info(id, &(p_users[i]))) <= 0)
-			{
-				log_error("query_user_info(id=%d) error: %d\n", id, ret);
-				ret = -3;
-				break;
-			}
+			id = p_user_list_pool->p_online_current->index_uid[left].id;
+			p_users[i] = p_user_list_pool->p_online_current->users[id];
 		}
 
-		if (ret > 0 && i > 0)
+		if (i > 0)
 		{
 			*p_user_cnt = i;
 			ret = 1;
