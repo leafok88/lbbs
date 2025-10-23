@@ -119,14 +119,14 @@ static int user_info_index_uid_comp(const void *ptr1, const void *ptr2)
 
 int user_list_load(MYSQL *db, USER_LIST *p_list)
 {
-	USER_INFO_INDEX_UID index_uid[BBS_max_user_count];
 	MYSQL_RES *rs = NULL;
 	MYSQL_ROW row;
 	char sql[SQL_BUFFER_LEN];
 	int ret = 0;
-	int i = 0;
-	int32_t last_uid = -1;
-	size_t intro_buf_offset = 0L;
+	int i;
+	int j;
+	int32_t last_uid;
+	size_t intro_buf_offset;
 	size_t intro_len;
 
 	if (db == NULL || p_list == NULL)
@@ -138,6 +138,10 @@ int user_list_load(MYSQL *db, USER_LIST *p_list)
 	if (p_list->user_count > 0)
 	{
 		last_uid = p_list->users[p_list->user_count - 1].uid;
+	}
+	else
+	{
+		last_uid = -1;
 	}
 
 	snprintf(sql, sizeof(sql),
@@ -192,10 +196,6 @@ int user_list_load(MYSQL *db, USER_LIST *p_list)
 		p_list->users[i].intro = p_list->user_intro_buf + intro_buf_offset;
 		intro_buf_offset += (intro_len + 1);
 
-		// index
-		index_uid[i].uid = p_list->users[i].uid;
-		index_uid[i].id = i;
-
 		i++;
 		if (i >= BBS_max_user_count)
 		{
@@ -206,11 +206,16 @@ int user_list_load(MYSQL *db, USER_LIST *p_list)
 	mysql_free_result(rs);
 	rs = NULL;
 
-	// Sort index
 	if (i != p_list->user_count || p_list->users[i - 1].uid != last_uid) // Count of users changed
 	{
-		qsort(index_uid, (size_t)i, sizeof(USER_INFO_INDEX_UID), user_info_index_uid_comp);
-		memcpy(p_list->index_uid, index_uid, sizeof(USER_INFO_INDEX_UID) * (size_t)i);
+		// Rebuild index
+		for (j = 0; j < i; j++)
+		{
+			p_list->index_uid[j].uid = p_list->users[j].uid;
+			p_list->index_uid[j].id = j;
+		}
+
+		qsort(p_list->index_uid, (size_t)i, sizeof(USER_INFO_INDEX_UID), user_info_index_uid_comp);
 
 #ifdef _DEBUG
 		log_error("Rebuild index of %d users, last_uid=%d\n", i, p_list->users[i - 1].uid);
@@ -236,6 +241,7 @@ int user_online_list_load(MYSQL *db, USER_ONLINE_LIST *p_list)
 	char sql[SQL_BUFFER_LEN];
 	int ret = 0;
 	int i;
+	int j;
 
 	if (db == NULL || p_list == NULL)
 	{
@@ -297,10 +303,6 @@ int user_online_list_load(MYSQL *db, USER_ONLINE_LIST *p_list)
 		p_list->users[i].login_tm = (row[4] == NULL ? 0 : atol(row[4]));
 		p_list->users[i].last_tm = (row[5] == NULL ? 0 : atol(row[5]));
 
-		// index
-		p_list->index_uid[i].uid = p_list->users[i].user_info.uid;
-		p_list->index_uid[i].id = i;
-
 		i++;
 		if (i >= BBS_max_user_online_count)
 		{
@@ -311,10 +313,17 @@ int user_online_list_load(MYSQL *db, USER_ONLINE_LIST *p_list)
 	mysql_free_result(rs);
 	rs = NULL;
 
-	// Sort index
 	if (i > 0)
 	{
+		// Rebuild index
+		for (j = 0; j < i; j++)
+		{
+			p_list->index_uid[j].uid = p_list->users[j].user_info.uid;
+			p_list->index_uid[j].id = j;
+		}
+
 		qsort(p_list->index_uid, (size_t)i, sizeof(USER_INFO_INDEX_UID), user_info_index_uid_comp);
+
 #ifdef _DEBUG
 		log_error("Rebuild index of %d online users\n", i);
 #endif
