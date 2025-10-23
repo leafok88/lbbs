@@ -29,7 +29,7 @@
 #define BBS_max_sessions_per_user 10
 #define LAST_LOGIN_DT_MAX_LEN 50
 
-static int display_user_intro_key_handler(int *p_key, DISPLAY_CTX *p_ctx)
+static int display_user_info_key_handler(int *p_key, DISPLAY_CTX *p_ctx)
 {
 	return 0;
 }
@@ -60,7 +60,7 @@ int user_info_display(USER_INFO *p_user_info)
 
 	localtime_r(&(p_user_info->last_login_dt), &tm_last_login);
 	strftime(str_last_login_dt, sizeof(str_last_login_dt), "%c", &tm_last_login);
-	if (p_user_info->last_logout_dt < p_user_info->last_login_dt)
+	if (p_user_info->last_logout_dt <= p_user_info->last_login_dt)
 	{
 		strncpy(str_last_logout_dt, str_last_login_dt, sizeof(str_last_logout_dt) - 1);
 		str_last_logout_dt[sizeof(str_last_logout_dt) - 1] = '\0';
@@ -131,7 +131,7 @@ int user_info_display(USER_INFO *p_user_info)
 	lines = split_data_lines(user_info_f, SCREEN_COLS, line_offsets, MIN(SCREEN_ROWS - 1, BBS_user_intro_max_line + 8), 1, NULL);
 
 	clearscr();
-	display_data(user_info_f, lines, line_offsets, 1, display_user_intro_key_handler, DATA_READ_HELP);
+	display_data(user_info_f, lines, line_offsets, 1, display_user_info_key_handler, DATA_READ_HELP);
 
 	return 0;
 }
