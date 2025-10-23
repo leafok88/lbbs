@@ -486,7 +486,7 @@ int user_list_display(int online_user)
 				snprintf(profile_f, sizeof(profile_f),
 						 "已选中用户 [%s]\n发帖数：%d\n\n%s\n",
 						 users[selected_index].username,
-						 user_stat_get_article_cnt(users[selected_index].uid),
+						 get_user_article_cnt(users[selected_index].uid),
 						 intro_f);
 
 				lines = split_data_lines(profile_f, SCREEN_COLS, line_offsets, BBS_user_intro_max_line + 4, 1, NULL);

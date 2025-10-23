@@ -74,14 +74,19 @@ int user_stat_map_update(USER_STAT_MAP *p_map)
 			log_error("article_block_find_by_index(index=%d) error\n", i);
 			break;
 		}
+		
+		if (p_article->visible == 0)
+		{
+			continue;
+		}
 
 		if (p_article->uid > p_map->last_uid)
 		{
 #ifdef _DEBUG
-			log_error("uid=%d of article(aid=%d) is greater than last_uid=%d, waiting for next user list update\n",
+			log_error("uid=%d of article(aid=%d) is greater than last_uid=%d\n",
 					  p_article->uid, p_article->aid, p_map->last_uid);
 #endif
-			break;
+			continue;
 		}
 
 		if (user_stat_article_cnt_inc(p_map, p_article->uid, 1) < 0)

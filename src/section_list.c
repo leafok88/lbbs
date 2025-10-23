@@ -17,6 +17,7 @@
 #include "log.h"
 #include "section_list.h"
 #include "trie_dict.h"
+#include "user_list.h"
 #include <errno.h>
 #include <signal.h>
 #include <stdio.h>
@@ -925,6 +926,11 @@ int section_list_set_article_visible(SECTION_LIST *p_section, int32_t aid, int8_
 	{
 		p_section->visible_article_count--;
 
+		if (user_article_cnt_inc(p_article->uid, -1) < 0)
+		{
+			log_error("user_article_cnt_inc(uid=%d, -1) error\n", p_article->uid);
+		}
+
 		if (p_article->tid == 0)
 		{
 			p_section->visible_topic_count--;
@@ -943,6 +949,11 @@ int section_list_set_article_visible(SECTION_LIST *p_section, int32_t aid, int8_
 					p_reply->visible = 0;
 					p_section->visible_article_count--;
 					affected_count++;
+
+					if (user_article_cnt_inc(p_reply->uid, -1) < 0)
+					{
+						log_error("user_article_cnt_inc(uid=%d, -1) error\n", p_reply->uid);
+					}
 				}
 			}
 		}
@@ -954,6 +965,11 @@ int section_list_set_article_visible(SECTION_LIST *p_section, int32_t aid, int8_
 		if (p_article->tid == 0)
 		{
 			p_section->visible_topic_count++;
+		}
+
+		if (user_article_cnt_inc(p_article->uid, 1) < 0)
+		{
+			log_error("user_article_cnt_inc(uid=%d, 1) error\n", p_article->uid);
 		}
 	}
 

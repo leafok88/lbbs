@@ -1129,7 +1129,12 @@ int user_stat_update(void)
 	return user_stat_map_update(&(p_user_list_pool->user_stat_map));
 }
 
-int user_stat_get_article_cnt(int32_t uid)
+int user_article_cnt_inc(int32_t uid, int n)
+{
+	return user_stat_article_cnt_inc(&(p_user_list_pool->user_stat_map), uid, n);
+}
+
+int get_user_article_cnt(int32_t uid)
 {
 	const USER_STAT *p_stat;
 	int ret;

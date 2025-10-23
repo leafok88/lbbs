@@ -102,6 +102,7 @@ extern int query_user_online_info_by_uid(int32_t uid, USER_ONLINE_INFO *p_users,
 extern int get_user_id_list(int32_t *p_uid_list, int *p_user_cnt, int start_uid);
 
 extern int user_stat_update(void);
-extern int user_stat_get_article_cnt(int32_t uid);
+extern int user_article_cnt_inc(int32_t uid, int n);
+extern int get_user_article_cnt(int32_t uid);
 
 #endif //_USER_LIST_H_
