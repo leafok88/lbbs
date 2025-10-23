@@ -42,17 +42,83 @@ const char *get_astro_name(time_t birthday)
 
 	localtime_r(&birthday, &tm_birth);
 
-	if (tm_birth.tm_mon < 1 || tm_birth.tm_mon > 12 || tm_birth.tm_mday < 1 || tm_birth.tm_mday > 31)
+	if (tm_birth.tm_mday < astro_dates[tm_birth.tm_mon])
 	{
-		return astro_names[0];
+		return astro_names[tm_birth.tm_mon];
 	}
 
-	if (tm_birth.tm_mday < astro_dates[tm_birth.tm_mon - 1])
+	return astro_names[tm_birth.tm_mon + 1];
+}
+
+static const int user_level_points[] = {
+	INT_MIN, // 0
+	50,		 // 1
+	200,	 // 2
+	500,	 // 3
+	1000,	 // 4
+	2000,	 // 5
+	5000,	 // 6
+	10000,	 // 7
+	20000,	 // 8
+	30000,	 // 9
+	50000,	 // 10
+	60000,	 // 11
+	70000,	 // 12
+	80000,	 // 13
+	90000,	 // 14
+	100000,	 // 15
+	INT_MAX, // 16
+};
+
+static const char *user_level_names[] = {
+	"新手上路", // 0
+	"初来乍练", // 1
+	"白手起家", // 2
+	"略懂一二", // 3
+	"小有作为", // 4
+	"对答如流", // 5
+	"精于此道", // 6
+	"博大精深", // 7
+	"登峰造极", // 8
+	"论坛砥柱", // 9
+	"☆☆☆☆☆",	// 10
+	"★☆☆☆☆",	// 11
+	"★★☆☆☆",	// 12
+	"★★★☆☆",	// 13
+	"★★★★☆",	// 14
+	"★★★★★",	// 15
+};
+
+static const int user_level_cnt = sizeof(user_level_names) / sizeof(const char *);
+
+static const char *get_user_level_name(int point)
+{
+	int left;
+	int right;
+	int mid;
+
+	left = 0;
+	right = user_level_cnt - 1;
+
+	while (left < right)
 	{
-		return astro_names[tm_birth.tm_mon - 1];
+		mid = (left + right) / 2;
+		if (point < user_level_points[mid + 1])
+		{
+			right = mid;
+		}
+		else if (point > user_level_points[mid + 1])
+		{
+			left = mid + 1;
+		}
+		else // if (point == user_level_points[mid])
+		{
+			left = mid + 1;
+			break;
+		}
 	}
 
-	return astro_names[tm_birth.tm_mon];
+	return user_level_names[left];
 }
 
 static int display_user_info_key_handler(int *p_key, DISPLAY_CTX *p_ctx)
@@ -73,7 +139,9 @@ int user_info_display(USER_INFO *p_user_info)
 	char str_last_logout_dt[LAST_LOGIN_DT_MAX_LEN + 1];
 	char login_ip[IP_ADDR_LEN];
 	int ip_mask_level;
+	const char *p_action_title;
 	char action_str[LINE_BUFFER_LEN];
+	const char *user_level_name;
 	char intro_f[BBS_user_intro_max_len];
 	int intro_len;
 	char user_info_f[BUFSIZ];
@@ -132,13 +200,17 @@ int user_info_display(USER_INFO *p_user_info)
 	p = action_str;
 	for (i = 0; i < session_cnt; i++)
 	{
-		if (p + strlen(sessions[i].current_action_title) + 4 >= action_str + sizeof(action_str)) // buffer overflow
+		p_action_title = (sessions[i].current_action_title != NULL
+							  ? sessions[i].current_action_title
+							  : sessions[i].current_action);
+
+		if (p + strlen(p_action_title) + 4 >= action_str + sizeof(action_str)) // buffer overflow
 		{
 			log_error("action_str of user(uid=%d) truncated at i=%d\n", p_user_info->uid, i);
 			break;
 		}
 		*p++ = '[';
-		for (q = sessions[i].current_action_title; *q != '\0';)
+		for (q = p_action_title; *q != '\0';)
 		{
 			*p++ = *q++;
 		}
@@ -161,6 +233,8 @@ int user_info_display(USER_INFO *p_user_info)
 		login_ip[0] = '\0';
 	}
 
+	user_level_name = get_user_level_name(p_user_info->exp);
+
 	intro_len = lml_render(p_user_info->intro, intro_f, sizeof(intro_f), 0);
 
 	snprintf(user_info_f, sizeof(user_info_f),
@@ -171,7 +245,7 @@ int user_info_display(USER_INFO *p_user_info)
 			 "%s\n%s\n",
 			 p_user_info->username, p_user_info->nickname, p_user_info->visit_count, article_cnt,
 			 str_last_login_dt, (session_cnt > 0 ? login_ip : "未知"), p_user_info->exp,
-			 (session_cnt > 0 ? "在线或因断线不详" : str_last_logout_dt), "?", astro_str,
+			 (session_cnt > 0 ? "在线或因断线不详" : str_last_logout_dt), user_level_name, astro_str,
 			 (session_cnt > 0 ? "目前在线，状态如下：\n" : ""), (session_cnt > 0 ? action_str : ""),
 			 (intro_len > 0 ? "\033[0;36m个人说明档如下：\033[m" : "\033[0;36m没有个人说明档\033[m"),
 			 intro_f);
