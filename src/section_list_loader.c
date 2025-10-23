@@ -691,8 +691,8 @@ int section_list_loader_launch(void)
 	int load_count;
 	int last_mid;
 	time_t tm_section_list_reload = 0;
-	time_t tm_user_list_reload = 0;
-	time_t tm_user_online_list_reload = 0;
+	time_t tm_user_list_reload = time(NULL);
+	time_t tm_user_online_list_reload = time(NULL);
 
 	if (section_list_loader_pid != 0)
 	{
