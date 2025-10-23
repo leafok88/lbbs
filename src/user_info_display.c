@@ -22,6 +22,7 @@
 #include "user_list.h"
 #include "user_info_display.h"
 #include "user_priv.h"
+#include <ctype.h>
 #include <string.h>
 #include <time.h>
 #include <sys/param.h>
@@ -29,7 +30,32 @@
 #define BBS_max_sessions_per_user 10
 #define LAST_LOGIN_DT_MAX_LEN 50
 
-static int display_user_intro_key_handler(int *p_key, DISPLAY_CTX *p_ctx)
+static const int astro_dates[] = {
+	21, 20, 21, 21, 22, 22, 23, 24, 24, 24, 23, 22};
+
+static const char *astro_names[] = {
+	"摩羯", "水瓶", "双鱼", "白羊", "金牛", "双子", "巨蟹", "狮子", "处女", "天秤", "天蝎", "射手", "摩羯"};
+
+const char *get_astro_name(time_t birthday)
+{
+	struct tm tm_birth;
+
+	localtime_r(&birthday, &tm_birth);
+
+	if (tm_birth.tm_mon < 1 || tm_birth.tm_mon > 12 || tm_birth.tm_mday < 1 || tm_birth.tm_mday > 31)
+	{
+		return astro_names[0];
+	}
+
+	if (tm_birth.tm_mday < astro_dates[tm_birth.tm_mon - 1])
+	{
+		return astro_names[tm_birth.tm_mon - 1];
+	}
+
+	return astro_names[tm_birth.tm_mon];
+}
+
+static int display_user_info_key_handler(int *p_key, DISPLAY_CTX *p_ctx)
 {
 	return 0;
 }
@@ -39,6 +65,8 @@ int user_info_display(USER_INFO *p_user_info)
 	USER_ONLINE_INFO sessions[BBS_max_sessions_per_user];
 	int session_cnt = BBS_max_sessions_per_user;
 	int article_cnt;
+	const char *astro_name;
+	char astro_str[LINE_BUFFER_LEN];
 	struct tm tm_last_login;
 	char str_last_login_dt[LAST_LOGIN_DT_MAX_LEN + 1];
 	struct tm tm_last_logout;
@@ -58,9 +86,29 @@ int user_info_display(USER_INFO *p_user_info)
 
 	article_cnt = get_user_article_cnt(p_user_info->uid);
 
+	astro_name = get_astro_name(p_user_info->birthday);
+	if (p_user_info->gender_pub && toupper(p_user_info->gender) == 'M')
+	{
+		snprintf(astro_str, sizeof(astro_str),
+				 "\033[1;36m%s座\033[m",
+				 astro_name);
+	}
+	else if (p_user_info->gender_pub && toupper(p_user_info->gender) == 'F')
+	{
+		snprintf(astro_str, sizeof(astro_str),
+				 "\033[1;35m%s座\033[m",
+				 astro_name);
+	}
+	else
+	{
+		snprintf(astro_str, sizeof(astro_str),
+				 "\033[1;33m%s座\033[m",
+				 astro_name);
+	}
+
 	localtime_r(&(p_user_info->last_login_dt), &tm_last_login);
 	strftime(str_last_login_dt, sizeof(str_last_login_dt), "%c", &tm_last_login);
-	if (p_user_info->last_logout_dt < p_user_info->last_login_dt)
+	if (p_user_info->last_logout_dt <= p_user_info->last_login_dt)
 	{
 		strncpy(str_last_logout_dt, str_last_login_dt, sizeof(str_last_logout_dt) - 1);
 		str_last_logout_dt[sizeof(str_last_logout_dt) - 1] = '\0';
@@ -118,12 +166,12 @@ int user_info_display(USER_INFO *p_user_info)
 	snprintf(user_info_f, sizeof(user_info_f),
 			 "\n%s (%s) 上站 [%d] 发文 [%d]\n"
 			 "上次在 [%s] 从 [%s] 访问本站 经验值 [%d]\n"
-			 "离线于 [%s] 等级 [%s]\n"
+			 "离线于 [%s] 等级 [%s] 星座 [%s]\n"
 			 "%s\033[1m%s\033[m"
 			 "%s\n%s\n",
 			 p_user_info->username, p_user_info->nickname, p_user_info->visit_count, article_cnt,
 			 str_last_login_dt, (session_cnt > 0 ? login_ip : "未知"), p_user_info->exp,
-			 (session_cnt > 0 ? "在线或因断线不详" : str_last_logout_dt), "?",
+			 (session_cnt > 0 ? "在线或因断线不详" : str_last_logout_dt), "?", astro_str,
 			 (session_cnt > 0 ? "目前在线，状态如下：\n" : ""), (session_cnt > 0 ? action_str : ""),
 			 (intro_len > 0 ? "\033[0;36m个人说明档如下：\033[m" : "\033[0;36m没有个人说明档\033[m"),
 			 intro_f);
@@ -131,7 +179,7 @@ int user_info_display(USER_INFO *p_user_info)
 	lines = split_data_lines(user_info_f, SCREEN_COLS, line_offsets, MIN(SCREEN_ROWS - 1, BBS_user_intro_max_line + 8), 1, NULL);
 
 	clearscr();
-	display_data(user_info_f, lines, line_offsets, 1, display_user_intro_key_handler, DATA_READ_HELP);
+	display_data(user_info_f, lines, line_offsets, 1, display_user_info_key_handler, DATA_READ_HELP);
 
 	return 0;
 }
