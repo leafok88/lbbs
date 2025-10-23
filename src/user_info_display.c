@@ -139,6 +139,7 @@ int user_info_display(USER_INFO *p_user_info)
 	char str_last_logout_dt[LAST_LOGIN_DT_MAX_LEN + 1];
 	char login_ip[IP_ADDR_LEN];
 	int ip_mask_level;
+	const char *p_action_title;
 	char action_str[LINE_BUFFER_LEN];
 	const char *user_level_name;
 	char intro_f[BBS_user_intro_max_len];
@@ -199,13 +200,17 @@ int user_info_display(USER_INFO *p_user_info)
 	p = action_str;
 	for (i = 0; i < session_cnt; i++)
 	{
-		if (p + strlen(sessions[i].current_action_title) + 4 >= action_str + sizeof(action_str)) // buffer overflow
+		p_action_title = (sessions[i].current_action_title != NULL
+							  ? sessions[i].current_action_title
+							  : sessions[i].current_action);
+
+		if (p + strlen(p_action_title) + 4 >= action_str + sizeof(action_str)) // buffer overflow
 		{
 			log_error("action_str of user(uid=%d) truncated at i=%d\n", p_user_info->uid, i);
 			break;
 		}
 		*p++ = '[';
-		for (q = sessions[i].current_action_title; *q != '\0';)
+		for (q = p_action_title; *q != '\0';)
 		{
 			*p++ = *q++;
 		}
