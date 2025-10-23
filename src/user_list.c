@@ -19,6 +19,7 @@
 #include "log.h"
 #include "trie_dict.h"
 #include "user_list.h"
+#include "user_stat.h"
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
@@ -53,6 +54,7 @@ struct user_list_pool_t
 	USER_ONLINE_LIST user_online_list[2];
 	USER_ONLINE_LIST *p_online_current;
 	USER_ONLINE_LIST *p_online_new;
+	USER_STAT_MAP user_stat_map;
 };
 typedef struct user_list_pool_t USER_LIST_POOL;
 
@@ -430,6 +432,8 @@ int user_list_pool_init(void)
 
 	p_user_list_pool->p_online_current = &(p_user_list_pool->user_online_list[0]);
 	p_user_list_pool->p_online_new = &(p_user_list_pool->user_online_list[1]);
+
+	user_stat_map_init(&(p_user_list_pool->user_stat_map));
 
 	return 0;
 }
@@ -1060,4 +1064,86 @@ int query_user_online_info_by_uid(int32_t uid, USER_ONLINE_INFO *p_users, int *p
 	}
 
 	return ret;
+}
+
+int get_user_id_list(int32_t *p_uid_list, int *p_user_cnt, int start_uid)
+{
+	int left;
+	int right;
+	int mid;
+	int ret = 0;
+	int i;
+
+	if (p_uid_list == NULL || p_user_cnt == NULL)
+	{
+		log_error("NULL pointer error\n");
+		return -1;
+	}
+
+	// acquire lock of user list
+	if (user_list_rd_lock(p_user_list_pool->semid) < 0)
+	{
+		log_error("user_list_rd_lock() error\n");
+		return -2;
+	}
+
+	left = 0;
+	right = p_user_list_pool->p_current->user_count - 1;
+
+	while (left < right)
+	{
+		mid = (left + right) / 2;
+		if (start_uid < p_user_list_pool->p_current->index_uid[mid].uid)
+		{
+			right = mid;
+		}
+		else if (start_uid > p_user_list_pool->p_current->index_uid[mid].uid)
+		{
+			left = mid + 1;
+		}
+		else // if (start_uid == p_user_list_pool->p_current->index_uid[mid].uid)
+		{
+			left = mid;
+			break;
+		}
+	}
+
+	for (i = 0; i < *p_user_cnt && left + i < p_user_list_pool->p_current->user_count; i++)
+	{
+		p_uid_list[i] = p_user_list_pool->p_current->index_uid[left + i].uid;
+	}
+	*p_user_cnt = i;
+
+	// release lock of user list
+	if (user_list_rd_unlock(p_user_list_pool->semid) < 0)
+	{
+		log_error("user_list_rd_unlock() error\n");
+		ret = -1;
+	}
+
+	return ret;
+}
+
+int user_stat_update(void)
+{
+	return user_stat_map_update(&(p_user_list_pool->user_stat_map));
+}
+
+int user_stat_get_article_cnt(int32_t uid)
+{
+	const USER_STAT *p_stat;
+	int ret;
+
+	ret = user_stat_get(&(p_user_list_pool->user_stat_map), uid, &p_stat);
+	if (ret < 0)
+	{
+		log_error("user_stat_get(uid=%d) error: %d\n", uid, ret);
+		return -1;
+	}
+	else if (ret == 0) // user not found
+	{
+		return -1;
+	}
+
+	return p_stat->article_count;
 }

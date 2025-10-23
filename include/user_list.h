@@ -18,6 +18,7 @@
 #define _USER_LIST_H_
 
 #include "bbs.h"
+#include "common.h"
 #include <mysql/mysql.h>
 
 #define BBS_user_limit_per_page 20
@@ -95,5 +96,10 @@ extern int query_user_info_by_uid(int32_t uid, USER_INFO *p_user);
 
 extern int query_user_online_info(int32_t id, USER_ONLINE_INFO *p_user);
 extern int query_user_online_info_by_uid(int32_t uid, USER_ONLINE_INFO *p_users, int *p_user_cnt, int start_id);
+
+extern int get_user_id_list(int32_t *p_uid_list, int *p_user_cnt, int start_uid);
+
+extern int user_stat_update(void);
+extern int user_stat_get_article_cnt(int32_t uid);
 
 #endif //_USER_LIST_H_

@@ -287,6 +287,12 @@ int main(int argc, char *argv[])
 
 	log_common("Initially load %d articles, last_aid = %d\n", article_block_article_count(), article_block_last_aid());
 
+	if ((ret = user_stat_update()) < 0)
+	{
+		log_error("user_stat_update() error\n");
+		goto cleanup;
+	}
+
 	// Set signal handler
 	act.sa_handler = sig_hup_handler;
 	if (sigaction(SIGHUP, &act, NULL) == -1)

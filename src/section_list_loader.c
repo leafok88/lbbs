@@ -811,6 +811,12 @@ int section_list_loader_launch(void)
 			{
 				log_error("user_list_pool_reload(all_user) error\n");
 			}
+
+			if (user_stat_update() < 0)
+			{
+				log_error("user_stat_update() error\n");
+			}
+
 			tm_user_list_reload = time(NULL);
 		}
 
@@ -821,6 +827,7 @@ int section_list_loader_launch(void)
 			{
 				log_error("user_list_pool_reload(online_user) error\n");
 			}
+
 			tm_user_online_list_reload = time(NULL);
 		}
 

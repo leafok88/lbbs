@@ -448,6 +448,7 @@ int user_list_display(int online_user)
 			clearscr();
 			if (online_user)
 			{
+				moveto(1, 1);
 				prints("已选中用户 [%s] 会话 %d", online_users[selected_index].user_info.username, online_users[selected_index].id);
 
 				USER_ONLINE_INFO users[5];
@@ -469,7 +470,10 @@ int user_list_display(int online_user)
 			}
 			else
 			{
+				moveto(1, 1);
 				prints("已选中用户 [%s]", users[selected_index].username);
+				moveto(2, 1);
+				prints("发帖数：%d", user_stat_get_article_cnt(users[selected_index].uid));
 			}
 			press_any_key();
 			user_list_draw_screen(online_user);
