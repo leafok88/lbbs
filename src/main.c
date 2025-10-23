@@ -246,6 +246,23 @@ int main(int argc, char *argv[])
 		}
 	}
 
+	// Load user_list and online_user_list
+	if (user_list_pool_init() < 0)
+	{
+		log_error("user_list_pool_init() error\n");
+		goto cleanup;
+	}
+	if (user_list_pool_reload(0) < 0)
+	{
+		log_error("user_list_pool_reload(all_user) error\n");
+		goto cleanup;
+	}
+	if (user_list_pool_reload(1) < 0)
+	{
+		log_error("user_list_pool_reload(online_user) error\n");
+		goto cleanup;
+	}
+
 	// Load section config and gen_ex
 	if (load_section_config_from_db(1) < 0)
 	{
@@ -270,10 +287,9 @@ int main(int argc, char *argv[])
 
 	log_common("Initially load %d articles, last_aid = %d\n", article_block_article_count(), article_block_last_aid());
 
-	// Load user list
-	if (user_list_pool_init() < 0)
+	if ((ret = user_stat_update()) < 0)
 	{
-		log_error("user_list_pool_init() error\n");
+		log_error("user_stat_update() error\n");
 		goto cleanup;
 	}
 

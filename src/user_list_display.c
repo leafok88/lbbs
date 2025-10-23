@@ -22,6 +22,7 @@
 #include "str_process.h"
 #include "user_list.h"
 #include "user_priv.h"
+#include "user_info_display.h"
 #include "user_list_display.h"
 #include <string.h>
 #include <time.h>
@@ -445,33 +446,7 @@ int user_list_display(int online_user)
 			}
 			break;
 		case VIEW_USER:
-			clearscr();
-			if (online_user)
-			{
-				prints("已选中用户 [%s] 会话 %d", online_users[selected_index].user_info.username, online_users[selected_index].id);
-
-				USER_ONLINE_INFO users[5];
-				int user_cnt = 5;
-				ret = query_user_online_info_by_uid(online_users[selected_index].user_info.uid, users, &user_cnt, 0);
-				if (ret <= 0)
-				{
-					log_error("query_user_online_info_by_uid(uid=%d, cnt=%d) error: %d\n",
-							  online_users[selected_index].user_info.uid, user_cnt, ret);
-				}
-				else
-				{
-					for (int i = 0; i < user_cnt; i++)
-					{
-						moveto(2 + i, 1);
-						prints("会话%d", users[i].id);
-					}
-				}
-			}
-			else
-			{
-				prints("已选中用户 [%s]", users[selected_index].username);
-			}
-			press_any_key();
+			user_info_display(online_user ? &(online_users[selected_index].user_info) : &(users[selected_index]));
 			user_list_draw_screen(online_user);
 			break;
 		case SHOW_HELP:

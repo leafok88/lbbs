@@ -19,6 +19,7 @@
 #include "log.h"
 #include "trie_dict.h"
 #include "user_list.h"
+#include "user_stat.h"
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
@@ -53,6 +54,7 @@ struct user_list_pool_t
 	USER_ONLINE_LIST user_online_list[2];
 	USER_ONLINE_LIST *p_online_current;
 	USER_ONLINE_LIST *p_online_new;
+	USER_STAT_MAP user_stat_map;
 };
 typedef struct user_list_pool_t USER_LIST_POOL;
 
@@ -119,13 +121,15 @@ static int user_info_index_uid_comp(const void *ptr1, const void *ptr2)
 
 int user_list_load(MYSQL *db, USER_LIST *p_list)
 {
-	USER_INFO_INDEX_UID index_uid[BBS_max_user_count];
 	MYSQL_RES *rs = NULL;
 	MYSQL_ROW row;
 	char sql[SQL_BUFFER_LEN];
 	int ret = 0;
 	int i;
-	int32_t last_uid = -1;
+	int j;
+	int32_t last_uid;
+	size_t intro_buf_offset;
+	size_t intro_len;
 
 	if (db == NULL || p_list == NULL)
 	{
@@ -137,10 +141,15 @@ int user_list_load(MYSQL *db, USER_LIST *p_list)
 	{
 		last_uid = p_list->users[p_list->user_count - 1].uid;
 	}
+	else
+	{
+		last_uid = -1;
+	}
 
 	snprintf(sql, sizeof(sql),
-			 "SELECT user_list.UID AS UID, username, nickname, gender, gender_pub, life, exp, "
-			 "UNIX_TIMESTAMP(signup_dt), UNIX_TIMESTAMP(last_login_dt), UNIX_TIMESTAMP(birthday) "
+			 "SELECT user_list.UID AS UID, username, nickname, gender, gender_pub, life, exp, visit_count, "
+			 "UNIX_TIMESTAMP(signup_dt), UNIX_TIMESTAMP(last_login_dt), UNIX_TIMESTAMP(last_logout_dt), "
+			 "UNIX_TIMESTAMP(birthday), `introduction` "
 			 "FROM user_list INNER JOIN user_pubinfo ON user_list.UID = user_pubinfo.UID "
 			 "INNER JOIN user_reginfo ON user_list.UID = user_reginfo.UID "
 			 "WHERE enable ORDER BY username");
@@ -159,6 +168,7 @@ int user_list_load(MYSQL *db, USER_LIST *p_list)
 		goto cleanup;
 	}
 
+	intro_buf_offset = 0;
 	i = 0;
 	while ((row = mysql_fetch_row(rs)))
 	{
@@ -173,13 +183,22 @@ int user_list_load(MYSQL *db, USER_LIST *p_list)
 		p_list->users[i].gender_pub = (int8_t)(row[4] == NULL ? 0 : atoi(row[4]));
 		p_list->users[i].life = (row[5] == NULL ? 0 : atoi(row[5]));
 		p_list->users[i].exp = (row[6] == NULL ? 0 : atoi(row[6]));
-		p_list->users[i].signup_dt = (row[7] == NULL ? 0 : atol(row[7]));
-		p_list->users[i].last_login_dt = (row[8] == NULL ? 0 : atol(row[8]));
-		p_list->users[i].birthday = (row[9] == NULL ? 0 : atol(row[9]));
-
-		// index
-		index_uid[i].uid = p_list->users[i].uid;
-		index_uid[i].id = i;
+		p_list->users[i].visit_count = (row[7] == NULL ? 0 : atoi(row[7]));
+		p_list->users[i].signup_dt = (row[8] == NULL ? 0 : atol(row[8]));
+		p_list->users[i].last_login_dt = (row[9] == NULL ? 0 : atol(row[9]));
+		p_list->users[i].last_logout_dt = (row[10] == NULL ? 0 : atol(row[10]));
+		p_list->users[i].birthday = (row[10] == NULL ? 0 : atol(row[11]));
+		intro_len = strlen((row[12] == NULL ? "" : row[12]));
+		if (intro_len >= sizeof(p_list->user_intro_buf) - 1 - intro_buf_offset)
+		{
+			log_error("OOM for user introduction: len=%d, i=%d\n", intro_len, i);
+			break;
+		}
+		memcpy(p_list->user_intro_buf + intro_buf_offset,
+			   (row[12] == NULL ? "" : row[12]),
+			   intro_len + 1);
+		p_list->users[i].intro = p_list->user_intro_buf + intro_buf_offset;
+		intro_buf_offset += (intro_len + 1);
 
 		i++;
 		if (i >= BBS_max_user_count)
@@ -191,11 +210,16 @@ int user_list_load(MYSQL *db, USER_LIST *p_list)
 	mysql_free_result(rs);
 	rs = NULL;
 
-	// Sort index
 	if (i != p_list->user_count || p_list->users[i - 1].uid != last_uid) // Count of users changed
 	{
-		qsort(index_uid, (size_t)i, sizeof(USER_INFO_INDEX_UID), user_info_index_uid_comp);
-		memcpy(p_list->index_uid, index_uid, sizeof(USER_INFO_INDEX_UID) * (size_t)i);
+		// Rebuild index
+		for (j = 0; j < i; j++)
+		{
+			p_list->index_uid[j].uid = p_list->users[j].uid;
+			p_list->index_uid[j].id = j;
+		}
+
+		qsort(p_list->index_uid, (size_t)i, sizeof(USER_INFO_INDEX_UID), user_info_index_uid_comp);
 
 #ifdef _DEBUG
 		log_error("Rebuild index of %d users, last_uid=%d\n", i, p_list->users[i - 1].uid);
@@ -221,6 +245,7 @@ int user_online_list_load(MYSQL *db, USER_ONLINE_LIST *p_list)
 	char sql[SQL_BUFFER_LEN];
 	int ret = 0;
 	int i;
+	int j;
 
 	if (db == NULL || p_list == NULL)
 	{
@@ -282,10 +307,6 @@ int user_online_list_load(MYSQL *db, USER_ONLINE_LIST *p_list)
 		p_list->users[i].login_tm = (row[4] == NULL ? 0 : atol(row[4]));
 		p_list->users[i].last_tm = (row[5] == NULL ? 0 : atol(row[5]));
 
-		// index
-		p_list->index_uid[i].uid = p_list->users[i].user_info.uid;
-		p_list->index_uid[i].id = i;
-
 		i++;
 		if (i >= BBS_max_user_online_count)
 		{
@@ -296,10 +317,17 @@ int user_online_list_load(MYSQL *db, USER_ONLINE_LIST *p_list)
 	mysql_free_result(rs);
 	rs = NULL;
 
-	// Sort index
 	if (i > 0)
 	{
+		// Rebuild index
+		for (j = 0; j < i; j++)
+		{
+			p_list->index_uid[j].uid = p_list->users[j].user_info.uid;
+			p_list->index_uid[j].id = j;
+		}
+
 		qsort(p_list->index_uid, (size_t)i, sizeof(USER_INFO_INDEX_UID), user_info_index_uid_comp);
+
 #ifdef _DEBUG
 		log_error("Rebuild index of %d online users\n", i);
 #endif
@@ -406,6 +434,8 @@ int user_list_pool_init(void)
 
 	p_user_list_pool->p_online_current = &(p_user_list_pool->user_online_list[0]);
 	p_user_list_pool->p_online_new = &(p_user_list_pool->user_online_list[1]);
+
+	user_stat_map_init(&(p_user_list_pool->user_stat_map));
 
 	return 0;
 }
@@ -959,12 +989,16 @@ int query_user_online_info_by_uid(int32_t uid, USER_ONLINE_INFO *p_users, int *p
 	int32_t id;
 	int ret = 0;
 	int i;
+	int user_cnt;
 
 	if (p_users == NULL || p_user_cnt == NULL)
 	{
 		log_error("NULL pointer error\n");
 		return -1;
 	}
+
+	user_cnt = *p_user_cnt;
+	*p_user_cnt = 0;
 
 	// acquire lock of user list
 	if (user_list_rd_lock(p_user_list_pool->semid) < 0)
@@ -1013,7 +1047,7 @@ int query_user_online_info_by_uid(int32_t uid, USER_ONLINE_INFO *p_users, int *p
 		}
 
 		for (i = 0;
-			 left < p_user_list_pool->p_online_current->user_count && i < *p_user_cnt &&
+			 left < p_user_list_pool->p_online_current->user_count && i < user_cnt &&
 			 uid == p_user_list_pool->p_online_current->index_uid[left].uid;
 			 left++, i++)
 		{
@@ -1036,4 +1070,91 @@ int query_user_online_info_by_uid(int32_t uid, USER_ONLINE_INFO *p_users, int *p
 	}
 
 	return ret;
+}
+
+int get_user_id_list(int32_t *p_uid_list, int *p_user_cnt, int start_uid)
+{
+	int left;
+	int right;
+	int mid;
+	int ret = 0;
+	int i;
+
+	if (p_uid_list == NULL || p_user_cnt == NULL)
+	{
+		log_error("NULL pointer error\n");
+		return -1;
+	}
+
+	// acquire lock of user list
+	if (user_list_rd_lock(p_user_list_pool->semid) < 0)
+	{
+		log_error("user_list_rd_lock() error\n");
+		return -2;
+	}
+
+	left = 0;
+	right = p_user_list_pool->p_current->user_count - 1;
+
+	while (left < right)
+	{
+		mid = (left + right) / 2;
+		if (start_uid < p_user_list_pool->p_current->index_uid[mid].uid)
+		{
+			right = mid;
+		}
+		else if (start_uid > p_user_list_pool->p_current->index_uid[mid].uid)
+		{
+			left = mid + 1;
+		}
+		else // if (start_uid == p_user_list_pool->p_current->index_uid[mid].uid)
+		{
+			left = mid;
+			break;
+		}
+	}
+
+	for (i = 0; i < *p_user_cnt && left + i < p_user_list_pool->p_current->user_count; i++)
+	{
+		p_uid_list[i] = p_user_list_pool->p_current->index_uid[left + i].uid;
+	}
+	*p_user_cnt = i;
+
+	// release lock of user list
+	if (user_list_rd_unlock(p_user_list_pool->semid) < 0)
+	{
+		log_error("user_list_rd_unlock() error\n");
+		ret = -1;
+	}
+
+	return ret;
+}
+
+int user_stat_update(void)
+{
+	return user_stat_map_update(&(p_user_list_pool->user_stat_map));
+}
+
+int user_article_cnt_inc(int32_t uid, int n)
+{
+	return user_stat_article_cnt_inc(&(p_user_list_pool->user_stat_map), uid, n);
+}
+
+int get_user_article_cnt(int32_t uid)
+{
+	const USER_STAT *p_stat;
+	int ret;
+
+	ret = user_stat_get(&(p_user_list_pool->user_stat_map), uid, &p_stat);
+	if (ret < 0)
+	{
+		log_error("user_stat_get(uid=%d) error: %d\n", uid, ret);
+		return -1;
+	}
+	else if (ret == 0) // user not found
+	{
+		return -1;
+	}
+
+	return p_stat->article_count;
 }

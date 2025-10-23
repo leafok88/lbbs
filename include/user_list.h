@@ -18,10 +18,15 @@
 #define _USER_LIST_H_
 
 #include "bbs.h"
+#include "common.h"
 #include <mysql/mysql.h>
 
 #define BBS_user_limit_per_page 20
 #define BBS_session_id_length 32
+
+#define BBS_user_intro_avg_len 256
+#define BBS_user_intro_max_len 4096
+#define BBS_user_intro_max_line 10
 
 struct user_info_t
 {
@@ -33,9 +38,12 @@ struct user_info_t
 	int8_t gender_pub;
 	int32_t life;
 	int32_t exp;
+	int32_t visit_count;
 	time_t signup_dt;
 	time_t last_login_dt;
+	time_t last_logout_dt;
 	time_t birthday;
+	const char *intro;
 };
 typedef struct user_info_t USER_INFO;
 
@@ -51,6 +59,7 @@ struct user_list_t
 	USER_INFO users[BBS_max_user_count];
 	USER_INFO_INDEX_UID index_uid[BBS_max_user_count];
 	int32_t user_count;
+	char user_intro_buf[BBS_user_intro_avg_len * BBS_max_user_count];
 };
 typedef struct user_list_t USER_LIST;
 
@@ -90,5 +99,11 @@ extern int query_user_info_by_uid(int32_t uid, USER_INFO *p_user);
 
 extern int query_user_online_info(int32_t id, USER_ONLINE_INFO *p_user);
 extern int query_user_online_info_by_uid(int32_t uid, USER_ONLINE_INFO *p_users, int *p_user_cnt, int start_id);
+
+extern int get_user_id_list(int32_t *p_uid_list, int *p_user_cnt, int start_uid);
+
+extern int user_stat_update(void);
+extern int user_article_cnt_inc(int32_t uid, int n);
+extern int get_user_article_cnt(int32_t uid);
 
 #endif //_USER_LIST_H_

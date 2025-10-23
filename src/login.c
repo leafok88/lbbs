@@ -579,7 +579,7 @@ int user_online_update(const char *action)
 	}
 
 	snprintf(sql, sizeof(sql),
-			 "UPDATE user_online SET current_action = '%s', last_tm=NOW() "
+			 "UPDATE user_online SET current_action = '%s', last_tm = NOW() "
 			 "WHERE SID = 'Telnet_Process_%d'",
 			 BBS_current_action, getpid());
 	if (mysql_query(db, sql) != 0)
