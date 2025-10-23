@@ -41,6 +41,7 @@ struct user_info_t
 	int32_t visit_count;
 	time_t signup_dt;
 	time_t last_login_dt;
+	time_t last_logout_dt;
 	time_t birthday;
 	const char *intro;
 };

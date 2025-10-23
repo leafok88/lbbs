@@ -148,7 +148,8 @@ int user_list_load(MYSQL *db, USER_LIST *p_list)
 
 	snprintf(sql, sizeof(sql),
 			 "SELECT user_list.UID AS UID, username, nickname, gender, gender_pub, life, exp, visit_count, "
-			 "UNIX_TIMESTAMP(signup_dt), UNIX_TIMESTAMP(last_login_dt), UNIX_TIMESTAMP(birthday), `introduction` "
+			 "UNIX_TIMESTAMP(signup_dt), UNIX_TIMESTAMP(last_login_dt), UNIX_TIMESTAMP(last_logout_dt), "
+			 "UNIX_TIMESTAMP(birthday), `introduction` "
 			 "FROM user_list INNER JOIN user_pubinfo ON user_list.UID = user_pubinfo.UID "
 			 "INNER JOIN user_reginfo ON user_list.UID = user_reginfo.UID "
 			 "WHERE enable ORDER BY username");
@@ -185,15 +186,16 @@ int user_list_load(MYSQL *db, USER_LIST *p_list)
 		p_list->users[i].visit_count = (row[7] == NULL ? 0 : atoi(row[7]));
 		p_list->users[i].signup_dt = (row[8] == NULL ? 0 : atol(row[8]));
 		p_list->users[i].last_login_dt = (row[9] == NULL ? 0 : atol(row[9]));
-		p_list->users[i].birthday = (row[10] == NULL ? 0 : atol(row[10]));
-		intro_len = strlen((row[11] == NULL ? "" : row[11]));
+		p_list->users[i].last_logout_dt = (row[10] == NULL ? 0 : atol(row[10]));
+		p_list->users[i].birthday = (row[10] == NULL ? 0 : atol(row[11]));
+		intro_len = strlen((row[12] == NULL ? "" : row[12]));
 		if (intro_len >= sizeof(p_list->user_intro_buf) - 1 - intro_buf_offset)
 		{
 			log_error("OOM for user introduction: len=%d, i=%d\n", intro_len, i);
 			break;
 		}
 		memcpy(p_list->user_intro_buf + intro_buf_offset,
-			   (row[11] == NULL ? "" : row[11]),
+			   (row[12] == NULL ? "" : row[12]),
 			   intro_len + 1);
 		p_list->users[i].intro = p_list->user_intro_buf + intro_buf_offset;
 		intro_buf_offset += (intro_len + 1);
