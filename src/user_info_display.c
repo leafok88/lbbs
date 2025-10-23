@@ -55,6 +55,77 @@ const char *get_astro_name(time_t birthday)
 	return astro_names[tm_birth.tm_mon];
 }
 
+static const int user_level_points[] = {
+	INT_MIN, // 0
+	50,		 // 1
+	200,	 // 2
+	500,	 // 3
+	1000,	 // 4
+	2000,	 // 5
+	5000,	 // 6
+	10000,	 // 7
+	20000,	 // 8
+	30000,	 // 9
+	50000,	 // 10
+	60000,	 // 11
+	70000,	 // 12
+	80000,	 // 13
+	90000,	 // 14
+	100000,	 // 15
+	INT_MAX, // 16
+};
+
+static const char *user_level_names[] = {
+	"新手上路", // 0
+	"初来乍练", // 1
+	"白手起家", // 2
+	"略懂一二", // 3
+	"小有作为", // 4
+	"对答如流", // 5
+	"精于此道", // 6
+	"博大精深", // 7
+	"登峰造极", // 8
+	"论坛砥柱", // 9
+	"☆☆☆☆☆",	// 10
+	"★☆☆☆☆",	// 11
+	"★★☆☆☆",	// 12
+	"★★★☆☆",	// 13
+	"★★★★☆",	// 14
+	"★★★★★",	// 15
+};
+
+static const int user_level_cnt = sizeof(user_level_names) / sizeof(const char *);
+
+static const char *get_user_level_name(int point)
+{
+	int left;
+	int right;
+	int mid;
+
+	left = 0;
+	right = user_level_cnt - 1;
+
+	while (left < right)
+	{
+		mid = (left + right) / 2;
+		if (point < user_level_points[mid + 1])
+		{
+			right = mid;
+		}
+		else if (point > user_level_points[mid + 1])
+		{
+			left = mid + 1;
+		}
+		else // if (point == user_level_points[mid])
+		{
+			left = mid + 1;
+			break;
+		}
+	}
+
+	return user_level_names[left];
+}
+
 static int display_user_info_key_handler(int *p_key, DISPLAY_CTX *p_ctx)
 {
 	return 0;
@@ -74,6 +145,7 @@ int user_info_display(USER_INFO *p_user_info)
 	char login_ip[IP_ADDR_LEN];
 	int ip_mask_level;
 	char action_str[LINE_BUFFER_LEN];
+	const char *user_level_name;
 	char intro_f[BBS_user_intro_max_len];
 	int intro_len;
 	char user_info_f[BUFSIZ];
@@ -161,6 +233,8 @@ int user_info_display(USER_INFO *p_user_info)
 		login_ip[0] = '\0';
 	}
 
+	user_level_name = get_user_level_name(p_user_info->exp);
+
 	intro_len = lml_render(p_user_info->intro, intro_f, sizeof(intro_f), 0);
 
 	snprintf(user_info_f, sizeof(user_info_f),
@@ -171,7 +245,7 @@ int user_info_display(USER_INFO *p_user_info)
 			 "%s\n%s\n",
 			 p_user_info->username, p_user_info->nickname, p_user_info->visit_count, article_cnt,
 			 str_last_login_dt, (session_cnt > 0 ? login_ip : "未知"), p_user_info->exp,
-			 (session_cnt > 0 ? "在线或因断线不详" : str_last_logout_dt), "?", astro_str,
+			 (session_cnt > 0 ? "在线或因断线不详" : str_last_logout_dt), user_level_name, astro_str,
 			 (session_cnt > 0 ? "目前在线，状态如下：\n" : ""), (session_cnt > 0 ? action_str : ""),
 			 (intro_len > 0 ? "\033[0;36m个人说明档如下：\033[m" : "\033[0;36m没有个人说明档\033[m"),
 			 intro_f);
