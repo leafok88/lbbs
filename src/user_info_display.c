@@ -85,7 +85,7 @@ int user_info_display(USER_INFO *p_user_info)
 	}
 
 	localtime_r(&(p_user_info->last_login_dt), &tm_last_login);
-	strftime(str_last_login_dt, sizeof(str_last_login_dt), "%c", &tm_last_login);
+	strftime(str_last_login_dt, sizeof(str_last_login_dt), "%F %H:%M", &tm_last_login);
 	if (p_user_info->last_logout_dt <= p_user_info->last_login_dt)
 	{
 		strncpy(str_last_logout_dt, str_last_login_dt, sizeof(str_last_logout_dt) - 1);
@@ -94,7 +94,7 @@ int user_info_display(USER_INFO *p_user_info)
 	else
 	{
 		localtime_r(&(p_user_info->last_logout_dt), &tm_last_logout);
-		strftime(str_last_logout_dt, sizeof(str_last_logout_dt), "%c", &tm_last_logout);
+		strftime(str_last_logout_dt, sizeof(str_last_logout_dt), "%F %H:%M", &tm_last_logout);
 	}
 
 	action_str[0] = '\0';
