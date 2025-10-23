@@ -16,13 +16,13 @@
 
 #include "common.h"
 #include "io.h"
-#include "lml.h"
 #include "log.h"
 #include "login.h"
 #include "screen.h"
 #include "str_process.h"
 #include "user_list.h"
 #include "user_priv.h"
+#include "user_info_display.h"
 #include "user_list_display.h"
 #include <string.h>
 #include <time.h>
@@ -36,11 +36,6 @@ enum select_cmd_t
 	REFRESH_LIST,
 	SHOW_HELP,
 };
-
-static int display_user_intro_key_handler(int *p_key, DISPLAY_CTX *p_ctx)
-{
-	return 0;
-}
 
 static int user_list_draw_screen(int online_user)
 {
@@ -451,48 +446,7 @@ int user_list_display(int online_user)
 			}
 			break;
 		case VIEW_USER:
-			clearscr();
-			if (online_user)
-			{
-				USER_ONLINE_INFO users[5];
-				int user_cnt = 5;
-				ret = query_user_online_info_by_uid(online_users[selected_index].user_info.uid, users, &user_cnt, 0);
-				if (ret <= 0)
-				{
-					log_error("query_user_online_info_by_uid(uid=%d, cnt=%d) error: %d\n",
-							  online_users[selected_index].user_info.uid, user_cnt, ret);
-				}
-				else
-				{
-					moveto(1, 1);
-					prints("已选中用户 [%s] 会话 %d", online_users[selected_index].user_info.username, online_users[selected_index].id);
-
-					for (int i = 0; i < user_cnt; i++)
-					{
-						moveto(2 + i, 1);
-						prints("会话%d", users[i].id);
-					}
-				}
-			}
-			else
-			{
-				char intro_f[BBS_user_intro_max_len];
-				char profile_f[BUFSIZ];
-				long line_offsets[BBS_user_intro_max_line + 1];
-				long lines;
-
-				lml_render(users[selected_index].intro, intro_f, sizeof(intro_f), 0);
-
-				snprintf(profile_f, sizeof(profile_f),
-						 "已选中用户 [%s]\n发帖数：%d\n\n%s\n",
-						 users[selected_index].username,
-						 get_user_article_cnt(users[selected_index].uid),
-						 intro_f);
-
-				lines = split_data_lines(profile_f, SCREEN_COLS, line_offsets, BBS_user_intro_max_line + 4, 1, NULL);
-				display_data(profile_f, lines, line_offsets, 2, display_user_intro_key_handler, DATA_READ_HELP);
-			}
-			press_any_key();
+			user_info_display(online_user ? &(online_users[selected_index].user_info) : &(users[selected_index]));
 			user_list_draw_screen(online_user);
 			break;
 		case SHOW_HELP:

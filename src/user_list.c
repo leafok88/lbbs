@@ -987,12 +987,16 @@ int query_user_online_info_by_uid(int32_t uid, USER_ONLINE_INFO *p_users, int *p
 	int32_t id;
 	int ret = 0;
 	int i;
+	int user_cnt;
 
 	if (p_users == NULL || p_user_cnt == NULL)
 	{
 		log_error("NULL pointer error\n");
 		return -1;
 	}
+
+	user_cnt = *p_user_cnt;
+	*p_user_cnt = 0;
 
 	// acquire lock of user list
 	if (user_list_rd_lock(p_user_list_pool->semid) < 0)
@@ -1041,7 +1045,7 @@ int query_user_online_info_by_uid(int32_t uid, USER_ONLINE_INFO *p_users, int *p
 		}
 
 		for (i = 0;
-			 left < p_user_list_pool->p_online_current->user_count && i < *p_user_cnt &&
+			 left < p_user_list_pool->p_online_current->user_count && i < user_cnt &&
 			 uid == p_user_list_pool->p_online_current->index_uid[left].uid;
 			 left++, i++)
 		{
