@@ -25,6 +25,8 @@
 #define BBS_session_id_length 32
 
 #define BBS_user_intro_avg_len 256
+#define BBS_user_intro_max_len 4096
+#define BBS_user_intro_max_line 10
 
 struct user_info_t
 {
