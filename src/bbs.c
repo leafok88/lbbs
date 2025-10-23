@@ -62,7 +62,7 @@ static const int astro_dates[] = {
 static const char *astro_names[] = {
 	"摩羯", "水瓶", "双鱼", "白羊", "金牛", "双子", "巨蟹", "狮子", "处女", "天秤", "天蝎", "射手", "摩羯"};
 
-static const int user_level_points[] = {
+static const int BBS_user_level_points[] = {
 	INT_MIN, // 0
 	50,		 // 1
 	200,	 // 2
@@ -82,7 +82,7 @@ static const int user_level_points[] = {
 	INT_MAX, // 16
 };
 
-static const char *user_level_names[] = {
+static const char *BBS_user_level_names[] = {
 	"新手上路", // 0
 	"初来乍练", // 1
 	"白手起家", // 2
@@ -101,7 +101,7 @@ static const char *user_level_names[] = {
 	"★★★★★",	// 15
 };
 
-static const int user_level_cnt = sizeof(user_level_names) / sizeof(const char *);
+static const int BBS_user_level_cnt = sizeof(BBS_user_level_names) / sizeof(const char *);
 
 const char *get_astro_name(time_t birthday)
 {
@@ -117,23 +117,23 @@ const char *get_astro_name(time_t birthday)
 	return astro_names[tm_birth.tm_mon + 1];
 }
 
-const char *get_user_level_name(int point)
+int get_user_level(int point)
 {
 	int left;
 	int right;
 	int mid;
 
 	left = 0;
-	right = user_level_cnt - 1;
+	right = BBS_user_level_cnt - 1;
 
 	while (left < right)
 	{
 		mid = (left + right) / 2;
-		if (point < user_level_points[mid + 1])
+		if (point < BBS_user_level_points[mid + 1])
 		{
 			right = mid;
 		}
-		else if (point > user_level_points[mid + 1])
+		else if (point > BBS_user_level_points[mid + 1])
 		{
 			left = mid + 1;
 		}
@@ -144,7 +144,12 @@ const char *get_user_level_name(int point)
 		}
 	}
 
-	return user_level_names[left];
+	return left;
+}
+
+const char *get_user_level_name(int level)
+{
+	return BBS_user_level_names[level];
 }
 
 char *setuserfile(char *buf, size_t len, const char *filename)

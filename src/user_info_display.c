@@ -51,6 +51,8 @@ int user_info_display(USER_INFO *p_user_info)
 	int ip_mask_level;
 	const char *p_action_title;
 	char action_str[LINE_BUFFER_LEN];
+	int life;
+	int user_level;
 	const char *user_level_name;
 	char intro_f[BBS_user_intro_max_len];
 	int intro_len;
@@ -143,19 +145,29 @@ int user_info_display(USER_INFO *p_user_info)
 		login_ip[0] = '\0';
 	}
 
-	user_level_name = get_user_level_name(p_user_info->exp);
+	if (p_user_info->life == 333 || p_user_info->life == 365 || p_user_info->life == 666 || p_user_info->life == 999) // Immortal
+	{
+		life = p_user_info->life;
+	}
+	else
+	{
+		life = p_user_info->life - (int)((time(NULL) - p_user_info->last_login_dt) / 86400 + 1);
+	}
+
+	user_level = get_user_level(p_user_info->exp);
+	user_level_name = get_user_level_name(user_level);
 
 	intro_len = lml_render(p_user_info->intro, intro_f, sizeof(intro_f), 0);
 
 	snprintf(user_info_f, sizeof(user_info_f),
 			 "\n%s (%s) 上站 [%d] 发文 [%d]\n"
 			 "上次在 [%s] 从 [%s] 访问本站 经验值 [%d]\n"
-			 "离线于 [%s] 等级 [%s] 星座 [%s]\n"
+			 "离线于 [%s] 生命 [%d] 等级 [%s(%d)] 星座 [%s]\n"
 			 "%s\033[1m%s\033[m"
 			 "%s\n%s\n",
 			 p_user_info->username, p_user_info->nickname, p_user_info->visit_count, article_cnt,
 			 str_last_login_dt, (session_cnt > 0 ? login_ip : "未知"), p_user_info->exp,
-			 (session_cnt > 0 ? "在线或因断线不详" : str_last_logout_dt), user_level_name, astro_str,
+			 (session_cnt > 0 ? "在线或因断线不详" : str_last_logout_dt), life, user_level_name, user_level + 1, astro_str,
 			 (session_cnt > 0 ? "目前在线，状态如下：\n" : ""), (session_cnt > 0 ? action_str : ""),
 			 (intro_len > 0 ? "\033[0;36m个人说明档如下：\033[m" : "\033[0;36m没有个人说明档\033[m"),
 			 intro_f);

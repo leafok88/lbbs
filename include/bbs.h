@@ -74,7 +74,8 @@ extern time_t BBS_current_action_tm;
 extern const int BBS_current_action_refresh_interval;
 
 extern const char *get_astro_name(time_t birthday);
-extern const char *get_user_level_name(int point);
+extern int get_user_level(int point);
+extern const char *get_user_level_name(int level);
 
 extern char *setuserfile(char *buf, size_t len, const char *filename);
 
