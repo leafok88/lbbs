@@ -42,17 +42,12 @@ const char *get_astro_name(time_t birthday)
 
 	localtime_r(&birthday, &tm_birth);
 
-	if (tm_birth.tm_mon < 1 || tm_birth.tm_mon > 12 || tm_birth.tm_mday < 1 || tm_birth.tm_mday > 31)
+	if (tm_birth.tm_mday < astro_dates[tm_birth.tm_mon])
 	{
-		return astro_names[0];
+		return astro_names[tm_birth.tm_mon];
 	}
 
-	if (tm_birth.tm_mday < astro_dates[tm_birth.tm_mon - 1])
-	{
-		return astro_names[tm_birth.tm_mon - 1];
-	}
-
-	return astro_names[tm_birth.tm_mon];
+	return astro_names[tm_birth.tm_mon + 1];
 }
 
 static const int user_level_points[] = {
