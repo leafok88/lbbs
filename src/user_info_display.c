@@ -40,7 +40,7 @@ const char *get_astro_name(time_t birthday)
 {
 	struct tm tm_birth;
 
-	localtime_r(&birthday, &tm_birth);
+	gmtime_r(&birthday, &tm_birth);
 
 	if (tm_birth.tm_mday < astro_dates[tm_birth.tm_mon])
 	{
