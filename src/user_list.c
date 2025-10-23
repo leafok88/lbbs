@@ -83,6 +83,13 @@ const USER_ACTION_MAP user_action_map[] =
 
 const int user_action_map_size = sizeof(user_action_map) / sizeof(USER_ACTION_MAP);
 
+static int user_list_try_rd_lock(int semid, int wait_sec);
+static int user_list_try_rw_lock(int semid, int wait_sec);
+static int user_list_rd_unlock(int semid);
+static int user_list_rw_unlock(int semid);
+static int user_list_rd_lock(int semid);
+static int user_list_rw_lock(int semid);
+
 static int user_list_load(MYSQL *db, USER_LIST *p_list);
 static int user_online_list_load(MYSQL *db, USER_ONLINE_LIST *p_list);
 

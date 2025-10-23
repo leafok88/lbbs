@@ -85,13 +85,6 @@ extern void user_list_pool_cleanup(void);
 extern int set_user_list_pool_shm_readonly(void);
 extern int detach_user_list_pool_shm(void);
 
-extern int user_list_try_rd_lock(int semid, int wait_sec);
-extern int user_list_try_rw_lock(int semid, int wait_sec);
-extern int user_list_rd_unlock(int semid);
-extern int user_list_rw_unlock(int semid);
-extern int user_list_rd_lock(int semid);
-extern int user_list_rw_lock(int semid);
-
 extern int user_list_pool_reload(int online_user);
 
 extern int query_user_list(int page_id, USER_INFO *p_users, int *p_user_count, int *p_page_count);
