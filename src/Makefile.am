@@ -1,6 +1,6 @@
 bin_PROGRAMS = bbsd
 EXTRA_PROGRAMS = test_trie_dict test_file_loader test_section_list test_lml test_ssh_server test_article_favor test_article_view_log \
-			   test_memory_pool
+			   test_memory_pool test_bbs
 
 bbsd_SOURCES = ${srcdir}/../include/*.h article_cache.c article_del.c article_favor.c article_favor_display.c article_op.c \
 			   article_post.c article_view_log.c bbs.c bbs_cmd.c bbs_main.c common.c database.c \
@@ -18,6 +18,7 @@ test_ssh_server_SOURCES = log.c test_ssh_server.c
 test_article_favor_SOURCES = article_favor.c common.c database.c log.c section_list.c test_article_favor.c trie_dict.c
 test_article_view_log_SOURCES = article_view_log.c database.c log.c test_article_view_log.c
 test_memory_pool_SOURCES = log.c memory_pool.c test_memory_pool.c
+test_bbs_SOURCES = bbs.c log.c test_bbs.c user_priv.c
 
 lib_LTLIBRARIES = libbbs.la
 
