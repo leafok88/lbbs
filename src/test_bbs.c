@@ -20,6 +20,7 @@
 int main(int argc, char *argv[])
 {
 	int i;
+	int user_level;
 
 	const int user_points[] = {
 		-50, -1, 0, 1, 49, 50, 51, 499, 500, 501, 99999, 100000, 100001};
@@ -28,7 +29,8 @@ int main(int argc, char *argv[])
 
 	for (i = 0; i < user_cnt; i++)
 	{
-		printf("%10d\t\t%s\n", user_points[i], get_user_level_name(user_points[i]));
+		user_level = get_user_level(user_points[i]);
+		printf("%10d\t%d\t%s\n", user_points[i], user_level, get_user_level_name(user_level));
 	}
 
 	return 0;

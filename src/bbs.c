@@ -79,7 +79,6 @@ static const int BBS_user_level_points[] = {
 	80000,	 // 13
 	90000,	 // 14
 	100000,	 // 15
-	INT_MAX, // 16
 };
 
 static const char *BBS_user_level_names[] = {
@@ -129,19 +128,24 @@ int get_user_level(int point)
 	while (left < right)
 	{
 		mid = (left + right) / 2;
-		if (point < BBS_user_level_points[mid + 1])
+		if (point < BBS_user_level_points[mid])
 		{
-			right = mid;
+			right = mid - 1;
 		}
-		else if (point > BBS_user_level_points[mid + 1])
+		else if (point > BBS_user_level_points[mid])
 		{
 			left = mid + 1;
 		}
 		else // if (point == user_level_points[mid])
 		{
-			left = mid + 1;
+			left = mid;
 			break;
 		}
+	}
+
+	if (point < BBS_user_level_points[left])
+	{
+		left--;
 	}
 
 	return left;

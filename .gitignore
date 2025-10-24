@@ -44,3 +44,4 @@ Makefile.in
 /src/test_article_favor
 /src/test_article_view_log
 /src/test_memory_pool
+/src/test_bbs
