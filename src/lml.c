@@ -118,8 +118,12 @@ typedef struct lml_tag_def_t
 const LML_TAG_DEF lml_tag_def[] = {
 	// Definition of tuple: {lml_tag, lml_output, default_param, quote_mode_output, lml_filter_cb}
 	{"plain", NULL, NULL, NULL, lml_tag_disable_filter},
-	{"nolml", "", NULL, "", NULL},
-	{"lml", "", NULL, "", NULL},
+	{"nolml", "", NULL, "", NULL}, // deprecated
+	{"lml", "", NULL, "", NULL}, // deprecated
+	{"align", "", "", "", NULL}, // N/A
+	{"/align", "", "", "", NULL}, // N/A
+	{"size", "", "", "", NULL}, // N/A
+	{"/size", "", "", "", NULL}, // N/A
 	{"left", "[", "", "[left]", NULL},
 	{"right", "]", "", "[right]", NULL},
 	{"bold", "\033[1m", "", "", NULL}, // does not work in Fterm
