@@ -957,10 +957,14 @@ int section_list_display(const char *sname, int32_t aid)
 			if((ret = query_user_info_by_uid(p_articles[selected_index]->uid, &q_user_info)) != 1)
 			{
 				log_error("query_user_info_by_uid(uid=%d) error\n", p_articles[selected_index]->uid);
+				clearscr();			
+				prints("查询用户出错");
+				press_any_key();
+				return -2;
 			}
 			if((ret = user_info_display(&q_user_info)) != 0)
 			{
-				log_error("user_info_display(uid=%d) error\n", p_articles[selected_index]->uid);
+				log_error("user_info_display(uid=%d) error\n", p_articles[selected_index]->uid);				
 			}			
 			if (section_list_draw_screen(sname, stitle, master_list, display_nickname) < 0)
 			{
