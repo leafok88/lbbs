@@ -1,5 +1,5 @@
 /***************************************************************************
-					     test_lml.c  -  description
+						 test_lml.c  -  description
 							 -------------------
 	Copyright            : (C) 2004-2025 by Leaflet
 	Email                : leaflet@leafok.com
@@ -40,9 +40,10 @@ const char *str_in[] = {
 	"[35mabc[m",
 	"123456",
 	"[color red]Red[/color][plain][color blue]Blue[/color][plain]",
+	"[color yellow]Yellow[/color][nolml][left][color blue]Blue[/color][right][lml][color red]Red[/color]",
 };
 
-int str_cnt = 16;
+const int str_cnt = sizeof(str_in) / sizeof(const char *);
 
 int main(int argc, char *argv[])
 {

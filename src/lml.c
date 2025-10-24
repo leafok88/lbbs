@@ -106,6 +106,22 @@ static int lml_tag_disable_filter(const char *tag_name, const char *tag_param_bu
 	return snprintf(tag_output_buf, tag_output_buf_len, "%s", (quote_mode ? "[plain]" : ""));
 }
 
+static int lml_tag_user_disabled = 0;
+
+static int lml_tag_user_disable_filter(const char *tag_name, const char *tag_param_buf, char *tag_output_buf, size_t tag_output_buf_len, int quote_mode)
+{
+	lml_tag_user_disabled = 1;
+	tag_output_buf[0] = '\0';
+	return 0;
+}
+
+static int lml_tag_user_enable_filter(const char *tag_name, const char *tag_param_buf, char *tag_output_buf, size_t tag_output_buf_len, int quote_mode)
+{
+	lml_tag_user_disabled = 0;
+	tag_output_buf[0] = '\0';
+	return 0;
+}
+
 typedef struct lml_tag_def_t
 {
 	const char *tag_name; // tag name
@@ -118,6 +134,8 @@ typedef struct lml_tag_def_t
 const LML_TAG_DEF lml_tag_def[] = {
 	// Definition of tuple: {lml_tag, lml_output, default_param, quote_mode_output, lml_filter_cb}
 	{"plain", NULL, NULL, NULL, lml_tag_disable_filter},
+	{"nolml", NULL, NULL, NULL, lml_tag_user_disable_filter},
+	{"lml", NULL, NULL, NULL, lml_tag_user_enable_filter},
 	{"left", "[", "", "[left]", NULL},
 	{"right", "]", "", "[right]", NULL},
 	{"bold", "\033[1m", "", "", NULL}, // does not work in Fterm
@@ -189,6 +207,7 @@ int lml_render(const char *str_in, char *str_out, int buf_len, int quote_mode)
 	lml_init();
 
 	lml_tag_disabled = 0;
+	lml_tag_user_disabled = 0;
 	lml_tag_quote_level = 0;
 
 	for (i = 0; str_in[i] != '\0'; i++)
@@ -308,7 +327,7 @@ int lml_render(const char *str_in, char *str_out, int buf_len, int quote_mode)
 								strncpy(tag_param_buf, lml_tag_def[k].default_param, LML_TAG_PARAM_BUF_LEN - 1);
 								tag_param_buf[LML_TAG_PARAM_BUF_LEN - 1] = '\0';
 							}
-							if (!quote_mode)
+							if (!quote_mode && !lml_tag_user_disabled)
 							{
 								if (lml_tag_def[k].tag_output != NULL)
 								{
@@ -324,7 +343,7 @@ int lml_render(const char *str_in, char *str_out, int buf_len, int quote_mode)
 									tag_output_len = 0;
 								}
 							}
-							else // quote mode
+							else // if (quote_mode || lml_tag_user_disabled)
 							{
 								if (lml_tag_def[k].quote_mode_output != NULL)
 								{
