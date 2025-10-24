@@ -321,7 +321,7 @@ int article_favor_check(int32_t aid, const ARTICLE_FAVOR *p_favor)
 			mid = (left + right) / 2;
 			if (aid < (i == 0 ? p_favor->aid_base[mid] : p_favor->aid_inc[mid]))
 			{
-				right = mid;
+				right = mid - 1;
 			}
 			else if (aid > (i == 0 ? p_favor->aid_base[mid] : p_favor->aid_inc[mid]))
 			{
@@ -372,7 +372,7 @@ int article_favor_set(int32_t aid, ARTICLE_FAVOR *p_favor, int state)
 			mid = (left + right) / 2;
 			if (aid < (i == 0 ? p_favor->aid_base[mid] : p_favor->aid_inc[mid]))
 			{
-				right = mid;
+				right = mid - 1;
 			}
 			else if (aid > (i == 0 ? p_favor->aid_base[mid] : p_favor->aid_inc[mid]))
 			{

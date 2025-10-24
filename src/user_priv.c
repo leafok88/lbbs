@@ -35,19 +35,24 @@ inline static int search_priv(BBS_user_priv *p_priv, int sid, int *p_offset)
 	{
 		mid = (left + right) / 2;
 
-		if (sid <= p_priv->s_priv_list[mid].sid)
+		if (sid < p_priv->s_priv_list[mid].sid)
 		{
-			right = mid;
+			right = mid - 1;
 		}
-		else
+		else if (sid > p_priv->s_priv_list[mid].sid)
 		{
 			left = mid + 1;
+		}
+		else // if (sid == p_priv->s_priv_list[mid].sid)
+		{
+			left = mid;
+			break;
 		}
 	}
 
 	*p_offset = left;
 
-	return (left == right && sid == p_priv->s_priv_list[left].sid);
+	return (sid == p_priv->s_priv_list[left].sid);
 }
 
 int setpriv(BBS_user_priv *p_priv, int sid, int priv, int is_favor)
