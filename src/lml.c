@@ -377,6 +377,7 @@ int lml_render(const char *str_in, char *str_out, int buf_len, int quote_mode)
 					j += tag_output_len;
 				}
 
+				tag_start_pos = -1;
 				tag_name_pos = -1;
 			}
 		}
