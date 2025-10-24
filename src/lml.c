@@ -108,23 +108,25 @@ static int lml_tag_disable_filter(const char *tag_name, const char *tag_param_bu
 
 typedef struct lml_tag_def_t
 {
-	const char *tag_name; // tag name
-	const char *tag_output; // output string
-	const char *default_param; // default param string
-	const char *quote_mode_output; // output string in quote mode
+	const char *tag_name;			 // tag name
+	const char *tag_output;			 // output string
+	const char *default_param;		 // default param string
+	const char *quote_mode_output;	 // output string in quote mode
 	lml_tag_filter_cb tag_filter_cb; // tag filter callback
 } LML_TAG_DEF;
 
 const LML_TAG_DEF lml_tag_def[] = {
 	// Definition of tuple: {lml_tag, lml_output, default_param, quote_mode_output, lml_filter_cb}
 	{"plain", NULL, NULL, NULL, lml_tag_disable_filter},
+	{"nolml", "", NULL, "", NULL},
+	{"lml", "", NULL, "", NULL},
 	{"left", "[", "", "[left]", NULL},
 	{"right", "]", "", "[right]", NULL},
 	{"bold", "\033[1m", "", "", NULL}, // does not work in Fterm
 	{"/bold", "\033[22m", NULL, "", NULL},
 	{"b", "\033[1m", "", "", NULL},
 	{"/b", "\033[22m", NULL, "", NULL},
-	{"italic", "\033[5m", "", "", NULL}, // use blink instead
+	{"italic", "\033[5m", "", "", NULL},   // use blink instead
 	{"/italic", "\033[m", NULL, "", NULL}, // \033[25m does not work in Fterm
 	{"i", "\033[5m", "", "", NULL},
 	{"/i", "\033[m", NULL, "", NULL},
@@ -180,11 +182,13 @@ int lml_render(const char *str_in, char *str_out, int buf_len, int quote_mode)
 	int j = 0;
 	int k;
 	int tag_start_pos = -1;
+	int tag_name_pos = -1;
 	int tag_end_pos = -1;
 	int tag_param_pos = -1;
 	int tag_output_len;
 	int new_line = 1;
 	int fb_quote_level = 0;
+	int tag_name_found;
 
 	lml_init();
 
@@ -263,7 +267,7 @@ int lml_render(const char *str_in, char *str_out, int buf_len, int quote_mode)
 
 		if (str_in[i] == '\n')
 		{
-			tag_start_pos = -1; // jump out of tag at end of line
+			tag_name_pos = -1; // jump out of tag at end of line
 			new_line = 1;
 		}
 		else if (str_in[i] == '\r')
@@ -273,29 +277,31 @@ int lml_render(const char *str_in, char *str_out, int buf_len, int quote_mode)
 
 		if (!lml_tag_disabled && str_in[i] == '[')
 		{
-			tag_start_pos = i + 1;
+			tag_start_pos = i;
+			tag_name_pos = i + 1;
 		}
 		else if (!lml_tag_disabled && str_in[i] == ']')
 		{
-			if (tag_start_pos >= 0)
+			if (tag_name_pos >= 0)
 			{
 				tag_end_pos = i;
 
 				// Skip space characters
-				while (str_in[tag_start_pos] == ' ')
+				while (str_in[tag_name_pos] == ' ')
 				{
-					tag_start_pos++;
+					tag_name_pos++;
 				}
 
-				for (k = 0; k < LML_TAG_COUNT; k++)
+				for (tag_name_found = 0, k = 0; k < LML_TAG_COUNT; k++)
 				{
-					if (strncasecmp(lml_tag_def[k].tag_name, str_in + tag_start_pos, (size_t)lml_tag_name_len[k]) == 0)
+					if (strncasecmp(lml_tag_def[k].tag_name, str_in + tag_name_pos, (size_t)lml_tag_name_len[k]) == 0)
 					{
 						tag_param_pos = -1;
-						switch (str_in[tag_start_pos + lml_tag_name_len[k]])
+						switch (str_in[tag_name_pos + lml_tag_name_len[k]])
 						{
 						case ' ':
-							tag_param_pos = tag_start_pos + lml_tag_name_len[k] + 1;
+							tag_name_found = 1;
+							tag_param_pos = tag_name_pos + lml_tag_name_len[k] + 1;
 							while (str_in[tag_param_pos] == ' ')
 							{
 								tag_param_pos++;
@@ -303,6 +309,7 @@ int lml_render(const char *str_in, char *str_out, int buf_len, int quote_mode)
 							strncpy(tag_param_buf, str_in + tag_param_pos, (size_t)MIN(tag_end_pos - tag_param_pos, LML_TAG_PARAM_BUF_LEN));
 							tag_param_buf[MIN(tag_end_pos - tag_param_pos, LML_TAG_PARAM_BUF_LEN)] = '\0';
 						case ']':
+							tag_name_found = 1;
 							if (tag_param_pos == -1 && lml_tag_def[k].tag_output != NULL && lml_tag_def[k].default_param != NULL) // Apply default param if not defined
 							{
 								strncpy(tag_param_buf, lml_tag_def[k].default_param, LML_TAG_PARAM_BUF_LEN - 1);
@@ -324,7 +331,7 @@ int lml_render(const char *str_in, char *str_out, int buf_len, int quote_mode)
 									tag_output_len = 0;
 								}
 							}
-							else // quote mode
+							else // if (quote_mode)
 							{
 								if (lml_tag_def[k].quote_mode_output != NULL)
 								{
@@ -356,10 +363,24 @@ int lml_render(const char *str_in, char *str_out, int buf_len, int quote_mode)
 					}
 				}
 
-				tag_start_pos = -1;
+				if (!tag_name_found)
+				{
+					tag_output_len = tag_end_pos - tag_start_pos + 1;
+					if (j + tag_output_len >= buf_len)
+					{
+						log_error("Buffer is not longer enough for output string %ld >= %d\n", j + tag_output_len, buf_len);
+						str_out[j] = '\0';
+						return j;
+					}
+
+					memcpy(str_out + j, str_in + tag_start_pos, (size_t)tag_output_len);
+					j += tag_output_len;
+				}
+
+				tag_name_pos = -1;
 			}
 		}
-		else if (lml_tag_disabled || tag_start_pos == -1) // not in LML tag
+		else if (lml_tag_disabled || tag_name_pos == -1) // not in LML tag
 		{
 			if (str_in[i] & 0x80) // head of multi-byte character
 			{
@@ -395,6 +416,21 @@ int lml_render(const char *str_in, char *str_out, int buf_len, int quote_mode)
 		{
 			// Do nothing
 		}
+	}
+
+	if (tag_start_pos != -1) // tag is not closed
+	{
+		tag_end_pos = i - 1;
+		tag_output_len = tag_end_pos - tag_start_pos + 1;
+		if (j + tag_output_len >= buf_len)
+		{
+			log_error("Buffer is not longer enough for output string %ld >= %d\n", j + tag_output_len, buf_len);
+			str_out[j] = '\0';
+			return j;
+		}
+
+		memcpy(str_out + j, str_in + tag_start_pos, (size_t)tag_output_len);
+		j += tag_output_len;
 	}
 
 	if (!quote_mode && !lml_tag_disabled && lml_tag_quote_level > 0)

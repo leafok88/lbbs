@@ -37,12 +37,14 @@ const char *str_in[] = {
 	"A[ color  BCD]EF[/color]G[color black]0[/color][color magenta]1[color cyan]23[/color]4[color red]5[/color]6[color yellOw]7[/color]8[color green]9[color blue]0[/color]",
 	"A[quote]B[quote]C[quote]D[quote]E[/quote]F[/quote]G[/quote]0[/quote]1[/quote]2[quote]3[/quote]4[/quote]56789",
 	": ABCDE[quote]FG\r\nab[/quote]cd[quote]ef[quote]g\r\n: : 012[/quote]345[/quote]6789\nABC[quote]DEFG",
-	"[35mabc[m",
+	"\033[35mabc\033[m",
 	"123456",
 	"[color red]Red[/color][plain][color blue]Blue[/color][plain]",
+	"[color yellow]Yellow[/color][nolml][left][color blue]Blue[/color][right][lml][color red]Red[/color]",
+	"[abc][left ][ right ][ colory ][left  ",
 };
 
-int str_cnt = 16;
+const int str_cnt = sizeof(str_in) / sizeof(const char *);
 
 int main(int argc, char *argv[])
 {
