@@ -41,7 +41,7 @@ const char *str_in[] = {
 	"123456",
 	"[color red]Red[/color][plain][color blue]Blue[/color][plain]",
 	"[color yellow]Yellow[/color][nolml][left][color blue]Blue[/color][right][lml][color red]Red[/color]",
-	"[abc][left ][ right ][ colory ][left  ",
+	"[abc][left ][ right ][ colory ][left  \nABCD[left]EFG[right ",
 };
 
 const int str_cnt = sizeof(str_in) / sizeof(const char *);

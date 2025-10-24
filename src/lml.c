@@ -265,9 +265,25 @@ int lml_render(const char *str_in, char *str_out, int buf_len, int quote_mode)
 			}
 		}
 
-		if (str_in[i] == '\n')
+		if (str_in[i] == '\n') // jump out of tag at end of line
 		{
-			tag_name_pos = -1; // jump out of tag at end of line
+			if (tag_start_pos != -1) // tag is not closed
+			{
+				tag_end_pos = i - 1;
+				tag_output_len = tag_end_pos - tag_start_pos + 1;
+				if (j + tag_output_len >= buf_len)
+				{
+					log_error("Buffer is not longer enough for output string %ld >= %d\n", j + tag_output_len, buf_len);
+					str_out[j] = '\0';
+					return j;
+				}
+
+				memcpy(str_out + j, str_in + tag_start_pos, (size_t)tag_output_len);
+				j += tag_output_len;
+			}
+
+			tag_start_pos = -1;
+			tag_name_pos = -1;
 			new_line = 1;
 		}
 		else if (str_in[i] == '\r')
