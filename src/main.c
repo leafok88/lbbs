@@ -199,7 +199,7 @@ int main(int argc, char *argv[])
 
 	if (trie_dict_init(VAR_TRIE_DICT_SHM, TRIE_NODE_PER_POOL) < 0)
 	{
-		printf("trie_dict_init failed\n");
+		printf("trie_dict_init(%s, %d) error\n", VAR_TRIE_DICT_SHM, TRIE_NODE_PER_POOL);
 		goto cleanup;
 	}
 	if (article_block_init(VAR_ARTICLE_BLOCK_SHM, BBS_article_limit_per_section * BBS_max_section / ARTICLE_PER_BLOCK) < 0)
@@ -247,9 +247,9 @@ int main(int argc, char *argv[])
 	}
 
 	// Load user_list and online_user_list
-	if (user_list_pool_init() < 0)
+	if (user_list_pool_init(VAR_USER_LIST_SHM) < 0)
 	{
-		log_error("user_list_pool_init() error\n");
+		log_error("user_list_pool_init(%s) error\n", VAR_USER_LIST_SHM);
 		goto cleanup;
 	}
 	if (user_list_pool_reload(0) < 0)
