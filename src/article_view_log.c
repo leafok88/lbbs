@@ -278,7 +278,7 @@ int article_view_log_is_viewed(int32_t aid, const ARTICLE_VIEW_LOG *p_view_log)
 			mid = (left + right) / 2;
 			if (aid < (i == 0 ? p_view_log->aid_base[mid] : p_view_log->aid_inc[mid]))
 			{
-				right = mid;
+				right = mid - 1;
 			}
 			else if (aid > (i == 0 ? p_view_log->aid_base[mid] : p_view_log->aid_inc[mid]))
 			{
@@ -327,7 +327,7 @@ int article_view_log_set_viewed(int32_t aid, ARTICLE_VIEW_LOG *p_view_log)
 			mid = (left + right) / 2;
 			if (aid < (i == 0 ? p_view_log->aid_base[mid] : p_view_log->aid_inc[mid]))
 			{
-				right = mid;
+				right = mid - 1;
 			}
 			else if (aid > (i == 0 ? p_view_log->aid_base[mid] : p_view_log->aid_inc[mid]))
 			{

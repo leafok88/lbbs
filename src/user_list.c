@@ -345,7 +345,7 @@ cleanup:
 	return ret;
 }
 
-int user_list_pool_init(void)
+int user_list_pool_init(const char *filename)
 {
 	int shmid;
 	int semid;
@@ -379,10 +379,10 @@ int user_list_pool_init(void)
 
 	// Allocate shared memory
 	proj_id = (int)(time(NULL) % getpid());
-	key = ftok(VAR_USER_LIST_SHM, proj_id);
+	key = ftok(filename, proj_id);
 	if (key == -1)
 	{
-		log_error("ftok(%s %d) error (%d)\n", VAR_USER_LIST_SHM, proj_id, errno);
+		log_error("ftok(%s %d) error (%d)\n", filename, proj_id, errno);
 		return -2;
 	}
 
@@ -918,7 +918,7 @@ int query_user_info_by_uid(int32_t uid, USER_INFO *p_user)
 		mid = (left + right) / 2;
 		if (uid < p_user_list_pool->p_current->index_uid[mid].uid)
 		{
-			right = mid;
+			right = mid - 1;
 		}
 		else if (uid > p_user_list_pool->p_current->index_uid[mid].uid)
 		{
@@ -1015,7 +1015,7 @@ int query_user_online_info_by_uid(int32_t uid, USER_ONLINE_INFO *p_users, int *p
 		mid = (left + right) / 2;
 		if (uid < p_user_list_pool->p_online_current->index_uid[mid].uid)
 		{
-			right = mid;
+			right = mid - 1;
 		}
 		else if (uid > p_user_list_pool->p_online_current->index_uid[mid].uid)
 		{
@@ -1101,7 +1101,7 @@ int get_user_id_list(int32_t *p_uid_list, int *p_user_cnt, int start_uid)
 		mid = (left + right) / 2;
 		if (start_uid < p_user_list_pool->p_current->index_uid[mid].uid)
 		{
-			right = mid;
+			right = mid - 1;
 		}
 		else if (start_uid > p_user_list_pool->p_current->index_uid[mid].uid)
 		{

@@ -343,25 +343,19 @@ ARTICLE *article_block_find_by_aid(int32_t aid)
 	}
 
 	left = 0;
-	right = p_article_block_pool->block_count;
+	right = p_article_block_pool->block_count - 1;
 
-	// aid in the range [ head aid of blocks[left], tail aid of blocks[right - 1] ]
-	while (left < right - 1)
+	// aid in the range [ head aid of blocks[left], tail aid of blocks[right] ]
+	while (left < right)
 	{
 		// get block offset no less than mid value of left and right block offsets
-		mid = (left + right) / 2 + (right - left) % 2;
-
-		if (mid >= p_article_block_pool->block_count)
-		{
-			log_error("block(mid = %d) is out of boundary\n", mid);
-			return NULL;
-		}
+		mid = (left + right) / 2 + (left + right) % 2;
 
 		if (aid < p_article_block_pool->p_block[mid]->articles[0].aid)
 		{
-			right = mid;
+			right = mid - 1;
 		}
-		else
+		else // if (aid >= p_article_block_pool->p_block[mid]->articles[0].aid)
 		{
 			left = mid;
 		}
@@ -1120,25 +1114,19 @@ ARTICLE *section_list_find_article_with_offset(SECTION_LIST *p_section, int32_t 
 	}
 
 	left = 0;
-	right = p_section->page_count;
+	right = p_section->page_count - 1;
 
-	// aid in the range [ head aid of pages[left], tail aid of pages[right - 1] ]
-	while (left < right - 1)
+	// aid in the range [ head aid of pages[left], tail aid of pages[right] ]
+	while (left < right)
 	{
 		// get page id no less than mid value of left page id and right page id
-		mid = (left + right) / 2 + (right - left) % 2;
-
-		if (mid >= p_section->page_count)
-		{
-			log_error("page id (mid = %d) is out of boundary\n", mid);
-			return NULL;
-		}
+		mid = (left + right) / 2 + (left + right) % 2;
 
 		if (aid < p_section->p_page_first_article[mid]->aid)
 		{
-			right = mid;
+			right = mid - 1;
 		}
-		else
+		else // if (aid < p_section->p_page_first_article[mid]->aid)
 		{
 			left = mid;
 		}

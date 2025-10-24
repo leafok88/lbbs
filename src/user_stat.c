@@ -121,7 +121,7 @@ int user_stat_article_cnt_inc(USER_STAT_MAP *p_map, int32_t uid, int n)
 		mid = (left + right) / 2;
 		if (uid < p_map->stat_list[mid].uid)
 		{
-			right = mid;
+			right = mid - 1;
 		}
 		else if (uid > p_map->stat_list[mid].uid)
 		{
@@ -163,7 +163,7 @@ int user_stat_get(USER_STAT_MAP *p_map, int32_t uid, const USER_STAT **pp_stat)
 		mid = (left + right) / 2;
 		if (uid < p_map->stat_list[mid].uid)
 		{
-			right = mid;
+			right = mid - 1;
 		}
 		else if (uid > p_map->stat_list[mid].uid)
 		{

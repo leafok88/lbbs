@@ -18,6 +18,7 @@
 #include "log.h"
 #include "section_list.h"
 #include "trie_dict.h"
+#include "user_list.h"
 #include <errno.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -25,6 +26,7 @@
 #define ARTICLE_BLOCK_SHM_FILE "~article_block_shm.dat"
 #define SECTION_LIST_SHM_FILE "~section_list_shm.dat"
 #define TRIE_DICT_SHM_FILE "~trie_dict_shm.dat"
+#define USER_LIST_SHM_FILE "~user_list_shm.dat"
 
 const char *sname[] = {
 	"Test",
@@ -97,6 +99,13 @@ int main(int argc, char *argv[])
 	}
 	fclose(fp);
 
+	if ((fp = fopen(USER_LIST_SHM_FILE, "w")) == NULL)
+	{
+		log_error("fopen(%s) error\n", USER_LIST_SHM_FILE);
+		return -1;
+	}
+	fclose(fp);
+
 	if (trie_dict_init(TRIE_DICT_SHM_FILE, TRIE_NODE_PER_POOL) < 0)
 	{
 		printf("trie_dict_init failed\n");
@@ -112,6 +121,13 @@ int main(int argc, char *argv[])
 	if (section_list_init(SECTION_LIST_SHM_FILE) < 0)
 	{
 		log_error("section_list_pool_init(%s) error\n", SECTION_LIST_SHM_FILE);
+		return -2;
+	}
+
+	// Load user_list and online_user_list
+	if (user_list_pool_init(USER_LIST_SHM_FILE) < 0)
+	{
+		log_error("user_list_pool_init() error\n");
 		return -2;
 	}
 
@@ -972,9 +988,16 @@ int main(int argc, char *argv[])
 	printf("Press ENTER to exit...");
 	getchar();
 
+	user_list_pool_cleanup();
 	section_list_cleanup();
 	article_block_cleanup();
 	trie_dict_cleanup();
+
+	if (unlink(USER_LIST_SHM_FILE) < 0)
+	{
+		log_error("unlink(%s) error\n", USER_LIST_SHM_FILE);
+		return -1;
+	}
 
 	if (unlink(TRIE_DICT_SHM_FILE) < 0)
 	{

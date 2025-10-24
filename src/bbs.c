@@ -17,6 +17,7 @@
 #include "bbs.h"
 #include "common.h"
 #include "user_priv.h"
+#include <limits.h>
 #include <stdio.h>
 #include <signal.h>
 #include <time.h>
@@ -54,6 +55,106 @@ char BBS_current_action[BBS_current_action_max_len + 1];
 time_t BBS_current_action_tm;
 
 const int BBS_current_action_refresh_interval = 60; // 1 minute
+
+static const int astro_dates[] = {
+	21, 20, 21, 21, 22, 22, 23, 24, 24, 24, 23, 22};
+
+static const char *astro_names[] = {
+	"摩羯", "水瓶", "双鱼", "白羊", "金牛", "双子", "巨蟹", "狮子", "处女", "天秤", "天蝎", "射手", "摩羯"};
+
+static const int BBS_user_level_points[] = {
+	INT_MIN, // 0
+	50,		 // 1
+	200,	 // 2
+	500,	 // 3
+	1000,	 // 4
+	2000,	 // 5
+	5000,	 // 6
+	10000,	 // 7
+	20000,	 // 8
+	30000,	 // 9
+	50000,	 // 10
+	60000,	 // 11
+	70000,	 // 12
+	80000,	 // 13
+	90000,	 // 14
+	100000,	 // 15
+};
+
+static const char *BBS_user_level_names[] = {
+	"新手上路", // 0
+	"初来乍练", // 1
+	"白手起家", // 2
+	"略懂一二", // 3
+	"小有作为", // 4
+	"对答如流", // 5
+	"精于此道", // 6
+	"博大精深", // 7
+	"登峰造极", // 8
+	"论坛砥柱", // 9
+	"☆☆☆☆☆",	// 10
+	"★☆☆☆☆",	// 11
+	"★★☆☆☆",	// 12
+	"★★★☆☆",	// 13
+	"★★★★☆",	// 14
+	"★★★★★",	// 15
+};
+
+static const int BBS_user_level_cnt = sizeof(BBS_user_level_names) / sizeof(const char *);
+
+const char *get_astro_name(time_t birthday)
+{
+	struct tm tm_birth;
+
+	gmtime_r(&birthday, &tm_birth);
+
+	if (tm_birth.tm_mday < astro_dates[tm_birth.tm_mon])
+	{
+		return astro_names[tm_birth.tm_mon];
+	}
+
+	return astro_names[tm_birth.tm_mon + 1];
+}
+
+int get_user_level(int point)
+{
+	int left;
+	int right;
+	int mid;
+
+	left = 0;
+	right = BBS_user_level_cnt - 1;
+
+	while (left < right)
+	{
+		mid = (left + right) / 2;
+		if (point < BBS_user_level_points[mid])
+		{
+			right = mid - 1;
+		}
+		else if (point > BBS_user_level_points[mid])
+		{
+			left = mid + 1;
+		}
+		else // if (point == user_level_points[mid])
+		{
+			left = mid;
+			break;
+		}
+	}
+
+	if (point < BBS_user_level_points[left])
+	{
+		left--;
+	}
+
+	return left;
+}
+
+const char *get_user_level_name(int level)
+{
+	return BBS_user_level_names[level];
+}
 
 char *setuserfile(char *buf, size_t len, const char *filename)
 {
