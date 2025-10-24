@@ -31,6 +31,7 @@
 #include "section_list_loader.h"
 #include "screen.h"
 #include "str_process.h"
+#include "user_info_display.h"
 #include "user_priv.h"
 #include <string.h>
 #include <time.h>
@@ -557,6 +558,7 @@ int section_list_display(const char *sname, int32_t aid)
 	ARTICLE article_new;
 	int page_id_cur;
 	const ARTICLE *p_article_locate;
+	USER_INFO q_user_info;
 
 	p_section = section_list_find_by_name(sname);
 	if (p_section == NULL)
@@ -952,10 +954,14 @@ int section_list_display(const char *sname, int32_t aid)
 			}
 			break;
 		case QUERY_USER:
-			if ((ret = display_user_info(p_articles[selected_index]->uid)) < 0)
+			if((ret = query_user_info_by_uid(p_articles[selected_index]->uid, &q_user_info)) != 1)
 			{
-				log_error("display_user_info(uid=%d) error\n", p_articles[selected_index]->uid);
+				log_error("query_user_info_by_uid(uid=%d) error\n", p_articles[selected_index]->uid);
 			}
+			if((ret = user_info_display(&q_user_info)) != 0)
+			{
+				log_error("user_info_display(uid=%d) error\n", p_articles[selected_index]->uid);
+			}			
 			if (section_list_draw_screen(sname, stitle, master_list, display_nickname) < 0)
 			{
 				log_error("section_list_draw_screen() error\n");
