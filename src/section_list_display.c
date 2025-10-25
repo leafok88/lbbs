@@ -264,7 +264,7 @@ static enum select_cmd_t section_list_select(int total_page, int item_count, int
 
 		switch (ch)
 		{
-		case KEY_NULL:			 // broken pipe
+		case KEY_NULL: // broken pipe
 			log_error("KEY_NULL\n");
 			return EXIT_SECTION;
 		case KEY_TIMEOUT:
@@ -312,7 +312,7 @@ static enum select_cmd_t section_list_select(int total_page, int item_count, int
 			{
 				return QUERY_USER;
 			}
-			break;	
+			break;
 		case 'F':
 			if (item_count > 0)
 			{
@@ -953,22 +953,22 @@ int section_list_display(const char *sname, int32_t aid)
 			}
 			break;
 		case QUERY_USER:
-			if((ret = query_user_info_by_uid(p_articles[selected_index]->uid, &user_info)) != 1)
-			{				
-				clearscr();				
-				prints("用户不存在");
-				press_any_key();									
-			}
-			else if((ret = user_info_display(&user_info)) != 0)
+			if ((ret = query_user_info_by_uid(p_articles[selected_index]->uid, &user_info)) != 1)
 			{
-				log_error("user_info_display(uid=%d) error\n", p_articles[selected_index]->uid);				
-			}			
+				clearscr();
+				prints("用户不存在");
+				press_any_key();
+			}
+			else if ((ret = user_info_display(&user_info)) != 0)
+			{
+				log_error("user_info_display(uid=%d) error\n", p_articles[selected_index]->uid);
+			}
 			if (section_list_draw_screen(sname, stitle, master_list, display_nickname) < 0)
 			{
 				log_error("section_list_draw_screen() error\n");
 				return -2;
 			}
-			break;	
+			break;
 		case SET_FAVOR_ARTICLE:
 			ret = article_favor_set(p_articles[selected_index]->tid == 0
 										? p_articles[selected_index]->aid
