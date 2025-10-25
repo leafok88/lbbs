@@ -64,6 +64,12 @@ int user_info_display(USER_INFO *p_user_info)
 	int ret;
 	int i;
 
+	if (p_user_info == NULL)
+	{
+		log_error("NULL pointer error\n");
+		return -1;
+	}
+
 	article_cnt = get_user_article_cnt(p_user_info->uid);
 
 	astro_name = get_astro_name(p_user_info->birthday);
