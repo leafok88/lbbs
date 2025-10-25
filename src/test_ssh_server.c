@@ -87,7 +87,7 @@ struct ssh_channel_callbacks_struct channel_cb = {
 	.channel_pty_request_function = pty_request,
 	.channel_shell_request_function = shell_request};
 
-static ssh_channel new_session_channel(ssh_session session, void *userdata)
+static ssh_channel channel_open(ssh_session session, void *userdata)
 {
 	(void)session;
 	(void)userdata;
@@ -112,7 +112,7 @@ int ssh_server(const char *hostaddr, unsigned int port)
 	struct ssh_server_callbacks_struct cb = {
 		.userdata = NULL,
 		.auth_password_function = auth_password,
-		.channel_open_request_session_function = new_session_channel};
+		.channel_open_request_session_function = channel_open};
 
 	long int ssh_timeout = 0;
 

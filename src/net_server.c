@@ -29,10 +29,12 @@
 #include "section_list_loader.h"
 #include <errno.h>
 #include <fcntl.h>
+#include <pty.h>
 #include <signal.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <utmp.h>
 #include <arpa/inet.h>
 #include <libssh/callbacks.h>
 #include <libssh/libssh.h>
@@ -59,16 +61,38 @@ static PROCESS_SOCKADDR process_sockaddr_pool[MAX_CLIENT_LIMIT];
 
 #define SSH_AUTH_MAX_DURATION (60 * 1000) // milliseconds
 
-struct ssl_server_cb_data_t
+#define SFTP_SERVER_PATH "/usr/lib/sftp-server"
+
+/* A userdata struct for session. */
+struct session_data_struct
 {
 	int tries;
 	int error;
 };
 
+/* A userdata struct for channel. */
+struct channel_data_struct
+{
+	/* pid of the child process the channel will spawn. */
+	pid_t pid;
+	/* For PTY allocation */
+	socket_t pty_master;
+	socket_t pty_slave;
+	/* For communication with the child process. */
+	socket_t child_stdin;
+	socket_t child_stdout;
+	/* Only used for subsystem and exec requests. */
+	socket_t child_stderr;
+	/* Event which is used to poll the above descriptors. */
+	ssh_event event;
+	/* Terminal size struct. */
+	struct winsize *winsize;
+};
+
 static int auth_password(ssh_session session, const char *user,
 						 const char *password, void *userdata)
 {
-	struct ssl_server_cb_data_t *p_data = userdata;
+	struct session_data_struct *sdata = (struct session_data_struct *)userdata;
 	int ret;
 
 	if (strcmp(user, "guest") == 0)
@@ -85,39 +109,148 @@ static int auth_password(ssh_session session, const char *user,
 		return SSH_AUTH_SUCCESS;
 	}
 
-	if ((++(p_data->tries)) >= BBS_login_retry_times)
+	if ((++(sdata->tries)) >= BBS_login_retry_times)
 	{
-		p_data->error = 1;
+		sdata->error = 1;
 	}
 
 	return SSH_AUTH_DENIED;
 }
 
 static int pty_request(ssh_session session, ssh_channel channel, const char *term,
-					   int x, int y, int px, int py, void *userdata)
+					   int cols, int rows, int px, int py, void *userdata)
 {
-	return 0;
+	struct channel_data_struct *cdata = (struct channel_data_struct *)userdata;
+	int rc;
+
+	(void)session;
+	(void)channel;
+	(void)term;
+
+	cdata->winsize->ws_row = (unsigned short int)rows;
+	cdata->winsize->ws_col = (unsigned short int)cols;
+	cdata->winsize->ws_xpixel = (unsigned short int)px;
+	cdata->winsize->ws_ypixel = (unsigned short int)py;
+
+	rc = openpty(&cdata->pty_master, &cdata->pty_slave, NULL, NULL, cdata->winsize);
+	if (rc != 0)
+	{
+		log_error("Failed to open pty\n");
+		return SSH_ERROR;
+	}
+
+	return SSH_OK;
+}
+
+static int pty_resize(ssh_session session, ssh_channel channel, int cols, int rows,
+					  int py, int px, void *userdata)
+{
+	struct channel_data_struct *cdata = (struct channel_data_struct *)userdata;
+
+	(void)session;
+	(void)channel;
+
+	cdata->winsize->ws_row = (unsigned short int)rows;
+	cdata->winsize->ws_col = (unsigned short int)cols;
+	cdata->winsize->ws_xpixel = (unsigned short int)px;
+	cdata->winsize->ws_ypixel = (unsigned short int)py;
+
+	if (cdata->pty_master != -1)
+	{
+		return ioctl(cdata->pty_master, TIOCSWINSZ, cdata->winsize);
+	}
+
+	return SSH_ERROR;
+}
+
+static int exec_pty(const char *mode, const char *command, struct channel_data_struct *cdata)
+{
+	(void)cdata;
+
+	if (command != NULL)
+	{
+		log_error("Forbid exec /bin/sh %s %s)\n", mode, command);
+	}
+
+	return SSH_OK;
+}
+
+static int exec_nopty(const char *command, struct channel_data_struct *cdata)
+{
+	(void)cdata;
+
+	if (command != NULL)
+	{
+		log_error("Forbid exec /bin/sh -c %s)\n", command);
+	}
+
+	return SSH_OK;
+}
+
+static int exec_request(ssh_session session, ssh_channel channel, const char *command, void *userdata)
+{
+	struct channel_data_struct *cdata = (struct channel_data_struct *)userdata;
+
+	(void)session;
+	(void)channel;
+
+	if (cdata->pid > 0)
+	{
+		return SSH_ERROR;
+	}
+
+	if (cdata->pty_master != -1 && cdata->pty_slave != -1)
+	{
+		return exec_pty("-c", command, cdata);
+	}
+	return exec_nopty(command, cdata);
 }
 
 static int shell_request(ssh_session session, ssh_channel channel, void *userdata)
 {
-	return 0;
+	struct channel_data_struct *cdata = (struct channel_data_struct *)userdata;
+
+	(void)session;
+	(void)channel;
+
+	if (cdata->pid > 0)
+	{
+		return SSH_ERROR;
+	}
+
+	if (cdata->pty_master != -1 && cdata->pty_slave != -1)
+	{
+		return exec_pty("-l", NULL, cdata);
+	}
+	/* Client requested a shell without a pty, let's pretend we allow that */
+	return SSH_OK;
 }
 
-static struct ssh_channel_callbacks_struct channel_cb = {
-	.channel_pty_request_function = pty_request,
-	.channel_shell_request_function = shell_request};
-
-static ssh_channel new_session_channel(ssh_session session, void *userdata)
+static int subsystem_request(ssh_session session, ssh_channel channel, const char *subsystem, void *userdata)
 {
+	(void)session;
+	(void)channel;
+
+	log_error("subsystem_request(subsystem=%s)\n", subsystem);
+
+	/* subsystem requests behave similarly to exec requests. */
+	if (strcmp(subsystem, "sftp") == 0)
+	{
+		return exec_request(session, channel, SFTP_SERVER_PATH, userdata);
+	}
+	return SSH_ERROR;
+}
+
+static ssh_channel channel_open(ssh_session session, void *userdata)
+{
+	(void)userdata;
+
 	if (SSH_channel != NULL)
 	{
 		return NULL;
 	}
 
 	SSH_channel = ssh_channel_new(session);
-	ssh_callbacks_init(&channel_cb);
-	ssh_set_channel_callbacks(SSH_channel, &channel_cb);
 
 	return SSH_channel;
 }
@@ -130,15 +263,41 @@ static int fork_server(void)
 	int i;
 	int ret;
 
-	struct ssl_server_cb_data_t cb_data = {
+	/* Structure for storing the pty size. */
+	struct winsize wsize = {
+		.ws_row = 0,
+		.ws_col = 0,
+		.ws_xpixel = 0,
+		.ws_ypixel = 0};
+
+	/* Our struct holding information about the channel. */
+	struct channel_data_struct cdata = {
+		.pid = 0,
+		.pty_master = -1,
+		.pty_slave = -1,
+		.child_stdin = -1,
+		.child_stdout = -1,
+		.child_stderr = -1,
+		.event = NULL,
+		.winsize = &wsize};
+
+	struct session_data_struct cb_data = {
 		.tries = 0,
 		.error = 0,
 	};
 
-	struct ssh_server_callbacks_struct cb = {
+	struct ssh_channel_callbacks_struct channel_cb = {
+		.userdata = &cdata,
+		.channel_pty_request_function = pty_request,
+		.channel_pty_window_change_function = pty_resize,
+		.channel_shell_request_function = shell_request,
+		.channel_exec_request_function = exec_request,
+		.channel_subsystem_request_function = subsystem_request};
+
+	struct ssh_server_callbacks_struct server_cb = {
 		.userdata = &cb_data,
 		.auth_password_function = auth_password,
-		.channel_open_request_session_function = new_session_channel,
+		.channel_open_request_session_function = channel_open,
 	};
 
 	pid = fork();
@@ -174,8 +333,10 @@ static int fork_server(void)
 
 		ssh_bind_free(sshbind);
 
-		ssh_callbacks_init(&cb);
-		ssh_set_server_callbacks(SSH_session, &cb);
+		ssh_callbacks_init(&channel_cb);
+		ssh_callbacks_init(&server_cb);
+
+		ssh_set_server_callbacks(SSH_session, &server_cb);
 
 		ssh_timeout = 60; // second
 		if (ssh_options_set(SSH_session, SSH_OPTIONS_TIMEOUT, &ssh_timeout) < 0)
@@ -212,6 +373,8 @@ static int fork_server(void)
 			goto cleanup;
 		}
 
+		ssh_set_channel_callbacks(SSH_channel, &channel_cb);
+
 		ssh_timeout = 0;
 		if (ssh_options_set(SSH_session, SSH_OPTIONS_TIMEOUT, &ssh_timeout) < 0)
 		{
@@ -246,6 +409,11 @@ cleanup:
 
 	if (SSH_v2)
 	{
+		close(cdata.pty_master);
+		close(cdata.child_stdin);
+		close(cdata.child_stdout);
+		close(cdata.child_stderr);
+
 		ssh_channel_free(SSH_channel);
 		ssh_disconnect(SSH_session);
 	}
