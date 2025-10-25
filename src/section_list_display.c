@@ -262,7 +262,7 @@ static enum select_cmd_t section_list_select(int total_page, int item_count, int
 
 		switch (ch)
 		{
-		case KEY_NULL:			 // broken pipe
+		case KEY_NULL: // broken pipe
 			log_error("KEY_NULL\n");
 			return EXIT_SECTION;
 		case KEY_TIMEOUT:
@@ -977,7 +977,7 @@ int section_list_display(const char *sname, int32_t aid)
 						  p_section->sid, p_articles[selected_index]->aid, direction, BBS_article_limit_per_section);
 				return -3;
 			}
-			else if (ret > 0 && page_id != page_id_cur) // found and page changed 
+			else if (ret > 0 && page_id != page_id_cur) // found and page changed
 			{
 				ret = query_section_articles(p_section, page_id, p_articles, &article_count, &page_count, &ontop_start_offset);
 				if (ret < 0)
