@@ -977,7 +977,7 @@ int section_list_display(const char *sname, int32_t aid)
 						  p_section->sid, p_articles[selected_index]->aid, direction, BBS_article_limit_per_section);
 				return -3;
 			}
-			else if (ret > 0 && page_id != page_id_cur) // found and page changed
+			else if (ret > 0 && page_id != page_id_cur) // found and page changed 
 			{
 				ret = query_section_articles(p_section, page_id, p_articles, &article_count, &page_count, &ontop_start_offset);
 				if (ret < 0)
