@@ -30,6 +30,7 @@
 #include "section_list_loader.h"
 #include "screen.h"
 #include "str_process.h"
+#include "user_info_display.h"
 #include "user_priv.h"
 #include <string.h>
 #include <time.h>
@@ -50,6 +51,7 @@ enum select_cmd_t
 	EDIT_ARTICLE,
 	DELETE_ARTICLE,
 	QUERY_ARTICLE,
+	QUERY_USER,
 	SET_FAVOR_ARTICLE,
 	UNSET_FAVOR_ARTICLE,
 	FIRST_TOPIC_ARTICLE,
@@ -262,7 +264,7 @@ static enum select_cmd_t section_list_select(int total_page, int item_count, int
 
 		switch (ch)
 		{
-		case KEY_NULL:			 // broken pipe
+		case KEY_NULL: // broken pipe
 			log_error("KEY_NULL\n");
 			return EXIT_SECTION;
 		case KEY_TIMEOUT:
@@ -303,6 +305,12 @@ static enum select_cmd_t section_list_select(int total_page, int item_count, int
 			if (item_count > 0)
 			{
 				return QUERY_ARTICLE;
+			}
+			break;
+		case Ctrl('A'):
+			if (item_count > 0)
+			{
+				return QUERY_USER;
 			}
 			break;
 		case 'F':
@@ -549,6 +557,7 @@ int section_list_display(const char *sname, int32_t aid)
 	ARTICLE article_new;
 	int page_id_cur;
 	const ARTICLE *p_article_locate;
+	USER_INFO user_info;
 
 	p_section = section_list_find_by_name(sname);
 	if (p_section == NULL)
@@ -936,6 +945,23 @@ int section_list_display(const char *sname, int32_t aid)
 			if ((ret = display_article_meta(p_articles[selected_index]->aid)) < 0)
 			{
 				log_error("display_article_meta(aid=%d) error\n", p_articles[selected_index]->aid);
+			}
+			if (section_list_draw_screen(sname, stitle, master_list, display_nickname) < 0)
+			{
+				log_error("section_list_draw_screen() error\n");
+				return -2;
+			}
+			break;
+		case QUERY_USER:
+			if ((ret = query_user_info_by_uid(p_articles[selected_index]->uid, &user_info)) != 1)
+			{
+				clearscr();
+				prints("用户不存在");
+				press_any_key();
+			}
+			else if ((ret = user_info_display(&user_info)) != 0)
+			{
+				log_error("user_info_display(uid=%d) error\n", p_articles[selected_index]->uid);
 			}
 			if (section_list_draw_screen(sname, stitle, master_list, display_nickname) < 0)
 			{
