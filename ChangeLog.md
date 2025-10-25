@@ -9,6 +9,7 @@ Add major features
 
 1. Display of all user list  
 2. Display of online user list  
+3. Display user information of selected item  
 
 
 2025-10-15  v1.4
