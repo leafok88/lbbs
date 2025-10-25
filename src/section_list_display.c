@@ -21,7 +21,6 @@
 #include "article_view_log.h"
 #include "article_del.h"
 #include "common.h"
-#include "display_user_info.h"
 #include "io.h"
 #include "log.h"
 #include "login.h"
@@ -558,7 +557,7 @@ int section_list_display(const char *sname, int32_t aid)
 	ARTICLE article_new;
 	int page_id_cur;
 	const ARTICLE *p_article_locate;
-	USER_INFO q_user_info;
+	USER_INFO user_info;
 
 	p_section = section_list_find_by_name(sname);
 	if (p_section == NULL)
@@ -954,7 +953,7 @@ int section_list_display(const char *sname, int32_t aid)
 			}
 			break;
 		case QUERY_USER:
-			if((ret = query_user_info_by_uid(p_articles[selected_index]->uid, &q_user_info)) != 1)
+			if((ret = query_user_info_by_uid(p_articles[selected_index]->uid, &user_info)) != 1)
 			{
 				log_error("query_user_info_by_uid(uid=%d) error\n", p_articles[selected_index]->uid);
 				clearscr();			
@@ -962,7 +961,7 @@ int section_list_display(const char *sname, int32_t aid)
 				press_any_key();
 				return -2;
 			}
-			if((ret = user_info_display(&q_user_info)) != 0)
+			if((ret = user_info_display(&user_info)) != 0)
 			{
 				log_error("user_info_display(uid=%d) error\n", p_articles[selected_index]->uid);				
 			}			
