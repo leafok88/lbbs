@@ -333,11 +333,6 @@ static int fork_server(void)
 
 		ssh_bind_free(sshbind);
 
-		ssh_callbacks_init(&channel_cb);
-		ssh_callbacks_init(&server_cb);
-
-		ssh_set_server_callbacks(SSH_session, &server_cb);
-
 		ssh_timeout = 60; // second
 		if (ssh_options_set(SSH_session, SSH_OPTIONS_TIMEOUT, &ssh_timeout) < 0)
 		{
@@ -345,12 +340,18 @@ static int fork_server(void)
 			goto cleanup;
 		}
 
+		ssh_set_auth_methods(SSH_session, SSH_AUTH_METHOD_PASSWORD);
+
+		ssh_callbacks_init(&server_cb);
+		ssh_callbacks_init(&channel_cb);
+
+		ssh_set_server_callbacks(SSH_session, &server_cb);
+
 		if (ssh_handle_key_exchange(SSH_session))
 		{
 			log_error("ssh_handle_key_exchange() error: %s\n", ssh_get_error(SSH_session));
 			goto cleanup;
 		}
-		ssh_set_auth_methods(SSH_session, SSH_AUTH_METHOD_PASSWORD);
 
 		event = ssh_event_new();
 		ssh_event_add_session(event, SSH_session);
@@ -374,6 +375,22 @@ static int fork_server(void)
 		}
 
 		ssh_set_channel_callbacks(SSH_channel, &channel_cb);
+
+		do
+		{
+			ret = ssh_event_dopoll(event, 100); // 0.1 second
+			if (ret == SSH_ERROR)
+			{
+				ssh_channel_close(SSH_channel);
+			}
+
+			if (ret == SSH_AGAIN) // loop until SSH connection is fully established
+			{
+				/* Executed only once, once the child process starts. */
+				cdata.event = event;
+				break;
+			}
+		} while (ssh_channel_is_open(SSH_channel));
 
 		ssh_timeout = 0;
 		if (ssh_options_set(SSH_session, SSH_OPTIONS_TIMEOUT, &ssh_timeout) < 0)
