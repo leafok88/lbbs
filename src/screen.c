@@ -40,25 +40,16 @@
 #define STR_TOP_MIDDLE_MAX_LEN 40
 #define STR_TOP_RIGHT_MAX_LEN 80
 
-static const char *get_time_str(char *s, size_t len)
+static size_t get_time_str(char *s, size_t len)
 {
-	static const char *weekday[] = {
-		"天", "一", "二", "三", "四", "五", "六"};
 	time_t curtime;
 	struct tm local_tm;
 
 	time(&curtime);
 	localtime_r(&curtime, &local_tm);
-	size_t j = strftime(s, len, "%b %d %H:%M 星期", &local_tm);
+	size_t j = strftime(s, len, "%m/%d %H:%M %Z", &local_tm);
 
-	if (j == 0 || j + strlen(weekday[local_tm.tm_wday]) + 1 > len)
-	{
-		return NULL;
-	}
-
-	strncat(s, weekday[local_tm.tm_wday], len - 1 - j);
-
-	return s;
+	return j;
 }
 
 void moveto(int row, int col)
@@ -900,24 +891,25 @@ int show_top(const char *str_left, const char *str_middle, const char *str_right
 int show_bottom(const char *msg)
 {
 	char str_time[LINE_BUFFER_LEN];
+	int len_str_time;
 	time_t time_online;
 	struct tm *tm_online;
 	char msg_f[LINE_BUFFER_LEN];
 	int eol;
-	int msg_len;
+	int len_msg;
 	int len;
 	int len_username;
 	char str_tm_online[LINE_BUFFER_LEN];
 
-	get_time_str(str_time, sizeof(str_time));
+	len_str_time = (int)get_time_str(str_time, sizeof(str_time));
 
 	msg_f[0] = '\0';
-	msg_len = 0;
+	len_msg = 0;
 	if (msg != NULL)
 	{
 		strncpy(msg_f, msg, sizeof(msg_f) - 1);
 		msg_f[sizeof(msg_f) - 1] = '\0';
-		len = split_line(msg_f, 23, &eol, &msg_len, 1);
+		len = split_line(msg_f, 23, &eol, &len_msg, 1);
 		msg_f[len] = '\0';
 	}
 
@@ -928,20 +920,20 @@ int show_bottom(const char *msg)
 	if (tm_online->tm_mday > 1)
 	{
 		snprintf(str_tm_online, sizeof(str_tm_online),
-				 "\033[36m%2d\033[33m天\033[36m%2d\033[33m时",
-				 tm_online->tm_mday - 1, tm_online->tm_hour);
+				 "\033[36m%d\033[33md \033[36m%d\033[33m:\033[36m%.2d",
+				 tm_online->tm_mday - 1, tm_online->tm_hour, tm_online->tm_min);
 	}
 	else
 	{
 		snprintf(str_tm_online, sizeof(str_tm_online),
-				 "\033[36m%2d\033[33m时\033[36m%2d\033[33m分",
+				 "\033[36m%d\033[33m:\033[36m%.2d",
 				 tm_online->tm_hour, tm_online->tm_min);
 	}
 
 	moveto(SCREEN_ROWS, 0);
 	clrtoeol();
-	prints("\033[1;44;33m时间[\033[36m%s\033[33m]%s%*s \033[33m帐号[\033[36m%s\033[33m][%s\033[33m]\033[m",
-		   str_time, msg_f, 38 - msg_len - len_username, "", BBS_username, str_tm_online);
+	prints("\033[1;44;33m时间[\033[36m%s\033[33m]%s%*s \033[33m用户[\033[36m%s\033[33m][%s\033[33m]\033[m",
+		   str_time, msg_f, 60 - len_str_time - len_msg - len_username, "", BBS_username, str_tm_online);
 
 	return 0;
 }
