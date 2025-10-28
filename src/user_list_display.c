@@ -82,7 +82,7 @@ static int user_list_draw_items(int page_id, USER_INFO *p_users, int user_count)
 		else if (p_tm->tm_year > 70)
 		{
 			snprintf(str_time_login, sizeof(str_time_login),
-					 "%d年", p_tm->tm_year - 70);
+					 "%d年%d天", p_tm->tm_year - 70, p_tm->tm_yday);
 		}
 		else if (p_tm->tm_yday > 0)
 		{
@@ -92,12 +92,12 @@ static int user_list_draw_items(int page_id, USER_INFO *p_users, int user_count)
 		else if (p_tm->tm_hour > 0)
 		{
 			snprintf(str_time_login, sizeof(str_time_login),
-					 "%d时%d分", p_tm->tm_hour, p_tm->tm_min);
+					 "%d:%.2d", p_tm->tm_hour, p_tm->tm_min);
 		}
 		else
 		{
 			snprintf(str_time_login, sizeof(str_time_login),
-					 "%d分%d秒", p_tm->tm_min, p_tm->tm_sec);
+					 "%d\'%.2d\"", p_tm->tm_min, p_tm->tm_sec);
 		}
 
 		moveto(4 + i, 1);
@@ -142,17 +142,17 @@ static int user_online_list_draw_items(int page_id, USER_ONLINE_INFO *p_users, i
 		else if (p_tm->tm_yday > 0)
 		{
 			snprintf(str_time_login, sizeof(str_time_login),
-					 "%d天%d时", p_tm->tm_yday, p_tm->tm_hour);
+					 "%dd%dh", p_tm->tm_yday, p_tm->tm_hour);
 		}
 		else if (p_tm->tm_hour > 0)
 		{
 			snprintf(str_time_login, sizeof(str_time_login),
-					 "%d时%d分", p_tm->tm_hour, p_tm->tm_min);
+					 "%d:%.2d", p_tm->tm_hour, p_tm->tm_min);
 		}
 		else
 		{
 			snprintf(str_time_login, sizeof(str_time_login),
-					 "%d\'%d\"", p_tm->tm_min, p_tm->tm_sec);
+					 "%d\'%.2d\"", p_tm->tm_min, p_tm->tm_sec);
 		}
 
 		tm_duration = tm_now - p_users[i].last_tm;
