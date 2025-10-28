@@ -933,7 +933,7 @@ int show_bottom(const char *msg)
 	moveto(SCREEN_ROWS, 0);
 	clrtoeol();
 	prints("\033[1;44;33m时间[\033[36m%s\033[33m]%s%*s \033[33m用户[\033[36m%s\033[33m][%s\033[33m]\033[m",
-		   str_time, msg_f, 60 - len_str_time - len_msg - len_username, "", BBS_username, str_tm_online);
+		   str_time, msg_f, 61 - len_str_time - len_msg - len_username, "", BBS_username, str_tm_online);
 
 	return 0;
 }
