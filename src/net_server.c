@@ -687,7 +687,7 @@ int net_server(const char *hostaddr, in_port_t port[])
 			{
 				if (load_file(data_files_load_startup[i]) < 0)
 				{
-					log_error("load_file_mmap(%s) error\n", data_files_load_startup[i]);
+					log_error("load_file(%s) error\n", data_files_load_startup[i]);
 				}
 			}
 			log_common("Reload data files successfully\n");
