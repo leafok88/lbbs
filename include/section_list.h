@@ -123,6 +123,7 @@ extern void section_list_reset_articles(SECTION_LIST *p_section);
 extern SECTION_LIST *section_list_find_by_name(const char *sname);
 extern SECTION_LIST *section_list_find_by_sid(int32_t sid);
 extern int get_section_index(SECTION_LIST *p_section);
+extern int get_section_info(SECTION_LIST *p_section, char *sname, char *stitle, char *master_list);
 
 extern int section_list_append_article(SECTION_LIST *p_section, const ARTICLE *p_article_src);
 extern int section_list_set_article_visible(SECTION_LIST *p_section, int32_t aid, int8_t visible);
