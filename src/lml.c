@@ -232,7 +232,7 @@ int lml_render(const char *str_in, char *str_out, int buf_len, int quote_mode)
 				lml_tag_quote_level += fb_quote_level;
 
 				tag_output_len = snprintf(tag_output_buf, LML_TAG_OUTPUT_BUF_LEN, "%s",
-										  lml_tag_quote_color[(lml_tag_quote_level) % LML_TAG_QUOTE_LEVEL_LOOP]);
+										  lml_tag_quote_color[lml_tag_quote_level % LML_TAG_QUOTE_LEVEL_LOOP]);
 				if (j + tag_output_len >= buf_len)
 				{
 					log_error("Buffer is not longer enough for output string %d >= %d\n", j + tag_output_len, buf_len);
