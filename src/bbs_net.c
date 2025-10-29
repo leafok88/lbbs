@@ -56,9 +56,9 @@ struct _bbsnet_conf
 	char charset[20];
 } bbsnet_conf[MAXSTATION];
 
-MENU_SET bbsnet_menu;
+static MENU_SET bbsnet_menu;
 
-int load_bbsnet_conf(const char *file_config)
+static int load_bbsnet_conf(const char *file_config)
 {
 	FILE *fp;
 	MENU *p_menu;
@@ -153,7 +153,7 @@ int load_bbsnet_conf(const char *file_config)
 	return 0;
 }
 
-void unload_bbsnet_conf(void)
+static void unload_bbsnet_conf(void)
 {
 	bbsnet_menu.menu_count = 0;
 	bbsnet_menu.menu_item_count = 0;
@@ -164,7 +164,7 @@ void unload_bbsnet_conf(void)
 	bbsnet_menu.p_menu_item_pool = NULL;
 }
 
-void process_bar(int n, int len)
+static void process_bar(int n, int len)
 {
 	char buf[LINE_BUFFER_LEN];
 	char buf2[LINE_BUFFER_LEN];
@@ -192,7 +192,7 @@ void process_bar(int n, int len)
 	iflush();
 }
 
-int bbsnet_connect(int n)
+static int bbsnet_connect(int n)
 {
 	int sock, ret, loop, error;
 	int sock_connected = 0;
@@ -807,8 +807,7 @@ cleanup:
 	return 0;
 }
 
-static int
-bbsnet_refresh()
+static int bbsnet_refresh()
 {
 	clearscr();
 	moveto(1, 0);
@@ -832,7 +831,7 @@ bbsnet_refresh()
 	return 0;
 }
 
-int bbsnet_selchange()
+static int bbsnet_selchange()
 {
 	int i = bbsnet_menu.menu_item_pos[0];
 
@@ -857,7 +856,7 @@ int bbsnet_selchange()
 	return 0;
 }
 
-int bbs_net()
+extern int bbs_net()
 {
 	int ch, i;
 
