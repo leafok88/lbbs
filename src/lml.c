@@ -301,106 +301,103 @@ int lml_render(const char *str_in, char *str_out, int buf_len, int quote_mode)
 			tag_start_pos = i;
 			tag_name_pos = i + 1;
 		}
-		else if (!lml_tag_disabled && str_in[i] == ']')
+		else if (!lml_tag_disabled && str_in[i] == ']' && tag_name_pos >= 0)
 		{
-			if (tag_name_pos >= 0)
+			tag_end_pos = i;
+
+			// Skip space characters
+			while (str_in[tag_name_pos] == ' ')
 			{
-				tag_end_pos = i;
-
-				// Skip space characters
-				while (str_in[tag_name_pos] == ' ')
-				{
-					tag_name_pos++;
-				}
-
-				for (tag_name_found = 0, k = 0; k < LML_TAG_COUNT; k++)
-				{
-					if (strncasecmp(lml_tag_def[k].tag_name, str_in + tag_name_pos, (size_t)lml_tag_name_len[k]) == 0)
-					{
-						tag_param_pos = -1;
-						switch (str_in[tag_name_pos + lml_tag_name_len[k]])
-						{
-						case ' ':
-							tag_name_found = 1;
-							tag_param_pos = tag_name_pos + lml_tag_name_len[k] + 1;
-							while (str_in[tag_param_pos] == ' ')
-							{
-								tag_param_pos++;
-							}
-							strncpy(tag_param_buf, str_in + tag_param_pos, (size_t)MIN(tag_end_pos - tag_param_pos, LML_TAG_PARAM_BUF_LEN));
-							tag_param_buf[MIN(tag_end_pos - tag_param_pos, LML_TAG_PARAM_BUF_LEN)] = '\0';
-						case ']':
-							tag_name_found = 1;
-							if (tag_param_pos == -1 && lml_tag_def[k].tag_output != NULL && lml_tag_def[k].default_param != NULL) // Apply default param if not defined
-							{
-								strncpy(tag_param_buf, lml_tag_def[k].default_param, LML_TAG_PARAM_BUF_LEN - 1);
-								tag_param_buf[LML_TAG_PARAM_BUF_LEN - 1] = '\0';
-							}
-							if (!quote_mode)
-							{
-								if (lml_tag_def[k].tag_output != NULL)
-								{
-									tag_output_len = snprintf(tag_output_buf, LML_TAG_OUTPUT_BUF_LEN, lml_tag_def[k].tag_output, tag_param_buf);
-								}
-								else if (lml_tag_def[k].tag_filter_cb != NULL)
-								{
-									tag_output_len = lml_tag_def[k].tag_filter_cb(
-										lml_tag_def[k].tag_name, tag_param_buf, tag_output_buf, LML_TAG_OUTPUT_BUF_LEN, 0);
-								}
-								else
-								{
-									tag_output_len = 0;
-								}
-							}
-							else // if (quote_mode)
-							{
-								if (lml_tag_def[k].quote_mode_output != NULL)
-								{
-									tag_output_len = snprintf(tag_output_buf, LML_TAG_OUTPUT_BUF_LEN, lml_tag_def[k].quote_mode_output, tag_param_buf);
-								}
-								else if (lml_tag_def[k].tag_filter_cb != NULL)
-								{
-									tag_output_len = lml_tag_def[k].tag_filter_cb(
-										lml_tag_def[k].tag_name, tag_param_buf, tag_output_buf, LML_TAG_OUTPUT_BUF_LEN, 1);
-								}
-								else
-								{
-									tag_output_len = 0;
-								}
-							}
-							if (j + tag_output_len >= buf_len)
-							{
-								log_error("Buffer is not longer enough for output string %d >= %d\n", j + tag_output_len, buf_len);
-								str_out[j] = '\0';
-								return j;
-							}
-							memcpy(str_out + j, tag_output_buf, (size_t)tag_output_len);
-							j += tag_output_len;
-							break;
-						default: // tag_name not match
-							continue;
-						}
-						break;
-					}
-				}
-
-				if (!tag_name_found)
-				{
-					tag_output_len = tag_end_pos - tag_start_pos + 1;
-					if (j + tag_output_len >= buf_len)
-					{
-						log_error("Buffer is not longer enough for output string %ld >= %d\n", j + tag_output_len, buf_len);
-						str_out[j] = '\0';
-						return j;
-					}
-
-					memcpy(str_out + j, str_in + tag_start_pos, (size_t)tag_output_len);
-					j += tag_output_len;
-				}
-
-				tag_start_pos = -1;
-				tag_name_pos = -1;
+				tag_name_pos++;
 			}
+
+			for (tag_name_found = 0, k = 0; k < LML_TAG_COUNT; k++)
+			{
+				if (strncasecmp(lml_tag_def[k].tag_name, str_in + tag_name_pos, (size_t)lml_tag_name_len[k]) == 0)
+				{
+					tag_param_pos = -1;
+					switch (str_in[tag_name_pos + lml_tag_name_len[k]])
+					{
+					case ' ':
+						tag_name_found = 1;
+						tag_param_pos = tag_name_pos + lml_tag_name_len[k] + 1;
+						while (str_in[tag_param_pos] == ' ')
+						{
+							tag_param_pos++;
+						}
+						strncpy(tag_param_buf, str_in + tag_param_pos, (size_t)MIN(tag_end_pos - tag_param_pos, LML_TAG_PARAM_BUF_LEN));
+						tag_param_buf[MIN(tag_end_pos - tag_param_pos, LML_TAG_PARAM_BUF_LEN)] = '\0';
+					case ']':
+						tag_name_found = 1;
+						if (tag_param_pos == -1 && lml_tag_def[k].tag_output != NULL && lml_tag_def[k].default_param != NULL) // Apply default param if not defined
+						{
+							strncpy(tag_param_buf, lml_tag_def[k].default_param, LML_TAG_PARAM_BUF_LEN - 1);
+							tag_param_buf[LML_TAG_PARAM_BUF_LEN - 1] = '\0';
+						}
+						if (!quote_mode)
+						{
+							if (lml_tag_def[k].tag_output != NULL)
+							{
+								tag_output_len = snprintf(tag_output_buf, LML_TAG_OUTPUT_BUF_LEN, lml_tag_def[k].tag_output, tag_param_buf);
+							}
+							else if (lml_tag_def[k].tag_filter_cb != NULL)
+							{
+								tag_output_len = lml_tag_def[k].tag_filter_cb(
+									lml_tag_def[k].tag_name, tag_param_buf, tag_output_buf, LML_TAG_OUTPUT_BUF_LEN, 0);
+							}
+							else
+							{
+								tag_output_len = 0;
+							}
+						}
+						else // if (quote_mode)
+						{
+							if (lml_tag_def[k].quote_mode_output != NULL)
+							{
+								tag_output_len = snprintf(tag_output_buf, LML_TAG_OUTPUT_BUF_LEN, lml_tag_def[k].quote_mode_output, tag_param_buf);
+							}
+							else if (lml_tag_def[k].tag_filter_cb != NULL)
+							{
+								tag_output_len = lml_tag_def[k].tag_filter_cb(
+									lml_tag_def[k].tag_name, tag_param_buf, tag_output_buf, LML_TAG_OUTPUT_BUF_LEN, 1);
+							}
+							else
+							{
+								tag_output_len = 0;
+							}
+						}
+						if (j + tag_output_len >= buf_len)
+						{
+							log_error("Buffer is not longer enough for output string %d >= %d\n", j + tag_output_len, buf_len);
+							str_out[j] = '\0';
+							return j;
+						}
+						memcpy(str_out + j, tag_output_buf, (size_t)tag_output_len);
+						j += tag_output_len;
+						break;
+					default: // tag_name not match
+						continue;
+					}
+					break;
+				}
+			}
+
+			if (!tag_name_found)
+			{
+				tag_output_len = tag_end_pos - tag_start_pos + 1;
+				if (j + tag_output_len >= buf_len)
+				{
+					log_error("Buffer is not longer enough for output string %ld >= %d\n", j + tag_output_len, buf_len);
+					str_out[j] = '\0';
+					return j;
+				}
+
+				memcpy(str_out + j, str_in + tag_start_pos, (size_t)tag_output_len);
+				j += tag_output_len;
+			}
+
+			tag_start_pos = -1;
+			tag_name_pos = -1;
 		}
 		else if (lml_tag_disabled || tag_name_pos == -1) // not in LML tag
 		{
