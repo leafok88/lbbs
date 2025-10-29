@@ -508,19 +508,9 @@ int query_favor_articles(ARTICLE_FAVOR *p_favor, int page_id, ARTICLE **p_articl
 			return -3;
 		}
 
-		// acquire lock of section
-		if (section_list_rd_lock(p_section) < 0)
+		if (get_section_info(p_section, p_snames[i], NULL, NULL) < 0)
 		{
-			log_error("section_list_rd_lock(sid = %d) error\n", p_section->sid);
-			return -4;
-		}
-
-		memcpy(p_snames[i], p_section->sname, sizeof(p_snames[i]));
-
-		// release lock of section
-		if (section_list_rd_unlock(p_section) < 0)
-		{
-			log_error("section_list_rd_unlock(sid = %d) error\n", p_section->sid);
+			log_error("get_section_info(sid=%d) error\n", p_section->sid);
 			return -4;
 		}
 	}

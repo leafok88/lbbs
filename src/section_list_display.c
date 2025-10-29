@@ -575,21 +575,10 @@ int section_list_display(const char *sname, int32_t aid)
 
 	section_index = get_section_index(p_section);
 
-	if ((ret = section_list_rd_lock(p_section)) < 0)
+	if (get_section_info(p_section, NULL, stitle, master_list) < 0)
 	{
-		log_error("section_list_rd_lock(sid = 0) error\n");
-		return -2;
-	}
-
-	strncpy(stitle, p_section->stitle, sizeof(stitle) - 1);
-	stitle[sizeof(stitle) - 1] = '\0';
-	strncpy(master_list, p_section->master_list, sizeof(master_list) - 1);
-	master_list[sizeof(master_list) - 1] = '\0';
-
-	if ((ret = section_list_rd_unlock(p_section)) < 0)
-	{
-		log_error("section_list_rd_unlock(sid = 0) error\n");
-		return -2;
+		log_error("get_section_info(sid=%d) error\n", p_section->sid);
+		return -4;
 	}
 
 	if (aid == 0)
