@@ -118,10 +118,8 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 						  conf_file, size, errno, retry_cnt + 1);
 				break;
 			}
-#ifdef _DEBUG
 			log_error("shmget(conf_file=%s, proj_id=%d, key=0x%x, size=%d) error (%d), retry ...\n",
 					  conf_file, proj_id + retry_cnt, key, size, errno);
-#endif					  
 			retry_cnt++;
 		}
 	} while (p_menu_set->shmid == -1);
