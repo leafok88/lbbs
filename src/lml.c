@@ -178,6 +178,18 @@ inline static void lml_init(void)
 	}
 }
 
+#define CHECK_AND_APPEND_OUTPUT(out_buf, out_buf_len, out_buf_offset, tag_out, tag_out_len) \
+{ \
+	if ((out_buf_offset) + (tag_out_len) >= (out_buf_len)) \
+	{ \
+		log_error("Buffer is not longer enough for output string %d >= %d\n", (out_buf_offset) + (tag_out_len), (out_buf_len)); \
+		out_buf[out_buf_offset] = '\0'; \
+		return (out_buf_offset); \
+	} \
+	memcpy((out_buf) + (out_buf_offset), (tag_out), (size_t)(tag_out_len)); \
+	(out_buf_offset) += (tag_out_len); \
+}
+
 int lml_render(const char *str_in, char *str_out, int buf_len, int quote_mode)
 {
 	char c;
@@ -217,14 +229,7 @@ int lml_render(const char *str_in, char *str_out, int buf_len, int quote_mode)
 			{
 				tag_output_len = snprintf(tag_output_buf, LML_TAG_OUTPUT_BUF_LEN, "%s",
 										  lml_tag_quote_color[lml_tag_quote_level % LML_TAG_QUOTE_LEVEL_LOOP]);
-				if (j + tag_output_len >= buf_len)
-				{
-					log_error("Buffer is not longer enough for output string %d >= %d\n", j + tag_output_len, buf_len);
-					str_out[j] = '\0';
-					return j;
-				}
-				memcpy(str_out + j, tag_output_buf, (size_t)tag_output_len);
-				j += tag_output_len;
+				CHECK_AND_APPEND_OUTPUT(str_out, buf_len, j, tag_output_buf, tag_output_len);
 			}
 
 			new_line = 0;
@@ -237,14 +242,7 @@ int lml_render(const char *str_in, char *str_out, int buf_len, int quote_mode)
 
 			if (str_in[k] == 'm') // Valid
 			{
-				if (j + (k - i + 1) >= buf_len)
-				{
-					log_error("Buffer is not longer enough for output string %d >= %d\n", j + (k - i + 1), buf_len);
-					str_out[j] = '\0';
-					return j;
-				}
-				memcpy(str_out + j, str_in + i, (size_t)(k - i + 1));
-				j += (k - i + 1);
+				CHECK_AND_APPEND_OUTPUT(str_out, buf_len, j, str_in + i, k - i + 1);
 				i = k;
 				continue;
 			}
@@ -260,15 +258,7 @@ int lml_render(const char *str_in, char *str_out, int buf_len, int quote_mode)
 			{
 				tag_end_pos = i - 1;
 				tag_output_len = tag_end_pos - tag_start_pos + 1;
-				if (j + tag_output_len >= buf_len)
-				{
-					log_error("Buffer is not longer enough for output string %ld >= %d\n", j + tag_output_len, buf_len);
-					str_out[j] = '\0';
-					return j;
-				}
-
-				memcpy(str_out + j, str_in + tag_start_pos, (size_t)tag_output_len);
-				j += tag_output_len;
+				CHECK_AND_APPEND_OUTPUT(str_out, buf_len, j, str_in + tag_start_pos, tag_output_len);
 			}
 
 			if (fb_quote_level > 0)
@@ -276,14 +266,7 @@ int lml_render(const char *str_in, char *str_out, int buf_len, int quote_mode)
 				lml_tag_quote_level -= fb_quote_level;
 
 				tag_output_len = snprintf(tag_output_buf, LML_TAG_OUTPUT_BUF_LEN, "\033[m");
-				if (j + tag_output_len >= buf_len)
-				{
-					log_error("Buffer is not longer enough for output string %d >= %d\n", j + tag_output_len, buf_len);
-					str_out[j] = '\0';
-					return j;
-				}
-				memcpy(str_out + j, tag_output_buf, (size_t)tag_output_len);
-				j += tag_output_len;
+				CHECK_AND_APPEND_OUTPUT(str_out, buf_len, j, tag_output_buf, tag_output_len);
 			}
 
 			tag_start_pos = -1;
@@ -301,15 +284,7 @@ int lml_render(const char *str_in, char *str_out, int buf_len, int quote_mode)
 			{
 				tag_end_pos = i - 1;
 				tag_output_len = tag_end_pos - tag_start_pos + 1;
-				if (j + tag_output_len >= buf_len)
-				{
-					log_error("Buffer is not longer enough for output string %ld >= %d\n", j + tag_output_len, buf_len);
-					str_out[j] = '\0';
-					return j;
-				}
-
-				memcpy(str_out + j, str_in + tag_start_pos, (size_t)tag_output_len);
-				j += tag_output_len;
+				CHECK_AND_APPEND_OUTPUT(str_out, buf_len, j, str_in + tag_start_pos, tag_output_len);
 			}
 
 			tag_start_pos = i;
@@ -348,6 +323,7 @@ int lml_render(const char *str_in, char *str_out, int buf_len, int quote_mode)
 							strncpy(tag_param_buf, lml_tag_def[k].default_param, LML_TAG_PARAM_BUF_LEN - 1);
 							tag_param_buf[LML_TAG_PARAM_BUF_LEN - 1] = '\0';
 						}
+						tag_output_len = 0;
 						if (!quote_mode)
 						{
 							if (lml_tag_def[k].tag_output != NULL)
@@ -358,10 +334,6 @@ int lml_render(const char *str_in, char *str_out, int buf_len, int quote_mode)
 							{
 								tag_output_len = lml_tag_def[k].tag_filter_cb(
 									lml_tag_def[k].tag_name, tag_param_buf, tag_output_buf, LML_TAG_OUTPUT_BUF_LEN, 0);
-							}
-							else
-							{
-								tag_output_len = 0;
 							}
 						}
 						else // if (quote_mode)
@@ -375,19 +347,8 @@ int lml_render(const char *str_in, char *str_out, int buf_len, int quote_mode)
 								tag_output_len = lml_tag_def[k].tag_filter_cb(
 									lml_tag_def[k].tag_name, tag_param_buf, tag_output_buf, LML_TAG_OUTPUT_BUF_LEN, 1);
 							}
-							else
-							{
-								tag_output_len = 0;
-							}
 						}
-						if (j + tag_output_len >= buf_len)
-						{
-							log_error("Buffer is not longer enough for output string %d >= %d\n", j + tag_output_len, buf_len);
-							str_out[j] = '\0';
-							return j;
-						}
-						memcpy(str_out + j, tag_output_buf, (size_t)tag_output_len);
-						j += tag_output_len;
+						CHECK_AND_APPEND_OUTPUT(str_out, buf_len, j, tag_output_buf, tag_output_len);
 						break;
 					default: // tag_name not match
 						continue;
@@ -399,15 +360,7 @@ int lml_render(const char *str_in, char *str_out, int buf_len, int quote_mode)
 			if (!tag_name_found)
 			{
 				tag_output_len = tag_end_pos - tag_start_pos + 1;
-				if (j + tag_output_len >= buf_len)
-				{
-					log_error("Buffer is not longer enough for output string %ld >= %d\n", j + tag_output_len, buf_len);
-					str_out[j] = '\0';
-					return j;
-				}
-
-				memcpy(str_out + j, str_in + tag_start_pos, (size_t)tag_output_len);
-				j += tag_output_len;
+				CHECK_AND_APPEND_OUTPUT(str_out, buf_len, j, str_in + tag_start_pos, tag_output_len);
 			}
 
 			tag_start_pos = -1;
@@ -455,28 +408,13 @@ int lml_render(const char *str_in, char *str_out, int buf_len, int quote_mode)
 	{
 		tag_end_pos = i - 1;
 		tag_output_len = tag_end_pos - tag_start_pos + 1;
-		if (j + tag_output_len >= buf_len)
-		{
-			log_error("Buffer is not longer enough for output string %ld >= %d\n", j + tag_output_len, buf_len);
-			str_out[j] = '\0';
-			return j;
-		}
-
-		memcpy(str_out + j, str_in + tag_start_pos, (size_t)tag_output_len);
-		j += tag_output_len;
+		CHECK_AND_APPEND_OUTPUT(str_out, buf_len, j, str_in + tag_start_pos, tag_output_len);
 	}
 
 	if (!quote_mode && !lml_tag_disabled && lml_tag_quote_level > 0)
 	{
 		tag_output_len = snprintf(tag_output_buf, LML_TAG_OUTPUT_BUF_LEN, "\033[m");
-		if (j + tag_output_len >= buf_len)
-		{
-			log_error("Buffer is not longer enough for output string %d >= %d\n", j + tag_output_len, buf_len);
-			str_out[j] = '\0';
-			return j;
-		}
-		memcpy(str_out + j, tag_output_buf, (size_t)tag_output_len);
-		j += tag_output_len;
+		CHECK_AND_APPEND_OUTPUT(str_out, buf_len, j, tag_output_buf, tag_output_len);
 	}
 
 	str_out[j] = '\0';
