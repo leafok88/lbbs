@@ -63,13 +63,14 @@ static int lml_tag_color_filter(const char *tag_name, const char *tag_param_buf,
 }
 
 #define LML_TAG_QUOTE_MAX_LEVEL 10
-#define LML_TAG_QUOTE_LEVEL_LOOP 3
 
 static const char *lml_tag_quote_color[] = {
 	"\033[33m", // yellow
 	"\033[32m", // green
 	"\033[35m", // magenta
 };
+
+static const int LML_TAG_QUOTE_LEVEL_LOOP = (int)(sizeof(lml_tag_quote_color) / sizeof(const char *));
 
 static int lml_tag_quote_level = 0;
 
@@ -119,11 +120,11 @@ const LML_TAG_DEF lml_tag_def[] = {
 	// Definition of tuple: {lml_tag, lml_output, default_param, quote_mode_output, lml_filter_cb}
 	{"plain", NULL, NULL, NULL, lml_tag_disable_filter},
 	{"nolml", "", NULL, "", NULL}, // deprecated
-	{"lml", "", NULL, "", NULL}, // deprecated
-	{"align", "", "", "", NULL}, // N/A
-	{"/align", "", "", "", NULL}, // N/A
-	{"size", "", "", "", NULL}, // N/A
-	{"/size", "", "", "", NULL}, // N/A
+	{"lml", "", NULL, "", NULL},   // deprecated
+	{"align", "", "", "", NULL},   // N/A
+	{"/align", "", "", "", NULL},  // N/A
+	{"size", "", "", "", NULL},	   // N/A
+	{"/size", "", "", "", NULL},   // N/A
 	{"left", "[", "", "[left]", NULL},
 	{"right", "]", "", "[right]", NULL},
 	{"bold", "\033[1m", "", "", NULL}, // does not work in Fterm
