@@ -20,7 +20,6 @@
 extern int list_section(void *param);
 extern int exec_mbem(void *param);
 extern int exit_bbs(void *param);
-extern int bbsnet(void *param);
 extern int license(void *param);
 extern int copyright(void *param);
 extern int version(void *param);
