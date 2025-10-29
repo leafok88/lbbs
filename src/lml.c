@@ -204,33 +204,17 @@ int lml_render(const char *str_in, char *str_out, int buf_len, int quote_mode)
 	{
 		if (!quote_mode && !lml_tag_disabled && new_line)
 		{
-			if (fb_quote_level > 0)
-			{
-				lml_tag_quote_level -= fb_quote_level;
-
-				tag_output_len = snprintf(tag_output_buf, LML_TAG_OUTPUT_BUF_LEN, "%s",
-										  (lml_tag_quote_level > 0 ? lml_tag_quote_color[lml_tag_quote_level % LML_TAG_QUOTE_LEVEL_LOOP] : "\033[m"));
-				if (j + tag_output_len >= buf_len)
-				{
-					log_error("Buffer is not longer enough for output string %d >= %d\n", j + tag_output_len, buf_len);
-					str_out[j] = '\0';
-					return j;
-				}
-				memcpy(str_out + j, tag_output_buf, (size_t)tag_output_len);
-				j += tag_output_len;
-
-				fb_quote_level = 0;
-			}
+			fb_quote_level = 0;
 
 			while (str_in[i + fb_quote_level * 2] == ':' && str_in[i + fb_quote_level * 2 + 1] == ' ') // FB2000 quote leading str
 			{
 				fb_quote_level++;
 			}
 
-			if (fb_quote_level > 0)
-			{
-				lml_tag_quote_level += fb_quote_level;
+			lml_tag_quote_level += fb_quote_level;
 
+			if (lml_tag_quote_level > 0)
+			{
 				tag_output_len = snprintf(tag_output_buf, LML_TAG_OUTPUT_BUF_LEN, "%s",
 										  lml_tag_quote_color[lml_tag_quote_level % LML_TAG_QUOTE_LEVEL_LOOP]);
 				if (j + tag_output_len >= buf_len)
@@ -287,6 +271,21 @@ int lml_render(const char *str_in, char *str_out, int buf_len, int quote_mode)
 				j += tag_output_len;
 			}
 
+			if (fb_quote_level > 0)
+			{
+				lml_tag_quote_level -= fb_quote_level;
+
+				tag_output_len = snprintf(tag_output_buf, LML_TAG_OUTPUT_BUF_LEN, "\033[m");
+				if (j + tag_output_len >= buf_len)
+				{
+					log_error("Buffer is not longer enough for output string %d >= %d\n", j + tag_output_len, buf_len);
+					str_out[j] = '\0';
+					return j;
+				}
+				memcpy(str_out + j, tag_output_buf, (size_t)tag_output_len);
+				j += tag_output_len;
+			}
+
 			tag_start_pos = -1;
 			tag_name_pos = -1;
 			new_line = 1;
@@ -298,6 +297,21 @@ int lml_render(const char *str_in, char *str_out, int buf_len, int quote_mode)
 
 		if (!lml_tag_disabled && str_in[i] == '[')
 		{
+			if (tag_start_pos != -1) // tag is not closed
+			{
+				tag_end_pos = i - 1;
+				tag_output_len = tag_end_pos - tag_start_pos + 1;
+				if (j + tag_output_len >= buf_len)
+				{
+					log_error("Buffer is not longer enough for output string %ld >= %d\n", j + tag_output_len, buf_len);
+					str_out[j] = '\0';
+					return j;
+				}
+
+				memcpy(str_out + j, str_in + tag_start_pos, (size_t)tag_output_len);
+				j += tag_output_len;
+			}
+
 			tag_start_pos = i;
 			tag_name_pos = i + 1;
 		}
