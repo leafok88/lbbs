@@ -44,6 +44,7 @@ const char *str_in[] = {
 	"[abc][left ][ right ][ colory ][left  \nABCD[left]EFG[right ",
 	"ABCD]EFG",
 	": : A123456789B123456789C123456789D123456789E123456789F123456789G123456789H123456789I123456789J123456789",
+	"\033[0m\033[I             \033[1;32m;,                                               ;,\033[m",
 };
 
 const int str_cnt = sizeof(str_in) / sizeof(const char *);

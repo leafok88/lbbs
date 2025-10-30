@@ -850,7 +850,7 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 		}
 
 		// Apply LML render to content body
-		len = lml_render(row[1], content_f, ARTICLE_CONTENT_MAX_LEN, SCREEN_COLS - 3, 1);
+		len = lml_render(row[1], content_f, ARTICLE_CONTENT_MAX_LEN, MAX_EDITOR_DATA_LINE_LENGTH - 3, 1);
 		content_f[len] = '\0';
 
 		// Remove control sequence
@@ -860,7 +860,7 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 					   "\n\n【 在 %s (%s) 的大作中提到: 】\n",
 					   p_article->username, p_article->nickname);
 
-		quote_content_lines = split_data_lines(content_f, SCREEN_COLS, line_offsets, ARTICLE_QUOTE_MAX_LINES + 1, 0, NULL);
+		quote_content_lines = split_data_lines(content_f, MAX_EDITOR_DATA_LINE_LENGTH - 2, line_offsets, ARTICLE_QUOTE_MAX_LINES + 1, 0, NULL);
 		for (i = 0; i < quote_content_lines; i++)
 		{
 			memcpy(content + len, ": ", 2); // quote line prefix
