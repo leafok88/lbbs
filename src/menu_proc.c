@@ -26,6 +26,7 @@
 #include "menu.h"
 #include "section_list_display.h"
 #include "screen.h"
+#include "user_intro_edit.h"
 #include "user_list_display.h"
 #include "user_priv.h"
 #include <dlfcn.h>
@@ -44,7 +45,8 @@ int list_section(void *param)
 	return REDRAW;
 }
 
-typedef union exec_handler_t{
+typedef union exec_handler_t
+{
 	void *p;
 	int (*handler)();
 } exec_handler;
@@ -360,6 +362,16 @@ int list_online_user(void *param)
 	if (user_list_display(1) < 0)
 	{
 		log_error("user_list_display(online_user) error\n");
+	}
+
+	return REDRAW;
+}
+
+int edit_intro(void *param)
+{
+	if (user_intro_edit(BBS_priv.uid) < 0)
+	{
+		log_error("user_intro_edit(%d) error\n", BBS_priv.uid);
 	}
 
 	return REDRAW;
