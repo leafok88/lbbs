@@ -178,17 +178,17 @@ inline static void lml_init(void)
 	}
 }
 
-#define CHECK_AND_APPEND_OUTPUT(out_buf, out_buf_len, out_buf_offset, tag_out, tag_out_len) \
-{ \
-	if ((out_buf_offset) + (tag_out_len) >= (out_buf_len)) \
-	{ \
-		log_error("Buffer is not longer enough for output string %d >= %d\n", (out_buf_offset) + (tag_out_len), (out_buf_len)); \
-		out_buf[out_buf_offset] = '\0'; \
-		return (out_buf_offset); \
-	} \
-	memcpy((out_buf) + (out_buf_offset), (tag_out), (size_t)(tag_out_len)); \
-	(out_buf_offset) += (tag_out_len); \
-}
+#define CHECK_AND_APPEND_OUTPUT(out_buf, out_buf_len, out_buf_offset, tag_out, tag_out_len)                                         \
+	{                                                                                                                               \
+		if ((out_buf_offset) + (tag_out_len) >= (out_buf_len))                                                                      \
+		{                                                                                                                           \
+			log_error("Buffer is not longer enough for output string %d >= %d\n", (out_buf_offset) + (tag_out_len), (out_buf_len)); \
+			out_buf[out_buf_offset] = '\0';                                                                                         \
+			return (out_buf_offset);                                                                                                \
+		}                                                                                                                           \
+		memcpy((out_buf) + (out_buf_offset), (tag_out), (size_t)(tag_out_len));                                                     \
+		(out_buf_offset) += (tag_out_len);                                                                                          \
+	}
 
 int lml_render(const char *str_in, char *str_out, int buf_len, int quote_mode)
 {
@@ -237,19 +237,17 @@ int lml_render(const char *str_in, char *str_out, int buf_len, int quote_mode)
 
 		if (str_in[i] == '\033' && str_in[i + 1] == '[') // Escape sequence -- copy directly
 		{
-			for (k = i + 2; str_in[k] != '\0' && str_in[k] != 'm'; k++)
+			for (k = i + 2; str_in[k] != '\0' && str_in[k] != 'm' && str_in[k] != '\033'; k++)
 				;
 
-			if (str_in[k] == 'm') // Valid
+			if (str_in[k] != 'm') // invalid
 			{
-				CHECK_AND_APPEND_OUTPUT(str_out, buf_len, j, str_in + i, k - i + 1);
-				i = k;
-				continue;
+				k--;
 			}
-			else // reach end of string
-			{
-				break;
-			}
+
+			CHECK_AND_APPEND_OUTPUT(str_out, buf_len, j, str_in + i, k - i + 1);
+			i = k;
+			continue;
 		}
 
 		if (str_in[i] == '\n') // jump out of tag at end of line
