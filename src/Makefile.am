@@ -13,7 +13,7 @@ bbsd_LDFLAGS=-export-dynamic
 test_trie_dict_SOURCES = log.c test_trie_dict.c trie_dict.c
 test_file_loader_SOURCES = file_loader.c log.c str_process.c test_file_loader.c trie_dict.c
 test_section_list_SOURCES = bbs.c common.c database.c log.c section_list.c test_section_list.c trie_dict.c user_list.c user_priv.c user_stat.c
-test_lml_SOURCES = lml.c log.c test_lml.c
+test_lml_SOURCES = lml.c log.c str_process.c test_lml.c
 test_ssh_server_SOURCES = log.c test_ssh_server.c
 test_article_favor_SOURCES = article_favor.c bbs.c common.c database.c log.c section_list.c test_article_favor.c trie_dict.c \
 							 user_list.c user_priv.c user_stat.c
