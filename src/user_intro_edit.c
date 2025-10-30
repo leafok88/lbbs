@@ -6,6 +6,7 @@
 #include "str_process.h"
 #include "user_list.h"
 #include "user_priv.h"
+#include <ctype.h>
 #include <stdlib.h>
 
 #define USER_INTRO_MAX_LEN 1280
