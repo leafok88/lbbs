@@ -42,7 +42,8 @@ const char *str_in[] = {
 	"[color red]Red[/color][plain][color blue]Blue[/color][plain]",
 	"[color yellow]Yellow[/color][nolml][left][color blue]Blue[/color][right][lml][color red]Red[/color]",
 	"[abc][left ][ right ][ colory ][left  \nABCD[left]EFG[right ",
-	"ABCD]EFG"
+	"ABCD]EFG",
+	": : A123456789B123456789C123456789D123456789E123456789F123456789G123456789H123456789I123456789J123456789",
 };
 
 const int str_cnt = sizeof(str_in) / sizeof(const char *);
@@ -65,7 +66,7 @@ int main(int argc, char *argv[])
 	printf("Test #1: quote_mode = 0\n");
 	for (i = 0; i < str_cnt; i++)
 	{
-		j = lml_render(str_in[i], str_out_buf, sizeof(str_out_buf), 0);
+		j = lml_render(str_in[i], str_out_buf, sizeof(str_out_buf), 80, 0);
 
 		printf("Input(len=%ld): %s\nOutput(len=%d): %s\n", strlen(str_in[i]), str_in[i], j, str_out_buf);
 	}
@@ -74,7 +75,7 @@ int main(int argc, char *argv[])
 	printf("Test #2: quote_mode = 1\n");
 	for (i = 0; i < str_cnt; i++)
 	{
-		j = lml_render(str_in[i], str_out_buf, sizeof(str_out_buf), 1);
+		j = lml_render(str_in[i], str_out_buf, sizeof(str_out_buf), 80, 1);
 
 		printf("Input(len=%ld): %s\nOutput(len=%d): %s\n", strlen(str_in[i]), str_in[i], j, str_out_buf);
 	}

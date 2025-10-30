@@ -163,7 +163,7 @@ int user_info_display(USER_INFO *p_user_info)
 	user_level = get_user_level(p_user_info->exp);
 	user_level_name = get_user_level_name(user_level);
 
-	intro_len = lml_render(p_user_info->intro, intro_f, sizeof(intro_f), 0);
+	intro_len = lml_render(p_user_info->intro, intro_f, sizeof(intro_f), 0, 0);
 
 	snprintf(user_info_f, sizeof(user_info_f),
 			 "\n%s (%s) 上站 [%d] 发文 [%d]\n"

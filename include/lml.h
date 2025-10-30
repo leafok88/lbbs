@@ -19,6 +19,6 @@
 
 #include <stddef.h>
 
-extern int lml_render(const char *str_in, char *str_out, int buf_len, int quote_mode);
+extern int lml_render(const char *str_in, char *str_out, int buf_len, int width, int quote_mode);
 
 #endif //_LML_H_
