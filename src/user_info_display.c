@@ -163,7 +163,7 @@ int user_info_display(USER_INFO *p_user_info)
 	user_level = get_user_level(p_user_info->exp);
 	user_level_name = get_user_level_name(user_level);
 
-	intro_len = lml_render(p_user_info->intro, intro_f, sizeof(intro_f), 0, 0);
+	intro_len = lml_render(p_user_info->intro, intro_f, sizeof(intro_f), SCREEN_COLS, 0);
 
 	snprintf(user_info_f, sizeof(user_info_f),
 			 "\n%s (%s) 上站 [%d] 发文 [%d]\n"
@@ -178,7 +178,7 @@ int user_info_display(USER_INFO *p_user_info)
 			 (intro_len > 0 ? "\033[0;36m个人说明档如下：\033[m" : "\033[0;36m没有个人说明档\033[m"),
 			 intro_f);
 
-	lines = split_data_lines(user_info_f, SCREEN_COLS, line_offsets, MIN(SCREEN_ROWS - 1, BBS_user_intro_max_line + 8), 1, NULL);
+	lines = split_data_lines(user_info_f, SCREEN_COLS + 1, line_offsets, MIN(SCREEN_ROWS - 1, BBS_user_intro_max_line + 8), 1, NULL);
 
 	clearscr();
 	display_data(user_info_f, lines, line_offsets, 1, display_user_info_key_handler, DATA_READ_HELP);
