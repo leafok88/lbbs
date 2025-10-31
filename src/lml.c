@@ -291,7 +291,7 @@ int lml_render(const char *str_in, char *str_out, int buf_len, int width, int qu
 					CHECK_AND_APPEND_OUTPUT(str_out, buf_len, j, "\n", 1, line_width);
 					new_line = 1;
 					line_width = 0;
-					i--; // redo at current $i
+					i--; // redo at current i
 				}
 				else
 				{
@@ -405,18 +405,20 @@ int lml_render(const char *str_in, char *str_out, int buf_len, int width, int qu
 
 			if (!tag_name_found)
 			{
-				tag_output_len = tag_end_pos - tag_start_pos + 1;
-
-				if (line_width + tag_output_len > width)
+				if (line_width + 1 > width)
 				{
 					CHECK_AND_APPEND_OUTPUT(str_out, buf_len, j, "\n", 1, line_width);
 					new_line = 1;
 					line_width = 0;
-					i--; // redo at current $i
+					i--; // redo at current i
 					continue;
 				}
 
-				CHECK_AND_APPEND_OUTPUT(str_out, buf_len, j, str_in + tag_start_pos, tag_output_len, line_width);
+				CHECK_AND_APPEND_OUTPUT(str_out, buf_len, j, "[", 1, line_width);
+				i = tag_start_pos; // restart from tag_start_pos + 1
+				tag_start_pos = -1;
+				tag_name_pos = -1;
+				continue;
 			}
 
 			tag_start_pos = -1;
@@ -429,7 +431,7 @@ int lml_render(const char *str_in, char *str_out, int buf_len, int width, int qu
 				CHECK_AND_APPEND_OUTPUT(str_out, buf_len, j, "\n", 1, line_width);
 				new_line = 1;
 				line_width = 0;
-				i--; // redo at current $i
+				i--; // redo at current i
 				continue;
 			}
 
