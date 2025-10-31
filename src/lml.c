@@ -252,6 +252,11 @@ int lml_render(const char *str_in, char *str_out, int buf_len, int width, int qu
 			new_line = 0;
 		}
 
+		if (lml_tag_disabled && new_line)
+		{
+			new_line = 0;
+		}
+
 		if (str_in[i] == '\033' && str_in[i + 1] == '[') // Escape sequence
 		{
 			for (k = i + 2; isdigit(str_in[k]) || str_in[k] == ';' || str_in[k] == '?'; k++)
