@@ -1,5 +1,5 @@
 <?php
-function str_length(string $str) : int
+function str_length(string $str, bool $skip_ctrl_seq = false) : int
 {
 	$len = strlen($str);
 	$ret = 0;
@@ -8,16 +8,44 @@ function str_length(string $str) : int
 	{
 		$c = $str[$i];
 
+		if ($c == "\r" || $c == "\7") // skip
+		{
+			continue;
+		}
+
+		if ($skip_ctrl_seq && $c == "\033" && $i + 1 < $len && $str[$i + 1] == "[") // Skip control sequence
+		{
+			for ($i = $i + 2; 
+				$i < $len && (ctype_digit($str[$i]) || $str[$i] == ';' || $str[$i] == '?');
+				$i++)
+				;
+
+			if ($i < $len && $str[$i] == 'm') // valid
+			{
+				// skip
+			}
+			else if ($i < $len && ctype_alpha($str[$i]))
+			{
+				// unsupported ANSI CSI command
+			}
+			else
+			{
+				$i--;
+			}
+
+			continue;
+		}
+
 		// Process UTF-8 Chinese characters
 		$v1 = ord($c);
-		if ($v1 & 0b10000000) //head of multi-byte character
+		if ($v1 & 0x80) //head of multi-byte character
 		{
-			$v2 = ($v1 & 0b01110000) << 1;
-			while ($v2 & 0b10000000)
+			$v2 = ($v1 & 0x70) << 1;
+			while ($v2 & 0x80)
 			{
 				$i++;
 				$c .= $str[$i];
-				$v2 = ($v2 & 0b01111111) << 1;
+				$v2 = ($v2 & 0x7f) << 1;
 			}
 
 			$ret += 2;
@@ -31,11 +59,11 @@ function str_length(string $str) : int
 	return $ret;
 }
 
-function split_line(string $str, string $prefix = "", int $width = 76, int $lines_limit = PHP_INT_MAX, string $end_of_line = "\n") : string
+function split_line(string $str, string $prefix = "", int $width = PHP_INT_MAX, int $lines_limit = PHP_INT_MAX, string $end_of_line = "\n") : string
 {
 	if ($width <= 0)
 	{
-		return $str;
+		$width = PHP_INT_MAX;
 	}
 
 	$result = "";
@@ -72,14 +100,14 @@ function split_line(string $str, string $prefix = "", int $width = 76, int $line
 
 		// Process UTF-8 Chinese characters
 		$v1 = ord($c);
-		if ($v1 & 0b10000000) //head of multi-byte character
+		if ($v1 & 0x80) //head of multi-byte character
 		{
-			$v2 = ($v1 & 0b01110000) << 1;
-			while ($v2 & 0b10000000)
+			$v2 = ($v1 & 0x70) << 1;
+			while ($v2 & 0x80)
 			{
 				$i++;
 				$c .= $str[$i];
-				$v2 = ($v2 & 0b01111111) << 1;
+				$v2 = ($v2 & 0x7f) << 1;
 			}
 
 			// Each UTF-8 CJK character should use two character length for display
