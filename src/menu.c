@@ -38,6 +38,8 @@
 
 #define MENU_SET_RESERVED_LENGTH (sizeof(int16_t) * 4)
 
+#define MENU_SHMGET_RETRY_LIMIT 3
+
 MENU_SET bbs_menu;
 MENU_SET top10_menu;
 
@@ -60,6 +62,7 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 	int proj_id;
 	key_t key;
 	size_t size;
+	int retry_cnt;
 
 	// Initialize the data structure
 	memset(p_menu_set, 0, sizeof(*p_menu_set));
@@ -87,32 +90,47 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 	}
 
 	// Allocate shared memory
-	proj_id = (int)(time(NULL) % getpid());
-	key = ftok(conf_file, proj_id);
-	if (key == -1)
-	{
-		log_error("ftok(%s %d) error (%d)\n", conf_file, proj_id, errno);
-		return -2;
-	}
-
 	size = MENU_SET_RESERVED_LENGTH +
 		   sizeof(MENU) * MAX_MENUS +
 		   sizeof(MENU_ITEM) * MAX_MENUITEMS +
 		   sizeof(MENU_SCREEN) * MAX_MENUS +
 		   MAX_MENU_SCR_BUF_LENGTH * MAX_MENUS;
-	p_menu_set->shmid = shmget(key, size, IPC_CREAT | IPC_EXCL | 0600);
-	if (p_menu_set->shmid == -1)
+
+	proj_id = (int)(time(NULL) % getpid());
+	retry_cnt = 0;
+
+	do
 	{
-		log_error("shmget(conf_file=%s, proj_id=%d, key=%d, size=%d) error (%d)\n",
-				  conf_file, proj_id, key, size, errno);
-		return -3;
-	}
+		key = ftok(conf_file, proj_id + retry_cnt);
+		if (key == -1)
+		{
+			log_error("ftok(%s %d) error (%d)\n", conf_file, proj_id, errno);
+			return -2;
+		}
+
+		p_menu_set->shmid = shmget(key, size, IPC_CREAT | IPC_EXCL | 0600);
+
+		if (p_menu_set->shmid == -1)
+		{
+			if (errno != EEXIST || retry_cnt + 1 >= MENU_SHMGET_RETRY_LIMIT)
+			{
+				log_error("shmget(conf_file=%s, size=%d) error (%d) %d times\n",
+						  conf_file, size, errno, retry_cnt + 1);
+				break;
+			}
+			log_error("shmget(conf_file=%s, proj_id=%d, key=0x%x, size=%d) error (%d), retry ...\n",
+					  conf_file, proj_id + retry_cnt, key, size, errno);
+			retry_cnt++;
+		}
+	} while (p_menu_set->shmid == -1);
+
 	p_menu_set->p_reserved = shmat(p_menu_set->shmid, NULL, 0);
 	if (p_menu_set->p_reserved == (void *)-1)
 	{
 		log_error("shmat() error (%d)\n", errno);
 		return -3;
 	}
+
 	p_menu_set->p_menu_pool = (char *)(p_menu_set->p_reserved) + MENU_SET_RESERVED_LENGTH;
 	p_menu_set->p_menu_item_pool = (char *)(p_menu_set->p_menu_pool) + sizeof(MENU) * MAX_MENUS;
 	p_menu_set->p_menu_screen_pool = (char *)(p_menu_set->p_menu_item_pool) + sizeof(MENU_ITEM) * MAX_MENUITEMS;

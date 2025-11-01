@@ -1560,6 +1560,43 @@ int get_section_index(SECTION_LIST *p_section)
 	return index;
 }
 
+int get_section_info(SECTION_LIST *p_section, char *sname, char *stitle, char *master_list)
+{
+	if (p_section == NULL)
+	{
+		log_error("NULL pointer error\n");
+		return -1;
+	}
+
+	if (section_list_rd_lock(p_section) < 0)
+	{
+		log_error("section_list_rd_lock(sid=%d) error\n", p_section->sid);
+		return -2;
+	}
+
+	if (sname != NULL)
+	{
+		memcpy(sname, p_section->sname, sizeof(p_section->sname));
+	}
+	if (stitle != NULL)
+	{
+		memcpy(stitle, p_section->stitle, sizeof(p_section->stitle));
+	}
+	if (master_list != NULL)
+	{
+		memcpy(master_list, p_section->master_list, sizeof(p_section->master_list));
+	}
+
+	// release lock of section
+	if (section_list_rd_unlock(p_section) < 0)
+	{
+		log_error("section_list_rd_unlock(sid=%d) error\n", p_section->sid);
+		return -2;
+	}
+
+	return 0;
+}
+
 int section_list_try_rd_lock(SECTION_LIST *p_section, int wait_sec)
 {
 	int index;

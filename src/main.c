@@ -242,7 +242,7 @@ int main(int argc, char *argv[])
 	{
 		if (load_file(data_files_load_startup[i]) < 0)
 		{
-			log_error("load_file_mmap(%s) error\n", data_files_load_startup[i]);
+			log_error("load_file(%s) error\n", data_files_load_startup[i]);
 		}
 	}
 

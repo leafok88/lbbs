@@ -17,6 +17,7 @@
 #include "common.h"
 #include "log.h"
 #include "str_process.h"
+#include <ctype.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -37,11 +38,22 @@ int str_length(const char *str, int skip_ctrl_seq)
 
 		if (skip_ctrl_seq && c == '\033' && str[i + 1] == '[') // Skip control sequence
 		{
-			i += 2;
-			while (str[i] != '\0' && str[i] != 'm')
+			for (i = i + 2; isdigit(str[i]) || str[i] == ';' || str[i] == '?'; i++)
+				;
+
+			if (str[i] == 'm') // valid
 			{
-				i++;
+				// skip
 			}
+			else if (isalpha(str[i]))
+			{
+				// unsupported ANSI CSI command
+			}
+			else
+			{
+				i--;
+			}
+
 			continue;
 		}
 

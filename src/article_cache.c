@@ -111,7 +111,7 @@ int article_cache_generate(const char *cache_dir, const ARTICLE *p_article, cons
 
 	// Generate article header / footer
 	localtime_r(&(p_article->sub_dt), &tm_sub_dt);
-	strftime(str_sub_dt, sizeof(str_sub_dt), "%c", &tm_sub_dt);
+	strftime(str_sub_dt, sizeof(str_sub_dt), "%c %Z", &tm_sub_dt);
 
 	snprintf(header, sizeof(header), "发布者: %s (%s), 版块: %s (%s)\n标  题: %s\n发布于: %s (%s)\n\n",
 			 p_article->username, p_article->nickname, p_section->sname, p_section->stitle, p_article->title, BBS_name, str_sub_dt);
@@ -135,10 +135,10 @@ int article_cache_generate(const char *cache_dir, const ARTICLE *p_article, cons
 	}
 
 	// Apply LML render to content body
-	cache.data_len = header_len + (size_t)lml_render(content, content_f, ARTICLE_CONTENT_MAX_LEN, 0);
+	cache.data_len = header_len + (size_t)lml_render(content, content_f, ARTICLE_CONTENT_MAX_LEN, SCREEN_COLS, 0);
 
 	cache.line_total = header_line_cnt +
-					   split_data_lines(content_f, SCREEN_COLS, cache.line_offsets + header_line_cnt, MAX_SPLIT_FILE_LINES - header_line_cnt, 1, NULL);
+					   split_data_lines(content_f, SCREEN_COLS + 1, cache.line_offsets + header_line_cnt, MAX_SPLIT_FILE_LINES - header_line_cnt, 1, NULL);
 
 	if (cache.data_len - header_len != (size_t)cache.line_offsets[cache.line_total])
 	{
