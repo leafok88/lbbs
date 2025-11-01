@@ -26,6 +26,8 @@
 #define LML_TAG_PARAM_BUF_LEN 256
 #define LML_TAG_OUTPUT_BUF_LEN 1024
 
+clock_t lml_total_exec_duration = 0;
+
 typedef int (*lml_tag_filter_cb)(const char *tag_name, const char *tag_param_buf, char *tag_output_buf, size_t tag_output_buf_len, int quote_mode);
 
 static int lml_tag_color_filter(const char *tag_name, const char *tag_param_buf, char *tag_output_buf, size_t tag_output_buf_len, int quote_mode)
@@ -196,6 +198,9 @@ inline static void lml_init(void)
 
 int lml_render(const char *str_in, char *str_out, int buf_len, int width, int quote_mode)
 {
+	clock_t clock_begin;
+	clock_t clock_end;
+
 	char c;
 	char tag_param_buf[LML_TAG_PARAM_BUF_LEN];
 	char tag_output_buf[LML_TAG_OUTPUT_BUF_LEN];
@@ -211,6 +216,8 @@ int lml_render(const char *str_in, char *str_out, int buf_len, int width, int qu
 	int fb_quote_level = 0;
 	int tag_name_found;
 	int line_width = 0;
+
+	clock_begin = clock();
 
 	lml_init();
 
@@ -257,7 +264,7 @@ int lml_render(const char *str_in, char *str_out, int buf_len, int width, int qu
 			new_line = 0;
 		}
 
-		if (str_in[i] == '\033' && str_in[i + 1] == '[') // Escape sequence
+		if (!quote_mode && !lml_tag_disabled && str_in[i] == '\033' && str_in[i + 1] == '[') // Escape sequence
 		{
 			for (k = i + 2; isdigit(str_in[k]) || str_in[k] == ';' || str_in[k] == '?'; k++)
 				;
@@ -281,7 +288,7 @@ int lml_render(const char *str_in, char *str_out, int buf_len, int width, int qu
 
 		if (str_in[i] == '\n') // jump out of tag at end of line
 		{
-			if (tag_start_pos != -1) // tag is not closed
+			if (!lml_tag_disabled && tag_start_pos != -1) // tag is not closed
 			{
 				tag_end_pos = i - 1;
 				tag_output_len = tag_end_pos - tag_start_pos + 1;
@@ -299,7 +306,7 @@ int lml_render(const char *str_in, char *str_out, int buf_len, int width, int qu
 				}
 			}
 
-			if (fb_quote_level > 0)
+			if (!lml_tag_disabled && fb_quote_level > 0)
 			{
 				lml_tag_quote_level -= fb_quote_level;
 
@@ -459,7 +466,7 @@ int lml_render(const char *str_in, char *str_out, int buf_len, int width, int qu
 		}
 	}
 
-	if (tag_start_pos != -1) // tag is not closed
+	if (!lml_tag_disabled && tag_start_pos != -1) // tag is not closed
 	{
 		tag_end_pos = i - 1;
 		tag_output_len = tag_end_pos - tag_start_pos + 1;
@@ -473,6 +480,9 @@ int lml_render(const char *str_in, char *str_out, int buf_len, int width, int qu
 	}
 
 	str_out[j] = '\0';
+
+	clock_end = clock();
+	lml_total_exec_duration += (clock_end - clock_begin);
 
 	return j;
 }
