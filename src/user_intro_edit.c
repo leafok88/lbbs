@@ -10,20 +10,22 @@
 #include <stdlib.h>
 #include <sys/param.h>
 
+#define BBS_user_intro_line_len 256
+
 int user_intro_edit(int uid)
 {
     MYSQL *db = NULL;
     MYSQL_RES *rs = NULL;
-    char *sql_content = NULL;
+    char sql_content[SQL_BUFFER_LEN + 2 * BBS_user_intro_line_len * BBS_user_intro_max_line + 1];
     EDITOR_DATA *p_editor_data = NULL;
     USER_INFO user_info;
     int ret = 0;
     int ch = 0;
-    char *intro = NULL;
-    char *intro_f = NULL;
+    char intro[BBS_user_intro_line_len * BBS_user_intro_max_line];
+    char intro_f[BBS_user_intro_line_len * BBS_user_intro_max_line];
     long len_intro = 0L;
     long line_offsets[BBS_user_intro_max_line + 1];
-    long lines = 0L; 
+    long lines = 0L;
 
     if ((ret = query_user_info_by_uid(uid, &user_info)) < 0)
     {
@@ -31,13 +33,6 @@ int user_intro_edit(int uid)
         return -2;
     }
     p_editor_data = editor_data_load(user_info.intro);
-
-edit_intro:
-    clearscr();
-    moveto(1, 1);
-    prints("说明档不能超过10行，每行字符数不能超过256。按任意键继续...");
-    iflush();
-    ch = igetch_t(MAX_DELAY_TIME);
 
     editor_display(p_editor_data);
 
@@ -76,14 +71,6 @@ edit_intro:
         goto cleanup;
     }
 
-    intro = malloc(BBS_user_intro_max_len);
-    if (intro == NULL)
-    {
-        log_error("malloc(content) error: OOM\n");
-        ret = -1;
-        goto cleanup;
-    }
-
     len_intro = editor_data_save(p_editor_data, intro, BBS_user_intro_max_len);
     if (len_intro < 0)
     {
@@ -92,10 +79,56 @@ edit_intro:
         goto cleanup;
     }
 
-    lines = split_data_lines(intro, BBS_user_intro_avg_len, line_offsets, MIN(SCREEN_ROWS - 1, BBS_user_intro_max_line + 8), 1, NULL);
-    
-    if (lines>10)
-        goto edit_intro;
+    lines = split_data_lines(intro, BBS_user_intro_line_len, line_offsets, MIN(SCREEN_ROWS - 1, BBS_user_intro_max_line + 8), 1, NULL);
+
+    while (lines > 10)
+    {
+        clearscr();
+        moveto(1, 1);
+        prints("说明档限10行以内。");
+        press_any_key();
+        editor_display(p_editor_data);
+
+        while (!SYS_server_exit)
+        {
+            clearscr();
+            moveto(1, 1);
+            prints("(S)保存, (C)取消 or (E)再编辑? [S]: ");
+            iflush();
+
+            ch = igetch_t(MAX_DELAY_TIME);
+            switch (toupper(ch))
+            {
+            case KEY_NULL:
+            case KEY_TIMEOUT:
+                goto cleanup;
+            case CR:
+            case 'S':
+                break;
+            case 'C':
+                clearscr();
+                moveto(1, 1);
+                prints("取消...");
+                press_any_key();
+                goto cleanup;
+            case 'E':
+                editor_display(p_editor_data);
+            default: // Invalid selection
+                continue;
+            }
+
+            break;
+        }
+        
+        len_intro = editor_data_save(p_editor_data, intro, BBS_user_intro_max_len);
+        if (len_intro < 0)
+        {
+            log_error("editor_data_save() error\n");
+            ret = -1;
+            goto cleanup;
+        }
+        lines = split_data_lines(intro, BBS_user_intro_line_len, line_offsets, MIN(SCREEN_ROWS - 1, BBS_user_intro_max_line + 8), 1, NULL);
+    }
 
     db = db_open();
     if (db == NULL)
@@ -121,34 +154,12 @@ edit_intro:
     }
 
     // Secure SQL parameters
-    intro_f = malloc((size_t)len_intro * 2 + 1);
-    if (intro_f == NULL)
-    {
-        log_error("malloc(intro_f) error: OOM\n");
-        ret = -1;
-        goto cleanup;
-    }
-
     mysql_real_escape_string(db, intro_f, intro, (unsigned long)len_intro);
-
-    free(intro);
-    intro = NULL;
-
-    sql_content = malloc(SQL_BUFFER_LEN + (size_t)len_intro * 2 + 1);
-    if (sql_content == NULL)
-    {
-        log_error("malloc(sql_content) error: OOM\n");
-        ret = -1;
-        goto cleanup;
-    }
 
     // Update user intro
     snprintf(sql_content, SQL_BUFFER_LEN + (size_t)len_intro * 2 + 1,
              "UPDATE user_pubinfo set introduction = '%s' where uid=%d",
              intro_f, BBS_priv.uid);
-
-    free(intro_f);
-    intro_f = NULL;
 
     if (mysql_query(db, sql_content) != 0)
     {
@@ -165,9 +176,6 @@ edit_intro:
         goto cleanup;
     }
 
-    free(sql_content);
-    sql_content = NULL;
-
     clearscr();
     moveto(1, 1);
     prints("说明档修改完成，新内容通常会在60秒后可见");
@@ -180,10 +188,6 @@ cleanup:
 
     // Cleanup buffers
     editor_data_cleanup(p_editor_data);
-
-    free(sql_content);
-    free(intro);
-    free(intro_f);
 
     return (int)ret;
 }
