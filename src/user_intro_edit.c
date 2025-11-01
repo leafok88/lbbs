@@ -8,8 +8,7 @@
 #include "user_priv.h"
 #include <ctype.h>
 #include <stdlib.h>
-
-#define USER_INTRO_MAX_LEN 1280
+#include <sys/param.h>
 
 int user_intro_edit(int uid)
 {
@@ -23,8 +22,8 @@ int user_intro_edit(int uid)
     char *intro = NULL;
     char *intro_f = NULL;
     long len_intro = 0L;
-
-    clearscr();
+    long line_offsets[BBS_user_intro_max_line + 1];
+    long lines = 0L; 
 
     if ((ret = query_user_info_by_uid(uid, &user_info)) < 0)
     {
@@ -32,6 +31,13 @@ int user_intro_edit(int uid)
         return -2;
     }
     p_editor_data = editor_data_load(user_info.intro);
+
+edit_intro:
+    clearscr();
+    moveto(1, 1);
+    prints("说明档不能超过10行，每行字符数不能超过256。按任意键继续...");
+    iflush();
+    ch = igetch_t(MAX_DELAY_TIME);
 
     editor_display(p_editor_data);
 
@@ -70,7 +76,7 @@ int user_intro_edit(int uid)
         goto cleanup;
     }
 
-    intro = malloc(USER_INTRO_MAX_LEN);
+    intro = malloc(BBS_user_intro_max_len);
     if (intro == NULL)
     {
         log_error("malloc(content) error: OOM\n");
@@ -78,13 +84,18 @@ int user_intro_edit(int uid)
         goto cleanup;
     }
 
-    len_intro = editor_data_save(p_editor_data, intro, USER_INTRO_MAX_LEN);
+    len_intro = editor_data_save(p_editor_data, intro, BBS_user_intro_max_len);
     if (len_intro < 0)
     {
         log_error("editor_data_save() error\n");
         ret = -1;
         goto cleanup;
     }
+
+    lines = split_data_lines(intro, BBS_user_intro_avg_len, line_offsets, MIN(SCREEN_ROWS - 1, BBS_user_intro_max_line + 8), 1, NULL);
+    
+    if (lines>10)
+        goto edit_intro;
 
     db = db_open();
     if (db == NULL)
@@ -147,13 +158,13 @@ int user_intro_edit(int uid)
     }
 
     // Commit transaction
-	if (mysql_query(db, "COMMIT") != 0)
-	{
-		log_error("Commit transaction error: %s\n", mysql_error(db));
-		ret = -1;
-		goto cleanup;
-	}
-   
+    if (mysql_query(db, "COMMIT") != 0)
+    {
+        log_error("Commit transaction error: %s\n", mysql_error(db));
+        ret = -1;
+        goto cleanup;
+    }
+
     free(sql_content);
     sql_content = NULL;
 
@@ -172,7 +183,7 @@ cleanup:
 
     free(sql_content);
     free(intro);
-    free(intro_f);    
+    free(intro_f);
 
     return (int)ret;
 }
