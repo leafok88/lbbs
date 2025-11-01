@@ -36,6 +36,11 @@ int user_intro_edit(int uid)
 
     editor_display(p_editor_data);
 
+    if (SYS_server_exit) // Do not save data on shutdown
+    {
+        goto cleanup;
+    }
+
     while (!SYS_server_exit)
     {
         clearscr();
@@ -51,6 +56,25 @@ int user_intro_edit(int uid)
             goto cleanup;
         case CR:
         case 'S':
+            len_intro = editor_data_save(p_editor_data, intro, BBS_user_intro_max_len);
+            if (len_intro < 0)
+            {
+                log_error("editor_data_save() error\n");
+                ret = -1;
+                goto cleanup;
+            }
+            lines = split_data_lines(intro, BBS_user_intro_line_len, line_offsets, MIN(SCREEN_ROWS - 1, BBS_user_intro_max_line + 8), 1, NULL);
+
+            if (lines > 10)
+            {
+                clearscr();
+                moveto(1, 1);
+                prints("说明档限10行以内。");
+                press_any_key();
+                editor_display(p_editor_data);
+
+                continue;
+            }
             break;
         case 'C':
             clearscr();
@@ -65,69 +89,6 @@ int user_intro_edit(int uid)
         }
 
         break;
-    }
-    if (SYS_server_exit) // Do not save data on shutdown
-    {
-        goto cleanup;
-    }
-
-    len_intro = editor_data_save(p_editor_data, intro, BBS_user_intro_max_len);
-    if (len_intro < 0)
-    {
-        log_error("editor_data_save() error\n");
-        ret = -1;
-        goto cleanup;
-    }
-
-    lines = split_data_lines(intro, BBS_user_intro_line_len, line_offsets, MIN(SCREEN_ROWS - 1, BBS_user_intro_max_line + 8), 1, NULL);
-
-    while (lines > 10)
-    {
-        clearscr();
-        moveto(1, 1);
-        prints("说明档限10行以内。");
-        press_any_key();
-        editor_display(p_editor_data);
-
-        while (!SYS_server_exit)
-        {
-            clearscr();
-            moveto(1, 1);
-            prints("(S)保存, (C)取消 or (E)再编辑? [S]: ");
-            iflush();
-
-            ch = igetch_t(MAX_DELAY_TIME);
-            switch (toupper(ch))
-            {
-            case KEY_NULL:
-            case KEY_TIMEOUT:
-                goto cleanup;
-            case CR:
-            case 'S':
-                break;
-            case 'C':
-                clearscr();
-                moveto(1, 1);
-                prints("取消...");
-                press_any_key();
-                goto cleanup;
-            case 'E':
-                editor_display(p_editor_data);
-            default: // Invalid selection
-                continue;
-            }
-
-            break;
-        }
-        
-        len_intro = editor_data_save(p_editor_data, intro, BBS_user_intro_max_len);
-        if (len_intro < 0)
-        {
-            log_error("editor_data_save() error\n");
-            ret = -1;
-            goto cleanup;
-        }
-        lines = split_data_lines(intro, BBS_user_intro_line_len, line_offsets, MIN(SCREEN_ROWS - 1, BBS_user_intro_max_line + 8), 1, NULL);
     }
 
     db = db_open();
