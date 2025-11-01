@@ -50,85 +50,38 @@ int bbs_welcome(void)
 {
 	char sql[SQL_BUFFER_LEN];
 
-	u_int32_t u_online = 0;
-	u_int32_t u_anonymous = 0;
-	u_int32_t u_total = 0;
-	u_int32_t u_login_count = 0;
+	int u_online = 0;
+	int u_anonymous = 0;
+	int u_total = 0;
+	int u_login_count = 0;
 
 	MYSQL *db;
 	MYSQL_RES *rs;
 	MYSQL_ROW row;
+
+	if (get_user_online_list_count(&u_online, &u_anonymous) < 0)
+	{
+		log_error("get_user_online_list_count() error\n");
+		u_online = 0;
+	}
+	u_online += u_anonymous;
+	u_online++; // current user
+	if (BBS_priv.uid == 0)
+	{
+		u_anonymous++;
+	}
+
+	if (get_user_list_count(&u_total) < 0)
+	{
+		log_error("get_user_list_count() error\n");
+		u_total = 0;
+	}
 
 	db = db_open();
 	if (db == NULL)
 	{
 		return -1;
 	}
-
-	snprintf(sql, sizeof(sql),
-			 "SELECT COUNT(*) AS cc FROM "
-			 "(SELECT DISTINCT SID FROM user_online "
-			 "WHERE last_tm >= SUBDATE(NOW(), INTERVAL %d SECOND)) AS t1",
-			 BBS_user_off_line);
-	if (mysql_query(db, sql) != 0)
-	{
-		log_error("Query user_online error: %s\n", mysql_error(db));
-		mysql_close(db);
-		return -2;
-	}
-	if ((rs = mysql_store_result(db)) == NULL)
-	{
-		log_error("Get user_online data failed\n");
-		mysql_close(db);
-		return -2;
-	}
-	if ((row = mysql_fetch_row(rs)))
-	{
-		u_online = (u_int32_t)atoi(row[0]);
-	}
-	mysql_free_result(rs);
-
-	snprintf(sql, sizeof(sql),
-			 "SELECT COUNT(*) AS cc FROM "
-			 "(SELECT DISTINCT SID FROM user_online "
-			 "WHERE UID = 0 AND last_tm >= SUBDATE(NOW(), INTERVAL %d SECOND)) AS t1",
-			 BBS_user_off_line);
-	if (mysql_query(db, sql) != 0)
-	{
-		log_error("Query user_online error: %s\n", mysql_error(db));
-		mysql_close(db);
-		return -2;
-	}
-	if ((rs = mysql_store_result(db)) == NULL)
-	{
-		log_error("Get user_online data failed\n");
-		mysql_close(db);
-		return -2;
-	}
-	if ((row = mysql_fetch_row(rs)))
-	{
-		u_anonymous = (u_int32_t)atoi(row[0]);
-	}
-	mysql_free_result(rs);
-
-	snprintf(sql, sizeof(sql), "SELECT COUNT(UID) AS cc FROM user_list WHERE enable");
-	if (mysql_query(db, sql) != 0)
-	{
-		log_error("Query user_list error: %s\n", mysql_error(db));
-		mysql_close(db);
-		return -2;
-	}
-	if ((rs = mysql_store_result(db)) == NULL)
-	{
-		log_error("Get user_list data failed\n");
-		mysql_close(db);
-		return -2;
-	}
-	if ((row = mysql_fetch_row(rs)))
-	{
-		u_total = (u_int32_t)atoi(row[0]);
-	}
-	mysql_free_result(rs);
 
 	snprintf(sql, sizeof(sql), "SELECT ID FROM user_login_log ORDER BY ID LIMIT 1");
 	if (mysql_query(db, sql) != 0)
@@ -145,15 +98,11 @@ int bbs_welcome(void)
 	}
 	if ((row = mysql_fetch_row(rs)))
 	{
-		u_login_count = (u_int32_t)atoi(row[0]);
+		u_login_count = atoi(row[0]);
 	}
 	mysql_free_result(rs);
 
 	mysql_close(db);
-
-	// Count current user before login
-	u_online++;
-	u_anonymous++;
 
 	// Display logo
 	display_file(DATA_WELCOME, 2);
