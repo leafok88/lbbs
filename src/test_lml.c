@@ -1,5 +1,5 @@
 /***************************************************************************
-					     test_lml.c  -  description
+						 test_lml.c  -  description
 							 -------------------
 	Copyright            : (C) 2004-2025 by Leaflet
 	Email                : leaflet@leafok.com
@@ -19,6 +19,7 @@
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
+#include <time.h>
 #include <unistd.h>
 
 #define STR_OUT_BUF_SIZE 256
@@ -44,7 +45,7 @@ const char *str_in[] = {
 	"[abc][left ][ right ][ colory ][left  \nABCD[left]EFG[right ",
 	"ABCD]EFG",
 	": : A123456789B123456789C123456789D123456789E123456789F123456789G123456789H123456789I123456789J123456789",
-	"\033[0m\033[I             \033[1;32m;,                                               ;,\033[m",
+	"\033[0m\033[I             \033[1;32m;,                                           ;,\033[m",
 	"\n01234567890123456789012345678901234567890123456789012345678901234567890123456789\n2\n01234567890123456789012345678901234567890123456789012345678901234567890123456789\n4\n5\n",
 	"A[012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789]B",
 };
@@ -53,6 +54,11 @@ const int str_cnt = sizeof(str_in) / sizeof(const char *);
 
 int main(int argc, char *argv[])
 {
+	clock_t clock_begin;
+	clock_t clock_end;
+	double prog_time_spent;
+	double lml_time_spent;
+
 	char str_out_buf[STR_OUT_BUF_SIZE];
 	int i;
 	int j;
@@ -66,6 +72,8 @@ int main(int argc, char *argv[])
 	log_common_redir(STDOUT_FILENO);
 	log_error_redir(STDERR_FILENO);
 
+	clock_begin = clock();
+
 	printf("Test #1: quote_mode = 0\n");
 	for (i = 0; i < str_cnt; i++)
 	{
@@ -73,7 +81,7 @@ int main(int argc, char *argv[])
 
 		printf("Input(len=%ld): %s\nOutput(len=%d): %s\n", strlen(str_in[i]), str_in[i], j, str_out_buf);
 	}
-	printf("Test #1: Done\n");
+	printf("Test #1: Done\n\n");
 
 	printf("Test #2: quote_mode = 1\n");
 	for (i = 0; i < str_cnt; i++)
@@ -82,7 +90,13 @@ int main(int argc, char *argv[])
 
 		printf("Input(len=%ld): %s\nOutput(len=%d): %s\n", strlen(str_in[i]), str_in[i], j, str_out_buf);
 	}
-	printf("Test #2: Done\n");
+	printf("Test #2: Done\n\n");
+
+	clock_end = clock();
+	prog_time_spent = (double)(clock_end - clock_begin) / (CLOCKS_PER_SEC / 1000);
+	lml_time_spent = (double)lml_total_exec_duration / (CLOCKS_PER_SEC / 1000);
+
+	printf("\npage_exec_duration=%.2f, lml_exec_duration=%.2f\n", prog_time_spent, lml_time_spent);
 
 	log_end();
 
