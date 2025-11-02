@@ -559,6 +559,7 @@ int section_list_display(const char *sname, int32_t aid)
 	int page_id_cur;
 	const ARTICLE *p_article_locate;
 	USER_INFO user_info;
+	char user_intro[BBS_user_intro_max_len];
 
 	p_section = section_list_find_by_name(sname);
 	if (p_section == NULL)
@@ -944,7 +945,7 @@ int section_list_display(const char *sname, int32_t aid)
 			}
 			break;
 		case QUERY_USER:
-			if ((ret = query_user_info_by_uid(p_articles[selected_index]->uid, &user_info)) < 0)
+			if ((ret = query_user_info_by_uid(p_articles[selected_index]->uid, &user_info, user_intro, sizeof(user_intro))) < 0)
 			{
 				log_error("query_user_info_by_uid(uid=%d) error\n", p_articles[selected_index]->uid);
 				return -2;
