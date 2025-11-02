@@ -661,6 +661,10 @@ int section_list_display(const char *sname, int32_t aid)
 		}
 
 		ret = section_list_select(page_count, article_count, &page_id, &selected_index);
+
+		// Update current aid location
+		section_aid_locations[section_index] = p_articles[selected_index]->aid;
+
 		switch (ret)
 		{
 		case EXIT_SECTION:
@@ -841,9 +845,6 @@ int section_list_display(const char *sname, int32_t aid)
 
 			// Update current topic
 			section_topic_view_tid = (p_articles[selected_index]->tid == 0 ? p_articles[selected_index]->aid : p_articles[selected_index]->tid);
-
-			// Update current aid location
-			section_aid_locations[section_index] = p_articles[selected_index]->aid;
 
 			if (section_list_draw_screen(sname, stitle, master_list, display_nickname) < 0)
 			{
