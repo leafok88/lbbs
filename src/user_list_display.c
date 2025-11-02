@@ -24,6 +24,7 @@
 #include "user_priv.h"
 #include "user_info_display.h"
 #include "user_list_display.h"
+#include <ctype.h>
 #include <string.h>
 #include <time.h>
 #include <sys/param.h>
