@@ -32,11 +32,12 @@
 #include "str_process.h"
 #include "user_info_display.h"
 #include "user_priv.h"
+#include <errno.h>
 #include <string.h>
 #include <time.h>
 #include <sys/param.h>
 
-static int section_aid_locations[BBS_max_section] = {0};
+static int32_t section_aid_locations[BBS_max_section] = {0};
 static int section_topic_view_mode = 0;
 static int section_topic_view_tid = -1;
 
@@ -1162,4 +1163,116 @@ int section_list_ex_dir_display(SECTION_LIST *p_section)
 	detach_menu_shm(&ex_menu_set);
 
 	return 0;
+}
+
+int section_aid_locations_save(int uid)
+{
+	char filename[FILE_PATH_LEN];
+	FILE *fp;
+	int i;
+	int ret = 0;
+
+	snprintf(filename, sizeof(filename), "%s/%d", VAR_SECTION_AID_LOC_DIR, uid);
+
+	if ((fp = fopen(filename, "wb")) == NULL)
+	{
+		log_error("fopen(%s, wb) error: %d\n", filename, errno);
+		return -1;
+	}
+
+	for (i = 0; i < p_section_list_pool->section_count; i++)
+	{
+		if (fwrite(&(p_section_list_pool->sections[i].sid), sizeof(p_section_list_pool->sections[i].sid), 1, fp) != 1)
+		{
+			log_error("fwrite(%s, sid) error\n", filename);
+			ret = -2;
+			break;
+		}
+
+		if (fwrite(&(section_aid_locations[i]), sizeof(section_aid_locations[i]), 1, fp) != 1)
+		{
+			log_error("fwrite(%s, aid) error\n", filename);
+			ret = -2;
+			break;
+		}
+	}
+
+	if (fclose(fp) < 0)
+	{
+		log_error("fclose(%s) error: %d\n", filename, errno);
+		ret = -1;
+	}
+
+	return ret;
+}
+
+int section_aid_locations_load(int uid)
+{
+	char filename[FILE_PATH_LEN];
+	FILE *fp;
+	int i;
+	int32_t sid;
+	int32_t aid;
+	SECTION_LIST *p_section;
+	int ret = 0;
+
+	snprintf(filename, sizeof(filename), "%s/%d", VAR_SECTION_AID_LOC_DIR, uid);
+
+	if ((fp = fopen(filename, "rb")) == NULL)
+	{
+		if (errno == ENOENT) // file not exist
+		{
+			return 0;
+		}
+		log_error("fopen(%s, rb) error: %d\n", filename, errno);
+		return -1;
+	}
+
+	while (!feof(fp))
+	{
+		if (fread(&sid, sizeof(sid), 1, fp) != 1)
+		{
+			if (ferror(fp) == 0)
+			{
+				break;
+			}
+			log_error("fread(%s, sid) error: %d\n", filename, ferror(fp));
+			ret = -2;
+			break;
+		}
+
+		if (fread(&aid, sizeof(aid), 1, fp) != 1)
+		{
+			if (ferror(fp) == 0)
+			{
+				break;
+			}
+			log_error("fread(%s, aid) error: %d\n", filename, ferror(fp));
+			ret = -2;
+			break;
+		}
+
+		p_section = section_list_find_by_sid(sid);
+		if (p_section == NULL)
+		{
+			continue; // skip section no longer exist
+		}
+
+		i = get_section_index(p_section);
+		if (i < 0)
+		{
+			log_error("get_section_index(sid=%d) error\n", sid);
+			ret = -3;
+			break;
+		}
+		section_aid_locations[i] = aid;
+	}
+
+	if (fclose(fp) < 0)
+	{
+		log_error("fclose(%s) error: %d\n", filename, errno);
+		ret = -1;
+	}
+
+	return ret;
 }
