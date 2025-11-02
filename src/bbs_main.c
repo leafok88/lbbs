@@ -28,6 +28,7 @@
 #include "menu.h"
 #include "screen.h"
 #include "section_list.h"
+#include "section_list_display.h"
 #include "trie_dict.h"
 #include "user_list.h"
 #include "user_priv.h"
@@ -48,16 +49,10 @@ int bbs_info()
 
 int bbs_welcome(void)
 {
-	char sql[SQL_BUFFER_LEN];
-
 	int u_online = 0;
 	int u_anonymous = 0;
 	int u_total = 0;
 	int u_login_count = 0;
-
-	MYSQL *db;
-	MYSQL_RES *rs;
-	MYSQL_ROW row;
 
 	if (get_user_online_list_count(&u_online, &u_anonymous) < 0)
 	{
@@ -77,32 +72,11 @@ int bbs_welcome(void)
 		u_total = 0;
 	}
 
-	db = db_open();
-	if (db == NULL)
+	if (get_user_login_count(&u_login_count) < 0)
 	{
-		return -1;
+		log_error("get_user_login_count() error\n");
+		u_login_count = 0;
 	}
-
-	snprintf(sql, sizeof(sql), "SELECT ID FROM user_login_log ORDER BY ID LIMIT 1");
-	if (mysql_query(db, sql) != 0)
-	{
-		log_error("Query user_login_log error: %s\n", mysql_error(db));
-		mysql_close(db);
-		return -2;
-	}
-	if ((rs = mysql_store_result(db)) == NULL)
-	{
-		log_error("Get user_login_log data failed\n");
-		mysql_close(db);
-		return -2;
-	}
-	if ((row = mysql_fetch_row(rs)))
-	{
-		u_login_count = atoi(row[0]);
-	}
-	mysql_free_result(rs);
-
-	mysql_close(db);
 
 	// Display logo
 	display_file(DATA_WELCOME, 2);
@@ -343,6 +317,13 @@ int bbs_main()
 	}
 	log_common("User [%s] login\n", BBS_username);
 
+	// Load section aid locations
+	if (section_aid_locations_load(BBS_priv.uid) < 0)
+	{
+		log_error("article_view_log_load() error\n");
+		goto cleanup;
+	}
+	
 	// Load article view log
 	if (article_view_log_load(BBS_priv.uid, &BBS_article_view_log, 0) < 0)
 	{
@@ -374,6 +355,12 @@ int bbs_main()
 
 	// Logout
 	bbs_logout();
+
+	// Save section aid locations
+	if (section_aid_locations_save(BBS_priv.uid) < 0)
+	{
+		log_error("article_view_log_save() error\n");
+	}
 
 	// Save incremental article view log
 	if (article_view_log_save_inc(&BBS_article_view_log) < 0)

@@ -57,6 +57,7 @@
 
 #define VAR_ARTICLE_CACHE_DIR "var/articles/"
 #define VAR_GEN_EX_MENU_DIR "var/gen_ex/"
+#define VAR_SECTION_AID_LOC_DIR "var/section_aid_loc/"
 
 // File loader
 extern const char *data_files_load_startup[];

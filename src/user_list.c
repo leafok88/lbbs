@@ -55,6 +55,7 @@ struct user_list_pool_t
 	USER_ONLINE_LIST *p_online_current;
 	USER_ONLINE_LIST *p_online_new;
 	USER_STAT_MAP user_stat_map;
+	int user_login_count;
 };
 typedef struct user_list_pool_t USER_LIST_POOL;
 
@@ -94,6 +95,7 @@ static int user_list_rw_lock(int semid);
 
 static int user_list_load(MYSQL *db, USER_LIST *p_list);
 static int user_online_list_load(MYSQL *db, USER_ONLINE_LIST *p_list);
+static int user_login_count_load(MYSQL *db);
 
 static int user_info_index_uid_comp(const void *ptr1, const void *ptr2)
 {
@@ -360,6 +362,39 @@ cleanup:
 	return ret;
 }
 
+int user_login_count_load(MYSQL *db)
+{
+	MYSQL_RES *rs = NULL;
+	MYSQL_ROW row;
+	char sql[SQL_BUFFER_LEN];
+
+	if (db == NULL)
+	{
+		log_error("NULL pointer error\n");
+		return -1;
+	}
+
+	snprintf(sql, sizeof(sql),
+			 "SELECT ID FROM user_login_log ORDER BY ID DESC LIMIT 1");
+	if (mysql_query(db, sql) != 0)
+	{
+		log_error("Query user_login_log error: %s\n", mysql_error(db));
+		return -2;
+	}
+	if ((rs = mysql_store_result(db)) == NULL)
+	{
+		log_error("Get user_login_log data failed\n");
+		return -2;
+	}
+	if ((row = mysql_fetch_row(rs)))
+	{
+		p_user_list_pool->user_login_count = atoi(row[0]);
+	}
+	mysql_free_result(rs);
+
+	return 0;
+}
+
 int user_list_pool_init(const char *filename)
 {
 	int shmid;
@@ -555,6 +590,13 @@ int user_list_pool_reload(int online_user)
 		if (user_online_list_load(db, p_user_list_pool->p_online_new) < 0)
 		{
 			log_error("user_online_list_load() error\n");
+			ret = -2;
+			goto cleanup;
+		}
+
+		if (user_login_count_load(db) < 0)
+		{
+			log_error("user_login_count_load() error\n");
 			ret = -2;
 			goto cleanup;
 		}
@@ -922,6 +964,19 @@ int get_user_online_list_count(int *p_user_cnt, int *p_guest_cnt)
 		log_error("user_list_rd_unlock() error\n");
 		return -2;
 	}
+
+	return 0;
+}
+
+int get_user_login_count(int *p_login_cnt)
+{
+	if (p_login_cnt == NULL)
+	{
+		log_error("NULL pointer error\n");
+		return -1;
+	}
+
+	*p_login_cnt = p_user_list_pool->user_login_count;
 
 	return 0;
 }

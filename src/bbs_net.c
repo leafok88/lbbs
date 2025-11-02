@@ -185,7 +185,7 @@ static void process_bar(int n, int len)
 	moveto(4, 0);
 	prints(" ------------------------------ \r\n");
 	snprintf(buf, sizeof(buf), "            %3d%%              ", n * 100 / len);
-	strncpy(buf2, buf, (size_t)n);
+	memcpy(buf2, buf, (size_t)n);
 	buf2[n] = '\0';
 	prints("|\033[46m%s\033[44m%s\033[m|\r\n", buf2, buf + n);
 	prints(" ------------------------------ \r\n");
