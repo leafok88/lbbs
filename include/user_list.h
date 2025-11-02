@@ -81,6 +81,7 @@ struct user_online_list_t
 	USER_ONLINE_INFO users[BBS_max_user_online_count];
 	USER_INFO_INDEX_UID index_uid[BBS_max_user_online_count];
 	int32_t user_count;
+	int32_t guest_count;
 };
 typedef struct user_online_list_t USER_ONLINE_LIST;
 
@@ -93,6 +94,10 @@ extern int user_list_pool_reload(int online_user);
 
 extern int query_user_list(int page_id, USER_INFO *p_users, int *p_user_count, int *p_page_count);
 extern int query_user_online_list(int page_id, USER_ONLINE_INFO *p_online_users, int *p_user_count, int *p_page_count);
+
+extern int get_user_list_count(int *p_user_cnt);
+extern int get_user_online_list_count(int *p_user_cnt, int *p_guest_cnt);
+extern int get_user_login_count(int *p_login_cnt);
 
 extern int query_user_info(int32_t id, USER_INFO *p_user);
 extern int query_user_info_by_uid(int32_t uid, USER_INFO *p_user);

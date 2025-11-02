@@ -18,6 +18,9 @@
 #define _LML_H_
 
 #include <stddef.h>
+#include <time.h>
+
+extern clock_t lml_total_exec_duration; // For testing purpose
 
 extern int lml_render(const char *str_in, char *str_out, int buf_len, int width, int quote_mode);
 
