@@ -97,6 +97,7 @@ extern int query_user_online_list(int page_id, USER_ONLINE_INFO *p_online_users,
 
 extern int get_user_list_count(int *p_user_cnt);
 extern int get_user_online_list_count(int *p_user_cnt, int *p_guest_cnt);
+extern int get_user_login_count(int *p_login_cnt);
 
 extern int query_user_info(int32_t id, USER_INFO *p_user);
 extern int query_user_info_by_uid(int32_t uid, USER_INFO *p_user);
