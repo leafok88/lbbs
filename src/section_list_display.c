@@ -663,12 +663,18 @@ int section_list_display(const char *sname, int32_t aid)
 
 		ret = section_list_select(page_count, article_count, &page_id, &selected_index);
 
-		// Update current aid location
-		section_aid_locations[section_index] = p_articles[selected_index]->aid;
-
 		switch (ret)
 		{
 		case EXIT_SECTION:
+			// Update current aid location
+			if (p_articles[selected_index] != NULL)
+			{
+				section_aid_locations[section_index] = p_articles[selected_index]->aid;
+			}
+			else
+			{
+				log_error("p_articles[selected_index=%d] is NULL when exit section [%s]\n", selected_index, sname);
+			}
 			return 0;
 		case CHANGE_PAGE:
 			ret = query_section_articles(p_section, page_id, p_articles, &article_count, &page_count, &ontop_start_offset);
