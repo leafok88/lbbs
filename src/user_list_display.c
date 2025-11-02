@@ -533,17 +533,22 @@ int user_list_search(void)
 			moveto(3, 1);
 			prints("存在多个匹配的用户，[S]精确查找，[L]列出全部? [L]");
 			iflush();
+			igetch_reset();
 
 			switch (igetch_t(MAX_DELAY_TIME))
 			{
 			case KEY_NULL:
 			case KEY_TIMEOUT:
+				return -1;
+			case KEY_ESC:
 				return 0;
 			case 'S':
 			case 's':
 				ret = (strcasecmp(username_list[0], username) == 0 ? 1 : 0);
 				break;
-			default:
+			case 'L':
+			case 'l':
+			case CR:
 				for (i = 0; i < MIN(ret, users_per_line * max_user_lines); i++)
 				{
 					moveto(4 + i / users_per_line, 3 + i % users_per_line * (BBS_username_max_len + 3));
@@ -554,6 +559,10 @@ int user_list_search(void)
 				{
 					prints("还有更多...");
 				}
+				continue;
+			default:
+				moveto(3, 1);
+				clrtoeol();
 				continue;
 			}
 		}
