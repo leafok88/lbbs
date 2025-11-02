@@ -38,7 +38,7 @@
 
 #define MENU_SET_RESERVED_LENGTH (sizeof(int16_t) * 4)
 
-#define MENU_SHMGET_RETRY_LIMIT 3
+#define MENU_SHMGET_RETRY_LIMIT 10
 
 MENU_SET bbs_menu;
 MENU_SET top10_menu;
