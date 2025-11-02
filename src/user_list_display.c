@@ -572,7 +572,8 @@ int user_list_search(void)
 			moveto(3, 1);
 			clrtoeol();
 			prints("没有找到符合条件的用户");
-			continue;
+			press_any_key();
+			return 0;
 		}
 		else // ret == 1
 		{
