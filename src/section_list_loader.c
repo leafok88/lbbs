@@ -1099,6 +1099,126 @@ int scan_unread_article_in_section(SECTION_LIST *p_section, const ARTICLE *p_art
 	return (p_article != NULL && p_article != p_article_cur ? 1 : 0);
 }
 
+int scan_article_in_section_by_uid(SECTION_LIST *p_section, const ARTICLE *p_article_cur,
+								   int direction, int32_t uid, const ARTICLE **pp_article)
+{
+	ARTICLE *p_article;
+	int ret = 0;
+
+	if (p_section == NULL || p_article_cur == NULL || pp_article == NULL)
+	{
+		log_error("NULL pointer error\n");
+		return -1;
+	}
+
+	if (p_article_cur->sid != p_section->sid)
+	{
+		log_error("Inconsistent SID\n");
+		return -1;
+	}
+
+	// acquire lock of section
+	if ((ret = section_list_rd_lock(p_section)) < 0)
+	{
+		log_error("section_list_rd_lock(sid = %d) error\n", p_section->sid);
+		return -2;
+	}
+
+	*pp_article = NULL;
+
+	if (direction >= 0)
+	{
+		for (p_article = p_article_cur->p_next; p_article != NULL && p_article != p_article_cur; p_article = p_article->p_next)
+		{
+			if (p_article->visible && p_article->uid == uid)
+			{
+				*pp_article = p_article;
+				break;
+			}
+		}
+	}
+	else // direction < 0
+	{
+		for (p_article = p_article_cur->p_prior; p_article != NULL && p_article != p_article_cur; p_article = p_article->p_prior)
+		{
+			if (p_article->visible && p_article->uid == uid)
+			{
+				*pp_article = p_article;
+				break;
+			}
+		}
+	}
+
+	// release lock of section
+	if (section_list_rd_unlock(p_section) < 0)
+	{
+		log_error("section_list_rd_unlock(sid = %d) error\n", p_section->sid);
+		return -2;
+	}
+
+	return (p_article != NULL && p_article != p_article_cur ? 1 : 0);
+}
+
+int scan_article_in_section_by_username(SECTION_LIST *p_section, const ARTICLE *p_article_cur,
+										int direction, const char *username, const ARTICLE **pp_article)
+{
+	ARTICLE *p_article;
+	int ret = 0;
+
+	if (p_section == NULL || p_article_cur == NULL || username == NULL || pp_article == NULL)
+	{
+		log_error("NULL pointer error\n");
+		return -1;
+	}
+
+	if (p_article_cur->sid != p_section->sid)
+	{
+		log_error("Inconsistent SID\n");
+		return -1;
+	}
+
+	// acquire lock of section
+	if ((ret = section_list_rd_lock(p_section)) < 0)
+	{
+		log_error("section_list_rd_lock(sid = %d) error\n", p_section->sid);
+		return -2;
+	}
+
+	*pp_article = NULL;
+
+	if (direction >= 0)
+	{
+		for (p_article = p_article_cur->p_next; p_article != NULL && p_article != p_article_cur; p_article = p_article->p_next)
+		{
+			if (p_article->visible && strcasecmp(p_article->username, username) == 0)
+			{
+				*pp_article = p_article;
+				break;
+			}
+		}
+	}
+	else // direction < 0
+	{
+		for (p_article = p_article_cur->p_prior; p_article != NULL && p_article != p_article_cur; p_article = p_article->p_prior)
+		{
+			if (p_article->visible && strcasecmp(p_article->username, username) == 0)
+			{
+				*pp_article = p_article;
+				break;
+			}
+		}
+	}
+
+	// release lock of section
+	if (section_list_rd_unlock(p_section) < 0)
+	{
+		log_error("section_list_rd_unlock(sid = %d) error\n", p_section->sid);
+		return -2;
+	}
+
+	return (p_article != NULL && p_article != p_article_cur ? 1 : 0);
+}
+
 int get_section_ex_menu_set(SECTION_LIST *p_section, MENU_SET *p_ex_menu_set)
 {
 	int ret = 0;

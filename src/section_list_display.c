@@ -59,6 +59,8 @@ enum select_cmd_t
 	FIRST_TOPIC_ARTICLE,
 	LAST_TOPIC_ARTICLE,
 	SCAN_NEW_ARTICLE,
+	SCAN_ARTICLE_BACKWARD_BY_USER,
+	SCAN_ARTICLE_FORWARD_BY_USER,
 	VIEW_EX_DIR,
 	SHOW_TOP10,
 	SEARCH_USER,
@@ -409,6 +411,18 @@ static enum select_cmd_t section_list_select(int total_page, int item_count, int
 				return SCAN_NEW_ARTICLE;
 			}
 			break;
+		case 'A':
+			if (item_count > 0)
+			{
+				return SCAN_ARTICLE_BACKWARD_BY_USER;
+			}
+			break;
+		case 'a':
+			if (item_count > 0)
+			{
+				return SCAN_ARTICLE_FORWARD_BY_USER;
+			}
+			break;
 		case 'u':
 			return SEARCH_USER;
 		case 'h':
@@ -564,6 +578,11 @@ int section_list_display(const char *sname, int32_t aid)
 	const ARTICLE *p_article_locate;
 	USER_INFO user_info;
 	char user_intro[BBS_user_intro_max_len];
+	char username[BBS_username_max_len + 1];
+	char username_list[1][BBS_username_max_len + 1];
+	int32_t uid;
+	int i;
+	int ok;
 
 	p_section = section_list_find_by_name(sname);
 	if (p_section == NULL)
@@ -1033,6 +1052,98 @@ int section_list_display(const char *sname, int32_t aid)
 			{
 				break;
 			}
+			page_id_cur = page_id;
+			ret = locate_article_in_section(p_section, p_article_locate, 0, 0,
+											&page_id, &selected_index, &article_count);
+			if (ret < 0)
+			{
+				log_error("locate_article_in_section(sid=%d, aid=%d, direction=0, step=0) error\n",
+						  p_section->sid, p_article_locate->aid);
+				return -3;
+			}
+			else if (ret > 0 && page_id != page_id_cur) // found and page changed
+			{
+				ret = query_section_articles(p_section, page_id, p_articles, &article_count, &page_count, &ontop_start_offset);
+				if (ret < 0)
+				{
+					log_error("query_section_articles(sid=%d, page_id=%d) error\n", p_section->sid, page_id);
+					return -3;
+				}
+			}
+			break;
+		case SCAN_ARTICLE_BACKWARD_BY_USER:
+		case SCAN_ARTICLE_FORWARD_BY_USER:
+			direction = (ret == SCAN_ARTICLE_FORWARD_BY_USER ? 1 : -1);
+			strncpy(username, p_articles[selected_index]->username, sizeof(username) - 1);
+			username[sizeof(username) - 1] = '\0';
+			uid = 0;
+
+			moveto(SCREEN_ROWS, 1);
+			clrtoeol();
+			get_data(SCREEN_ROWS, 1,
+					 (direction == 1 ? "向下搜寻作者: " : "向上搜寻作者: "),
+					 username, sizeof(username), BBS_username_max_len);
+
+			if (username[0] == '\0')
+			{
+				break;
+			}
+
+			// Verify format
+			for (i = 0, ok = 1; ok && username[i] != '\0'; i++)
+			{
+				if (!(isalpha(username[i]) || (i > 0 && (isdigit(username[i]) || username[i] == '_'))))
+				{
+					ok = 0;
+				}
+			}
+			if (ok && i > BBS_username_max_len)
+			{
+				ok = 0;
+			}
+			if (!ok)
+			{
+				break;
+			}
+
+			ret = query_user_info_by_username(username, 1, &uid, username_list);
+			if (ret < 0)
+			{
+				log_error("query_user_info_by_username(%s) error\n", username);
+				break;
+			}
+
+			if (uid > 0)
+			{
+				ret = scan_article_in_section_by_uid(p_section, p_articles[selected_index],
+													 direction, uid, &p_article_locate);
+				if (ret < 0)
+				{
+					log_error("scan_article_in_section_by_uid(sid=%d, aid=%d, direction=%d, uid=%d) error\n",
+							  p_section->sid, p_articles[selected_index]->aid, direction, uid);
+					return -3;
+				}
+				else if (ret == 0) // not found
+				{
+					break;
+				}
+			}
+			else // uid == 0
+			{
+				ret = scan_article_in_section_by_username(p_section, p_articles[selected_index],
+														  direction, username, &p_article_locate);
+				if (ret < 0)
+				{
+					log_error("scan_article_in_section_by_username(sid=%d, aid=%d, direction=%d, username=%s) error\n",
+							  p_section->sid, p_articles[selected_index]->aid, direction, username);
+					return -3;
+				}
+				else if (ret == 0) // not found
+				{
+					break;
+				}
+			}
+
 			page_id_cur = page_id;
 			ret = locate_article_in_section(p_section, p_article_locate, 0, 0,
 											&page_id, &selected_index, &article_count);
