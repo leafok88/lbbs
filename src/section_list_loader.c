@@ -892,7 +892,9 @@ int query_section_articles(SECTION_LIST *p_section, int page_id, ARTICLE *p_arti
 	}
 	else if (page_id < 0 || page_id >= *p_page_count)
 	{
+#ifdef _DEBUG
 		log_error("Invalid page_id=%d, not in range [0, %d)\n", page_id, *p_page_count);
+#endif
 		ret = -3;
 	}
 	else
@@ -1016,7 +1018,7 @@ int locate_article_in_section(SECTION_LIST *p_section, const ARTICLE *p_article_
 		p_article = section_list_find_article_with_offset(p_section, aid, &page_id, &offset, &p_tmp);
 		if (p_article != NULL)
 		{
-			*p_article_count = (page_id == p_section->page_count - 1 ? p_section->last_page_visible_article_count : BBS_article_limit_per_page);
+			*p_article_count = (page_id >= p_section->page_count - 1 ? p_section->last_page_visible_article_count : BBS_article_limit_per_page);
 
 			p_article = p_section->p_page_first_article[page_id];
 			for (i = 0; i < *p_article_count && p_article != NULL;)

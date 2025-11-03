@@ -864,8 +864,8 @@ int section_list_append_article(SECTION_LIST *p_section, const ARTICLE *p_articl
 	p_section->p_article_tail = p_article;
 
 	// Update page
-	if ((p_article->visible && p_section->last_page_visible_article_count % BBS_article_limit_per_page == 0) ||
-		p_section->article_count == 1)
+	if ((p_article->visible && p_section->last_page_visible_article_count == BBS_article_limit_per_page) ||
+		p_section->page_count == 0)
 	{
 		p_section->p_page_first_article[p_section->page_count] = p_article;
 		p_section->page_count++;
@@ -1063,9 +1063,14 @@ int section_list_page_count_with_ontop(SECTION_LIST *p_section)
 		return -1;
 	}
 
-	page_count = p_section->page_count - (p_section->last_page_visible_article_count > 0 ? 1 : 0) +
+	page_count = p_section->page_count - 1 +
 				 (p_section->last_page_visible_article_count + p_section->ontop_article_count) / BBS_article_limit_per_page +
-				 ((p_section->last_page_visible_article_count + p_section->ontop_article_count) % BBS_article_limit_per_page == 0 ? 0 : 1);
+				 ((p_section->last_page_visible_article_count + p_section->ontop_article_count) % BBS_article_limit_per_page ? 1 : 0);
+
+	if (page_count < 0)
+	{
+		page_count = 0;
+	}
 
 	return page_count;
 }
@@ -1279,7 +1284,9 @@ int section_list_calculate_page(SECTION_LIST *p_section, int32_t start_aid)
 	} while (p_article != p_section->p_article_head);
 
 	p_section->page_count = page + (visible_article_count > 0 ? 1 : 0);
-	p_section->last_page_visible_article_count = visible_article_count;
+	p_section->last_page_visible_article_count = (visible_article_count > 0
+													  ? visible_article_count
+													  : (page > 0 ? BBS_article_limit_per_page : 0));
 
 	return 0;
 }
