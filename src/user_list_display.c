@@ -483,7 +483,7 @@ int user_list_search(void)
 	int ret;
 	int i;
 	USER_INFO user_info;
-	char user_intro[BBS_user_intro_max_len];
+	char user_intro[BBS_user_intro_max_len + 1];
 	int ok;
 
 	username[0] = '\0';
