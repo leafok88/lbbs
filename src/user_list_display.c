@@ -485,6 +485,7 @@ int user_list_search(void)
 	USER_INFO user_info;
 	char user_intro[BBS_user_intro_max_len + 1];
 	int ok;
+	int ch;
 
 	username[0] = '\0';
 
@@ -492,6 +493,7 @@ int user_list_search(void)
 
 	while (!SYS_server_exit)
 	{
+		clrline(3, SCREEN_ROWS);
 		get_data(2, 1, "查找谁: ", username, sizeof(username), BBS_username_max_len);
 
 		if (username[0] == '\0')
@@ -530,47 +532,47 @@ int user_list_search(void)
 		}
 		else if (ret > 1)
 		{
-			moveto(3, 1);
-			prints("存在多个匹配的用户，[S]精确查找，[L]列出全部? [L]");
-			iflush();
-			igetch_reset();
+			for (i = 0; i < MIN(ret, users_per_line * max_user_lines); i++)
+			{
+				moveto(4 + i / users_per_line, 3 + i % users_per_line * (BBS_username_max_len + 3));
+				prints("%s", username_list[i]);
+			}
+			moveto(SCREEN_ROWS, 1);
+			if (ret > users_per_line * max_user_lines)
+			{
+				prints("还有更多...");
+			}
 
-			switch (igetch_t(MAX_DELAY_TIME))
+			moveto(3, 1);
+			prints("存在多个匹配的用户，按\033[1;33mEnter\033[m精确查找");
+			iflush();
+
+			ch = igetch_t(MAX_DELAY_TIME);
+			switch (ch)
 			{
 			case KEY_NULL:
 			case KEY_TIMEOUT:
 				return -1;
 			case KEY_ESC:
 				return 0;
-			case 'S':
-			case 's':
+			case CR:
 				ret = (strcasecmp(username_list[0], username) == 0 ? 1 : 0);
 				break;
-			case 'L':
-			case 'l':
-			case CR:
-				for (i = 0; i < MIN(ret, users_per_line * max_user_lines); i++)
-				{
-					moveto(4 + i / users_per_line, 3 + i % users_per_line * (BBS_username_max_len + 3));
-					prints("%s", username_list[i]);
-				}
-				moveto(SCREEN_ROWS, 1);
-				if (ret > users_per_line * max_user_lines)
-				{
-					prints("还有更多...");
-				}
-				continue;
 			default:
-				moveto(3, 1);
-				clrtoeol();
+				i = (int)strnlen(username, sizeof(username) - 1);
+				if (i + 1 <= BBS_username_max_len && (isalnum((char)ch) || ch == '_'))
+				{
+					username[i] = (char)ch;
+					username[i + 1] = '\0';
+				}
 				continue;
 			}
 		}
 
+		clrline(3, SCREEN_ROWS);
 		if (ret == 0)
 		{
 			moveto(3, 1);
-			clrtoeol();
 			prints("没有找到符合条件的用户");
 			press_any_key();
 			return 0;
