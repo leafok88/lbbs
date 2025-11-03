@@ -723,7 +723,7 @@ int section_list_loader_launch(void)
 	detach_menu_shm(&top10_menu);
 
 	// Set signal handler
-	act.sa_handler = SIG_DFL;
+	act.sa_handler = SIG_IGN;
 	if (sigaction(SIGHUP, &act, NULL) == -1)
 	{
 		log_error("set signal action of SIGHUP error: %d\n", errno);
