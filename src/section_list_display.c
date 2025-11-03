@@ -1165,11 +1165,6 @@ int section_list_display(const char *sname, int32_t aid)
 			page_id_cur = page_id;
 			ret = locate_article_in_section(p_section, p_article_locate, 0, 0,
 											&page_id, &selected_index, &article_count);
-			if (article_count > BBS_article_limit_per_page)
-			{
-				log_error("Bug: article_count=%d\n", article_count);
-				return -4;
-			}
 			if (ret < 0)
 			{
 				log_error("locate_article_in_section(sid=%d, aid=%d, direction=0, step=0) error\n",
@@ -1214,11 +1209,6 @@ int section_list_display(const char *sname, int32_t aid)
 
 			ret = scan_article_in_section_by_title(p_section, p_articles[selected_index],
 												   direction, title, &p_article_locate);
-			if (article_count > BBS_article_limit_per_page)
-			{
-				log_error("Bug: article_count=%d\n", article_count);
-				return -4;
-			}
 			if (ret < 0)
 			{
 				log_error("scan_article_in_section_by_title(sid=%d, aid=%d, direction=%d, title=%s) error\n",
