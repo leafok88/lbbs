@@ -1173,6 +1173,12 @@ int section_list_display(const char *sname, int32_t aid)
 			}
 			else if (ret > 0 && page_id != page_id_cur) // found and page changed
 			{
+				if (article_count > BBS_article_limit_per_page)
+				{
+					log_error("Bug: article_count=%d\n", article_count);
+					return -4;
+				}
+
 				ret = query_section_articles(p_section, page_id, p_articles, &article_count, &page_count, &ontop_start_offset);
 				if (ret < 0)
 				{
@@ -1225,12 +1231,23 @@ int section_list_display(const char *sname, int32_t aid)
 			}
 			else if (ret > 0 && page_id != page_id_cur) // found and page changed
 			{
+				if (article_count > BBS_article_limit_per_page)
+				{
+					log_error("Bug: article_count=%d\n", article_count);
+					return -4;
+				}
+
 				ret = query_section_articles(p_section, page_id, p_articles, &article_count, &page_count, &ontop_start_offset);
 				if (ret < 0)
 				{
 					log_error("query_section_articles(sid=%d, page_id=%d) error\n", p_section->sid, page_id);
 					return -3;
 				}
+			}
+			if (article_count > BBS_article_limit_per_page)
+			{
+				log_error("Bug: article_count=%d\n", article_count);
+				return -4;
 			}
 			break;
 		case SEARCH_USER:
