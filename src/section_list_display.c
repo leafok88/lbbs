@@ -1180,6 +1180,11 @@ int section_list_display(const char *sname, int32_t aid)
 					return -3;
 				}
 			}
+			if (article_count > BBS_article_limit_per_page)
+			{
+				log_error("Bug: article_count=%d\n", article_count);
+				return -4;
+			}
 			break;
 		case SCAN_ARTICLE_BACKWARD_BY_TITLE:
 		case SCAN_ARTICLE_FORWARD_BY_TITLE:
