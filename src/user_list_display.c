@@ -502,12 +502,12 @@ int user_list_search(void)
 		// Verify format
 		for (i = 0, ok = 1; ok && username[i] != '\0'; i++)
 		{
-			if (!(isalpha(username[i]) || (i > 0 && isdigit(username[i]))))
+			if (!(isalpha(username[i]) || (i > 0 && (isdigit(username[i]) || username[i] == '_'))))
 			{
 				ok = 0;
 			}
 		}
-		if (ok && i > 12)
+		if (ok && i > BBS_username_max_len)
 		{
 			ok = 0;
 		}
