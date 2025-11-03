@@ -10,6 +10,9 @@ Add major features
 1. Display of all user list  
 2. Display of online user list  
 3. Display user information of selected item  
+4. Search user by username  
+5. Search article by username  
+6. Search article by title  
 
 
 2025-10-15  v1.4

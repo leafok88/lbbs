@@ -723,7 +723,7 @@ int section_list_loader_launch(void)
 	detach_menu_shm(&top10_menu);
 
 	// Set signal handler
-	act.sa_handler = SIG_DFL;
+	act.sa_handler = SIG_IGN;
 	if (sigaction(SIGHUP, &act, NULL) == -1)
 	{
 		log_error("set signal action of SIGHUP error: %d\n", errno);
@@ -931,7 +931,8 @@ int query_section_articles(SECTION_LIST *p_section, int page_id, ARTICLE *p_arti
 					 : (page_id - p_section->page_count + 1) * BBS_article_limit_per_page - p_section->last_page_visible_article_count);
 			while (*p_article_count < BBS_article_limit_per_page && i < p_section->ontop_article_count)
 			{
-				p_articles[(*p_article_count)++] = p_section->p_ontop_articles[i++];
+				p_articles[*p_article_count] = p_section->p_ontop_articles[i++];
+				(*p_article_count)++;
 			}
 		}
 	}
@@ -1086,6 +1087,186 @@ int scan_unread_article_in_section(SECTION_LIST *p_section, const ARTICLE *p_art
 		{
 			*pp_article_unread = p_article;
 			break;
+		}
+	}
+
+	// release lock of section
+	if (section_list_rd_unlock(p_section) < 0)
+	{
+		log_error("section_list_rd_unlock(sid = %d) error\n", p_section->sid);
+		return -2;
+	}
+
+	return (p_article != NULL && p_article != p_article_cur ? 1 : 0);
+}
+
+int scan_article_in_section_by_uid(SECTION_LIST *p_section, const ARTICLE *p_article_cur,
+								   int direction, int32_t uid, const ARTICLE **pp_article)
+{
+	ARTICLE *p_article;
+	int ret = 0;
+
+	if (p_section == NULL || p_article_cur == NULL || pp_article == NULL)
+	{
+		log_error("NULL pointer error\n");
+		return -1;
+	}
+
+	if (p_article_cur->sid != p_section->sid)
+	{
+		log_error("Inconsistent SID\n");
+		return -1;
+	}
+
+	// acquire lock of section
+	if ((ret = section_list_rd_lock(p_section)) < 0)
+	{
+		log_error("section_list_rd_lock(sid = %d) error\n", p_section->sid);
+		return -2;
+	}
+
+	*pp_article = NULL;
+
+	if (direction >= 0)
+	{
+		for (p_article = p_article_cur->p_next; p_article != NULL && p_article != p_article_cur; p_article = p_article->p_next)
+		{
+			if (p_article->visible && p_article->uid == uid)
+			{
+				*pp_article = p_article;
+				break;
+			}
+		}
+	}
+	else // direction < 0
+	{
+		for (p_article = p_article_cur->p_prior; p_article != NULL && p_article != p_article_cur; p_article = p_article->p_prior)
+		{
+			if (p_article->visible && p_article->uid == uid)
+			{
+				*pp_article = p_article;
+				break;
+			}
+		}
+	}
+
+	// release lock of section
+	if (section_list_rd_unlock(p_section) < 0)
+	{
+		log_error("section_list_rd_unlock(sid = %d) error\n", p_section->sid);
+		return -2;
+	}
+
+	return (p_article != NULL && p_article != p_article_cur ? 1 : 0);
+}
+
+int scan_article_in_section_by_username(SECTION_LIST *p_section, const ARTICLE *p_article_cur,
+										int direction, const char *username, const ARTICLE **pp_article)
+{
+	ARTICLE *p_article;
+	int ret = 0;
+
+	if (p_section == NULL || p_article_cur == NULL || username == NULL || pp_article == NULL)
+	{
+		log_error("NULL pointer error\n");
+		return -1;
+	}
+
+	if (p_article_cur->sid != p_section->sid)
+	{
+		log_error("Inconsistent SID\n");
+		return -1;
+	}
+
+	// acquire lock of section
+	if ((ret = section_list_rd_lock(p_section)) < 0)
+	{
+		log_error("section_list_rd_lock(sid = %d) error\n", p_section->sid);
+		return -2;
+	}
+
+	*pp_article = NULL;
+
+	if (direction >= 0)
+	{
+		for (p_article = p_article_cur->p_next; p_article != NULL && p_article != p_article_cur; p_article = p_article->p_next)
+		{
+			if (p_article->visible && strcasecmp(p_article->username, username) == 0)
+			{
+				*pp_article = p_article;
+				break;
+			}
+		}
+	}
+	else // direction < 0
+	{
+		for (p_article = p_article_cur->p_prior; p_article != NULL && p_article != p_article_cur; p_article = p_article->p_prior)
+		{
+			if (p_article->visible && strcasecmp(p_article->username, username) == 0)
+			{
+				*pp_article = p_article;
+				break;
+			}
+		}
+	}
+
+	// release lock of section
+	if (section_list_rd_unlock(p_section) < 0)
+	{
+		log_error("section_list_rd_unlock(sid = %d) error\n", p_section->sid);
+		return -2;
+	}
+
+	return (p_article != NULL && p_article != p_article_cur ? 1 : 0);
+}
+
+int scan_article_in_section_by_title(SECTION_LIST *p_section, const ARTICLE *p_article_cur,
+										int direction, const char *title, const ARTICLE **pp_article)
+{
+	ARTICLE *p_article;
+	int ret = 0;
+
+	if (p_section == NULL || p_article_cur == NULL || title == NULL || pp_article == NULL)
+	{
+		log_error("NULL pointer error\n");
+		return -1;
+	}
+
+	if (p_article_cur->sid != p_section->sid)
+	{
+		log_error("Inconsistent SID\n");
+		return -1;
+	}
+
+	// acquire lock of section
+	if ((ret = section_list_rd_lock(p_section)) < 0)
+	{
+		log_error("section_list_rd_lock(sid = %d) error\n", p_section->sid);
+		return -2;
+	}
+
+	*pp_article = NULL;
+
+	if (direction >= 0)
+	{
+		for (p_article = p_article_cur->p_next; p_article != NULL && p_article != p_article_cur; p_article = p_article->p_next)
+		{
+			if (p_article->visible && strcasestr(p_article->title, title) != NULL)
+			{
+				*pp_article = p_article;
+				break;
+			}
+		}
+	}
+	else // direction < 0
+	{
+		for (p_article = p_article_cur->p_prior; p_article != NULL && p_article != p_article_cur; p_article = p_article->p_prior)
+		{
+			if (p_article->visible && strcasestr(p_article->title, title) != NULL)
+			{
+				*pp_article = p_article;
+				break;
+			}
 		}
 	}
 

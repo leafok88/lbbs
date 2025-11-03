@@ -94,7 +94,7 @@ static int user_list_rd_lock(int semid);
 static int user_list_rw_lock(int semid);
 
 static int user_list_load(MYSQL *db, USER_LIST *p_list);
-static int user_online_list_load(MYSQL *db, USER_ONLINE_LIST *p_list);
+static int user_online_list_load(MYSQL *db, USER_ONLINE_LIST *p_online_list);
 static int user_login_count_load(MYSQL *db);
 
 static int user_info_index_uid_comp(const void *ptr1, const void *ptr2)
@@ -240,7 +240,7 @@ cleanup:
 	return ret;
 }
 
-int user_online_list_load(MYSQL *db, USER_ONLINE_LIST *p_list)
+int user_online_list_load(MYSQL *db, USER_ONLINE_LIST *p_online_list)
 {
 	MYSQL_RES *rs = NULL;
 	MYSQL_ROW row;
@@ -251,7 +251,7 @@ int user_online_list_load(MYSQL *db, USER_ONLINE_LIST *p_list)
 	int user_cnt;
 	int guest_cnt;
 
-	if (db == NULL || p_list == NULL)
+	if (db == NULL || p_online_list == NULL)
 	{
 		log_error("NULL pointer error\n");
 		return -1;
@@ -293,35 +293,35 @@ int user_online_list_load(MYSQL *db, USER_ONLINE_LIST *p_list)
 			user_cnt++;
 		}
 
-		p_list->users[i].id = i;
-		strncpy(p_list->users[i].session_id, row[0], sizeof(p_list->users[i].session_id) - 1);
-		p_list->users[i].session_id[sizeof(p_list->users[i].session_id) - 1] = '\0';
+		p_online_list->users[i].id = i;
+		strncpy(p_online_list->users[i].session_id, row[0], sizeof(p_online_list->users[i].session_id) - 1);
+		p_online_list->users[i].session_id[sizeof(p_online_list->users[i].session_id) - 1] = '\0';
 
-		if ((ret = query_user_info_by_uid(atoi(row[1]), &(p_list->users[i].user_info))) <= 0)
+		if ((ret = query_user_info_by_uid(atoi(row[1]), &(p_online_list->users[i].user_info), NULL, 0)) <= 0)
 		{
 			log_error("query_user_info_by_uid(%d) error\n", atoi(row[1]));
 			continue;
 		}
 
-		strncpy(p_list->users[i].ip, row[2], sizeof(p_list->users[i].ip) - 1);
-		p_list->users[i].ip[sizeof(p_list->users[i].ip) - 1] = '\0';
+		strncpy(p_online_list->users[i].ip, row[2], sizeof(p_online_list->users[i].ip) - 1);
+		p_online_list->users[i].ip[sizeof(p_online_list->users[i].ip) - 1] = '\0';
 
-		strncpy(p_list->users[i].current_action, row[3], sizeof(p_list->users[i].current_action) - 1);
-		p_list->users[i].current_action[sizeof(p_list->users[i].current_action) - 1] = '\0';
-		p_list->users[i].current_action_title = NULL;
-		if (p_list->users[i].current_action[0] == '\0')
+		strncpy(p_online_list->users[i].current_action, row[3], sizeof(p_online_list->users[i].current_action) - 1);
+		p_online_list->users[i].current_action[sizeof(p_online_list->users[i].current_action) - 1] = '\0';
+		p_online_list->users[i].current_action_title = NULL;
+		if (p_online_list->users[i].current_action[0] == '\0')
 		{
-			p_list->users[i].current_action_title = "";
+			p_online_list->users[i].current_action_title = "";
 		}
-		else if (trie_dict_get(p_trie_action_dict, p_list->users[i].current_action, (int64_t *)(&(p_list->users[i].current_action_title))) < 0)
+		else if (trie_dict_get(p_trie_action_dict, p_online_list->users[i].current_action, (int64_t *)(&(p_online_list->users[i].current_action_title))) < 0)
 		{
 			log_error("trie_dict_get(p_trie_action_dict, %s) error on session_id=%s\n",
-					  p_list->users[i].current_action, p_list->users[i].session_id);
+					  p_online_list->users[i].current_action, p_online_list->users[i].session_id);
 			continue;
 		}
 
-		p_list->users[i].login_tm = (row[4] == NULL ? 0 : atol(row[4]));
-		p_list->users[i].last_tm = (row[5] == NULL ? 0 : atol(row[5]));
+		p_online_list->users[i].login_tm = (row[4] == NULL ? 0 : atol(row[4]));
+		p_online_list->users[i].last_tm = (row[5] == NULL ? 0 : atol(row[5]));
 
 		i++;
 		if (i >= BBS_max_user_online_count)
@@ -338,19 +338,19 @@ int user_online_list_load(MYSQL *db, USER_ONLINE_LIST *p_list)
 		// Rebuild index
 		for (j = 0; j < user_cnt; j++)
 		{
-			p_list->index_uid[j].uid = p_list->users[j].user_info.uid;
-			p_list->index_uid[j].id = j;
+			p_online_list->index_uid[j].uid = p_online_list->users[j].user_info.uid;
+			p_online_list->index_uid[j].id = j;
 		}
 
-		qsort(p_list->index_uid, (size_t)user_cnt, sizeof(USER_INFO_INDEX_UID), user_info_index_uid_comp);
+		qsort(p_online_list->index_uid, (size_t)user_cnt, sizeof(USER_INFO_INDEX_UID), user_info_index_uid_comp);
 
 #ifdef _DEBUG
 		log_error("Rebuild index of %d online users\n", user_cnt);
 #endif
 	}
 
-	p_list->user_count = user_cnt;
-	p_list->guest_count = guest_cnt;
+	p_online_list->user_count = user_cnt;
+	p_online_list->guest_count = guest_cnt;
 
 #ifdef _DEBUG
 	log_error("Loaded %d online users and %d guest users\n", p_list->user_count, p_list->guest_count);
@@ -1014,7 +1014,7 @@ int query_user_info(int32_t id, USER_INFO *p_user)
 	return ret;
 }
 
-int query_user_info_by_uid(int32_t uid, USER_INFO *p_user)
+int query_user_info_by_uid(int32_t uid, USER_INFO *p_user, char *p_intro_buf, size_t intro_buf_len)
 {
 	int left;
 	int right;
@@ -1061,8 +1061,149 @@ int query_user_info_by_uid(int32_t uid, USER_INFO *p_user)
 		id = p_user_list_pool->p_current->index_uid[left].id;
 		*p_user = p_user_list_pool->p_current->users[id];
 		ret = 1;
+
+		if (p_intro_buf != NULL)
+		{
+			strncpy(p_intro_buf, p_user_list_pool->p_current->users[id].intro, intro_buf_len - 1);
+			p_intro_buf[intro_buf_len - 1] = '\0';
+			p_user->intro = p_intro_buf;
+		}
 	}
 
+	// release lock of user list
+	if (user_list_rd_unlock(p_user_list_pool->semid) < 0)
+	{
+		log_error("user_list_rd_unlock() error\n");
+		ret = -1;
+	}
+
+	return ret;
+}
+
+int query_user_info_by_username(const char *username_prefix, int max_user_cnt,
+								int32_t uid_list[], char username_list[][BBS_username_max_len + 1])
+{
+	int left;
+	int right;
+	int mid;
+	int left_save;
+	int ret = 0;
+	size_t prefix_len;
+	int comp;
+	int i;
+
+	if (username_prefix == NULL || uid_list == NULL || username_list == NULL)
+	{
+		log_error("NULL pointer error\n");
+		return -1;
+	}
+
+	prefix_len = strlen(username_prefix);
+
+	// acquire lock of user list
+	if (user_list_rd_lock(p_user_list_pool->semid) < 0)
+	{
+		log_error("user_list_rd_lock() error\n");
+		return -2;
+	}
+
+	left = 0;
+	right = p_user_list_pool->p_current->user_count - 1;
+
+	while (left < right)
+	{
+		mid = (left + right) / 2;
+		comp = strncasecmp(username_prefix, p_user_list_pool->p_current->users[mid].username, prefix_len);
+		if (comp < 0)
+		{
+			right = mid - 1;
+		}
+		else if (comp > 0)
+		{
+			left = mid + 1;
+		}
+		else // if (comp == 0)
+		{
+			left = mid;
+			break;
+		}
+	}
+
+	if (strncasecmp(username_prefix, p_user_list_pool->p_current->users[left].username, prefix_len) == 0) // Found
+	{
+#ifdef _DEBUG
+		log_error("Debug: match found, pos=%d\n", left);
+#endif
+
+		left_save = left;
+		right = left;
+		left = 0;
+
+		while (left < right)
+		{
+			mid = (left + right) / 2;
+			comp = strncasecmp(username_prefix, p_user_list_pool->p_current->users[mid].username, prefix_len);
+			if (comp > 0)
+			{
+				left = mid + 1;
+			}
+			else if (comp == 0)
+			{
+				right = mid;
+			}
+			else // if (comp < 0)
+			{
+				log_error("Bug: left=%d right=%d mid=%d");
+				ret = -2;
+				goto cleanup;
+			}
+		}
+
+#ifdef _DEBUG
+		log_error("Debug: first match found, pos=%d\n", right);
+#endif
+
+		left = left_save;
+		left_save = right;
+		right = p_user_list_pool->p_current->user_count - 1;
+
+		while (left < right)
+		{
+			mid = (left + right) / 2 + (left + right) % 2;
+			comp = strncasecmp(username_prefix, p_user_list_pool->p_current->users[mid].username, prefix_len);
+			if (comp < 0)
+			{
+				right = mid - 1;
+			}
+			else if (comp == 0)
+			{
+				left = mid;
+			}
+			else // if (comp > 0)
+			{
+				log_error("Bug: left=%d right=%d mid=%d");
+				ret = -2;
+				goto cleanup;
+			}
+		}
+
+#ifdef _DEBUG
+		log_error("Debug: last match found, pos=%d\n", left);
+#endif
+
+		right = left;
+		left = left_save;
+
+		for (i = 0; i < max_user_cnt && left + i <= right; i++)
+		{
+			uid_list[i] = p_user_list_pool->p_current->users[left + i].uid;
+			strncpy(username_list[i], p_user_list_pool->p_current->users[left + i].username, sizeof(username_list[i]) - 1);
+			username_list[i][sizeof(username_list[i]) - 1] = '\0';
+		}
+		ret = i;
+	}
+
+cleanup:
 	// release lock of user list
 	if (user_list_rd_unlock(p_user_list_pool->semid) < 0)
 	{

@@ -1084,8 +1084,10 @@ int section_list_page_article_count_with_ontop(SECTION_LIST *p_section, int32_t 
 	}
 	else // if (page_id >= p_section->page_count - 1)
 	{
-		return MAX(0, (p_section->last_page_visible_article_count + p_section->ontop_article_count -
-					   BBS_article_limit_per_page * (page_id - p_section->page_count + 1)));
+		return MIN(MAX(0,
+					   (p_section->last_page_visible_article_count + p_section->ontop_article_count -
+						BBS_article_limit_per_page * (page_id - p_section->page_count + 1))),
+				   BBS_article_limit_per_page);
 	}
 }
 

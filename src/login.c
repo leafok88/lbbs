@@ -114,12 +114,12 @@ int check_user(const char *username, const char *password)
 	// Verify format
 	for (i = 0; ok && username[i] != '\0'; i++)
 	{
-		if (!(isalpha(username[i]) || (i > 0 && isdigit(username[i]))))
+		if (!(isalpha(username[i]) || (i > 0 && (isdigit(username[i]) || username[i] == '_'))))
 		{
 			ok = 0;
 		}
 	}
-	if (ok && (i < 3 || i > 12))
+	if (ok && (i < 5 || i > BBS_username_max_len))
 	{
 		ok = 0;
 	}
@@ -130,7 +130,7 @@ int check_user(const char *username, const char *password)
 			ok = 0;
 		}
 	}
-	if (ok && (i < 5 || i > 12))
+	if (ok && (i < 5 || i > BBS_password_max_len))
 	{
 		ok = 0;
 	}

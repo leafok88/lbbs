@@ -21,4 +21,6 @@
 
 extern int user_list_display(int online_user);
 
+extern int user_list_search(void);
+
 #endif //_USER_LIST_DISPLAY_H_
