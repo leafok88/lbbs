@@ -31,6 +31,7 @@
 #include "screen.h"
 #include "str_process.h"
 #include "user_info_display.h"
+#include "user_list_display.h"
 #include "user_priv.h"
 #include <errno.h>
 #include <string.h>
@@ -60,6 +61,7 @@ enum select_cmd_t
 	SCAN_NEW_ARTICLE,
 	VIEW_EX_DIR,
 	SHOW_TOP10,
+	SEARCH_USER,
 };
 
 static int section_list_draw_items(int page_id, ARTICLE *p_articles[], int article_count, int display_nickname, int ontop_start_offset)
@@ -407,6 +409,8 @@ static enum select_cmd_t section_list_select(int total_page, int item_count, int
 				return SCAN_NEW_ARTICLE;
 			}
 			break;
+		case 'u':
+			return SEARCH_USER;
 		case 'h':
 			return SHOW_HELP;
 		case 'x':
@@ -1046,6 +1050,14 @@ int section_list_display(const char *sname, int32_t aid)
 					log_error("query_section_articles(sid=%d, page_id=%d) error\n", p_section->sid, page_id);
 					return -3;
 				}
+			}
+			break;
+		case SEARCH_USER:
+			user_list_search();
+			if (section_list_draw_screen(sname, stitle, master_list, display_nickname) < 0)
+			{
+				log_error("section_list_draw_screen() error\n");
+				return -2;
 			}
 			break;
 		case SHOW_HELP:
