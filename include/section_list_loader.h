@@ -68,6 +68,8 @@ extern int scan_article_in_section_by_uid(SECTION_LIST *p_section, const ARTICLE
 										  int direction, int32_t uid, const ARTICLE **pp_article);
 extern int scan_article_in_section_by_username(SECTION_LIST *p_section, const ARTICLE *p_article_cur,
 										  int direction, const char *username, const ARTICLE **pp_article);
+extern int scan_article_in_section_by_title(SECTION_LIST *p_section, const ARTICLE *p_article_cur,
+										  int direction, const char *title, const ARTICLE **pp_article);
 
 extern int get_section_ex_menu_set(SECTION_LIST *p_section, MENU_SET *p_ex_menu_set);
 
