@@ -931,7 +931,8 @@ int query_section_articles(SECTION_LIST *p_section, int page_id, ARTICLE *p_arti
 					 : (page_id - p_section->page_count + 1) * BBS_article_limit_per_page - p_section->last_page_visible_article_count);
 			while (*p_article_count < BBS_article_limit_per_page && i < p_section->ontop_article_count)
 			{
-				p_articles[(*p_article_count)++] = p_section->p_ontop_articles[i++];
+				p_articles[*p_article_count] = p_section->p_ontop_articles[i++];
+				(*p_article_count)++;
 			}
 		}
 	}
