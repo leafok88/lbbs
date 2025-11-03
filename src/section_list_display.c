@@ -33,6 +33,7 @@
 #include "user_info_display.h"
 #include "user_list_display.h"
 #include "user_priv.h"
+#include <ctype.h>
 #include <errno.h>
 #include <string.h>
 #include <time.h>
