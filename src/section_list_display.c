@@ -710,11 +710,7 @@ int section_list_display(const char *sname, int32_t aid)
 			// Update current aid location
 			if (p_articles[selected_index] != NULL)
 			{
-				section_aid_locations[section_index] = p_articles[selected_index]->aid;
-			}
-			else
-			{
-				log_error("p_articles[selected_index=%d] is NULL when exit section [%s]\n", selected_index, sname);
+				section_aid_locations[section_index] = (p_articles[selected_index]->visible ? p_articles[selected_index]->aid : 0);
 			}
 			return 0;
 		case CHANGE_PAGE:
@@ -860,6 +856,15 @@ int section_list_display(const char *sname, int32_t aid)
 					{
 						log_error("article_reply(aid=%d) error\n", p_articles[selected_index]->aid);
 					}
+					else if (ret > 0) // Article replied
+					{
+						ret = query_section_articles(p_section, page_id, p_articles, &article_count, &page_count, &ontop_start_offset);
+						if (ret < 0)
+						{
+							log_error("query_section_articles(sid=%d, page_id=%d) error\n", p_section->sid, page_id);
+							return -3;
+						}
+					}
 					loop = 1;
 					break;
 				case '=':  // First topic article
@@ -923,7 +928,7 @@ int section_list_display(const char *sname, int32_t aid)
 				ret = query_section_articles(p_section, page_id, p_articles, &article_count, &page_count, &ontop_start_offset);
 				if (ret < 0)
 				{
-					log_error("query_section_articles(sid=%d, page_id=%d) error\n", p_section->sid, page_id);
+					log_error("query_section_articles(sid=%d, page_id=%d) error: %d\n", p_section->sid, page_id, ret);
 					return -3;
 				}
 			}
@@ -949,6 +954,15 @@ int section_list_display(const char *sname, int32_t aid)
 			{
 				log_error("article_modify(aid=%d) error\n", p_articles[selected_index]->aid);
 			}
+			else if (ret > 0) // Article modified
+			{
+				ret = query_section_articles(p_section, page_id, p_articles, &article_count, &page_count, &ontop_start_offset);
+				if (ret < 0)
+				{
+					log_error("query_section_articles(sid=%d, page_id=%d) error\n", p_section->sid, page_id);
+					return -3;
+				}
+			}
 			if (section_list_draw_screen(sname, stitle, master_list, display_nickname) < 0)
 			{
 				log_error("section_list_draw_screen() error\n");
@@ -967,12 +981,25 @@ int section_list_display(const char *sname, int32_t aid)
 			}
 			else if (ret > 0) // Article deleted
 			{
-				ret = query_section_articles(p_section, page_id, p_articles, &article_count, &page_count, &ontop_start_offset);
-				if (ret < 0)
+				do
 				{
-					log_error("query_section_articles(sid=%d, page_id=%d) error\n", p_section->sid, page_id);
-					return -3;
-				}
+					ret = query_section_articles(p_section, page_id, p_articles, &article_count, &page_count, &ontop_start_offset);
+					if (ret >= 0 && selected_index > article_count - 1)
+					{
+						selected_index = article_count - 1;
+						break;
+					}
+					else if (ret < 0 && page_id > 0)
+					{
+						page_id--;
+						selected_index = BBS_article_limit_per_page - 1;
+					}
+					else if (ret < 0 && page_id <= 0)
+					{
+						selected_index = 0;
+						break;
+					}
+				} while (ret < 0);
 			}
 			if (section_list_draw_screen(sname, stitle, master_list, display_nickname) < 0)
 			{
