@@ -1063,6 +1063,48 @@ int locate_article_in_section(SECTION_LIST *p_section, const ARTICLE *p_article_
 	return (ret < 0 ? ret : (p_article == NULL ? 0 : 1));
 }
 
+int last_article_in_section(SECTION_LIST *p_section, const ARTICLE **pp_article)
+{
+	int ret = 0;
+
+	const ARTICLE *p_article;
+
+	if (p_section == NULL || pp_article == NULL)
+	{
+		log_error("NULL pointer error\n");
+		return -1;
+	}
+
+	*pp_article = NULL;
+
+	// acquire lock of section
+	if ((ret = section_list_rd_lock(p_section)) < 0)
+	{
+		log_error("section_list_rd_lock(sid = %d) error\n", p_section->sid);
+		return -2;
+	}
+
+	for (p_article = p_section->p_article_tail;
+		 p_article && p_article != p_section->p_article_head && !p_article->visible;
+		 p_article = p_article->p_prior)
+		;
+
+	if (p_article && p_article->visible)
+	{
+		*pp_article = p_article;
+		ret = 1;
+	}
+
+	// release lock of section
+	if (section_list_rd_unlock(p_section) < 0)
+	{
+		log_error("section_list_rd_unlock(sid = %d) error\n", p_section->sid);
+		ret = -2;
+	}
+
+	return ret;
+}
+
 int scan_unread_article_in_section(SECTION_LIST *p_section, const ARTICLE *p_article_cur, const ARTICLE **pp_article_unread)
 {
 	ARTICLE *p_article;
