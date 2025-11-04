@@ -3,7 +3,7 @@
  * ip_mask
  *   - IP address mask
  *
- * Copyright (C) 2004-2025 by Leaflet <leaflet@leafok.com>
+ * Copyright (C) 2004-2025  Leaflet <leaflet@leafok.com>
  */
 
 #include "ip_mask.h"

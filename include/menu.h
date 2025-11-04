@@ -3,7 +3,7 @@
  * menu
  *   - configurable user interactive menu feature
  *
- * Copyright (C) 2004-2025 by Leaflet <leaflet@leafok.com>
+ * Copyright (C) 2004-2025  Leaflet <leaflet@leafok.com>
  */
 
 #ifndef _MENU_H_

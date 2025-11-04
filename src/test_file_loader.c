@@ -3,7 +3,7 @@
  * test_file_loader
  *   - tester for shared memory based file loader
  *
- * Copyright (C) 2004-2025 by Leaflet <leaflet@leafok.com>
+ * Copyright (C) 2004-2025  Leaflet <leaflet@leafok.com>
  */
 
 #include "file_loader.h"

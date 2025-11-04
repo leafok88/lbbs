@@ -3,7 +3,7 @@
  * user_list_display
  *   - user interactive list of (online) users
  *
- * Copyright (C) 2004-2025 by Leaflet <leaflet@leafok.com>
+ * Copyright (C) 2004-2025  Leaflet <leaflet@leafok.com>
  */
 
 #ifndef _USER_LIST_DISPLAY_H_

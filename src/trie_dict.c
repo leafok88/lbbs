@@ -3,7 +3,7 @@
  * trie_dict
  *   - trie-tree based dict feature
  *
- * Copyright (C) 2004-2025 by Leaflet <leaflet@leafok.com>
+ * Copyright (C) 2004-2025  Leaflet <leaflet@leafok.com>
  */
 
 #include "log.h"

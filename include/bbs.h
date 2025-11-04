@@ -3,7 +3,7 @@
  * bbs
  *   - BBS related common definitions
  *
- * Copyright (C) 2004-2025 by Leaflet <leaflet@leafok.com>
+ * Copyright (C) 2004-2025  Leaflet <leaflet@leafok.com>
  */
 
 #ifndef _BBS_H_

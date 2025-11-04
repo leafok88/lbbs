@@ -3,7 +3,7 @@
  * user_list
  *   - data model and basic operations of (online) user list
  *
- * Copyright (C) 2004-2025 by Leaflet <leaflet@leafok.com>
+ * Copyright (C) 2004-2025  Leaflet <leaflet@leafok.com>
  */
 
 #include "common.h"

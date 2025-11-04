@@ -3,7 +3,7 @@
  * section_list
  *   - data models and basic operations of section and article
  *
- * Copyright (C) 2004-2025 by Leaflet <leaflet@leafok.com>
+ * Copyright (C) 2004-2025  Leaflet <leaflet@leafok.com>
  */
 
 #ifndef _SECTION_LIST_H_

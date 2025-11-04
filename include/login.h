@@ -3,7 +3,7 @@
  * login
  *   - user authentication and online status manager
  *
- * Copyright (C) 2004-2025 by Leaflet <leaflet@leafok.com>
+ * Copyright (C) 2004-2025  Leaflet <leaflet@leafok.com>
  */
 
 #ifndef _LOGIN_H_

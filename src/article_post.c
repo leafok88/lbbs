@@ -3,7 +3,7 @@
  * article_post
  *   - user interactive feature to post / modify / reply article
  *
- * Copyright (C) 2004-2025 by Leaflet <leaflet@leafok.com>
+ * Copyright (C) 2004-2025  Leaflet <leaflet@leafok.com>
  */
 
 #include "article_cache.h"

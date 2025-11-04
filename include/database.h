@@ -3,7 +3,7 @@
  * database
  *   - configuration and function of DB connection
  *
- * Copyright (C) 2004-2025 by Leaflet <leaflet@leafok.com>
+ * Copyright (C) 2004-2025  Leaflet <leaflet@leafok.com>
  */
 
 #ifndef _DATABASE_H_

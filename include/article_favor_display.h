@@ -3,7 +3,7 @@
  * article_favor_display
  *   - user interactive feature to display favorite articles
  *
- * Copyright (C) 2004-2025 by Leaflet <leaflet@leafok.com>
+ * Copyright (C) 2004-2025  Leaflet <leaflet@leafok.com>
  */
 
 #ifndef _ARTICLE_FAVOR_DISPLAY_H_

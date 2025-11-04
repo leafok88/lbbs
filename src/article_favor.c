@@ -3,7 +3,7 @@
  * article_favor
  *   - data model and basic operations of user favorite articles
  *
- * Copyright (C) 2004-2025 by Leaflet <leaflet@leafok.com>
+ * Copyright (C) 2004-2025  Leaflet <leaflet@leafok.com>
  */
 
 #include "article_favor.h"

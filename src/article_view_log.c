@@ -3,7 +3,7 @@
  * article_view_log
  *   - data persistence and query of article view log
  *
- * Copyright (C) 2004-2025 by Leaflet <leaflet@leafok.com>
+ * Copyright (C) 2004-2025  Leaflet <leaflet@leafok.com>
  */
 
 #include "article_view_log.h"

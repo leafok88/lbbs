@@ -3,7 +3,7 @@
  * test_ssh_server
  *   - tester for network server with SSH support
  *
- * Copyright (C) 2004-2025 by Leaflet <leaflet@leafok.com>
+ * Copyright (C) 2004-2025  Leaflet <leaflet@leafok.com>
  */
 
 // This test was written based on libssh example/proxy.c

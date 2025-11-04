@@ -3,7 +3,7 @@
  * article_del
  *   - user interactive feature to delete article
  *
- * Copyright (C) 2004-2025 by Leaflet <leaflet@leafok.com>
+ * Copyright (C) 2004-2025  Leaflet <leaflet@leafok.com>
  */
 
 #include "article_del.h"

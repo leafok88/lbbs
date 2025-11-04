@@ -3,7 +3,7 @@
  * user_priv
  *   - basic operations of user privilege
  *
- * Copyright (C) 2004-2025 by Leaflet <leaflet@leafok.com>
+ * Copyright (C) 2004-2025  Leaflet <leaflet@leafok.com>
  */
 
 #ifndef _USER_PRIV_H_
