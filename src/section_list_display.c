@@ -61,6 +61,7 @@ enum select_cmd_t
 	UNSET_FAVOR_ARTICLE,
 	FIRST_TOPIC_ARTICLE,
 	LAST_TOPIC_ARTICLE,
+	LAST_SECTION_ARTICLE,
 	SCAN_NEW_ARTICLE,
 	SCAN_ARTICLE_BACKWARD_BY_USER,
 	SCAN_ARTICLE_FORWARD_BY_USER,
@@ -368,6 +369,10 @@ static enum select_cmd_t section_list_select(int total_page, int item_count, int
 			break;
 		case '$':
 		case KEY_END:
+			if (*p_page_id + 1 == total_page && *p_selected_index + 1 == item_count) // Press END at end of list
+			{
+				return LAST_SECTION_ARTICLE;
+			}
 			if (total_page > 0)
 			{
 				*p_page_id = total_page - 1;
@@ -710,7 +715,27 @@ int section_list_display(const char *sname, int32_t aid)
 			// Update current aid location
 			if (p_articles[selected_index] != NULL)
 			{
-				section_aid_locations[section_index] = (p_articles[selected_index]->visible ? p_articles[selected_index]->aid : 0);
+				if (selected_index >= ontop_start_offset)
+				{
+					ret = last_article_in_section(p_section, &p_article_locate);
+					if (ret < 0)
+					{
+						log_error("last_article_in_section(sid=%d) error\n", p_section->sid);
+						return -3;
+					}
+					else if (ret == 0)
+					{
+						section_aid_locations[section_index] = 0;
+					}
+					else // ret > 0
+					{
+						section_aid_locations[section_index] = p_article_locate->aid;
+					}
+				}
+				else
+				{
+					section_aid_locations[section_index] = (p_articles[selected_index]->visible ? p_articles[selected_index]->aid : 0);
+				}
 			}
 			return 0;
 		case CHANGE_PAGE:
@@ -1073,6 +1098,36 @@ int section_list_display(const char *sname, int32_t aid)
 			{
 				log_error("locate_article_in_section(sid=%d, aid=%d, direction=%d, step=%d) error\n",
 						  p_section->sid, p_articles[selected_index]->aid, direction, BBS_article_limit_per_section);
+				return -3;
+			}
+			else if (ret > 0 && page_id != page_id_cur) // found and page changed
+			{
+				ret = query_section_articles(p_section, page_id, p_articles, &article_count, &page_count, &ontop_start_offset);
+				if (ret < 0)
+				{
+					log_error("query_section_articles(sid=%d, page_id=%d) error\n", p_section->sid, page_id);
+					return -3;
+				}
+			}
+			break;
+		case LAST_SECTION_ARTICLE:
+			page_id_cur = page_id;
+			ret = last_article_in_section(p_section, &p_article_locate);
+			if (ret < 0)
+			{
+				log_error("last_article_in_section(sid=%d) error\n", p_section->sid);
+				return -3;
+			}
+			else if (ret == 0)
+			{
+				break;
+			}
+			ret = locate_article_in_section(p_section, p_article_locate, 0, 0,
+											&page_id, &selected_index, &article_count);
+			if (ret < 0)
+			{
+				log_error("locate_article_in_section(sid=%d, aid=%d, direction=0, step=0) error\n",
+						  p_section->sid, p_article_locate->aid);
 				return -3;
 			}
 			else if (ret > 0 && page_id != page_id_cur) // found and page changed
