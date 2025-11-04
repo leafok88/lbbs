@@ -1,18 +1,10 @@
-/***************************************************************************
-					 article_favor.h  -  description
-							 -------------------
-	Copyright            : (C) 2004-2025 by Leaflet
-	Email                : leaflet@leafok.com
- ***************************************************************************/
-
-/***************************************************************************
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 3 of the License, or     *
- *   (at your option) any later version.                                   *
- *                                                                         *
- ***************************************************************************/
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+/*
+ * article_favor
+ *   - data model and basic operations of user favorite articles
+ *
+ * Copyright (C) 2004-2025 by Leaflet <leaflet@leafok.com>
+ */
 
 #ifndef _ARTICLE_FAVOR_H_
 #define _ARTICLE_FAVOR_H_

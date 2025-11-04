@@ -1,18 +1,10 @@
-/***************************************************************************
-						  user_priv.h  -  description
-							 -------------------
-	Copyright            : (C) 2004-2025 by Leaflet
-	Email                : leaflet@leafok.com
- ***************************************************************************/
-
-/***************************************************************************
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 3 of the License, or     *
- *   (at your option) any later version.                                   *
- *                                                                         *
- ***************************************************************************/
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+/*
+ * user_priv
+ *   - basic operations of user privilege
+ *
+ * Copyright (C) 2004-2025 by Leaflet <leaflet@leafok.com>
+ */
 
 #ifndef _USER_PRIV_H_
 #define _USER_PRIV_H_
@@ -32,14 +24,14 @@
 #define S_ALL 0xff
 #define S_DEFAULT 0x3 // 0x1 | 0x2
 
-#define P_GUEST 0x0		//游客
-#define P_USER 0x1		//普通用户
-//#define P_AUTH_USER 0x2 // Reserved
-#define P_MAN_S 0x4		//副版主
-#define P_MAN_M 0x8		//正版主
-#define P_MAN_C 0x10	// Reserved
-#define P_ADMIN_S 0x20	//副系统管理员
-#define P_ADMIN_M 0x40	//主系统管理员
+#define P_GUEST 0x0 // 游客
+#define P_USER 0x1	// 普通用户
+// #define P_AUTH_USER 0x2 // Reserved
+#define P_MAN_S 0x4	   // 副版主
+#define P_MAN_M 0x8	   // 正版主
+#define P_MAN_C 0x10   // Reserved
+#define P_ADMIN_S 0x20 // 副系统管理员
+#define P_ADMIN_M 0x40 // 主系统管理员
 
 struct user_priv
 {

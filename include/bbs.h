@@ -1,18 +1,10 @@
-/***************************************************************************
-							bbs.h  -  description
-							 -------------------
-	Copyright            : (C) 2004-2025 by Leaflet
-	Email                : leaflet@leafok.com
- ***************************************************************************/
-
-/***************************************************************************
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 3 of the License, or     *
- *   (at your option) any later version.                                   *
- *                                                                         *
- ***************************************************************************/
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+/*
+ * bbs
+ *   - BBS related common definitions
+ *
+ * Copyright (C) 2004-2025 by Leaflet <leaflet@leafok.com>
+ */
 
 #ifndef _BBS_H_
 #define _BBS_H_

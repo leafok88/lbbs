@@ -1,18 +1,10 @@
-/***************************************************************************
-						  user_priv.c  -  description
-							 -------------------
-	Copyright            : (C) 2004-2025 by Leaflet
-	Email                : leaflet@leafok.com
- ***************************************************************************/
-
-/***************************************************************************
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 3 of the License, or     *
- *   (at your option) any later version.                                   *
- *                                                                         *
- ***************************************************************************/
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+/*
+ * user_priv
+ *   - basic operations of user privilege
+ *
+ * Copyright (C) 2004-2025 by Leaflet <leaflet@leafok.com>
+ */
 
 #include "bbs.h"
 #include "common.h"
@@ -66,7 +58,7 @@ int setpriv(BBS_user_priv *p_priv, int sid, int priv, int is_favor)
 		return 0;
 	}
 
-	if (search_priv(p_priv, sid, &offset)) //found
+	if (search_priv(p_priv, sid, &offset)) // found
 	{
 		p_priv->s_priv_list[offset].s_priv = priv;
 		p_priv->s_priv_list[offset].is_favor = is_favor;
@@ -98,7 +90,7 @@ int getpriv(BBS_user_priv *p_priv, int sid, int *p_is_favor)
 {
 	int offset;
 
-	if (search_priv(p_priv, sid, &offset)) //found
+	if (search_priv(p_priv, sid, &offset)) // found
 	{
 		*p_is_favor = p_priv->s_priv_list[offset].is_favor;
 		return p_priv->s_priv_list[offset].s_priv;

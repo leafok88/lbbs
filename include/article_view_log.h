@@ -1,18 +1,10 @@
-/***************************************************************************
-					 article_view_log.h  -  description
-							 -------------------
-	Copyright            : (C) 2004-2025 by Leaflet
-	Email                : leaflet@leafok.com
- ***************************************************************************/
-
-/***************************************************************************
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 3 of the License, or     *
- *   (at your option) any later version.                                   *
- *                                                                         *
- ***************************************************************************/
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+/*
+ * article_view_log
+ *   - data persistence and query of article view log
+ *
+ * Copyright (C) 2004-2025 by Leaflet <leaflet@leafok.com>
+ */
 
 #ifndef _ARTICLE_VIEW_LOG_H_
 #define _ARTICLE_VIEW_LOG_H_

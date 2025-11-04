@@ -1,18 +1,10 @@
-/***************************************************************************
-						 user_list.c  -  description
-							 -------------------
-	Copyright            : (C) 2004-2025 by Leaflet
-	Email                : leaflet@leafok.com
- ***************************************************************************/
-
-/***************************************************************************
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 3 of the License, or     *
- *   (at your option) any later version.                                   *
- *                                                                         *
- ***************************************************************************/
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+/*
+ * user_stat
+ *   - data model and basic operations of user related statistics
+ *
+ * Copyright (C) 2004-2025 by Leaflet <leaflet@leafok.com>
+ */
 
 #include "log.h"
 #include "section_list.h"
@@ -74,7 +66,7 @@ int user_stat_map_update(USER_STAT_MAP *p_map)
 			log_error("article_block_find_by_index(index=%d) error\n", i);
 			break;
 		}
-		
+
 		if (p_article->visible == 0)
 		{
 			continue;
