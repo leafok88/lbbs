@@ -1039,7 +1039,13 @@ int locate_article_in_section(SECTION_LIST *p_section, const ARTICLE *p_article_
 						break;
 					}
 				}
+
 				p_article = p_article->p_next;
+				if (p_article == p_section->p_page_first_article[page_id])
+				{
+					log_error("Dead loop detected at page=%d, article_count=%d\n", page_id, *p_article_count);
+					break;
+				}
 			}
 
 			// Include ontop articles
@@ -1223,7 +1229,7 @@ int scan_article_in_section_by_username(SECTION_LIST *p_section, const ARTICLE *
 }
 
 int scan_article_in_section_by_title(SECTION_LIST *p_section, const ARTICLE *p_article_cur,
-										int direction, const char *title, const ARTICLE **pp_article)
+									 int direction, const char *title, const ARTICLE **pp_article)
 {
 	ARTICLE *p_article;
 	int ret = 0;
