@@ -28,6 +28,7 @@
 #include "menu.h"
 #include "screen.h"
 #include "section_list.h"
+#include "section_list_display.h"
 #include "trie_dict.h"
 #include "user_list.h"
 #include "user_priv.h"
@@ -316,6 +317,13 @@ int bbs_main()
 	}
 	log_common("User [%s] login\n", BBS_username);
 
+	// Load section aid locations
+	if (section_aid_locations_load(BBS_priv.uid) < 0)
+	{
+		log_error("article_view_log_load() error\n");
+		goto cleanup;
+	}
+	
 	// Load article view log
 	if (article_view_log_load(BBS_priv.uid, &BBS_article_view_log, 0) < 0)
 	{
@@ -347,6 +355,12 @@ int bbs_main()
 
 	// Logout
 	bbs_logout();
+
+	// Save section aid locations
+	if (section_aid_locations_save(BBS_priv.uid) < 0)
+	{
+		log_error("article_view_log_save() error\n");
+	}
 
 	// Save incremental article view log
 	if (article_view_log_save_inc(&BBS_article_view_log) < 0)

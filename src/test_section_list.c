@@ -562,7 +562,7 @@ int main(int argc, char *argv[])
 				(p_section[i]->visible_article_count % BBS_article_limit_per_page ? 1 : 0) !=
 			p_section[i]->page_count)
 		{
-			printf("Inconsistent page count in section %d offset %d, %d != %d, "
+			printf("#1 Inconsistent page count in section %d offset %d, %d != %d, "
 				   "visible_article_count = %d, last_page_visible_count = %d\n",
 				   i, j,
 				   p_section[i]->visible_article_count / BBS_article_limit_per_page +
@@ -645,7 +645,7 @@ int main(int argc, char *argv[])
 				(p_section[i]->visible_article_count % BBS_article_limit_per_page ? 1 : 0) !=
 			p_section[i]->page_count)
 		{
-			printf("Inconsistent page count in section %d offset %d, %d != %d, "
+			printf("#2 Inconsistent page count in section %d offset %d, %d != %d, "
 				   "visible_article_count = %d, last_page_visible_count = %d\n",
 				   i, j,
 				   p_section[i]->visible_article_count / BBS_article_limit_per_page +
@@ -714,7 +714,7 @@ int main(int argc, char *argv[])
 				(p_section[i]->visible_article_count % BBS_article_limit_per_page ? 1 : 0) !=
 			p_section[i]->page_count)
 		{
-			printf("Inconsistent page count in section %d offset %d, %d != %d, "
+			printf("#3 Inconsistent page count in section %d offset %d, %d != %d, "
 				   "visible_article_count = %d, last_page_visible_count = %d\n",
 				   i, j,
 				   p_section[i]->visible_article_count / BBS_article_limit_per_page +

@@ -171,6 +171,14 @@ int main(int argc, char *argv[])
 		goto cleanup;
 	}
 
+	// Check section aid location dir
+	ret = mkdir(VAR_SECTION_AID_LOC_DIR, 0750);
+	if (ret == -1 && errno != EEXIST)
+	{
+		log_error("mkdir(%s) error (%d)\n", VAR_SECTION_AID_LOC_DIR, errno);
+		goto cleanup;
+	}
+
 	// Initialize data pools
 	if ((fp = fopen(VAR_ARTICLE_BLOCK_SHM, "w")) == NULL)
 	{

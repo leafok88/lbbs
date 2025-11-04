@@ -100,7 +100,9 @@ extern int get_user_online_list_count(int *p_user_cnt, int *p_guest_cnt);
 extern int get_user_login_count(int *p_login_cnt);
 
 extern int query_user_info(int32_t id, USER_INFO *p_user);
-extern int query_user_info_by_uid(int32_t uid, USER_INFO *p_user);
+extern int query_user_info_by_uid(int32_t uid, USER_INFO *p_user, char *p_intro_buf, size_t intro_buf_len);
+extern int query_user_info_by_username(const char *username_prefix, int max_user_cnt,
+									   int32_t uid_list[], char username_list[][BBS_username_max_len + 1]);
 
 extern int query_user_online_info(int32_t id, USER_ONLINE_INFO *p_user);
 extern int query_user_online_info_by_uid(int32_t uid, USER_ONLINE_INFO *p_users, int *p_user_cnt, int start_id);

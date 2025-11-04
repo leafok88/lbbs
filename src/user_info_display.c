@@ -54,7 +54,7 @@ int user_info_display(USER_INFO *p_user_info)
 	int life;
 	int user_level;
 	const char *user_level_name;
-	char intro_f[BBS_user_intro_max_len];
+	char intro_f[BBS_user_intro_max_len + 1];
 	int intro_len;
 	char user_info_f[BUFSIZ];
 	long line_offsets[BBS_user_intro_max_line + 1];

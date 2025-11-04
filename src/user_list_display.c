@@ -24,6 +24,7 @@
 #include "user_priv.h"
 #include "user_info_display.h"
 #include "user_list_display.h"
+#include <ctype.h>
 #include <string.h>
 #include <time.h>
 #include <sys/param.h>
@@ -35,6 +36,7 @@ enum select_cmd_t
 	CHANGE_PAGE,
 	REFRESH_LIST,
 	SHOW_HELP,
+	SEARCH_USER,
 };
 
 static int user_list_draw_screen(int online_user)
@@ -43,7 +45,8 @@ static int user_list_draw_screen(int online_user)
 	show_top((online_user ? "[线上使用者]" : "[已注册用户]"), BBS_name, "");
 	moveto(2, 0);
 	prints("返回[\033[1;32m←\033[0;37m,\033[1;32mESC\033[0;37m] 选择[\033[1;32m↑\033[0;37m,\033[1;32m↓\033[0;37m] "
-		   "查看[\033[1;32m→\033[0;37m,\033[1;32mENTER\033[0;37m] 帮助[\033[1;32mh\033[0;37m]\033[m");
+		   "查看[\033[1;32m→\033[0;37m,\033[1;32mENTER\033[0;37m] 查找[\033[1;32ms\033[0;37m] "
+		   "帮助[\033[1;32mh\033[0;37m]\033[m");
 	moveto(3, 0);
 
 	if (online_user)
@@ -305,6 +308,8 @@ static enum select_cmd_t user_list_select(int total_page, int item_count, int *p
 				(*p_selected_index)++;
 			}
 			break;
+		case 's':
+			return SEARCH_USER;
 		case KEY_F5:
 			return REFRESH_LIST;
 		case 'h':
@@ -449,6 +454,10 @@ int user_list_display(int online_user)
 			user_info_display(online_user ? &(online_users[selected_index].user_info) : &(users[selected_index]));
 			user_list_draw_screen(online_user);
 			break;
+		case SEARCH_USER:
+			user_list_search();
+			user_list_draw_screen(online_user);
+			break;
 		case SHOW_HELP:
 			// Display help information
 			display_file(DATA_READ_HELP, 1);
@@ -456,6 +465,131 @@ int user_list_display(int online_user)
 			break;
 		default:
 			log_error("Unknown command %d\n", ret);
+		}
+	}
+
+	return 0;
+}
+
+int user_list_search(void)
+{
+	const int users_per_line = 5;
+	const int max_user_lines = 20;
+	const int max_user_cnt = users_per_line * max_user_lines + 1;
+
+	char username[BBS_username_max_len + 1];
+	int32_t uid_list[max_user_cnt];
+	char username_list[max_user_cnt][BBS_username_max_len + 1];
+	int ret;
+	int i;
+	USER_INFO user_info;
+	char user_intro[BBS_user_intro_max_len + 1];
+	int ok;
+	int ch;
+
+	username[0] = '\0';
+
+	clearscr();
+
+	while (!SYS_server_exit)
+	{
+		clrline(3, SCREEN_ROWS);
+		get_data(2, 1, "查找谁: ", username, sizeof(username), BBS_username_max_len);
+
+		if (username[0] == '\0')
+		{
+			return 0;
+		}
+
+		// Verify format
+		for (i = 0, ok = 1; ok && username[i] != '\0'; i++)
+		{
+			if (!(isalpha(username[i]) || (i > 0 && (isdigit(username[i]) || username[i] == '_'))))
+			{
+				ok = 0;
+			}
+		}
+		if (ok && i > BBS_username_max_len)
+		{
+			ok = 0;
+		}
+		if (!ok)
+		{
+			moveto(3, 1);
+			clrtoeol();
+			prints("用户名格式非法");
+			continue;
+		}
+
+		clrline(3, SCREEN_ROWS);
+
+		ret = query_user_info_by_username(username, max_user_cnt, uid_list, username_list);
+
+		if (ret < 0)
+		{
+			log_error("query_user_info_by_username(%s) error\n", username);
+			return -1;
+		}
+		else if (ret > 1)
+		{
+			for (i = 0; i < MIN(ret, users_per_line * max_user_lines); i++)
+			{
+				moveto(4 + i / users_per_line, 3 + i % users_per_line * (BBS_username_max_len + 3));
+				prints("%s", username_list[i]);
+			}
+			moveto(SCREEN_ROWS, 1);
+			if (ret > users_per_line * max_user_lines)
+			{
+				prints("还有更多...");
+			}
+
+			moveto(3, 1);
+			prints("存在多个匹配的用户，按\033[1;33mEnter\033[m精确查找");
+			iflush();
+
+			ch = igetch_t(MAX_DELAY_TIME);
+			switch (ch)
+			{
+			case KEY_NULL:
+			case KEY_TIMEOUT:
+				return -1;
+			case KEY_ESC:
+				return 0;
+			case CR:
+				ret = (strcasecmp(username_list[0], username) == 0 ? 1 : 0);
+				break;
+			default:
+				i = (int)strnlen(username, sizeof(username) - 1);
+				if (i + 1 <= BBS_username_max_len && (isalnum((char)ch) || ch == '_'))
+				{
+					username[i] = (char)ch;
+					username[i + 1] = '\0';
+				}
+				continue;
+			}
+		}
+
+		clrline(3, SCREEN_ROWS);
+		if (ret == 0)
+		{
+			moveto(3, 1);
+			prints("没有找到符合条件的用户");
+			press_any_key();
+			return 0;
+		}
+		else // ret == 1
+		{
+			if (query_user_info_by_uid(uid_list[0], &user_info, user_intro, sizeof(user_intro)) <= 0)
+			{
+				log_error("query_user_info_by_uid(uid=%d) error\n", uid_list[0]);
+				return -2;
+			}
+			else if (user_info_display(&user_info) < 0)
+			{
+				log_error("user_info_display(uid=%d) error\n", uid_list[0]);
+				return -3;
+			}
+			return 1;
 		}
 	}
 

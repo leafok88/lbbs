@@ -36,7 +36,7 @@ int BBS_max_client_per_ip = MAX_CLIENT_PER_IP_LIMIT;
 char BBS_start_dt[BBS_start_dt_max_len + 1] = "2000年 1月 1日";
 int BBS_sys_id = 1;
 
-const int BBS_section_list_load_interval = 5; // second
+const int BBS_section_list_load_interval = 1; // second
 
 // User
 const int BBS_user_list_load_interval = 60;		  // 1 minute

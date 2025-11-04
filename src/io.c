@@ -245,6 +245,8 @@ int iflush(void)
 
 int igetch(int timeout)
 {
+	static int stdin_read_wait = 0;
+
 	struct epoll_event ev, events[MAX_EVENTS];
 	int nfds, epollfd;
 	int ret;
@@ -295,85 +297,97 @@ int igetch(int timeout)
 				break;
 			}
 
-			nfds = epoll_wait(epollfd, events, MAX_EVENTS, timeout);
-
-			if (nfds < 0)
+			if (!stdin_read_wait)
 			{
-				if (errno != EINTR)
+				nfds = epoll_wait(epollfd, events, MAX_EVENTS, timeout);
+
+				if (nfds < 0)
 				{
-					log_error("epoll_wait() error (%d)\n", errno);
+					if (errno != EINTR)
+					{
+						log_error("epoll_wait() error (%d)\n", errno);
+						break;
+					}
+					continue;
+				}
+				else if (nfds == 0) // timeout
+				{
+					out = KEY_TIMEOUT;
 					break;
 				}
-				continue;
-			}
-			else if (nfds == 0) // timeout
-			{
-				out = KEY_TIMEOUT;
-				break;
+
+				for (int i = 0; i < nfds; i++)
+				{
+					if (events[i].data.fd == STDIN_FILENO)
+					{
+						stdin_read_wait = 1;
+					}
+				}
 			}
 
-			for (int i = 0; i < nfds; i++)
+			if (stdin_read_wait)
 			{
-				if (events[i].data.fd == STDIN_FILENO)
+				while (stdin_buf_len < sizeof(stdin_buf) && !SYS_server_exit) // read until complete or error
 				{
-					while (stdin_buf_len < sizeof(stdin_buf) && !SYS_server_exit) // read until complete or error
+					if (SSH_v2)
 					{
-						if (SSH_v2)
+						ret = ssh_channel_read_nonblocking(SSH_channel, stdin_buf + stdin_buf_len, sizeof(stdin_buf) - (uint32_t)stdin_buf_len, 0);
+						if (ret == SSH_ERROR)
 						{
-							ret = ssh_channel_read_nonblocking(SSH_channel, stdin_buf + stdin_buf_len, sizeof(stdin_buf) - (uint32_t)stdin_buf_len, 0);
-							if (ret == SSH_ERROR)
-							{
-								log_error("ssh_channel_read_nonblocking() error: %s\n", ssh_get_error(SSH_session));
-								loop = 0;
-								break;
-							}
-							else if (ret == SSH_EOF)
-							{
-								loop = 0;
-								break;
-							}
-							else if (ret == 0)
-							{
-								out = 0;
-								loop = 0;
-								break;
-							}
-						}
-						else
-						{
-							ret = (int)read(STDIN_FILENO, stdin_buf + stdin_buf_len, sizeof(stdin_buf) - (size_t)stdin_buf_len);
-						}
-						if (ret < 0)
-						{
-							if (errno == EAGAIN || errno == EWOULDBLOCK)
-							{
-								out = 0;
-								loop = 0;
-								break;
-							}
-							else if (errno == EINTR)
-							{
-								continue;
-							}
-							else
-							{
-#ifdef _DEBUG
-								log_error("read(STDIN) error (%d)\n", errno);
-#endif
-								loop = 0;
-								break;
-							}
-						}
-						else if (ret == 0) // broken pipe
-						{
+							log_error("ssh_channel_read_nonblocking() error: %s\n", ssh_get_error(SSH_session));
 							loop = 0;
 							break;
 						}
-						else
+						else if (ret == SSH_EOF)
 						{
-							stdin_buf_len += ret;
+							stdin_read_wait = 0;
+							loop = 0;
+							break;
+						}
+						else if (ret == 0)
+						{
+							out = 0;
+							stdin_read_wait = 0;
+							loop = 0;
+							break;
+						}
+					}
+					else
+					{
+						ret = (int)read(STDIN_FILENO, stdin_buf + stdin_buf_len, sizeof(stdin_buf) - (size_t)stdin_buf_len);
+					}
+					if (ret < 0)
+					{
+						if (errno == EAGAIN || errno == EWOULDBLOCK)
+						{
+							out = 0;
+							stdin_read_wait = 0;
+							loop = 0;
+							break;
+						}
+						else if (errno == EINTR)
+						{
 							continue;
 						}
+						else
+						{
+#ifdef _DEBUG
+							log_error("read(STDIN) error (%d)\n", errno);
+#endif
+							loop = 0;
+							break;
+						}
+					}
+					else if (ret == 0) // broken pipe
+					{
+						stdin_read_wait = 0;
+						loop = 0;
+						break;
+					}
+					else
+					{
+						stdin_buf_len += ret;
+						continue;
 					}
 				}
 			}
