@@ -52,7 +52,7 @@ static void trie_file_dict_cleanup_cb(const char *filename, int64_t value)
 {
 	int shmid = (int)value;
 
-	if (shmctl(shmid, IPC_RMID, NULL) == -1)
+	if (shmid != 0 && shmctl(shmid, IPC_RMID, NULL) == -1)
 	{
 		log_error("shmctl(shmid=%d, IPC_RMID) error (%d)\n", shmid, errno);
 	}
@@ -172,7 +172,7 @@ int load_file(const char *filename)
 	{
 		log_error("trie_dict_set(%s) error\n", filename);
 
-		if (shmctl(shmid, IPC_RMID, NULL) == -1)
+		if (shmid != 0 && shmctl(shmid, IPC_RMID, NULL) == -1)
 		{
 			log_error("shmctl(shmid=%d, IPC_RMID) error (%d)\n", shmid, errno);
 		}

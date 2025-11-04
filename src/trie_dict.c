@@ -102,7 +102,7 @@ void trie_dict_cleanup(void)
 
 	detach_trie_dict_shm();
 
-	if (shmctl(shmid, IPC_RMID, NULL) == -1)
+	if (shmid != 0 && shmctl(shmid, IPC_RMID, NULL) == -1)
 	{
 		log_error("shmctl(shmid = %d, IPC_RMID) error (%d)\n", shmid, errno);
 	}

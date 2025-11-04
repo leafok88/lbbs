@@ -503,7 +503,7 @@ void user_list_pool_cleanup(void)
 		log_error("shmdt(shmid = %d) error (%d)\n", shmid, errno);
 	}
 
-	if (shmctl(shmid, IPC_RMID, NULL) == -1)
+	if (shmid != 0 && shmctl(shmid, IPC_RMID, NULL) == -1)
 	{
 		log_error("shmctl(shmid = %d, IPC_RMID) error (%d)\n", shmid, errno);
 	}

@@ -1384,7 +1384,7 @@ int unload_menu(MENU_SET *p_menu_set)
 
 	detach_menu_shm(p_menu_set);
 
-	if (shmctl(shmid, IPC_RMID, NULL) == -1)
+	if (shmid != 0 && shmctl(shmid, IPC_RMID, NULL) == -1)
 	{
 		log_error("shmctl(shmid=%d, IPC_RMID) error (%d)\n", shmid, errno);
 		return -1;
