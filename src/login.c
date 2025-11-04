@@ -32,6 +32,9 @@
 #include <mysql/mysql.h>
 #include <sys/param.h>
 
+static const int BBS_username_min_len = 3; // common len = 5, special len = 3
+static const int BBS_password_min_len = 5; // legacy len = 5, current len = 6
+
 int bbs_login(void)
 {
 	char username[BBS_username_max_len + 1];
@@ -119,7 +122,7 @@ int check_user(const char *username, const char *password)
 			ok = 0;
 		}
 	}
-	if (ok && (i < 5 || i > BBS_username_max_len))
+	if (ok && (i < BBS_username_min_len || i > BBS_username_max_len))
 	{
 		ok = 0;
 	}
@@ -130,7 +133,7 @@ int check_user(const char *username, const char *password)
 			ok = 0;
 		}
 	}
-	if (ok && (i < 5 || i > BBS_password_max_len))
+	if (ok && (i < BBS_password_min_len || i > BBS_password_max_len))
 	{
 		ok = 0;
 	}
