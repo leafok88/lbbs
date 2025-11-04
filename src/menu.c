@@ -96,19 +96,18 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 		key = ftok(conf_file, proj_id + retry_cnt);
 		if (key == -1)
 		{
-			log_error("ftok(%s %d) error (%d)\n", conf_file, proj_id, errno);
-			return -2;
+			log_error("ftok(%s %d) error (%d)\n", conf_file, proj_id + retry_cnt, errno);
+			return -3;
 		}
 
 		p_menu_set->shmid = shmget(key, size, IPC_CREAT | IPC_EXCL | 0600);
-
 		if (p_menu_set->shmid == -1)
 		{
 			if (errno != EEXIST || retry_cnt + 1 >= MENU_SHMGET_RETRY_LIMIT)
 			{
 				log_error("shmget(conf_file=%s, size=%d) error (%d) %d times\n",
 						  conf_file, size, errno, retry_cnt + 1);
-				break;
+				return -3;
 			}
 			log_error("shmget(conf_file=%s, proj_id=%d, key=0x%x, size=%d) error (%d), retry ...\n",
 					  conf_file, proj_id + retry_cnt, key, size, errno);
