@@ -28,7 +28,7 @@ libbbs_la_SOURCES = bbs_net.c
 AM_CFLAGS = -I${srcdir}/../include ${LIBSSH_CFLAGS} ${MYSQLCLIENT_CFLAGS} ${SYSTEMD_CFLAGS} -std=c17 -Wall -Werror \
 			-Wno-unused-parameter -Wformat -Wpedantic -Wformat-security -Wconversion \
 			-Wdeprecated -finline-functions
-LIBS = ${LIBSSH_LIBS} ${MYSQLCLIENT_LIBS} ${SYSTEMD_LIBS} -lz -ldl
+LIBS = ${LIBSSH_LIBS} ${MYSQLCLIENT_LIBS} ${SYSTEMD_LIBS} -ldl
 
 libdir = ${prefix}/lib
 
