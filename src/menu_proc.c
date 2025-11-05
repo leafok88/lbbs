@@ -269,7 +269,7 @@ int show_top10_menu(void *param)
 				show_top10 = 0;
 				return 0;
 			case KEY_TIMEOUT:
-				if (time(NULL) - BBS_last_access_tm >= MAX_DELAY_TIME)
+				if (time(NULL) - BBS_last_access_tm >= BBS_max_user_idle_time)
 				{
 					log_error("User input timeout\n");
 					show_top10 = 0;

@@ -476,7 +476,7 @@ static int bbsnet_connect(int n)
 		}
 		else if (nfds == 0) // timeout
 		{
-			if (time(NULL) - BBS_last_access_tm >= MAX_DELAY_TIME)
+			if (time(NULL) - BBS_last_access_tm >= BBS_max_user_idle_time)
 			{
 				break;
 			}
@@ -874,7 +874,7 @@ extern int bbs_net()
 			log_error("KEY_NULL\n");
 			goto cleanup;
 		case KEY_TIMEOUT:
-			if (time(NULL) - BBS_last_access_tm >= MAX_DELAY_TIME)
+			if (time(NULL) - BBS_last_access_tm >= BBS_max_user_idle_time)
 			{
 				log_error("User input timeout\n");
 				goto cleanup;

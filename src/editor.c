@@ -700,7 +700,7 @@ int editor_display(EDITOR_DATA *p_editor_data)
 			iflush();
 
 			str_len = 0;
-			ch = igetch_t(MAX_DELAY_TIME);
+			ch = igetch_t(BBS_max_user_idle_time);
 			while (!SYS_server_exit)
 			{
 				if (ch != KEY_NULL && ch != KEY_TIMEOUT)
@@ -1156,7 +1156,7 @@ int editor_display(EDITOR_DATA *p_editor_data)
 					break;
 				}
 
-				ch = igetch_t(MAX_DELAY_TIME);
+				ch = igetch_t(BBS_max_user_idle_time);
 			}
 
 			continue;

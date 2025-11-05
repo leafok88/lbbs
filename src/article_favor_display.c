@@ -167,7 +167,7 @@ static enum select_cmd_t article_favor_select(int total_page, int item_count, in
 		case KEY_LEFT:
 			return EXIT_LIST; // exit list
 		case KEY_TIMEOUT:
-			if (time(NULL) - BBS_last_access_tm >= MAX_DELAY_TIME)
+			if (time(NULL) - BBS_last_access_tm >= BBS_max_user_idle_time)
 			{
 				log_error("User input timeout\n");
 				return EXIT_LIST; // exit list

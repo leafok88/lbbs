@@ -224,7 +224,7 @@ static enum select_cmd_t user_list_select(int total_page, int item_count, int *p
 		case KEY_LEFT:
 			return EXIT_LIST; // exit list
 		case KEY_TIMEOUT:
-			if (time(NULL) - BBS_last_access_tm >= MAX_DELAY_TIME)
+			if (time(NULL) - BBS_last_access_tm >= BBS_max_user_idle_time)
 			{
 				log_error("User input timeout\n");
 				return EXIT_LIST; // exit list
@@ -539,7 +539,7 @@ int user_list_search(void)
 			prints("存在多个匹配的用户，按\033[1;33mEnter\033[m精确查找");
 			iflush();
 
-			ch = igetch_t(MAX_DELAY_TIME);
+			ch = igetch_t(BBS_max_user_idle_time);
 			switch (ch)
 			{
 			case KEY_NULL:

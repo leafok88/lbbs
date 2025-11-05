@@ -102,7 +102,7 @@ int article_post(const SECTION_LIST *p_section, ARTICLE *p_article_new)
 			ch = 0;
 		}
 
-		for (; !SYS_server_exit; ch = igetch_t(MAX_DELAY_TIME))
+		for (; !SYS_server_exit; ch = igetch_t(BBS_max_user_idle_time))
 		{
 			switch (toupper(ch))
 			{
@@ -165,7 +165,7 @@ int article_post(const SECTION_LIST *p_section, ARTICLE *p_article_new)
 			prints("(S)发送, (C)取消, (T)更改标题 or (E)再编辑? [S]: ");
 			iflush();
 
-			for (ch = 0; !SYS_server_exit; ch = igetch_t(MAX_DELAY_TIME))
+			for (ch = 0; !SYS_server_exit; ch = igetch_t(BBS_max_user_idle_time))
 			{
 				switch (toupper(ch))
 				{
@@ -516,7 +516,7 @@ int article_modify(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTI
 				   (reply_note ? "关闭" : "开启"));
 			iflush();
 
-			ch = igetch_t(MAX_DELAY_TIME);
+			ch = igetch_t(BBS_max_user_idle_time);
 			switch (toupper(ch))
 			{
 			case KEY_NULL:
@@ -914,7 +914,7 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 			ch = 0;
 		}
 
-		for (; !SYS_server_exit; ch = igetch_t(MAX_DELAY_TIME))
+		for (; !SYS_server_exit; ch = igetch_t(BBS_max_user_idle_time))
 		{
 			switch (toupper(ch))
 			{
@@ -974,7 +974,7 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 			prints("(S)发送, (C)取消, (T)更改标题 or (E)再编辑? [S]: ");
 			iflush();
 
-			for (ch = 0; !SYS_server_exit; ch = igetch_t(MAX_DELAY_TIME))
+			for (ch = 0; !SYS_server_exit; ch = igetch_t(BBS_max_user_idle_time))
 			{
 				switch (toupper(ch))
 				{

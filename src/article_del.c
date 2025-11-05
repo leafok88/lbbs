@@ -47,7 +47,7 @@ int article_del(const SECTION_LIST *p_section, const ARTICLE *p_article)
 	prints("真的要删除文章？(Y)是, (N)否 [N]: ");
 	iflush();
 
-	for (ch = 0; !SYS_server_exit; ch = igetch_t(MAX_DELAY_TIME))
+	for (ch = 0; !SYS_server_exit; ch = igetch_t(BBS_max_user_idle_time))
 	{
 		switch (toupper(ch))
 		{

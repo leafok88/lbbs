@@ -161,7 +161,7 @@ int bbs_center()
 			log_error("KEY_NULL\n");
 			return 0;
 		case KEY_TIMEOUT:
-			if (time(NULL) - BBS_last_access_tm >= MAX_DELAY_TIME)
+			if (time(NULL) - BBS_last_access_tm >= BBS_max_user_idle_time)
 			{
 				log_error("User input timeout\n");
 				return 0;
