@@ -18,6 +18,12 @@ AC_PROG_INSTALL
 AC_PROG_LN_S
 AC_PROG_MAKE_SET
 
+AC_SUBST([PKG_CONFIG_PATH])
+PKG_PROG_PKG_CONFIG
+PKG_CHECK_MODULES([LIBSSH], [libssh])
+PKG_CHECK_MODULES([MYSQLCLIENT], [mysqlclient])
+PKG_CHECK_MODULES([SYSTEMD], [libsystemd])
+
 # Checks for libraries.
 AC_CHECK_LIB([mysqlclient], [mysql_connect])
 AC_CHECK_LIB([z], [unzip])
