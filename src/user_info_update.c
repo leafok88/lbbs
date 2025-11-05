@@ -98,7 +98,7 @@ int user_intro_edit(int uid)
                 goto cleanup;
             }
 
-	        len_intro = lml_render(intro, intro_f, sizeof(intro_f), SCREEN_COLS, 0);
+            len_intro = lml_render(intro, intro_f, sizeof(intro_f), SCREEN_COLS, 0);
             lines = split_data_lines(intro_f, BBS_user_intro_line_len, line_offsets, BBS_user_intro_max_line + 2, 1, NULL);
 
             if (lines > BBS_user_intro_max_line)
@@ -152,7 +152,7 @@ int user_intro_edit(int uid)
 
     clearscr();
     moveto(1, 1);
-    prints("说明档修改完成，新内容通常会在%d秒后可见",BBS_user_list_load_interval);
+    prints("说明档修改完成，新内容通常会在%d秒后可见", BBS_user_list_load_interval);
     press_any_key();
     ret = 1; // Success
 
