@@ -13,58 +13,62 @@
 #include <libssh/libssh.h>
 #include <libssh/server.h>
 
-#define LINE_BUFFER_LEN 1024
-#define FILE_PATH_LEN 4096
+enum common_constant_t
+{
+    LINE_BUFFER_LEN = 1024,
+    FILE_PATH_LEN = 4096,
+
+    // Screen
+    SCREEN_ROWS = 24,
+    SCREEN_COLS = 80,
+
+    // Network
+    MAX_CLIENT_LIMIT = 2000,
+    MAX_CLIENT_PER_IP_LIMIT = 100,
+    IP_ADDR_LEN = 50,
+    MAX_EVENTS = 10,
+};
 
 // Version
 #define APP_INFO (PACKAGE_STRING " build on " __DATE__ " " __TIME__)
 
 // Enviroment
-#define CONF_BBSD "conf/bbsd.conf"
-#define CONF_MENU "var/menu_merged.conf"
-#define CONF_BBSNET "conf/bbsnet.conf"
-#define CONF_TOP10_MENU "var/bbs_top_menu.conf"
-#define SSH_HOST_KEYFILE "conf/ssh_host_rsa_key"
+extern const char CONF_BBSD[];
+extern const char CONF_MENU[];
+extern const char CONF_BBSNET[];
+extern const char CONF_TOP10_MENU[];
+extern const char SSH_HOST_KEYFILE[];
 
-#define LOG_FILE_INFO "log/bbsd.log"
-#define LOG_FILE_ERROR "log/error.log"
+extern const char LOG_FILE_INFO[];
+extern const char LOG_FILE_ERROR[];
 
-#define DATA_WELCOME "data/welcome.txt"
-#define DATA_REGISTER "data/register.txt"
-#define DATA_GOODBYE "data/goodbye.txt"
-#define DATA_LICENSE "data/license.txt"
-#define DATA_COPYRIGHT "data/copyright.txt"
-#define DATA_VERSION "data/version.txt"
-#define DATA_LOGIN_ERROR "data/login_error.txt"
-#define DATA_ACTIVE_BOARD "data/active_board.txt"
-#define DATA_READ_HELP "data/read_help.txt"
-#define DATA_EDITOR_HELP "data/editor_help.txt"
+extern const char DATA_WELCOME[];
+extern const char DATA_REGISTER[];
+extern const char DATA_GOODBYE[];
+extern const char DATA_LICENSE[];
+extern const char DATA_COPYRIGHT[];
+extern const char DATA_VERSION[];
+extern const char DATA_LOGIN_ERROR[];
+extern const char DATA_ACTIVE_BOARD[];
+extern const char DATA_READ_HELP[];
+extern const char DATA_EDITOR_HELP[];
 
-#define VAR_BBS_TOP "var/bbs_top.txt"
+extern const char VAR_BBS_TOP[];
 
-#define VAR_ARTICLE_BLOCK_SHM "var/article_block_shm.~"
-#define VAR_SECTION_LIST_SHM "var/section_list_shm.~"
-#define VAR_TRIE_DICT_SHM "var/trie_dict_shm.~"
-#define VAR_USER_LIST_SHM "var/user_list_shm.~"
+extern const char VAR_ARTICLE_BLOCK_SHM[];
+extern const char VAR_SECTION_LIST_SHM[];
+extern const char VAR_TRIE_DICT_SHM[];
+extern const char VAR_USER_LIST_SHM[];
 
-#define VAR_ARTICLE_CACHE_DIR "var/articles/"
-#define VAR_GEN_EX_MENU_DIR "var/gen_ex/"
-#define VAR_SECTION_AID_LOC_DIR "var/section_aid_loc/"
+extern const char VAR_ARTICLE_CACHE_DIR[];
+extern const char VAR_GEN_EX_MENU_DIR[];
+extern const char VAR_SECTION_AID_LOC_DIR[];
 
 // File loader
 extern const char *data_files_load_startup[];
 extern const int data_files_load_startup_count;
 
-// Screen
-#define SCREEN_ROWS 24
-#define SCREEN_COLS 80
-
 // Network
-#define MAX_CLIENT_LIMIT 2000
-#define MAX_CLIENT_PER_IP_LIMIT 100
-#define IP_ADDR_LEN 50
-#define MAX_EVENTS 10
-
 extern int socket_server[2];
 extern int socket_client;
 extern char hostaddr_client[IP_ADDR_LEN];

@@ -20,7 +20,7 @@
 static FILE *fp_common_log;
 static FILE *fp_error_log;
 
-int log_begin(char *common_log_file, char *error_log_file)
+int log_begin(const char *common_log_file, const char *error_log_file)
 {
 	fp_common_log = fopen(common_log_file, "a");
 	if (fp_common_log == NULL)
@@ -65,7 +65,7 @@ inline static void log_head(char *buf, size_t len, int log_level, const char *ap
 	}
 }
 
-int log_printf(int log_level, const char *app_file, int app_line, const char *format, ...)
+int log_printf(enum log_level_t log_level, const char *app_file, int app_line, const char *format, ...)
 {
 	va_list args;
 	int retval;
