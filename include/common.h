@@ -30,7 +30,7 @@ enum common_constant_t
 };
 
 // Version
-#define APP_INFO (PACKAGE_STRING " build on " __DATE__ " " __TIME__)
+extern const char APP_INFO[];
 
 // Enviroment
 extern const char CONF_BBSD[];

@@ -8,6 +8,9 @@
 
 #include "common.h"
 
+// Version
+const char APP_INFO[] = PACKAGE_STRING " build on " __DATE__ " " __TIME__;
+
 // Enviroment
 const char CONF_BBSD[] = "conf/bbsd.conf";
 const char CONF_MENU[] = "var/menu_merged.conf";
