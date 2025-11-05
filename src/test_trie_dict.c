@@ -13,8 +13,8 @@
 #include <string.h>
 #include <unistd.h>
 
-#define TEST_VAL ((int64_t)(0xcb429a63a017661f)) // int64_t
-#define TRIE_DICT_SHM_FILE "~trie_dict_shm.dat"
+static const int64_t TEST_VAL = ((int64_t)(0xcb429a63a017661f)); // int64_t
+static const char TRIE_DICT_SHM_FILE[] = "~trie_dict_shm.dat";
 
 const char *keys[] = {
 	"ABCDEFG",

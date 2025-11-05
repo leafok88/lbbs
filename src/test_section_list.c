@@ -15,10 +15,10 @@
 #include <stdio.h>
 #include <unistd.h>
 
-#define ARTICLE_BLOCK_SHM_FILE "~article_block_shm.dat"
-#define SECTION_LIST_SHM_FILE "~section_list_shm.dat"
-#define TRIE_DICT_SHM_FILE "~trie_dict_shm.dat"
-#define USER_LIST_SHM_FILE "~user_list_shm.dat"
+static const char ARTICLE_BLOCK_SHM_FILE[] = "~article_block_shm.dat";
+static const char SECTION_LIST_SHM_FILE[] = "~section_list_shm.dat";
+static const char TRIE_DICT_SHM_FILE[] = "~trie_dict_shm.dat";
+static const char USER_LIST_SHM_FILE[] = "~user_list_shm.dat";
 
 const char *sname[] = {
 	"Test",

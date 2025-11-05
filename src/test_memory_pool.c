@@ -12,9 +12,12 @@
 #include <string.h>
 #include <unistd.h>
 
-#define NODE_SIZE 1023
-#define NODE_PER_CHUNK 1000
-#define CHUNK_COUNT_LIMIT 100
+enum _test_memory_pool_constant_t
+{
+	NODE_SIZE = 1023,
+	NODE_PER_CHUNK = 1000,
+	CHUNK_COUNT_LIMIT = 100,
+};
 
 int main(int argc, char *argv[])
 {
