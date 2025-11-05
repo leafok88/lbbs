@@ -19,10 +19,12 @@
 #include <sys/mman.h>
 #include <sys/stat.h>
 
-#define ARTICLE_HEADER_MAX_LEN 4096
-#define ARTICLE_CONTENT_MAX_LEN 1024 * 1024 * 4 // 4MB
-#define ARTICLE_FOOTER_MAX_LEN 4096
-#define SUB_DT_MAX_LEN 50
+enum _article_cache_constant_t
+{
+	ARTICLE_HEADER_MAX_LEN = 4096,
+	ARTICLE_FOOTER_MAX_LEN = 4096,
+	SUB_DT_MAX_LEN = 50,
+};
 
 static const char *BBS_article_footer_color[] = {
 	"\033[31m",
