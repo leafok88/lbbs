@@ -12,8 +12,11 @@
 #include "section_list.h"
 #include <stdint.h>
 
-#define MAX_FAVOR_AID_BASE_CNT 10000
-#define MAX_FAVOR_AID_INC_CNT 1000
+enum article_favor_constant_t
+{
+	MAX_FAVOR_AID_BASE_CNT = 10000,
+	MAX_FAVOR_AID_INC_CNT = 1000,
+};
 
 struct article_favor_t
 {

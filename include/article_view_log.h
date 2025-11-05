@@ -11,7 +11,10 @@
 
 #include <stdint.h>
 
-#define MAX_VIEWED_AID_INC_CNT 1000
+enum article_view_log_constant_t
+{
+	MAX_VIEWED_AID_INC_CNT = 1000,
+};
 
 struct article_view_log_t
 {
