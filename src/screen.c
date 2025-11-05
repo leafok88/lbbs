@@ -1,18 +1,10 @@
-/***************************************************************************
-						  screen.c  -  description
-							 -------------------
-	Copyright            : (C) 2004-2025 by Leaflet
-	Email                : leaflet@leafok.com
- ***************************************************************************/
-
-/***************************************************************************
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 3 of the License, or     *
- *   (at your option) any later version.                                   *
- *                                                                         *
- ***************************************************************************/
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+/*
+ * screen
+ *   - advanced telnet-based user interactive input / output features
+ *
+ * Copyright (C) 2004-2025  Leaflet <leaflet@leafok.com>
+ */
 
 #include "bbs.h"
 #include "common.h"
@@ -152,7 +144,7 @@ static int _str_input(char *buffer, int buf_size, int max_display_len, int echo_
 
 	while (!SYS_server_exit)
 	{
-		ch = igetch_t(MIN(MAX_DELAY_TIME, 60));
+		ch = igetch_t(MIN(BBS_max_user_idle_time, 60));
 
 		if (ch == CR)
 		{
@@ -322,7 +314,7 @@ int get_data(int row, int col, char *prompt, char *buffer, int buf_size, int max
 
 	while (!SYS_server_exit)
 	{
-		ch = igetch_t(MIN(MAX_DELAY_TIME, 60));
+		ch = igetch_t(MIN(BBS_max_user_idle_time, 60));
 
 		if (ch == CR)
 		{
@@ -653,7 +645,7 @@ int display_data(const void *p_data, long display_line_total, const long *p_line
 			input_ok = 0;
 			while (!SYS_server_exit && !input_ok)
 			{
-				ch = igetch_t(MAX_DELAY_TIME);
+				ch = igetch_t(BBS_max_user_idle_time);
 				input_ok = 1;
 
 				if (ch != KEY_NULL && ch != KEY_TIMEOUT)

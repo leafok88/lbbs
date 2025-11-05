@@ -1,18 +1,10 @@
-/***************************************************************************
-					article_favor_display.c  -  description
-							 -------------------
-	Copyright            : (C) 2004-2025 by Leaflet
-	Email                : leaflet@leafok.com
- ***************************************************************************/
-
-/***************************************************************************
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 3 of the License, or     *
- *   (at your option) any later version.                                   *
- *                                                                         *
- ***************************************************************************/
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+/*
+ * article_favor_display
+ *   - user interactive feature to display favorite articles
+ *
+ * Copyright (C) 2004-2025  Leaflet <leaflet@leafok.com>
+ */
 
 #include "article_favor_display.h"
 #include "article_view_log.h"
@@ -175,7 +167,7 @@ static enum select_cmd_t article_favor_select(int total_page, int item_count, in
 		case KEY_LEFT:
 			return EXIT_LIST; // exit list
 		case KEY_TIMEOUT:
-			if (time(NULL) - BBS_last_access_tm >= MAX_DELAY_TIME)
+			if (time(NULL) - BBS_last_access_tm >= BBS_max_user_idle_time)
 			{
 				log_error("User input timeout\n");
 				return EXIT_LIST; // exit list

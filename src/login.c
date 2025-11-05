@@ -1,18 +1,10 @@
-/***************************************************************************
-						  login.c  -  description
-							 -------------------
-	Copyright            : (C) 2004-2025 by Leaflet
-	Email                : leaflet@leafok.com
- ***************************************************************************/
-
-/***************************************************************************
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 3 of the License, or     *
- *   (at your option) any later version.                                   *
- *                                                                         *
- ***************************************************************************/
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+/*
+ * login
+ *   - user authentication and online status manager
+ *
+ * Copyright (C) 2004-2025  Leaflet <leaflet@leafok.com>
+ */
 
 #include "bbs.h"
 #include "common.h"
@@ -31,6 +23,9 @@
 #include <unistd.h>
 #include <mysql/mysql.h>
 #include <sys/param.h>
+
+static const int BBS_username_min_len = 3; // common len = 5, special len = 3
+static const int BBS_password_min_len = 5; // legacy len = 5, current len = 6
 
 int bbs_login(void)
 {
@@ -119,7 +114,7 @@ int check_user(const char *username, const char *password)
 			ok = 0;
 		}
 	}
-	if (ok && (i < 5 || i > BBS_username_max_len))
+	if (ok && (i < BBS_username_min_len || i > BBS_username_max_len))
 	{
 		ok = 0;
 	}
@@ -130,7 +125,7 @@ int check_user(const char *username, const char *password)
 			ok = 0;
 		}
 	}
-	if (ok && (i < 5 || i > BBS_password_max_len))
+	if (ok && (i < BBS_password_min_len || i > BBS_password_max_len))
 	{
 		ok = 0;
 	}

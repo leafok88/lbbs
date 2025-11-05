@@ -1,18 +1,10 @@
-/***************************************************************************
-					section_list_loader.c  -  description
-							 -------------------
-	Copyright            : (C) 2004-2025 by Leaflet
-	Email                : leaflet@leafok.com
- ***************************************************************************/
-
-/***************************************************************************
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 3 of the License, or     *
- *   (at your option) any later version.                                   *
- *                                                                         *
- ***************************************************************************/
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+/*
+ * section_list_loader
+ *   - load and query operations of section articles
+ *
+ * Copyright (C) 2004-2025  Leaflet <leaflet@leafok.com>
+ */
 
 #include "article_cache.h"
 #include "article_view_log.h"
@@ -892,7 +884,9 @@ int query_section_articles(SECTION_LIST *p_section, int page_id, ARTICLE *p_arti
 	}
 	else if (page_id < 0 || page_id >= *p_page_count)
 	{
+#ifdef _DEBUG
 		log_error("Invalid page_id=%d, not in range [0, %d)\n", page_id, *p_page_count);
+#endif
 		ret = -3;
 	}
 	else
@@ -1016,7 +1010,7 @@ int locate_article_in_section(SECTION_LIST *p_section, const ARTICLE *p_article_
 		p_article = section_list_find_article_with_offset(p_section, aid, &page_id, &offset, &p_tmp);
 		if (p_article != NULL)
 		{
-			*p_article_count = (page_id == p_section->page_count - 1 ? p_section->last_page_visible_article_count : BBS_article_limit_per_page);
+			*p_article_count = (page_id >= p_section->page_count - 1 ? p_section->last_page_visible_article_count : BBS_article_limit_per_page);
 
 			p_article = p_section->p_page_first_article[page_id];
 			for (i = 0; i < *p_article_count && p_article != NULL;)
@@ -1037,7 +1031,13 @@ int locate_article_in_section(SECTION_LIST *p_section, const ARTICLE *p_article_
 						break;
 					}
 				}
+
 				p_article = p_article->p_next;
+				if (p_article == p_section->p_page_first_article[page_id])
+				{
+					log_error("Dead loop detected at page=%d, article_count=%d\n", page_id, *p_article_count);
+					break;
+				}
 			}
 
 			// Include ontop articles
@@ -1053,6 +1053,48 @@ int locate_article_in_section(SECTION_LIST *p_section, const ARTICLE *p_article_
 	}
 
 	return (ret < 0 ? ret : (p_article == NULL ? 0 : 1));
+}
+
+int last_article_in_section(SECTION_LIST *p_section, const ARTICLE **pp_article)
+{
+	int ret = 0;
+
+	const ARTICLE *p_article;
+
+	if (p_section == NULL || pp_article == NULL)
+	{
+		log_error("NULL pointer error\n");
+		return -1;
+	}
+
+	*pp_article = NULL;
+
+	// acquire lock of section
+	if ((ret = section_list_rd_lock(p_section)) < 0)
+	{
+		log_error("section_list_rd_lock(sid = %d) error\n", p_section->sid);
+		return -2;
+	}
+
+	for (p_article = p_section->p_article_tail;
+		 p_article && p_article != p_section->p_article_head && !p_article->visible;
+		 p_article = p_article->p_prior)
+		;
+
+	if (p_article && p_article->visible)
+	{
+		*pp_article = p_article;
+		ret = 1;
+	}
+
+	// release lock of section
+	if (section_list_rd_unlock(p_section) < 0)
+	{
+		log_error("section_list_rd_unlock(sid = %d) error\n", p_section->sid);
+		ret = -2;
+	}
+
+	return ret;
 }
 
 int scan_unread_article_in_section(SECTION_LIST *p_section, const ARTICLE *p_article_cur, const ARTICLE **pp_article_unread)
@@ -1221,7 +1263,7 @@ int scan_article_in_section_by_username(SECTION_LIST *p_section, const ARTICLE *
 }
 
 int scan_article_in_section_by_title(SECTION_LIST *p_section, const ARTICLE *p_article_cur,
-										int direction, const char *title, const ARTICLE **pp_article)
+									 int direction, const char *title, const ARTICLE **pp_article)
 {
 	ARTICLE *p_article;
 	int ret = 0;

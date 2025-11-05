@@ -1,18 +1,10 @@
-/***************************************************************************
-						  menu.h  -  description
-							 -------------------
-	Copyright            : (C) 2004-2025 by Leaflet
-	Email                : leaflet@leafok.com
- ***************************************************************************/
-
-/***************************************************************************
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 3 of the License, or     *
- *   (at your option) any later version.                                   *
- *                                                                         *
- ***************************************************************************/
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+/*
+ * menu
+ *   - configurable user interactive menu feature
+ *
+ * Copyright (C) 2004-2025  Leaflet <leaflet@leafok.com>
+ */
 
 #ifndef _MENU_H_
 #define _MENU_H_

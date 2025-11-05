@@ -1,18 +1,10 @@
-/***************************************************************************
-				  test_article_view_log.c  -  description
-							 -------------------
-	Copyright            : (C) 2004-2025 by Leaflet
-	Email                : leaflet@leafok.com
- ***************************************************************************/
-
-/***************************************************************************
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 3 of the License, or     *
- *   (at your option) any later version.                                   *
- *                                                                         *
- ***************************************************************************/
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+/*
+ * test_article_view_log
+ *   - tester for data persistence and query of article view log
+ *
+ * Copyright (C) 2004-2025  Leaflet <leaflet@leafok.com>
+ */
 
 #include "article_view_log.h"
 #include <stdio.h>
@@ -48,6 +40,6 @@ int main(int argc, char *argv[])
 	printf("Base cnt = %d, Inc cnt = %d\n", view_log.aid_base_cnt, view_log.aid_inc_cnt);
 
 	article_view_log_unload(&view_log);
-	
+
 	return 0;
 }

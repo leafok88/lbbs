@@ -1,18 +1,10 @@
-/***************************************************************************
-						 user_list.c  -  description
-							 -------------------
-	Copyright            : (C) 2004-2025 by Leaflet
-	Email                : leaflet@leafok.com
- ***************************************************************************/
-
-/***************************************************************************
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 3 of the License, or     *
- *   (at your option) any later version.                                   *
- *                                                                         *
- ***************************************************************************/
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+/*
+ * user_list
+ *   - data model and basic operations of (online) user list
+ *
+ * Copyright (C) 2004-2025  Leaflet <leaflet@leafok.com>
+ */
 
 #include "common.h"
 #include "database.h"
@@ -511,7 +503,7 @@ void user_list_pool_cleanup(void)
 		log_error("shmdt(shmid = %d) error (%d)\n", shmid, errno);
 	}
 
-	if (shmctl(shmid, IPC_RMID, NULL) == -1)
+	if (shmid != 0 && shmctl(shmid, IPC_RMID, NULL) == -1)
 	{
 		log_error("shmctl(shmid = %d, IPC_RMID) error (%d)\n", shmid, errno);
 	}

@@ -1,18 +1,10 @@
-/***************************************************************************
-						   editor.h  -  description
-							 -------------------
-	copyright            : (C) 2004-2025 by Leaflet
-	email                : leaflet@leafok.com
- ***************************************************************************/
-
-/***************************************************************************
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 3 of the License, or     *
- *   (at your option) any later version.                                   *
- *                                                                         *
- ***************************************************************************/
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+/*
+ * editor
+ *   - user interactive full-screen text editor
+ *
+ * Copyright (C) 2004-2025  Leaflet <leaflet@leafok.com>
+ */
 
 #ifndef _EDITOR_H_
 #define _EDITOR_H_
@@ -26,7 +18,7 @@ struct editor_data_t
 {
 	char *p_display_lines[MAX_EDITOR_DATA_LINES];
 	long display_line_lengths[MAX_EDITOR_DATA_LINES]; // string length of display line
-	int display_line_widths[MAX_EDITOR_DATA_LINES]; // display width of display line
+	int display_line_widths[MAX_EDITOR_DATA_LINES];	  // display width of display line
 	long display_line_total;
 };
 typedef struct editor_data_t EDITOR_DATA;

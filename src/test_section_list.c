@@ -1,18 +1,10 @@
-/***************************************************************************
-					test_section_list.c  -  description
-							 -------------------
-	Copyright            : (C) 2004-2025 by Leaflet
-	Email                : leaflet@leafok.com
- ***************************************************************************/
-
-/***************************************************************************
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 3 of the License, or     *
- *   (at your option) any later version.                                   *
- *                                                                         *
- ***************************************************************************/
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+/*
+ * test_section_list
+ *   - tester for data models and basic operations of section and article
+ *
+ * Copyright (C) 2004-2025  Leaflet <leaflet@leafok.com>
+ */
 
 #include "bbs.h"
 #include "log.h"
@@ -562,7 +554,7 @@ int main(int argc, char *argv[])
 				(p_section[i]->visible_article_count % BBS_article_limit_per_page ? 1 : 0) !=
 			p_section[i]->page_count)
 		{
-			printf("Inconsistent page count in section %d offset %d, %d != %d, "
+			printf("#1 Inconsistent page count in section %d offset %d, %d != %d, "
 				   "visible_article_count = %d, last_page_visible_count = %d\n",
 				   i, j,
 				   p_section[i]->visible_article_count / BBS_article_limit_per_page +
@@ -645,7 +637,7 @@ int main(int argc, char *argv[])
 				(p_section[i]->visible_article_count % BBS_article_limit_per_page ? 1 : 0) !=
 			p_section[i]->page_count)
 		{
-			printf("Inconsistent page count in section %d offset %d, %d != %d, "
+			printf("#2 Inconsistent page count in section %d offset %d, %d != %d, "
 				   "visible_article_count = %d, last_page_visible_count = %d\n",
 				   i, j,
 				   p_section[i]->visible_article_count / BBS_article_limit_per_page +
@@ -714,7 +706,7 @@ int main(int argc, char *argv[])
 				(p_section[i]->visible_article_count % BBS_article_limit_per_page ? 1 : 0) !=
 			p_section[i]->page_count)
 		{
-			printf("Inconsistent page count in section %d offset %d, %d != %d, "
+			printf("#3 Inconsistent page count in section %d offset %d, %d != %d, "
 				   "visible_article_count = %d, last_page_visible_count = %d\n",
 				   i, j,
 				   p_section[i]->visible_article_count / BBS_article_limit_per_page +

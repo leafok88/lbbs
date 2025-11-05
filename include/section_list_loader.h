@@ -1,18 +1,10 @@
-/***************************************************************************
-					section_list_loader.h  -  description
-							 -------------------
-	Copyright            : (C) 2004-2025 by Leaflet
-	Email                : leaflet@leafok.com
- ***************************************************************************/
-
-/***************************************************************************
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 3 of the License, or     *
- *   (at your option) any later version.                                   *
- *                                                                         *
- ***************************************************************************/
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+/*
+ * section_list_loader
+ *   - load and query operations of section articles
+ *
+ * Copyright (C) 2004-2025  Leaflet <leaflet@leafok.com>
+ */
 
 #ifndef _SECTION_LIST_LOADER_H_
 #define _SECTION_LIST_LOADER_H_
@@ -59,6 +51,8 @@ extern int query_section_articles(SECTION_LIST *p_section, int page_id, ARTICLE 
 extern int locate_article_in_section(SECTION_LIST *p_section, const ARTICLE *p_article_cur, int direction, int step,
 									 int *p_page_id, int *p_visible_offset, int *p_article_count);
 
+extern int last_article_in_section(SECTION_LIST *p_section, const ARTICLE **pp_article);
+
 // Return on success : found (1)
 //                   : not found (0)
 //           failure : error number (< 0)
@@ -67,9 +61,9 @@ extern int scan_unread_article_in_section(SECTION_LIST *p_section, const ARTICLE
 extern int scan_article_in_section_by_uid(SECTION_LIST *p_section, const ARTICLE *p_article_cur,
 										  int direction, int32_t uid, const ARTICLE **pp_article);
 extern int scan_article_in_section_by_username(SECTION_LIST *p_section, const ARTICLE *p_article_cur,
-										  int direction, const char *username, const ARTICLE **pp_article);
+											   int direction, const char *username, const ARTICLE **pp_article);
 extern int scan_article_in_section_by_title(SECTION_LIST *p_section, const ARTICLE *p_article_cur,
-										  int direction, const char *title, const ARTICLE **pp_article);
+											int direction, const char *title, const ARTICLE **pp_article);
 
 extern int get_section_ex_menu_set(SECTION_LIST *p_section, MENU_SET *p_ex_menu_set);
 

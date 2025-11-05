@@ -1,18 +1,10 @@
-/***************************************************************************
-						   editor.h  -  description
-							 -------------------
-	copyright            : (C) 2004-2025 by Leaflet
-	email                : leaflet@leafok.com
- ***************************************************************************/
-
-/***************************************************************************
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 3 of the License, or     *
- *   (at your option) any later version.                                   *
- *                                                                         *
- ***************************************************************************/
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+/*
+ * editor
+ *   - user interactive full-screen text editor
+ *
+ * Copyright (C) 2004-2025  Leaflet <leaflet@leafok.com>
+ */
 
 #include "bbs.h"
 #include "common.h"
@@ -708,7 +700,7 @@ int editor_display(EDITOR_DATA *p_editor_data)
 			iflush();
 
 			str_len = 0;
-			ch = igetch_t(MAX_DELAY_TIME);
+			ch = igetch_t(BBS_max_user_idle_time);
 			while (!SYS_server_exit)
 			{
 				if (ch != KEY_NULL && ch != KEY_TIMEOUT)
@@ -1164,7 +1156,7 @@ int editor_display(EDITOR_DATA *p_editor_data)
 					break;
 				}
 
-				ch = igetch_t(MAX_DELAY_TIME);
+				ch = igetch_t(BBS_max_user_idle_time);
 			}
 
 			continue;

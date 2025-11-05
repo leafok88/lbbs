@@ -1,18 +1,10 @@
-/***************************************************************************
-					 user_list_display.c  -  description
-							 -------------------
-	Copyright            : (C) 2004-2025 by Leaflet
-	Email                : leaflet@leafok.com
- ***************************************************************************/
-
-/***************************************************************************
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 3 of the License, or     *
- *   (at your option) any later version.                                   *
- *                                                                         *
- ***************************************************************************/
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+/*
+ * user_list_display
+ *   - user interactive list of (online) users
+ *
+ * Copyright (C) 2004-2025  Leaflet <leaflet@leafok.com>
+ */
 
 #include "common.h"
 #include "io.h"
@@ -232,7 +224,7 @@ static enum select_cmd_t user_list_select(int total_page, int item_count, int *p
 		case KEY_LEFT:
 			return EXIT_LIST; // exit list
 		case KEY_TIMEOUT:
-			if (time(NULL) - BBS_last_access_tm >= MAX_DELAY_TIME)
+			if (time(NULL) - BBS_last_access_tm >= BBS_max_user_idle_time)
 			{
 				log_error("User input timeout\n");
 				return EXIT_LIST; // exit list
@@ -547,7 +539,7 @@ int user_list_search(void)
 			prints("存在多个匹配的用户，按\033[1;33mEnter\033[m精确查找");
 			iflush();
 
-			ch = igetch_t(MAX_DELAY_TIME);
+			ch = igetch_t(BBS_max_user_idle_time);
 			switch (ch)
 			{
 			case KEY_NULL:

@@ -1,18 +1,10 @@
-/***************************************************************************
-							bbs.c  -  description
-							 -------------------
-	Copyright            : (C) 2004-2025 by Leaflet
-	Email                : leaflet@leafok.com
- ***************************************************************************/
-
-/***************************************************************************
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 3 of the License, or     *
- *   (at your option) any later version.                                   *
- *                                                                         *
- ***************************************************************************/
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+/*
+ * bbs
+ *   - BBS related common definitions
+ *
+ * Copyright (C) 2004-2025  Leaflet <leaflet@leafok.com>
+ */
 
 #include "bbs.h"
 #include "common.h"
@@ -36,7 +28,7 @@ int BBS_max_client_per_ip = MAX_CLIENT_PER_IP_LIMIT;
 char BBS_start_dt[BBS_start_dt_max_len + 1] = "2000年 1月 1日";
 int BBS_sys_id = 1;
 
-const int BBS_section_list_load_interval = 5; // second
+const int BBS_section_list_load_interval = 1; // second
 
 // User
 const int BBS_user_list_load_interval = 60;		  // 1 minute

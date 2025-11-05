@@ -1,18 +1,10 @@
-/***************************************************************************
-						  log.c  -  description
-							 -------------------
-	Copyright            : (C) 2004-2025 by Leaflet
-	Email                : leaflet@leafok.com
- ***************************************************************************/
-
-/***************************************************************************
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 3 of the License, or     *
- *   (at your option) any later version.                                   *
- *                                                                         *
- ***************************************************************************/
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+/*
+ * log
+ *   - logger
+ *
+ * Copyright (C) 2004-2025  Leaflet <leaflet@leafok.com>
+ */
 
 #include "common.h"
 #include "io.h"
@@ -28,7 +20,7 @@
 static FILE *fp_common_log;
 static FILE *fp_error_log;
 
-int log_begin(char *common_log_file, char *error_log_file)
+int log_begin(const char *common_log_file, const char *error_log_file)
 {
 	fp_common_log = fopen(common_log_file, "a");
 	if (fp_common_log == NULL)
@@ -73,7 +65,7 @@ inline static void log_head(char *buf, size_t len, int log_level, const char *ap
 	}
 }
 
-int log_printf(int log_level, const char *app_file, int app_line, const char *format, ...)
+int log_printf(enum log_level_t log_level, const char *app_file, int app_line, const char *format, ...)
 {
 	va_list args;
 	int retval;

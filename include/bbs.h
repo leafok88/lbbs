@@ -1,18 +1,10 @@
-/***************************************************************************
-							bbs.h  -  description
-							 -------------------
-	Copyright            : (C) 2004-2025 by Leaflet
-	Email                : leaflet@leafok.com
- ***************************************************************************/
-
-/***************************************************************************
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 3 of the License, or     *
- *   (at your option) any later version.                                   *
- *                                                                         *
- ***************************************************************************/
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+/*
+ * bbs
+ *   - BBS related common definitions
+ *
+ * Copyright (C) 2004-2025  Leaflet <leaflet@leafok.com>
+ */
 
 #ifndef _BBS_H_
 #define _BBS_H_
@@ -20,23 +12,33 @@
 #include <time.h>
 #include <netinet/in.h>
 
+enum bbs_const_t
+{
+    BBS_max_section = 200,
+    BBS_section_name_max_len = 20,
+    BBS_section_title_max_len = 40,
+    BBS_username_max_len = 12,
+    BBS_password_max_len = 12,
+    BBS_nickname_max_len = 40,
+    BBS_user_tz_max_len = 50,
+
+    BBS_msg_max_len = 1024,
+
+    BBS_id_max_len = 20,
+    BBS_name_max_len = 50,
+    BBS_server_max_len = 255,
+    BBS_address_max_len = 50,
+    BBS_start_dt_max_len = 50,
+
+    BBS_max_user_count = 100000,
+    BBS_max_user_online_count = 10000,
+
+    BBS_max_user_idle_time = 600, // 10 minutes
+
+    BBS_current_action_max_len = 20,
+};
+
 // BBS
-#define BBS_max_section 200
-#define BBS_section_name_max_len 20
-#define BBS_section_title_max_len 40
-#define BBS_username_max_len 12
-#define BBS_password_max_len 12
-#define BBS_nickname_max_len 40
-#define BBS_user_tz_max_len 50
-
-#define BBS_msg_max_len 1024
-
-#define BBS_id_max_len 20
-#define BBS_name_max_len 50
-#define BBS_server_max_len 255
-#define BBS_address_max_len 50
-#define BBS_start_dt_max_len 50
-
 extern const int BBS_section_list_load_interval;
 
 extern char BBS_id[BBS_id_max_len + 1];
@@ -50,13 +52,10 @@ extern char BBS_start_dt[BBS_start_dt_max_len + 1];
 extern int BBS_sys_id;
 
 // User
-#define BBS_max_user_count 100000
-#define BBS_max_user_online_count 10000
 extern const int BBS_user_list_load_interval;
 extern const int BBS_user_online_list_load_interval;
 
 // Session
-#define MAX_DELAY_TIME 600 // 10 minutes
 extern const int BBS_user_off_line;
 
 extern char BBS_username[BBS_username_max_len + 1];
@@ -66,8 +65,6 @@ extern int BBS_user_exp;
 
 extern time_t BBS_login_tm;
 extern time_t BBS_last_access_tm;
-
-#define BBS_current_action_max_len 20
 
 extern char BBS_current_action[BBS_current_action_max_len + 1];
 extern time_t BBS_current_action_tm;

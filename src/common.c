@@ -1,20 +1,47 @@
-/***************************************************************************
-						  common.c  -  description
-							 -------------------
-	Copyright            : (C) 2004-2025 by Leaflet
-	Email                : leaflet@leafok.com
- ***************************************************************************/
-
-/***************************************************************************
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 3 of the License, or     *
- *   (at your option) any later version.                                   *
- *                                                                         *
- ***************************************************************************/
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+/*
+ * common
+ *   - common definitions
+ *
+ * Copyright (C) 2004-2025  Leaflet <leaflet@leafok.com>
+ */
 
 #include "common.h"
+
+// Version
+const char APP_INFO[] = PACKAGE_STRING " build on " __DATE__ " " __TIME__;
+
+// Enviroment
+const char CONF_BBSD[] = "conf/bbsd.conf";
+const char CONF_MENU[] = "var/menu_merged.conf";
+const char CONF_BBSNET[] = "conf/bbsnet.conf";
+const char CONF_TOP10_MENU[] = "var/bbs_top_menu.conf";
+const char SSH_HOST_KEYFILE[] = "conf/ssh_host_rsa_key";
+
+const char LOG_FILE_INFO[] = "log/bbsd.log";
+const char LOG_FILE_ERROR[] = "log/error.log";
+
+const char DATA_WELCOME[] = "data/welcome.txt";
+const char DATA_REGISTER[] = "data/register.txt";
+const char DATA_GOODBYE[] = "data/goodbye.txt";
+const char DATA_LICENSE[] = "data/license.txt";
+const char DATA_COPYRIGHT[] = "data/copyright.txt";
+const char DATA_VERSION[] = "data/version.txt";
+const char DATA_LOGIN_ERROR[] = "data/login_error.txt";
+const char DATA_ACTIVE_BOARD[] = "data/active_board.txt";
+const char DATA_READ_HELP[] = "data/read_help.txt";
+const char DATA_EDITOR_HELP[] = "data/editor_help.txt";
+
+const char VAR_BBS_TOP[] = "var/bbs_top.txt";
+
+const char VAR_ARTICLE_BLOCK_SHM[] = "var/article_block_shm.~";
+const char VAR_SECTION_LIST_SHM[] = "var/section_list_shm.~";
+const char VAR_TRIE_DICT_SHM[] = "var/trie_dict_shm.~";
+const char VAR_USER_LIST_SHM[] = "var/user_list_shm.~";
+
+const char VAR_ARTICLE_CACHE_DIR[] = "var/articles/";
+const char VAR_GEN_EX_MENU_DIR[] = "var/gen_ex/";
+const char VAR_SECTION_AID_LOC_DIR[] = "var/section_aid_loc/";
 
 // File loader
 const char *data_files_load_startup[] = {
