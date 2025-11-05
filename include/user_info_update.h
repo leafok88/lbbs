@@ -4,6 +4,8 @@
  *   - update user information
  *
  * Copyright (C) 2004-2025  Leaflet <leaflet@leafok.com>
+ *
+ * Author:                  ytht <2391669999@qq.com>
  */
 
 #ifndef _USER_INFO_UPDATE_
