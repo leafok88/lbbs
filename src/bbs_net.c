@@ -45,7 +45,7 @@ struct _bbsnet_conf
 	char host2[40];
 	char ip[40];
 	in_port_t port;
-	char charset[20];
+	char charset[CHARSET_MAX_LEN + 1];
 } bbsnet_conf[MAXSTATION];
 
 static MENU_SET bbsnet_menu;

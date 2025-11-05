@@ -93,9 +93,13 @@ enum io_echo_t
     DOECHO = 1,
 };
 
-#define BBS_DEFAULT_CHARSET "UTF-8"
+enum io_iconv_t
+{
+    CHARSET_MAX_LEN = 20,
+};
 
-extern char stdio_charset[20];
+extern const char BBS_default_charset[CHARSET_MAX_LEN + 1];
+extern char stdio_charset[CHARSET_MAX_LEN + 1];
 
 extern int prints(const char *format, ...);
 extern int outc(char c);
