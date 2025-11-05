@@ -10,6 +10,7 @@
 #include "database.h"
 #include "editor.h"
 #include "io.h"
+#include "lml.h"
 #include "log.h"
 #include "screen.h"
 #include "str_process.h"
@@ -96,7 +97,9 @@ int user_intro_edit(int uid)
                 ret = -1;
                 goto cleanup;
             }
-            lines = split_data_lines(intro, BBS_user_intro_line_len, line_offsets, BBS_user_intro_max_line + 2, 1, NULL);
+
+	        len_intro = lml_render(intro, intro_f, sizeof(intro_f), SCREEN_COLS, 0);
+            lines = split_data_lines(intro_f, BBS_user_intro_line_len, line_offsets, BBS_user_intro_max_line + 2, 1, NULL);
 
             if (lines > BBS_user_intro_max_line)
             {
