@@ -12,84 +12,86 @@
 #include <iconv.h>
 #include <stdio.h>
 
-#define CR '\r'
-#define LF '\n'
-#define BACKSPACE '\b'
-#define BELL '\b'
-#define KEY_TAB 9
-#define KEY_ESC 27
-#define KEY_SPACE '\040'
+enum io_key_t
+{
+    CR = '\r',
+    LF = '\n',
+    BACKSPACE = '\b',
+    BELL = '\b',
+    KEY_TAB = 9,
+    KEY_ESC = 27,
+    KEY_SPACE = '\040',
 
-#ifndef EXTEND_KEY
-#define EXTEND_KEY
+    // Expand key
+    KEY_NULL = 0xffff,
+    KEY_TIMEOUT = 0xfffe,
+    KEY_CONTROL = 0xff,
+    KEY_UP = 0x0101,
+    KEY_DOWN = 0x0102,
+    KEY_RIGHT = 0x0103,
+    KEY_LEFT = 0x0104,
+    KEY_CSI = 0x011b, // ESC ESC
+    KEY_HOME = 0x0201,
+    KEY_INS = 0x0202,
+    KEY_DEL = 0x0203,
+    KEY_END = 0x0204,
+    KEY_PGUP = 0x0205,
+    KEY_PGDN = 0x0206,
 
-#define KEY_NULL 0xffff
-#define KEY_TIMEOUT 0xfffe
-#define KEY_CONTROL 0xff
-#define KEY_UP 0x0101
-#define KEY_DOWN 0x0102
-#define KEY_RIGHT 0x0103
-#define KEY_LEFT 0x0104
-#define KEY_CSI 0x011b // ESC ESC
-#define KEY_HOME 0x0201
-#define KEY_INS 0x0202
-#define KEY_DEL 0x0203
-#define KEY_END 0x0204
-#define KEY_PGUP 0x0205
-#define KEY_PGDN 0x0206
+    KEY_F1 = 0x0207,
+    KEY_F2 = 0x0208,
+    KEY_F3 = 0x0209,
+    KEY_F4 = 0x020a,
+    KEY_F5 = 0x020b,
+    KEY_F6 = 0x020c,
+    KEY_F7 = 0x020d,
+    KEY_F8 = 0x020e,
+    KEY_F9 = 0x020f,
+    KEY_F10 = 0x0210,
+    KEY_F11 = 0x0211,
+    KEY_F12 = 0x0212,
 
-#define KEY_F1 0x0207
-#define KEY_F2 0x0208
-#define KEY_F3 0x0209
-#define KEY_F4 0x020a
-#define KEY_F5 0x020b
-#define KEY_F6 0x020c
-#define KEY_F7 0x020d
-#define KEY_F8 0x020e
-#define KEY_F9 0x020f
-#define KEY_F10 0x0210
-#define KEY_F11 0x0211
-#define KEY_F12 0x0212
+    KEY_SHIFT_F1 = 0x0213,
+    KEY_SHIFT_F2 = 0x0214,
+    KEY_SHIFT_F3 = 0x0215,
+    KEY_SHIFT_F4 = 0x0216,
+    KEY_SHIFT_F5 = 0x0217,
+    KEY_SHIFT_F6 = 0x0218,
+    KEY_SHIFT_F7 = 0x0219,
+    KEY_SHIFT_F8 = 0x021a,
+    KEY_SHIFT_F9 = 0x021b,
+    KEY_SHIFT_F10 = 0x021c,
+    KEY_SHIFT_F11 = 0x021d,
+    KEY_SHIFT_F12 = 0x021e,
 
-#define KEY_SHIFT_F1 0x0213
-#define KEY_SHIFT_F2 0x0214
-#define KEY_SHIFT_F3 0x0215
-#define KEY_SHIFT_F4 0x0216
-#define KEY_SHIFT_F5 0x0217
-#define KEY_SHIFT_F6 0x0218
-#define KEY_SHIFT_F7 0x0219
-#define KEY_SHIFT_F8 0x021a
-#define KEY_SHIFT_F9 0x021b
-#define KEY_SHIFT_F10 0x021c
-#define KEY_SHIFT_F11 0x021d
-#define KEY_SHIFT_F12 0x021e
+    KEY_CTRL_F1 = 0x021f,
+    KEY_CTRL_F2 = 0x0220,
+    KEY_CTRL_F3 = 0x0221,
+    KEY_CTRL_F4 = 0x0222,
+    KEY_CTRL_F5 = 0x0223,
+    KEY_CTRL_F6 = 0x0224,
+    KEY_CTRL_F7 = 0x0225,
+    KEY_CTRL_F8 = 0x0226,
+    KEY_CTRL_F9 = 0x0227,
+    KEY_CTRL_F10 = 0x0228,
+    KEY_CTRL_F11 = 0x0229,
+    KEY_CTRL_F12 = 0x022a,
 
-#define KEY_CTRL_F1 0x021f
-#define KEY_CTRL_F2 0x0220
-#define KEY_CTRL_F3 0x0221
-#define KEY_CTRL_F4 0x0222
-#define KEY_CTRL_F5 0x0223
-#define KEY_CTRL_F6 0x0224
-#define KEY_CTRL_F7 0x0225
-#define KEY_CTRL_F8 0x0226
-#define KEY_CTRL_F9 0x0227
-#define KEY_CTRL_F10 0x0228
-#define KEY_CTRL_F11 0x0229
-#define KEY_CTRL_F12 0x022a
-
-#define KEY_CTRL_UP 0x0230
-#define KEY_CTRL_DOWN 0x0231
-#define KEY_CTRL_RIGHT 0x0232
-#define KEY_CTRL_LEFT 0x0233
-#define KEY_CTRL_HOME 0x0234
-#define KEY_CTRL_END 0x0235
-
-#endif // EXPAND_KEY
+    KEY_CTRL_UP = 0x0230,
+    KEY_CTRL_DOWN = 0x0231,
+    KEY_CTRL_RIGHT = 0x0232,
+    KEY_CTRL_LEFT = 0x0233,
+    KEY_CTRL_HOME = 0x0234,
+    KEY_CTRL_END = 0x0235,
+};
 
 #define Ctrl(C) ((C) - 'A' + 1)
 
-#define DOECHO (1)
-#define NOECHO (0)
+enum io_echo_t
+{
+    NOECHO = 0,
+    DOECHO = 1,
+};
 
 #define BBS_DEFAULT_CHARSET "UTF-8"
 
