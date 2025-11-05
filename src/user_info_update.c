@@ -6,6 +6,7 @@
  * Copyright (C) 2004-2025  Leaflet <leaflet@leafok.com>
  */
 
+#include "bbs.h"
 #include "database.h"
 #include "editor.h"
 #include "io.h"
@@ -148,7 +149,7 @@ int user_intro_edit(int uid)
 
     clearscr();
     moveto(1, 1);
-    prints("说明档修改完成，新内容通常会在60秒后可见");
+    prints("说明档修改完成，新内容通常会在%d秒后可见",BBS_user_list_load_interval);
     press_any_key();
     ret = 1; // Success
 
