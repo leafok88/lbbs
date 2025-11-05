@@ -18,9 +18,13 @@
 #include <string.h>
 #include <sys/param.h>
 
-#define EDITOR_ESC_DISPLAY_STR "\033[32m*\033[m"
-#define EDITOR_MEM_POOL_LINE_PER_CHUNK 1000
-#define EDITOR_MEM_POOL_CHUNK_LIMIT (MAX_EDITOR_DATA_LINES / EDITOR_MEM_POOL_LINE_PER_CHUNK + 1)
+enum _editor_constant_t
+{
+	EDITOR_MEM_POOL_LINE_PER_CHUNK = 1000,
+	EDITOR_MEM_POOL_CHUNK_LIMIT = (MAX_EDITOR_DATA_LINES / EDITOR_MEM_POOL_LINE_PER_CHUNK + 1),
+};
+
+static const char EDITOR_ESC_DISPLAY_STR[] = "\033[32m*\033[m";
 
 static MEMORY_POOL *p_mp_data_line;
 static MEMORY_POOL *p_mp_editor_data;

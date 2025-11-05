@@ -31,7 +31,10 @@
 #include <time.h>
 #include <sys/param.h>
 
-#define TITLE_SEARCH_MAX_LEN 60
+enum _section_list_display_constant_t
+{
+	TITLE_SEARCH_MAX_LEN = 60,
+};
 
 static int32_t section_aid_locations[BBS_max_section] = {0};
 static int section_topic_view_mode = 0;

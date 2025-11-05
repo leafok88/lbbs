@@ -24,13 +24,14 @@
 #include <sys/ipc.h>
 #include <sys/shm.h>
 
-#define MENU_SCREEN_PATH_PREFIX "var/MENU_SCR_"
-#define MENU_CONF_DELIM_WITH_SPACE " ,\t\r\n"
-#define MENU_CONF_DELIM_WITHOUT_SPACE "\r\n"
+enum _menu_constant_t
+{
+	MENU_SET_RESERVED_LENGTH = sizeof(int16_t) * 4,
+	MENU_SHMGET_RETRY_LIMIT = 10,
+};
 
-#define MENU_SET_RESERVED_LENGTH (sizeof(int16_t) * 4)
-
-#define MENU_SHMGET_RETRY_LIMIT 10
+static const char MENU_CONF_DELIM_WITH_SPACE[] = " ,\t\r\n";
+static const char MENU_CONF_DELIM_WITHOUT_SPACE[] = "\r\n";
 
 MENU_SET bbs_menu;
 MENU_SET top10_menu;

@@ -33,8 +33,11 @@ union semun
 };
 #endif // #ifdef _SEM_SEMUN_UNDEFINED
 
-#define USER_LIST_TRY_LOCK_WAIT_TIME 1 // second
-#define USER_LIST_TRY_LOCK_TIMES 10
+enum _user_list_constant_t
+{
+	USER_LIST_TRY_LOCK_WAIT_TIME = 1, // second
+	USER_LIST_TRY_LOCK_TIMES = 10,
+};
 
 struct user_list_pool_t
 {

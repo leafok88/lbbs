@@ -33,11 +33,14 @@
 #include <sys/socket.h>
 #include <sys/epoll.h>
 
-#define MENU_CONF_DELIM " \t\r\n"
+static const char MENU_CONF_DELIM[] = " \t\r\n";
 
-#define MAX_PROCESS_BAR_LEN 30
-#define MAXSTATION 26 * 2
-#define STATION_PER_LINE 4
+enum _bbs_net_constant_t
+{
+	MAX_PROCESS_BAR_LEN = 30,
+	MAXSTATION = 26 * 2,
+	STATION_PER_LINE = 4,
+};
 
 struct _bbsnet_conf
 {

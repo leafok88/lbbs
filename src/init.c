@@ -20,7 +20,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-#define CONF_DELIM_WITH_SPACE " \t\r\n"
+static const char CONF_DELIM_WITH_SPACE[] = " \t\r\n";
 
 int init_daemon(void)
 {

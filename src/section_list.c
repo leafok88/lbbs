@@ -32,16 +32,19 @@ union semun
 };
 #endif // #ifdef _SEM_SEMUN_UNDEFINED
 
-#define SECTION_TRY_LOCK_WAIT_TIME 1 // second
-#define SECTION_TRY_LOCK_TIMES 10
+enum _section_list_constant_t
+{
+	SECTION_TRY_LOCK_WAIT_TIME = 1, // second
+	SECTION_TRY_LOCK_TIMES = 10,
 
-#define ARTICLE_BLOCK_PER_SHM 1000		 // sizeof(ARTICLE_BLOCK) * ARTICLE_BLOCK_PER_SHM is the size of each shm segment to allocate
-#define ARTICLE_BLOCK_SHM_COUNT_LIMIT 80 // limited by length (8-bit) of proj_id in ftok(path, proj_id)
-#define ARTICLE_BLOCK_PER_POOL (ARTICLE_BLOCK_PER_SHM * ARTICLE_BLOCK_SHM_COUNT_LIMIT)
+	ARTICLE_BLOCK_PER_SHM = 1000,		// sizeof(ARTICLE_BLOCK) * ARTICLE_BLOCK_PER_SHM is the size of each shm segment to allocate
+	ARTICLE_BLOCK_SHM_COUNT_LIMIT = 80, // limited by length (8-bit) of proj_id in ftok(path, proj_id)
+	ARTICLE_BLOCK_PER_POOL = (ARTICLE_BLOCK_PER_SHM * ARTICLE_BLOCK_SHM_COUNT_LIMIT),
 
-#define CALCULATE_PAGE_THRESHOLD 100 // Adjust to tune performance of moving topic between sections
+	CALCULATE_PAGE_THRESHOLD = 100, // Adjust to tune performance of moving topic between sections
 
-#define SID_STR_LEN 5 // 32-bit + NULL
+	SID_STR_LEN = 5, // 32-bit + NULL
+};
 
 struct article_block_t
 {

@@ -14,8 +14,11 @@
 #include <signal.h>
 #include <time.h>
 
-#define BBS_port_default 23
-#define BBS_ssh_port_default 22
+enum _bbs_port_constant_t
+{
+	BBS_port_default = 23,
+	BBS_ssh_port_default = 22,
+};
 
 // BBS enviroment
 char BBS_id[BBS_id_max_len + 1] = "Example BBS";
