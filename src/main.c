@@ -202,9 +202,9 @@ int main(int argc, char *argv[])
 		printf("trie_dict_init(%s, %d) error\n", VAR_TRIE_DICT_SHM, TRIE_NODE_PER_POOL);
 		goto cleanup;
 	}
-	if (article_block_init(VAR_ARTICLE_BLOCK_SHM, BBS_article_limit_per_section * BBS_max_section / ARTICLE_PER_BLOCK) < 0)
+	if (article_block_init(VAR_ARTICLE_BLOCK_SHM, BBS_article_limit_per_section * BBS_max_section / BBS_article_count_per_block) < 0)
 	{
-		log_error("article_block_init(%s, %d) error\n", VAR_ARTICLE_BLOCK_SHM, BBS_article_limit_per_section * BBS_max_section / ARTICLE_PER_BLOCK);
+		log_error("article_block_init(%s, %d) error\n", VAR_ARTICLE_BLOCK_SHM, BBS_article_limit_per_section * BBS_max_section / BBS_article_count_per_block);
 		goto cleanup;
 	}
 	if (section_list_init(VAR_SECTION_LIST_SHM) < 0)

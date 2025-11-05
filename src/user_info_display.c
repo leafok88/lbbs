@@ -20,8 +20,11 @@
 #include <time.h>
 #include <sys/param.h>
 
-#define BBS_max_sessions_per_user 10
-#define LAST_LOGIN_DT_MAX_LEN 50
+enum _user_info_display_constant_t
+{
+	BBS_max_sessions_per_user = 10,
+	LAST_LOGIN_DT_MAX_LEN = 50,
+};
 
 static int display_user_info_key_handler(int *p_key, DISPLAY_CTX *p_ctx)
 {

@@ -15,7 +15,10 @@
 #include <unistd.h>
 #include <sys/types.h>
 
-#define STR_LOG_TIME_MAX_LEN 50
+enum _log_constant_t
+{
+	STR_LOG_TIME_MAX_LEN = 50,
+};
 
 static FILE *fp_common_log;
 static FILE *fp_error_log;

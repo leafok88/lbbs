@@ -14,14 +14,15 @@
 #include <libssh/libssh.h>
 #include <libssh/server.h>
 
-#ifndef BUF_SIZE
-#define BUF_SIZE 2048
-#endif
+enum test_ssh_server_constant_t
+{
+	BUF_SIZE = 2048,
+};
 
-#define SSH_HOST_RSA_KEYFILE "../conf/ssh_host_rsa_key"
+static const char SSH_HOST_RSA_KEYFILE[] = "../conf/ssh_host_rsa_key";
 
-#define USER "test"
-#define PASSWORD "123456"
+static const char USER[] = "test";
+static const char PASSWORD[] = "123456";
 
 static ssh_channel SSH_channel;
 static int authenticated = 0;

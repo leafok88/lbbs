@@ -274,9 +274,9 @@ int bbs_main()
 	}
 
 	// Set default charset
-	if (io_conv_init(BBS_DEFAULT_CHARSET) < 0)
+	if (io_conv_init(BBS_default_charset) < 0)
 	{
-		log_error("io_conv_init(%s) error\n", BBS_DEFAULT_CHARSET);
+		log_error("io_conv_init(%s) error\n", BBS_default_charset);
 		goto cleanup;
 	}
 

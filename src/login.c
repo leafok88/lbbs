@@ -27,6 +27,12 @@
 static const int BBS_username_min_len = 3; // common len = 5, special len = 3
 static const int BBS_password_min_len = 5; // legacy len = 5, current len = 6
 
+static const int BBS_allowed_login_failures_within_interval = 10;
+static const int BBS_login_failures_count_interval = 10; // minutes
+static const int BBS_allowed_login_failures_per_account = 3;
+
+const int BBS_login_retry_times = 3;
+
 int bbs_login(void)
 {
 	char username[BBS_username_max_len + 1];

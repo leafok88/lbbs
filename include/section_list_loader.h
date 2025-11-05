@@ -13,8 +13,11 @@
 #include "section_list.h"
 #include <mysql/mysql.h>
 
-#define ERR_UNKNOWN_SECTION -101
-#define LOAD_ARTICLE_COUNT_LIMIT 1000
+enum section_list_loader_constant_t
+{
+	ERR_UNKNOWN_SECTION = -101,
+	LOAD_ARTICLE_COUNT_LIMIT = 1000,
+};
 
 extern int section_list_loader_pid;
 extern int last_article_op_log_mid;

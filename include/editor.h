@@ -11,8 +11,11 @@
 
 #include "screen.h"
 
-#define MAX_EDITOR_DATA_LINES 65536
-#define MAX_EDITOR_DATA_LINE_LENGTH 1024
+enum editor_constant_t
+{
+	MAX_EDITOR_DATA_LINES = 65536,
+	MAX_EDITOR_DATA_LINE_LENGTH = 1024,
+};
 
 struct editor_data_t
 {

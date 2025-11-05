@@ -9,10 +9,15 @@
 #ifndef _SCREEN_H_
 #define _SCREEN_H_
 
+#include "io.h"
 #include <stddef.h>
 
-#define CTRL_SEQ_CLR_LINE "\033[K"
-#define MSG_EXT_MAX_LEN 400
+extern const char CTRL_SEQ_CLR_LINE[];
+
+enum display_constant_t
+{
+   MSG_EXT_MAX_LEN = 400,
+};
 
 struct display_ctx_t
 {
@@ -37,7 +42,7 @@ extern int press_any_key_ex(const char *msg, int sec);
 
 extern void set_input_echo(int echo);
 
-extern int str_input(char *buffer, int buffer_length, int echo_mode);
+extern int str_input(char *buffer, int buffer_length, enum io_echo_t echo_mode);
 extern int get_data(int row, int col, char *prompt, char *buffer, int buffer_length, int max_display_len);
 
 // eof_exit = 0 : Do not exit at EOF

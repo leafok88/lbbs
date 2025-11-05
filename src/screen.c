@@ -26,11 +26,13 @@
 #include <sys/shm.h>
 #include <sys/types.h>
 
-#define ACTIVE_BOARD_HEIGHT 8
+const char CTRL_SEQ_CLR_LINE[] = "\033[K";
 
-#define STR_TOP_LEFT_MAX_LEN 80
-#define STR_TOP_MIDDLE_MAX_LEN 40
-#define STR_TOP_RIGHT_MAX_LEN 80
+static const int ACTIVE_BOARD_HEIGHT = 8;
+
+static const int STR_TOP_LEFT_MAX_LEN = 80;
+static const int STR_TOP_MIDDLE_MAX_LEN = 40;
+static const int STR_TOP_RIGHT_MAX_LEN = 80;
 
 static size_t get_time_str(char *s, size_t len)
 {
@@ -127,7 +129,7 @@ void set_input_echo(int echo)
 	iflush();
 }
 
-static int _str_input(char *buffer, int buf_size, int max_display_len, int echo_mode)
+static int _str_input(char *buffer, int buf_size, int max_display_len, enum io_echo_t echo_mode)
 {
 	int ch;
 	int offset = 0;
@@ -271,7 +273,7 @@ static int _str_input(char *buffer, int buf_size, int max_display_len, int echo_
 	return offset;
 }
 
-int str_input(char *buffer, int buf_size, int echo_mode)
+int str_input(char *buffer, int buf_size, enum io_echo_t echo_mode)
 {
 	int len;
 

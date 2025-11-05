@@ -11,7 +11,10 @@
 
 #include <stdio.h>
 
-#define MAX_SPLIT_FILE_LINES 65536
+enum str_process_constant_t
+{
+	MAX_SPLIT_FILE_LINES = 65536,
+};
 
 extern int str_length(const char *str, int skip_ctrl_seq);
 

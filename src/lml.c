@@ -15,8 +15,12 @@
 #include <string.h>
 #include <sys/param.h>
 
-#define LML_TAG_PARAM_BUF_LEN 256
-#define LML_TAG_OUTPUT_BUF_LEN 1024
+enum _lml_constant_t
+{
+	LML_TAG_PARAM_BUF_LEN = 256,
+	LML_TAG_OUTPUT_BUF_LEN = 1024,
+	LML_TAG_QUOTE_MAX_LEVEL = 10,
+};
 
 clock_t lml_total_exec_duration = 0;
 
@@ -57,8 +61,6 @@ static int lml_tag_color_filter(const char *tag_name, const char *tag_param_buf,
 	}
 	return 0;
 }
-
-#define LML_TAG_QUOTE_MAX_LEVEL 10
 
 static const char *lml_tag_quote_color[] = {
 	"\033[33m", // yellow
@@ -154,9 +156,8 @@ const LML_TAG_DEF lml_tag_def[] = {
 	{"bwf", "\033[1;31m****\033[m", "", "****", NULL},
 };
 
-#define LML_TAG_COUNT (sizeof(lml_tag_def) / sizeof(LML_TAG_DEF))
-
-static int lml_tag_name_len[LML_TAG_COUNT];
+static const int lml_tag_count = sizeof(lml_tag_def) / sizeof(LML_TAG_DEF);
+static int lml_tag_name_len[sizeof(lml_tag_def) / sizeof(LML_TAG_DEF)];
 static int lml_ready = 0;
 
 inline static void lml_init(void)
@@ -165,7 +166,7 @@ inline static void lml_init(void)
 
 	if (!lml_ready)
 	{
-		for (i = 0; i < LML_TAG_COUNT; i++)
+		for (i = 0; i < lml_tag_count; i++)
 		{
 			lml_tag_name_len[i] = (int)strlen(lml_tag_def[i].tag_name);
 		}
@@ -345,7 +346,7 @@ int lml_render(const char *str_in, char *str_out, int buf_len, int width, int qu
 				tag_name_pos++;
 			}
 
-			for (tag_name_found = 0, k = 0; k < LML_TAG_COUNT; k++)
+			for (tag_name_found = 0, k = 0; k < lml_tag_count; k++)
 			{
 				if (strncasecmp(lml_tag_def[k].tag_name, str_in + tag_name_pos, (size_t)lml_tag_name_len[k]) == 0)
 				{

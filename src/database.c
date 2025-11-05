@@ -13,11 +13,11 @@
 #include <mysql/mysql.h>
 
 // Global declaration for database
-char DB_host[256];
-char DB_username[50];
-char DB_password[50];
-char DB_database[50];
-char DB_timezone[50];
+char DB_host[DB_host_max_len + 1];
+char DB_username[DB_username_max_len + 1];
+char DB_password[DB_password_max_len + 1];
+char DB_database[DB_database_max_len + 1];
+char DB_timezone[DB_timezone_max_len + 1];
 
 MYSQL *db_open()
 {

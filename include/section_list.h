@@ -14,13 +14,16 @@
 #include "menu.h"
 #include <time.h>
 
-#define BBS_article_title_max_len 160
-#define BBS_article_limit_per_section 50000
-#define BBS_article_limit_per_page 20
+enum section_list_constant_t
+{
+	BBS_article_title_max_len = 160,
+	BBS_article_limit_per_section = 50000,
+	BBS_article_limit_per_page = 20,
 
-#define BBS_ontop_article_limit_per_section 10
+	BBS_ontop_article_limit_per_section = 10,
 
-#define ARTICLE_PER_BLOCK 1000
+	BBS_article_count_per_block = 1000,
+};
 
 struct article_t
 {
@@ -84,7 +87,7 @@ typedef struct section_list_pool_t SECTION_LIST_POOL;
 
 extern SECTION_LIST_POOL *p_section_list_pool;
 
-// article_block_count * ARTICLE_PER_BLOCK should be
+// article_block_count * BBS_article_count_per_block should be
 // no less than BBS_article_limit_per_section * BBS_max_section,
 // in order to allocate enough memory for blocks
 extern int article_block_init(const char *filename, int block_count);

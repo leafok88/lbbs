@@ -11,9 +11,12 @@
 
 #include <stdint.h>
 
-#define TRIE_CHILDREN 256
-#define TRIE_MAX_KEY_LEN 1023
-#define TRIE_NODE_PER_POOL 5000
+enum trie_dict_constant_t
+{
+	TRIE_CHILDREN = 256,
+	TRIE_MAX_KEY_LEN = 1023,
+	TRIE_NODE_PER_POOL = 5000,
+};
 
 struct trie_node_t
 {
