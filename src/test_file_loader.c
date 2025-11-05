@@ -14,7 +14,7 @@
 #include <unistd.h>
 #include <sys/shm.h>
 
-#define TRIE_DICT_SHM_FILE "~trie_dict_shm.dat"
+static const char TRIE_DICT_SHM_FILE[] = "~trie_dict_shm.dat";
 
 const char *files[] = {
 	"../data/welcome.txt",

@@ -9,8 +9,6 @@
 #ifndef _BBS_CMD_H_
 #define _BBS_CMD_H_
 
-#define MAX_CMD_LENGTH 20
-
 enum menu_return_t
 {
 	MENU_OK = 0x0,

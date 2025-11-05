@@ -13,6 +13,11 @@
 #include "section_list.h"
 #include "str_process.h"
 
+enum article_cache_constant_t
+{
+	ARTICLE_CONTENT_MAX_LEN = 1024 * 1024 * 4, // 4MB
+};
+
 struct article_cache_t
 {
 	void *p_mmap;

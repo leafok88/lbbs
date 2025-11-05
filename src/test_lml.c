@@ -14,7 +14,10 @@
 #include <time.h>
 #include <unistd.h>
 
-#define STR_OUT_BUF_SIZE 256
+enum _test_lml_constant_t
+{
+	STR_OUT_BUF_SIZE = 256,
+};
 
 const char *str_in[] = {
 	"[left]ABCD[right]EFG",

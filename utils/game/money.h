@@ -9,7 +9,10 @@
 #ifndef _MONEY_H_
 #define _MONEY_H_
 
-#define USER_MONEY_MAX 1000000000 // 1 billion
+enum money_constant_t
+{
+    USER_MONEY_MAX = 1000000000, // 1 billion
+};
 
 extern int BBS_user_money;
 

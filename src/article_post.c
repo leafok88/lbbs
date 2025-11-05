@@ -21,11 +21,12 @@
 #include <stdlib.h>
 #include <time.h>
 
-#define TITLE_INPUT_MAX_LEN 72
-#define ARTICLE_CONTENT_MAX_LEN 1024 * 1024 * 4 // 4MB
-#define ARTICLE_QUOTE_MAX_LINES 20
-
-#define MODIFY_DT_MAX_LEN 50
+enum _article_post_constant_t
+{
+	TITLE_INPUT_MAX_LEN = 72,
+	ARTICLE_QUOTE_MAX_LINES = 20,
+	MODIFY_DT_MAX_LEN = 50,
+};
 
 int article_post(const SECTION_LIST *p_section, ARTICLE *p_article_new)
 {

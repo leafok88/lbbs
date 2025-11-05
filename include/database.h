@@ -11,14 +11,22 @@
 
 #include <mysql/mysql.h>
 
-#define SQL_BUFFER_LEN 10240
+enum database_constant_t
+{
+    SQL_BUFFER_LEN = 10240,
+    DB_host_max_len = 256,
+    DB_username_max_len = 50,
+    DB_password_max_len = 50,
+    DB_database_max_len = 50,
+    DB_timezone_max_len = 50,
+};
 
 // Database
-extern char DB_host[256];
-extern char DB_username[50];
-extern char DB_password[50];
-extern char DB_database[50];
-extern char DB_timezone[50];
+extern char DB_host[DB_host_max_len + 1];
+extern char DB_username[DB_username_max_len + 1];
+extern char DB_password[DB_password_max_len + 1];
+extern char DB_database[DB_database_max_len + 1];
+extern char DB_timezone[DB_timezone_max_len + 1];
 
 extern MYSQL *db_open();
 
