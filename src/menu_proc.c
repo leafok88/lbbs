@@ -18,7 +18,7 @@
 #include "menu.h"
 #include "section_list_display.h"
 #include "screen.h"
-#include "user_intro_edit.h"
+#include "user_info_update.h"
 #include "user_list_display.h"
 #include "user_priv.h"
 #include <dlfcn.h>

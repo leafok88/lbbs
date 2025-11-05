@@ -1,3 +1,11 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+/*
+ * user_info_update
+ *   - update user information
+ *
+ * Copyright (C) 2004-2025  Leaflet <leaflet@leafok.com>
+ */
+
 #include "database.h"
 #include "editor.h"
 #include "io.h"
@@ -87,7 +95,7 @@ int user_intro_edit(int uid)
                 ret = -1;
                 goto cleanup;
             }
-            lines = split_data_lines(intro, BBS_user_intro_line_len, line_offsets, BBS_user_intro_max_line+2, 1, NULL);
+            lines = split_data_lines(intro, BBS_user_intro_line_len, line_offsets, BBS_user_intro_max_line + 2, 1, NULL);
 
             if (lines > BBS_user_intro_max_line)
             {
