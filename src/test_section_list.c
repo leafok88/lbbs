@@ -68,7 +68,7 @@ int main(int argc, char *argv[])
 	log_error_redir(STDERR_FILENO);
 
 	// - 1 to make blocks allocated is less than required, to trigger error handling
-	block_count = BBS_article_limit_per_section * BBS_max_section / ARTICLE_PER_BLOCK;
+	block_count = BBS_article_limit_per_section * BBS_max_section / BBS_article_count_per_block;
 
 	if ((fp = fopen(ARTICLE_BLOCK_SHM_FILE, "w")) == NULL)
 	{

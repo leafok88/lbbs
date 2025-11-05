@@ -45,7 +45,7 @@ union semun
 
 struct article_block_t
 {
-	ARTICLE articles[ARTICLE_PER_BLOCK];
+	ARTICLE articles[BBS_article_count_per_block];
 	int article_count;
 	struct article_block_t *p_next_block;
 };
@@ -391,21 +391,21 @@ ARTICLE *article_block_find_by_index(int index)
 		return NULL;
 	}
 
-	if (index < 0 || index / ARTICLE_PER_BLOCK >= p_article_block_pool->block_count)
+	if (index < 0 || index / BBS_article_count_per_block >= p_article_block_pool->block_count)
 	{
 		log_error("article_block_find_by_index(%d) is out of boundary of block [0, %d)\n", index, p_article_block_pool->block_count);
 		return NULL;
 	}
 
-	p_block = p_article_block_pool->p_block[index / ARTICLE_PER_BLOCK];
+	p_block = p_article_block_pool->p_block[index / BBS_article_count_per_block];
 
-	if (index % ARTICLE_PER_BLOCK >= p_block->article_count)
+	if (index % BBS_article_count_per_block >= p_block->article_count)
 	{
 		log_error("article_block_find_by_index(%d) is out of boundary of article [0, %d)\n", index, p_block->article_count);
 		return NULL;
 	}
 
-	return (p_block->articles + (index % ARTICLE_PER_BLOCK));
+	return (p_block->articles + (index % BBS_article_count_per_block));
 }
 
 extern int section_list_init(const char *filename)
@@ -767,7 +767,7 @@ int section_list_append_article(SECTION_LIST *p_section, const ARTICLE *p_articl
 	}
 
 	if (p_article_block_pool->block_count == 0 ||
-		p_article_block_pool->p_block[p_article_block_pool->block_count - 1]->article_count >= ARTICLE_PER_BLOCK)
+		p_article_block_pool->p_block[p_article_block_pool->block_count - 1]->article_count >= BBS_article_count_per_block)
 	{
 		if ((p_block = pop_free_article_block()) == NULL)
 		{
@@ -777,7 +777,7 @@ int section_list_append_article(SECTION_LIST *p_section, const ARTICLE *p_articl
 
 		if (p_article_block_pool->block_count > 0)
 		{
-			last_aid = p_article_block_pool->p_block[p_article_block_pool->block_count - 1]->articles[ARTICLE_PER_BLOCK - 1].aid;
+			last_aid = p_article_block_pool->p_block[p_article_block_pool->block_count - 1]->articles[BBS_article_count_per_block - 1].aid;
 		}
 
 		p_article_block_pool->p_block[p_article_block_pool->block_count] = p_block;
@@ -1300,7 +1300,7 @@ int article_block_article_count(void)
 		return -1;
 	}
 
-	ret = (p_article_block_pool->block_count - 1) * ARTICLE_PER_BLOCK +
+	ret = (p_article_block_pool->block_count - 1) * BBS_article_count_per_block +
 		  p_article_block_pool->p_block[p_article_block_pool->block_count - 1]->article_count;
 
 	return ret;
