@@ -1,33 +1,26 @@
-/***************************************************************************
-						   log.h  -  description
-							 -------------------
-	Copyright            : (C) 2004-2025 by Leaflet
-	Email                : leaflet@leafok.com
- ***************************************************************************/
-
-/***************************************************************************
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 3 of the License, or     *
- *   (at your option) any later version.                                   *
- *                                                                         *
- ***************************************************************************/
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+/*
+ * log
+ *   - logger
+ *
+ * Copyright (C) 2004-2025  Leaflet <leaflet@leafok.com>
+ */
 
 #ifndef _LOG_H_
 #define _LOG_H_
 
 #include <stdio.h>
 
-enum{
+enum log_level_t
+{
 	LOG_LEVEL_COMMON = 1,
 	LOG_LEVEL_ERROR = 2,
 };
 
-extern int log_begin(char *common_log_file, char *error_log_file);
+extern int log_begin(const char *common_log_file, const char *error_log_file);
 extern void log_end();
 
-extern int log_printf(int log_level, const char *app_file, int app_line, const char *format, ...);
+extern int log_printf(enum log_level_t log_level, const char *app_file, int app_line, const char *format, ...);
 
 #define log_common(...) log_printf(LOG_LEVEL_COMMON, __FILE__, __LINE__, __VA_ARGS__)
 #define log_error(...) log_printf(LOG_LEVEL_ERROR, __FILE__, __LINE__, __VA_ARGS__)

@@ -1,18 +1,10 @@
-/***************************************************************************
-					   section_list.h  -  description
-							 -------------------
-	Copyright            : (C) 2004-2025 by Leaflet
-	Email                : leaflet@leafok.com
- ***************************************************************************/
-
-/***************************************************************************
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 3 of the License, or     *
- *   (at your option) any later version.                                   *
- *                                                                         *
- ***************************************************************************/
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+/*
+ * section_list
+ *   - data models and basic operations of section and article
+ *
+ * Copyright (C) 2004-2025  Leaflet <leaflet@leafok.com>
+ */
 
 #ifndef _SECTION_LIST_H_
 #define _SECTION_LIST_H_
@@ -22,13 +14,16 @@
 #include "menu.h"
 #include <time.h>
 
-#define BBS_article_title_max_len 160
-#define BBS_article_limit_per_section 50000
-#define BBS_article_limit_per_page 20
+enum section_list_constant_t
+{
+	BBS_article_title_max_len = 160,
+	BBS_article_limit_per_section = 50000,
+	BBS_article_limit_per_page = 20,
 
-#define BBS_ontop_article_limit_per_section 10
+	BBS_ontop_article_limit_per_section = 10,
 
-#define ARTICLE_PER_BLOCK 1000
+	BBS_article_count_per_block = 1000,
+};
 
 struct article_t
 {
@@ -92,7 +87,7 @@ typedef struct section_list_pool_t SECTION_LIST_POOL;
 
 extern SECTION_LIST_POOL *p_section_list_pool;
 
-// article_block_count * ARTICLE_PER_BLOCK should be
+// article_block_count * BBS_article_count_per_block should be
 // no less than BBS_article_limit_per_section * BBS_max_section,
 // in order to allocate enough memory for blocks
 extern int article_block_init(const char *filename, int block_count);

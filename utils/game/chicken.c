@@ -16,14 +16,16 @@
 #include <unistd.h>
 #include <sys/param.h>
 
-#define DATA_FILE "var/chicken"
-#define LOG_FILE "var/chicken/log"
-#define CHICKEN_NAME_LEN 40
+enum _chicken_constant_t
+{
+	CHICKEN_NAME_LEN = 40,
+};
 
-char
-	*cstate[10] = {"我在吃饭", "偷吃零食", "拉便便", "笨蛋..输给鸡?", "哈..赢小鸡也没多光荣", "没食物啦..", "疲劳全消!"};
-char *cage[9] = {"诞生", "周岁", "幼年", "少年", "青年", "活力", "壮年", "中年"};
-char *menu[8] = {"游戏", "运动", "调教计能", "买卖工具", "清理鸡舍"};
+static const char DATA_FILE[] = "var/chicken";
+static const char LOG_FILE[] = "var/chicken/log";
+
+static const char *cstate[10] =
+	{"我在吃饭", "偷吃零食", "拉便便", "笨蛋..输给鸡?", "哈..赢小鸡也没多光荣", "没食物啦..", "疲劳全消!"};
 
 char fname[FILE_PATH_LEN];
 time_t birth;
@@ -649,7 +651,7 @@ int pressany(int i)
 	moveto(23, 0);
 	prints("[33;46;1m                           [34m%s[37m                         [0m", cstate[i]);
 	iflush();
-	ch = igetch_t(MIN(MAX_DELAY_TIME, 60));
+	ch = igetch_t(MIN(BBS_max_user_idle_time, 60));
 	moveto(23, 0);
 	clrtoeol();
 	iflush();
@@ -665,7 +667,7 @@ int guess()
 	clrtoeol();
 	iflush();
 
-	ch = igetch_t(MIN(MAX_DELAY_TIME, 60));
+	ch = igetch_t(MIN(BBS_max_user_idle_time, 60));
 	if ((ch != '1') && (ch != '2') && (ch != '3'))
 	{
 		return -1; // error input

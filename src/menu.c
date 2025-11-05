@@ -1,18 +1,10 @@
-/***************************************************************************
-						  menu.c  -  description
-							 -------------------
-	Copyright            : (C) 2004-2025 by Leaflet
-	Email                : leaflet@leafok.com
- ***************************************************************************/
-
-/***************************************************************************
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 3 of the License, or     *
- *   (at your option) any later version.                                   *
- *                                                                         *
- ***************************************************************************/
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+/*
+ * menu
+ *   - configurable user interactive menu feature
+ *
+ * Copyright (C) 2004-2025  Leaflet <leaflet@leafok.com>
+ */
 
 #include "bbs.h"
 #include "bbs_cmd.h"
@@ -32,13 +24,14 @@
 #include <sys/ipc.h>
 #include <sys/shm.h>
 
-#define MENU_SCREEN_PATH_PREFIX "var/MENU_SCR_"
-#define MENU_CONF_DELIM_WITH_SPACE " ,\t\r\n"
-#define MENU_CONF_DELIM_WITHOUT_SPACE "\r\n"
+enum _menu_constant_t
+{
+	MENU_SET_RESERVED_LENGTH = sizeof(int16_t) * 4,
+	MENU_SHMGET_RETRY_LIMIT = 10,
+};
 
-#define MENU_SET_RESERVED_LENGTH (sizeof(int16_t) * 4)
-
-#define MENU_SHMGET_RETRY_LIMIT 10
+static const char MENU_CONF_DELIM_WITH_SPACE[] = " ,\t\r\n";
+static const char MENU_CONF_DELIM_WITHOUT_SPACE[] = "\r\n";
 
 MENU_SET bbs_menu;
 MENU_SET top10_menu;
@@ -104,19 +97,18 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 		key = ftok(conf_file, proj_id + retry_cnt);
 		if (key == -1)
 		{
-			log_error("ftok(%s %d) error (%d)\n", conf_file, proj_id, errno);
-			return -2;
+			log_error("ftok(%s %d) error (%d)\n", conf_file, proj_id + retry_cnt, errno);
+			return -3;
 		}
 
 		p_menu_set->shmid = shmget(key, size, IPC_CREAT | IPC_EXCL | 0600);
-
 		if (p_menu_set->shmid == -1)
 		{
 			if (errno != EEXIST || retry_cnt + 1 >= MENU_SHMGET_RETRY_LIMIT)
 			{
 				log_error("shmget(conf_file=%s, size=%d) error (%d) %d times\n",
 						  conf_file, size, errno, retry_cnt + 1);
-				break;
+				return -3;
 			}
 			log_error("shmget(conf_file=%s, proj_id=%d, key=0x%x, size=%d) error (%d), retry ...\n",
 					  conf_file, proj_id + retry_cnt, key, size, errno);
@@ -1393,7 +1385,7 @@ int unload_menu(MENU_SET *p_menu_set)
 
 	detach_menu_shm(p_menu_set);
 
-	if (shmctl(shmid, IPC_RMID, NULL) == -1)
+	if (shmid != 0 && shmctl(shmid, IPC_RMID, NULL) == -1)
 	{
 		log_error("shmctl(shmid=%d, IPC_RMID) error (%d)\n", shmid, errno);
 		return -1;

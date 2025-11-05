@@ -1,18 +1,10 @@
-/***************************************************************************
-					test_memory_pool.c  -  description
-							 -------------------
-	copyright            : (C) 2004-2025 by Leaflet
-	email                : leaflet@leafok.com
- ***************************************************************************/
-
-/***************************************************************************
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 3 of the License, or     *
- *   (at your option) any later version.                                   *
- *                                                                         *
- ***************************************************************************/
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+/*
+ * test_memory_pool
+ *   - tester for memory pool
+ *
+ * Copyright (C) 2004-2025  Leaflet <leaflet@leafok.com>
+ */
 
 #include "log.h"
 #include "memory_pool.h"
@@ -20,9 +12,12 @@
 #include <string.h>
 #include <unistd.h>
 
-#define NODE_SIZE 1023
-#define NODE_PER_CHUNK 1000
-#define CHUNK_COUNT_LIMIT 100
+enum _test_memory_pool_constant_t
+{
+	NODE_SIZE = 1023,
+	NODE_PER_CHUNK = 1000,
+	CHUNK_COUNT_LIMIT = 100,
+};
 
 int main(int argc, char *argv[])
 {

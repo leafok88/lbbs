@@ -1,18 +1,10 @@
-/***************************************************************************
-						 test_lml.c  -  description
-							 -------------------
-	Copyright            : (C) 2004-2025 by Leaflet
-	Email                : leaflet@leafok.com
- ***************************************************************************/
-
-/***************************************************************************
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 3 of the License, or     *
- *   (at your option) any later version.                                   *
- *                                                                         *
- ***************************************************************************/
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+/*
+ * test_lml
+ *   - tester for LML render
+ *
+ * Copyright (C) 2004-2025  Leaflet <leaflet@leafok.com>
+ */
 
 #include "lml.h"
 #include "log.h"
@@ -22,7 +14,10 @@
 #include <time.h>
 #include <unistd.h>
 
-#define STR_OUT_BUF_SIZE 256
+enum _test_lml_constant_t
+{
+	STR_OUT_BUF_SIZE = 256,
+};
 
 const char *str_in[] = {
 	"[left]ABCD[right]EFG",

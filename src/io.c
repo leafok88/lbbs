@@ -1,18 +1,10 @@
-/***************************************************************************
-							io.c  -  description
-							 -------------------
-	Copyright            : (C) 2004-2025 by Leaflet
-	Email                : leaflet@leafok.com
- ***************************************************************************/
-
-/***************************************************************************
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 3 of the License, or     *
- *   (at your option) any later version.                                   *
- *                                                                         *
- ***************************************************************************/
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+/*
+ * io
+ *   - basic terminal-based user input / output features
+ *
+ * Copyright (C) 2004-2025  Leaflet <leaflet@leafok.com>
+ */
 
 #include "common.h"
 #include "io.h"
@@ -31,7 +23,8 @@
 #include <libssh/libssh.h>
 #include <libssh/server.h>
 
-char stdio_charset[20] = BBS_DEFAULT_CHARSET;
+const char BBS_default_charset[CHARSET_MAX_LEN + 1] = "UTF-8";
+char stdio_charset[CHARSET_MAX_LEN + 1] = "UTF-8";
 
 // static input / output buffer
 static char stdin_buf[LINE_BUFFER_LEN];
@@ -1034,7 +1027,7 @@ int io_buf_conv(iconv_t cd, char *p_buf, int *p_buf_len, int *p_buf_offset, char
 
 int io_conv_init(const char *charset)
 {
-	char tocode[32];
+	char tocode[CHARSET_MAX_LEN + 20];
 
 	if (charset == NULL)
 	{
@@ -1047,8 +1040,8 @@ int io_conv_init(const char *charset)
 	strncpy(stdio_charset, charset, sizeof(stdio_charset) - 1);
 	stdio_charset[sizeof(stdio_charset) - 1] = '\0';
 
-	snprintf(tocode, sizeof(tocode), "%s%s", BBS_DEFAULT_CHARSET,
-			 (strcasecmp(stdio_charset, BBS_DEFAULT_CHARSET) == 0 ? "" : "//IGNORE"));
+	snprintf(tocode, sizeof(tocode), "%s%s", BBS_default_charset,
+			 (strcasecmp(stdio_charset, BBS_default_charset) == 0 ? "" : "//IGNORE"));
 	stdin_cd = iconv_open(tocode, stdio_charset);
 	if (stdin_cd == (iconv_t)(-1))
 	{
@@ -1057,11 +1050,11 @@ int io_conv_init(const char *charset)
 	}
 
 	snprintf(tocode, sizeof(tocode), "%s%s", stdio_charset,
-			 (strcasecmp(BBS_DEFAULT_CHARSET, stdio_charset) == 0 ? "" : "//TRANSLIT"));
-	stdout_cd = iconv_open(tocode, BBS_DEFAULT_CHARSET);
+			 (strcasecmp(BBS_default_charset, stdio_charset) == 0 ? "" : "//TRANSLIT"));
+	stdout_cd = iconv_open(tocode, BBS_default_charset);
 	if (stdout_cd == (iconv_t)(-1))
 	{
-		log_error("iconv_open(%s->%s) error: %d\n", BBS_DEFAULT_CHARSET, tocode, errno);
+		log_error("iconv_open(%s->%s) error: %d\n", BBS_default_charset, tocode, errno);
 		iconv_close(stdin_cd);
 		return -2;
 	}

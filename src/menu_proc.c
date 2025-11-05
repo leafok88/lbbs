@@ -1,18 +1,10 @@
-/***************************************************************************
-						  menu_proc.c  -  description
-							 -------------------
-	Copyright            : (C) 2004-2025 by Leaflet
-	Email                : leaflet@leafok.com
- ***************************************************************************/
-
-/***************************************************************************
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 3 of the License, or     *
- *   (at your option) any later version.                                   *
- *                                                                         *
- ***************************************************************************/
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+/*
+ * menu_proc
+ *   - handler functions of menu commands
+ *
+ * Copyright (C) 2004-2025  Leaflet <leaflet@leafok.com>
+ */
 
 #include "article_cache.h"
 #include "article_favor_display.h"
@@ -44,7 +36,8 @@ int list_section(void *param)
 	return REDRAW;
 }
 
-typedef union exec_handler_t{
+typedef union exec_handler_t
+{
 	void *p;
 	int (*handler)();
 } exec_handler;
@@ -276,7 +269,7 @@ int show_top10_menu(void *param)
 				show_top10 = 0;
 				return 0;
 			case KEY_TIMEOUT:
-				if (time(NULL) - BBS_last_access_tm >= MAX_DELAY_TIME)
+				if (time(NULL) - BBS_last_access_tm >= BBS_max_user_idle_time)
 				{
 					log_error("User input timeout\n");
 					show_top10 = 0;

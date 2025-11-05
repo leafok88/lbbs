@@ -1,27 +1,22 @@
-/***************************************************************************
-						 trie_dict.h  -  description
-							 -------------------
-	Copyright            : (C) 2004-2025 by Leaflet
-	Email                : leaflet@leafok.com
- ***************************************************************************/
-
-/***************************************************************************
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 3 of the License, or     *
- *   (at your option) any later version.                                   *
- *                                                                         *
- ***************************************************************************/
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+/*
+ * trie_dict
+ *   - trie-tree based dict feature
+ *
+ * Copyright (C) 2004-2025  Leaflet <leaflet@leafok.com>
+ */
 
 #ifndef _TRIE_DICT_H_
 #define _TRIE_DICT_H_
 
 #include <stdint.h>
 
-#define TRIE_CHILDREN 256
-#define TRIE_MAX_KEY_LEN 1023
-#define TRIE_NODE_PER_POOL 5000
+enum trie_dict_constant_t
+{
+	TRIE_CHILDREN = 256,
+	TRIE_MAX_KEY_LEN = 1023,
+	TRIE_NODE_PER_POOL = 5000,
+};
 
 struct trie_node_t
 {

@@ -1,18 +1,10 @@
-/***************************************************************************
-					test_ssh_server.c  -  description
-							 -------------------
-	Copyright            : (C) 2004-2025 by Leaflet
-	Email                : leaflet@leafok.com
- ***************************************************************************/
-
-/***************************************************************************
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 3 of the License, or     *
- *   (at your option) any later version.                                   *
- *                                                                         *
- ***************************************************************************/
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+/*
+ * test_ssh_server
+ *   - tester for network server with SSH support
+ *
+ * Copyright (C) 2004-2025  Leaflet <leaflet@leafok.com>
+ */
 
 // This test was written based on libssh example/proxy.c
 
@@ -22,14 +14,15 @@
 #include <libssh/libssh.h>
 #include <libssh/server.h>
 
-#ifndef BUF_SIZE
-#define BUF_SIZE 2048
-#endif
+enum test_ssh_server_constant_t
+{
+	BUF_SIZE = 2048,
+};
 
-#define SSH_HOST_RSA_KEYFILE "../conf/ssh_host_rsa_key"
+static const char SSH_HOST_RSA_KEYFILE[] = "../conf/ssh_host_rsa_key";
 
-#define USER "test"
-#define PASSWORD "123456"
+static const char USER[] = "test";
+static const char PASSWORD[] = "123456";
 
 static ssh_channel SSH_channel;
 static int authenticated = 0;

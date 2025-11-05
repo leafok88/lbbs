@@ -1,18 +1,10 @@
-/***************************************************************************
-					 user_list_display.c  -  description
-							 -------------------
-	Copyright            : (C) 2004-2025 by Leaflet
-	Email                : leaflet@leafok.com
- ***************************************************************************/
-
-/***************************************************************************
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 3 of the License, or     *
- *   (at your option) any later version.                                   *
- *                                                                         *
- ***************************************************************************/
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+/*
+ * user_list_display
+ *   - display user information
+ *
+ * Copyright (C) 2004-2025  Leaflet <leaflet@leafok.com>
+ */
 
 #include "bbs.h"
 #include "ip_mask.h"
@@ -28,8 +20,11 @@
 #include <time.h>
 #include <sys/param.h>
 
-#define BBS_max_sessions_per_user 10
-#define LAST_LOGIN_DT_MAX_LEN 50
+enum _user_info_display_constant_t
+{
+	BBS_max_sessions_per_user = 10,
+	LAST_LOGIN_DT_MAX_LEN = 50,
+};
 
 static int display_user_info_key_handler(int *p_key, DISPLAY_CTX *p_ctx)
 {

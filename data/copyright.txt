@@ -1,20 +1,18 @@
-LeafOK Bulletin Board System (Web)        Version 2.x
-Copyright (C) 2001-2025                   Leaflet
+LeafOK Bulletin Board System  (Web version)
+Copyright (C) 2001-2025       Leaflet <leaflet@leafok.com>
+Source code repository        https://github.com/leafok88/leafok_bbs
 
 
-LeafOK Bulletin Board System (Telnet)     Version 1.x
-Copyright (C) 2004-2025                   Leaflet
+LeafOK Bulletin Board System  (Telnet version)
+Copyright (C) 2004-2025       Leaflet <leaflet@leafok.com>
+Source code repository        https://github.com/leafok88/lbbs
 
 
-E-mail: leaflet@leafok.com
 
 
-You may download latest source code from GitHub.
-Web version:     https://github.com/leafok88/leafok_bbs
-Telnet version:  https://github.com/leafok88/lbbs
 
+This software comes with ABSOLUTELY NO WARRANTY.
 
-This BBS comes with ABSOLUTELY NO WARRANTY.
 This program is free software; you can redistribute it and/or modify 
 it under the terms of the GNU General Public License as published by 
 the Free Software Foundation; either version 3 of the License, or    

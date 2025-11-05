@@ -1,18 +1,10 @@
-/***************************************************************************
-						 database.c  -  description
-							 -------------------
-	Copyright            : (C) 2004-2025 by Leaflet
-	Email                : leaflet@leafok.com
- ***************************************************************************/
-
-/***************************************************************************
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 3 of the License, or     *
- *   (at your option) any later version.                                   *
- *                                                                         *
- ***************************************************************************/
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+/*
+ * database
+ *   - configuration and function of DB connection
+ *
+ * Copyright (C) 2004-2025  Leaflet <leaflet@leafok.com>
+ */
 
 #include "common.h"
 #include "database.h"
@@ -21,11 +13,11 @@
 #include <mysql/mysql.h>
 
 // Global declaration for database
-char DB_host[256];
-char DB_username[50];
-char DB_password[50];
-char DB_database[50];
-char DB_timezone[50];
+char DB_host[DB_host_max_len + 1];
+char DB_username[DB_username_max_len + 1];
+char DB_password[DB_password_max_len + 1];
+char DB_database[DB_database_max_len + 1];
+char DB_timezone[DB_timezone_max_len + 1];
 
 MYSQL *db_open()
 {

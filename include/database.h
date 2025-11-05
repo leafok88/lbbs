@@ -1,32 +1,32 @@
-/***************************************************************************
-						  database.h  -  description
-							 -------------------
-	Copyright            : (C) 2004-2025 by Leaflet
-	Email                : leaflet@leafok.com
- ***************************************************************************/
-
-/***************************************************************************
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 3 of the License, or     *
- *   (at your option) any later version.                                   *
- *                                                                         *
- ***************************************************************************/
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+/*
+ * database
+ *   - configuration and function of DB connection
+ *
+ * Copyright (C) 2004-2025  Leaflet <leaflet@leafok.com>
+ */
 
 #ifndef _DATABASE_H_
 #define _DATABASE_H_
 
 #include <mysql/mysql.h>
 
-#define SQL_BUFFER_LEN 10240
+enum database_constant_t
+{
+    SQL_BUFFER_LEN = 10240,
+    DB_host_max_len = 256,
+    DB_username_max_len = 50,
+    DB_password_max_len = 50,
+    DB_database_max_len = 50,
+    DB_timezone_max_len = 50,
+};
 
 // Database
-extern char DB_host[256];
-extern char DB_username[50];
-extern char DB_password[50];
-extern char DB_database[50];
-extern char DB_timezone[50];
+extern char DB_host[DB_host_max_len + 1];
+extern char DB_username[DB_username_max_len + 1];
+extern char DB_password[DB_password_max_len + 1];
+extern char DB_database[DB_database_max_len + 1];
+extern char DB_timezone[DB_timezone_max_len + 1];
 
 extern MYSQL *db_open();
 

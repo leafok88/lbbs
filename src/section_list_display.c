@@ -1,18 +1,10 @@
-/***************************************************************************
-					section_list_display.c  -  description
-							 -------------------
-	Copyright            : (C) 2004-2025 by Leaflet
-	Email                : leaflet@leafok.com
- ***************************************************************************/
-
-/***************************************************************************
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 3 of the License, or     *
- *   (at your option) any later version.                                   *
- *                                                                         *
- ***************************************************************************/
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+/*
+ * section_list_display
+ *   - user interactive feature of section articles list
+ *
+ * Copyright (C) 2004-2025  Leaflet <leaflet@leafok.com>
+ */
 
 #include "article_cache.h"
 #include "article_favor.h"
@@ -39,7 +31,10 @@
 #include <time.h>
 #include <sys/param.h>
 
-#define TITLE_SEARCH_MAX_LEN 60
+enum _section_list_display_constant_t
+{
+	TITLE_SEARCH_MAX_LEN = 60,
+};
 
 static int32_t section_aid_locations[BBS_max_section] = {0};
 static int section_topic_view_mode = 0;
@@ -279,7 +274,7 @@ static enum select_cmd_t section_list_select(int total_page, int item_count, int
 			log_error("KEY_NULL\n");
 			return EXIT_SECTION;
 		case KEY_TIMEOUT:
-			if (time(NULL) - BBS_last_access_tm >= MAX_DELAY_TIME)
+			if (time(NULL) - BBS_last_access_tm >= BBS_max_user_idle_time)
 			{
 				log_error("User input timeout\n");
 				return EXIT_SECTION;
@@ -1406,7 +1401,7 @@ int section_list_ex_dir_display(SECTION_LIST *p_section)
 				log_error("KEY_NULL\n");
 				return 0;
 			case KEY_TIMEOUT:
-				if (time(NULL) - BBS_last_access_tm >= MAX_DELAY_TIME)
+				if (time(NULL) - BBS_last_access_tm >= BBS_max_user_idle_time)
 				{
 					log_error("User input timeout\n");
 					return 0;

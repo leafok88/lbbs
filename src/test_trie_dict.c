@@ -1,18 +1,10 @@
-/***************************************************************************
-					  test_trie_dict.c  -  description
-							 -------------------
-	Copyright            : (C) 2004-2025 by Leaflet
-	Email                : leaflet@leafok.com
- ***************************************************************************/
-
-/***************************************************************************
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 3 of the License, or     *
- *   (at your option) any later version.                                   *
- *                                                                         *
- ***************************************************************************/
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+/*
+ * test_trie_dict
+ *   - tester for trie-tree based dict feature
+ *
+ * Copyright (C) 2004-2025  Leaflet <leaflet@leafok.com>
+ */
 
 #include "log.h"
 #include "trie_dict.h"
@@ -21,8 +13,8 @@
 #include <string.h>
 #include <unistd.h>
 
-#define TEST_VAL ((int64_t)(0xcb429a63a017661f)) // int64_t
-#define TRIE_DICT_SHM_FILE "~trie_dict_shm.dat"
+static const int64_t TEST_VAL = ((int64_t)(0xcb429a63a017661f)); // int64_t
+static const char TRIE_DICT_SHM_FILE[] = "~trie_dict_shm.dat";
 
 const char *keys[] = {
 	"ABCDEFG",

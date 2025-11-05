@@ -1,18 +1,10 @@
-/***************************************************************************
-						 user_list.h  -  description
-							 -------------------
-	Copyright            : (C) 2004-2025 by Leaflet
-	Email                : leaflet@leafok.com
- ***************************************************************************/
-
-/***************************************************************************
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 3 of the License, or     *
- *   (at your option) any later version.                                   *
- *                                                                         *
- ***************************************************************************/
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+/*
+ * user_list
+ *   - data model and basic operations of (online) user list
+ *
+ * Copyright (C) 2004-2025  Leaflet <leaflet@leafok.com>
+ */
 
 #ifndef _USER_LIST_H_
 #define _USER_LIST_H_
@@ -21,12 +13,15 @@
 #include "common.h"
 #include <mysql/mysql.h>
 
-#define BBS_user_limit_per_page 20
-#define BBS_session_id_length 32
+enum user_list_constant_t
+{
+	BBS_user_limit_per_page = 20,
+	BBS_session_id_length = 32,
 
-#define BBS_user_intro_avg_len 256
-#define BBS_user_intro_max_len 4096
-#define BBS_user_intro_max_line 10
+	BBS_user_intro_avg_len = 256,
+	BBS_user_intro_max_len = 4096,
+	BBS_user_intro_max_line = 10,
+};
 
 struct user_info_t
 {

@@ -1,18 +1,10 @@
-/***************************************************************************
-							bbs.c  -  description
-							 -------------------
-	Copyright            : (C) 2004-2025 by Leaflet
-	Email                : leaflet@leafok.com
- ***************************************************************************/
-
-/***************************************************************************
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 3 of the License, or     *
- *   (at your option) any later version.                                   *
- *                                                                         *
- ***************************************************************************/
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+/*
+ * bbs
+ *   - BBS related common definitions
+ *
+ * Copyright (C) 2004-2025  Leaflet <leaflet@leafok.com>
+ */
 
 #include "bbs.h"
 #include "common.h"
@@ -22,8 +14,11 @@
 #include <signal.h>
 #include <time.h>
 
-#define BBS_port_default 23
-#define BBS_ssh_port_default 22
+enum _bbs_port_constant_t
+{
+	BBS_port_default = 23,
+	BBS_ssh_port_default = 22,
+};
 
 // BBS enviroment
 char BBS_id[BBS_id_max_len + 1] = "Example BBS";

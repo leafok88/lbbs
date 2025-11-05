@@ -1,18 +1,10 @@
-/***************************************************************************
-						article_post.c  -  description
-							 -------------------
-	copyright            : (C) 2004-2025 by Leaflet
-	email                : leaflet@leafok.com
- ***************************************************************************/
-
-/***************************************************************************
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 3 of the License, or     *
- *   (at your option) any later version.                                   *
- *                                                                         *
- ***************************************************************************/
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+/*
+ * article_post
+ *   - user interactive feature to post / modify / reply article
+ *
+ * Copyright (C) 2004-2025  Leaflet <leaflet@leafok.com>
+ */
 
 #include "article_cache.h"
 #include "article_post.h"
@@ -29,11 +21,12 @@
 #include <stdlib.h>
 #include <time.h>
 
-#define TITLE_INPUT_MAX_LEN 72
-#define ARTICLE_CONTENT_MAX_LEN 1024 * 1024 * 4 // 4MB
-#define ARTICLE_QUOTE_MAX_LINES 20
-
-#define MODIFY_DT_MAX_LEN 50
+enum _article_post_constant_t
+{
+	TITLE_INPUT_MAX_LEN = 72,
+	ARTICLE_QUOTE_MAX_LINES = 20,
+	MODIFY_DT_MAX_LEN = 50,
+};
 
 int article_post(const SECTION_LIST *p_section, ARTICLE *p_article_new)
 {
@@ -110,7 +103,7 @@ int article_post(const SECTION_LIST *p_section, ARTICLE *p_article_new)
 			ch = 0;
 		}
 
-		for (; !SYS_server_exit; ch = igetch_t(MAX_DELAY_TIME))
+		for (; !SYS_server_exit; ch = igetch_t(BBS_max_user_idle_time))
 		{
 			switch (toupper(ch))
 			{
@@ -173,7 +166,7 @@ int article_post(const SECTION_LIST *p_section, ARTICLE *p_article_new)
 			prints("(S)发送, (C)取消, (T)更改标题 or (E)再编辑? [S]: ");
 			iflush();
 
-			for (ch = 0; !SYS_server_exit; ch = igetch_t(MAX_DELAY_TIME))
+			for (ch = 0; !SYS_server_exit; ch = igetch_t(BBS_max_user_idle_time))
 			{
 				switch (toupper(ch))
 				{
@@ -524,7 +517,7 @@ int article_modify(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTI
 				   (reply_note ? "关闭" : "开启"));
 			iflush();
 
-			ch = igetch_t(MAX_DELAY_TIME);
+			ch = igetch_t(BBS_max_user_idle_time);
 			switch (toupper(ch))
 			{
 			case KEY_NULL:
@@ -922,7 +915,7 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 			ch = 0;
 		}
 
-		for (; !SYS_server_exit; ch = igetch_t(MAX_DELAY_TIME))
+		for (; !SYS_server_exit; ch = igetch_t(BBS_max_user_idle_time))
 		{
 			switch (toupper(ch))
 			{
@@ -982,7 +975,7 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 			prints("(S)发送, (C)取消, (T)更改标题 or (E)再编辑? [S]: ");
 			iflush();
 
-			for (ch = 0; !SYS_server_exit; ch = igetch_t(MAX_DELAY_TIME))
+			for (ch = 0; !SYS_server_exit; ch = igetch_t(BBS_max_user_idle_time))
 			{
 				switch (toupper(ch))
 				{

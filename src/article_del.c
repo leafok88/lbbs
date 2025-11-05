@@ -1,18 +1,10 @@
-/***************************************************************************
-						article_del.c  -  description
-							 -------------------
-	copyright            : (C) 2004-2025 by Leaflet
-	email                : leaflet@leafok.com
- ***************************************************************************/
-
-/***************************************************************************
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 3 of the License, or     *
- *   (at your option) any later version.                                   *
- *                                                                         *
- ***************************************************************************/
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+/*
+ * article_del
+ *   - user interactive feature to delete article
+ *
+ * Copyright (C) 2004-2025  Leaflet <leaflet@leafok.com>
+ */
 
 #include "article_del.h"
 #include "database.h"
@@ -55,7 +47,7 @@ int article_del(const SECTION_LIST *p_section, const ARTICLE *p_article)
 	prints("真的要删除文章？(Y)是, (N)否 [N]: ");
 	iflush();
 
-	for (ch = 0; !SYS_server_exit; ch = igetch_t(MAX_DELAY_TIME))
+	for (ch = 0; !SYS_server_exit; ch = igetch_t(BBS_max_user_idle_time))
 	{
 		switch (toupper(ch))
 		{

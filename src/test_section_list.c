@@ -1,18 +1,10 @@
-/***************************************************************************
-					test_section_list.c  -  description
-							 -------------------
-	Copyright            : (C) 2004-2025 by Leaflet
-	Email                : leaflet@leafok.com
- ***************************************************************************/
-
-/***************************************************************************
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 3 of the License, or     *
- *   (at your option) any later version.                                   *
- *                                                                         *
- ***************************************************************************/
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+/*
+ * test_section_list
+ *   - tester for data models and basic operations of section and article
+ *
+ * Copyright (C) 2004-2025  Leaflet <leaflet@leafok.com>
+ */
 
 #include "bbs.h"
 #include "log.h"
@@ -23,10 +15,10 @@
 #include <stdio.h>
 #include <unistd.h>
 
-#define ARTICLE_BLOCK_SHM_FILE "~article_block_shm.dat"
-#define SECTION_LIST_SHM_FILE "~section_list_shm.dat"
-#define TRIE_DICT_SHM_FILE "~trie_dict_shm.dat"
-#define USER_LIST_SHM_FILE "~user_list_shm.dat"
+static const char ARTICLE_BLOCK_SHM_FILE[] = "~article_block_shm.dat";
+static const char SECTION_LIST_SHM_FILE[] = "~section_list_shm.dat";
+static const char TRIE_DICT_SHM_FILE[] = "~trie_dict_shm.dat";
+static const char USER_LIST_SHM_FILE[] = "~user_list_shm.dat";
 
 const char *sname[] = {
 	"Test",
@@ -76,7 +68,7 @@ int main(int argc, char *argv[])
 	log_error_redir(STDERR_FILENO);
 
 	// - 1 to make blocks allocated is less than required, to trigger error handling
-	block_count = BBS_article_limit_per_section * BBS_max_section / ARTICLE_PER_BLOCK;
+	block_count = BBS_article_limit_per_section * BBS_max_section / BBS_article_count_per_block;
 
 	if ((fp = fopen(ARTICLE_BLOCK_SHM_FILE, "w")) == NULL)
 	{

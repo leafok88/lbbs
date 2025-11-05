@@ -1,18 +1,10 @@
-/***************************************************************************
-						  net_server.c  -  description
-							 -------------------
-	Copyright            : (C) 2004-2025 by Leaflet
-	Email                : leaflet@leafok.com
- ***************************************************************************/
-
-/***************************************************************************
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 3 of the License, or     *
- *   (at your option) any later version.                                   *
- *                                                                         *
- ***************************************************************************/
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+/*
+ * net_server
+ *   - network server with SSH support
+ *
+ * Copyright (C) 2004-2025  Leaflet <leaflet@leafok.com>
+ */
 
 #include "bbs.h"
 #include "bbs_main.h"
@@ -47,8 +39,13 @@
 #include <sys/wait.h>
 #include <systemd/sd-daemon.h>
 
-#define WAIT_CHILD_PROCESS_EXIT_TIMEOUT 5 // second
-#define WAIT_CHILD_PROCESS_KILL_TIMEOUT 1 // second
+enum _net_server_constant_t
+{
+	WAIT_CHILD_PROCESS_EXIT_TIMEOUT = 5, // second
+	WAIT_CHILD_PROCESS_KILL_TIMEOUT = 1, // second
+
+	SSH_AUTH_MAX_DURATION = 60 * 1000, // milliseconds
+};
 
 struct process_sockaddr_t
 {
@@ -59,9 +56,7 @@ typedef struct process_sockaddr_t PROCESS_SOCKADDR;
 
 static PROCESS_SOCKADDR process_sockaddr_pool[MAX_CLIENT_LIMIT];
 
-#define SSH_AUTH_MAX_DURATION (60 * 1000) // milliseconds
-
-#define SFTP_SERVER_PATH "/usr/lib/sftp-server"
+static const char SFTP_SERVER_PATH[] = "/usr/lib/sftp-server";
 
 /* A userdata struct for session. */
 struct session_data_struct

@@ -1,18 +1,10 @@
-/***************************************************************************
-					   article_cache.c  -  description
-							 -------------------
-	Copyright            : (C) 2004-2025 by Leaflet
-	Email                : leaflet@leafok.com
- ***************************************************************************/
-
-/***************************************************************************
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 3 of the License, or     *
- *   (at your option) any later version.                                   *
- *                                                                         *
- ***************************************************************************/
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+/*
+ * article_cache
+ *   - convert article content from DB to local cache with LML conversion and line offset index
+ *
+ * Copyright (C) 2004-2025  Leaflet <leaflet@leafok.com>
+ */
 
 #include "article_cache.h"
 #include "lml.h"
@@ -27,10 +19,12 @@
 #include <sys/mman.h>
 #include <sys/stat.h>
 
-#define ARTICLE_HEADER_MAX_LEN 4096
-#define ARTICLE_CONTENT_MAX_LEN 1024 * 1024 * 4 // 4MB
-#define ARTICLE_FOOTER_MAX_LEN 4096
-#define SUB_DT_MAX_LEN 50
+enum _article_cache_constant_t
+{
+	ARTICLE_HEADER_MAX_LEN = 4096,
+	ARTICLE_FOOTER_MAX_LEN = 4096,
+	SUB_DT_MAX_LEN = 50,
+};
 
 static const char *BBS_article_footer_color[] = {
 	"\033[31m",

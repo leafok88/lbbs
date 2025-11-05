@@ -1,26 +1,23 @@
-/***************************************************************************
-                            screen.h  -  description
-                             -------------------
-    copyright            : (C) 2004-2025 by Leaflet
-    email                : leaflet@leafok.com
- ***************************************************************************/
-
-/***************************************************************************
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 3 of the License, or     *
- *   (at your option) any later version.                                   *
- *                                                                         *
- ***************************************************************************/
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+/*
+ * screen
+ *   - advanced telnet-based user interactive input / output features
+ *
+ * Copyright (C) 2004-2025  Leaflet <leaflet@leafok.com>
+ */
 
 #ifndef _SCREEN_H_
 #define _SCREEN_H_
 
+#include "io.h"
 #include <stddef.h>
 
-#define CTRL_SEQ_CLR_LINE "\033[K"
-#define MSG_EXT_MAX_LEN 400
+extern const char CTRL_SEQ_CLR_LINE[];
+
+enum display_constant_t
+{
+   MSG_EXT_MAX_LEN = 400,
+};
 
 struct display_ctx_t
 {
@@ -45,7 +42,7 @@ extern int press_any_key_ex(const char *msg, int sec);
 
 extern void set_input_echo(int echo);
 
-extern int str_input(char *buffer, int buffer_length, int echo_mode);
+extern int str_input(char *buffer, int buffer_length, enum io_echo_t echo_mode);
 extern int get_data(int row, int col, char *prompt, char *buffer, int buffer_length, int max_display_len);
 
 // eof_exit = 0 : Do not exit at EOF
