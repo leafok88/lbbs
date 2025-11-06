@@ -338,18 +338,10 @@ int user_online_list_load(MYSQL *db, USER_ONLINE_LIST *p_online_list)
 		}
 
 		qsort(p_online_list->index_uid, (size_t)user_cnt, sizeof(USER_INFO_INDEX_UID), user_info_index_uid_comp);
-
-#ifdef _DEBUG
-		log_error("Rebuild index of %d online users\n", user_cnt);
-#endif
 	}
 
 	p_online_list->user_count = user_cnt;
 	p_online_list->guest_count = guest_cnt;
-
-#ifdef _DEBUG
-	log_error("Loaded %d online users and %d guest users\n", p_online_list->user_count, p_online_list->guest_count);
-#endif
 
 cleanup:
 	mysql_free_result(rs);
