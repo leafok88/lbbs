@@ -138,6 +138,9 @@ int bbs_center()
 		if (ch != KEY_NULL && ch != KEY_TIMEOUT)
 		{
 			BBS_last_access_tm = time(NULL);
+#ifdef _DEBUG
+			log_error("Debug: BBS_last_access_tm is updated\n");
+#endif
 		}
 
 		if (bbs_menu.choose_step == 0 && time(NULL) - t_last_action >= 10)
