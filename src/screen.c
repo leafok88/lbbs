@@ -894,6 +894,7 @@ int show_bottom(const char *msg)
 	int len;
 	int len_username;
 	char str_tm_online[LINE_BUFFER_LEN];
+	int len_str_tm_online;
 
 	len_str_time = (int)get_time_str(str_time, sizeof(str_time));
 
@@ -923,11 +924,12 @@ int show_bottom(const char *msg)
 				 "\033[36m%d\033[33m:\033[36m%.2d",
 				 tm_online->tm_hour, tm_online->tm_min);
 	}
+	len_str_tm_online = str_length(str_tm_online, 1);
 
 	moveto(SCREEN_ROWS, 0);
 	clrtoeol();
 	prints("\033[1;44;33m时间[\033[36m%s\033[33m]%s%*s \033[33m用户[\033[36m%s\033[33m][%s\033[33m]\033[m",
-		   str_time, msg_f, 61 - len_str_time - len_msg - len_username, "", BBS_username, str_tm_online);
+		   str_time, msg_f, 65 - len_str_time - len_msg - len_username - len_str_tm_online, "", BBS_username, str_tm_online);
 
 	return 0;
 }

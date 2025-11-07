@@ -28,6 +28,7 @@ static const BBS_CMD bbs_cmd_list[] = {
 	{"FAVOR_TOPIC", favor_topic},
 	{"LIST_USER", list_user},
 	{"LIST_ONLINE_USER", list_online_user},
+	{"EDIT_INTRO", edit_intro},
 };
 
 static const int bbs_cmd_count = sizeof(bbs_cmd_list) / sizeof(BBS_CMD);

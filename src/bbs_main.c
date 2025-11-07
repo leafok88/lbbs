@@ -11,6 +11,7 @@
 #include "bbs.h"
 #include "bbs_cmd.h"
 #include "bbs_main.h"
+#include "bwf.h"
 #include "common.h"
 #include "database.h"
 #include "editor.h"
@@ -138,6 +139,9 @@ int bbs_center()
 		if (ch != KEY_NULL && ch != KEY_TIMEOUT)
 		{
 			BBS_last_access_tm = time(NULL);
+#ifdef _DEBUG
+			log_error("Debug: BBS_last_access_tm is updated\n");
+#endif
 		}
 
 		if (bbs_menu.choose_step == 0 && time(NULL) - t_last_action >= 10)
@@ -388,6 +392,9 @@ cleanup:
 	detach_section_list_shm();
 	detach_article_block_shm();
 	detach_trie_dict_shm();
+
+	// Cleanup BWF
+	bwf_unload();
 
 	return 0;
 }

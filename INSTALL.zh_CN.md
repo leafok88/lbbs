@@ -19,7 +19,8 @@
    sh ./autogen.sh
 
 3) 编译源代码  
-   ./configure --prefix=/usr/local/lbbs  
+   export LBBS_HOME_DIR=/usr/local/lbbs
+   ./configure --prefix=$LBBS_HOME_DIR  
    make
 
 4) 建立用户和组  
@@ -27,22 +28,23 @@
 
 5) 安装程序文件和数据文件  
    sudo make install  
-   chown -R bbs:bbs /usr/local/lbbs
+   chown -R bbs:bbs $LBBS_HOME_DIR
 
 6) 修改以下配置文件  
    默认配置文件被命名为*.default，请先将其改名。  
-   /usr/local/lbbs/conf/bbsd.conf  
-   /usr/local/lbbs/utils/conf/db_conn.conf.php  
+   $LBBS_HOME_DIR/conf/bbsd.conf  
+   $LBBS_HOME_DIR/conf/badwords.conf  
+   $LBBS_HOME_DIR/utils/conf/db_conn.conf.php  
 
 7) 运行以下脚本来生成菜单配置文件和版块精华区数据文件  
-   sudo -u bbs php /usr/local/lbbs/utils/bin/gen_section_menu.php  
-   sudo -u bbs php /usr/local/lbbs/utils/bin/gen_ex_list.php  
+   sudo -u bbs php $LBBS_HOME_DIR/utils/bin/gen_section_menu.php  
+   sudo -u bbs php $LBBS_HOME_DIR/utils/bin/gen_ex_list.php  
 
-8) 创建SSH2 RSA证书，并将其拷贝到/usr/local/lbbs/conf  
-   ssh-keygen -t rsa -C "Your Server Name" -f ssh_host_rsa_key
+8) 创建SSH2 RSA证书  
+   ssh-keygen -t rsa -C "Your Server Name" -f $LBBS_HOME_DIR/conf/ssh_host_rsa_key
 
 9) 启动服务程序  
-   sudo -u bbs /usr/local/lbbs/bin/bbsd
+   sudo -u bbs $LBBS_HOME_DIR/bin/bbsd
 
 10) 配置systemd  
    基于conf/lbbs.service.default创建/usr/lib/systemd/system/lbbs.service，并进行必要的修改。  

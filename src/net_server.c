@@ -8,6 +8,7 @@
 
 #include "bbs.h"
 #include "bbs_main.h"
+#include "bwf.h"
 #include "common.h"
 #include "database.h"
 #include "file_loader.h"
@@ -651,6 +652,12 @@ int net_server(const char *hostaddr, in_port_t port[])
 			if (load_conf(CONF_BBSD) < 0)
 			{
 				log_error("Reload conf failed\n");
+			}
+
+			// Reload BWF config
+			if (bwf_load(CONF_BWF) < 0)
+			{
+				log_error("Reload BWF conf failed\n");
 			}
 
 			if (load_menu(&bbs_menu_new, CONF_MENU) < 0)

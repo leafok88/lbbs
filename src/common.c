@@ -15,6 +15,7 @@ const char APP_INFO[] = PACKAGE_STRING " build on " __DATE__ " " __TIME__;
 const char CONF_BBSD[] = "conf/bbsd.conf";
 const char CONF_MENU[] = "var/menu_merged.conf";
 const char CONF_BBSNET[] = "conf/bbsnet.conf";
+const char CONF_BWF[] = "conf/badwords.conf";
 const char CONF_TOP10_MENU[] = "var/bbs_top_menu.conf";
 const char SSH_HOST_KEYFILE[] = "conf/ssh_host_rsa_key";
 

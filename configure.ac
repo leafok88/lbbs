@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.69])
-AC_INIT([lbbs],[1.5.2])
+AC_INIT([lbbs],[1.5.3])
 AC_CONFIG_SRCDIR([src/])
 AC_CONFIG_MACRO_DIRS([m4])
 AM_INIT_AUTOMAKE([foreign])
@@ -23,6 +23,7 @@ PKG_PROG_PKG_CONFIG
 PKG_CHECK_MODULES([LIBSSH], [libssh])
 PKG_CHECK_MODULES([MYSQLCLIENT], [mysqlclient])
 PKG_CHECK_MODULES([SYSTEMD], [libsystemd])
+PKG_CHECK_MODULES([LIBPCRE2], [libpcre2-8])
 
 # Checks for libraries.
 AC_CHECK_LIB([mysqlclient], [mysql_connect])

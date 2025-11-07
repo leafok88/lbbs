@@ -3,6 +3,7 @@
 /* Writed by Birdman From 140.116.102.125 创意哇哈哈*/
 
 #include "bbs.h"
+#include "bwf.h"
 #include "common.h"
 #include "io.h"
 #include "log.h"
@@ -91,7 +92,6 @@ static int load_chicken()
 
 	if ((fp = fopen(fname, "r+")) == NULL)
 	{
-		chicken_name[0] = '\0';
 		if (create_a_egg() < 0)
 		{
 			return -1;
@@ -144,18 +144,24 @@ static int create_a_egg()
 	time(&now);
 	localtime_r(&now, &ptime);
 	char name_tmp[CHICKEN_NAME_LEN + 1];
+	int ret;
+
+	snprintf(name_tmp, sizeof(name_tmp), "宝宝");
 
 	clrtobot(2);
-	while (!SYS_server_exit && chicken_name[0] == '\0')
+
+	for (chicken_name[0] = '\0'; !SYS_server_exit && chicken_name[0] == '\0';)
 	{
-		strncpy(chicken_name, "宝宝", sizeof(chicken_name) - 1);
-		chicken_name[sizeof(chicken_name) - 1] = '\0';
-
-		strncpy(name_tmp, chicken_name, sizeof(name_tmp) - 1);
-		name_tmp[sizeof(name_tmp) - 1] = '\0';
-
 		if (get_data(2, 1, "帮小鸡取个好名字：", name_tmp, sizeof(name_tmp), CHICKEN_NAME_LEN / 2) > 0)
 		{
+			if ((ret = check_badwords(name_tmp, '*')) < 0)
+			{
+				log_error("check_badwords(name) error\n");
+			}
+			else if (ret > 0)
+			{
+				continue;
+			}
 			strncpy(chicken_name, name_tmp, sizeof(chicken_name) - 1);
 			chicken_name[sizeof(chicken_name) - 1] = '\0';
 		}
@@ -390,6 +396,7 @@ static int select_menu()
 	time(&now);
 	localtime_r(&now, &ptime);
 	char name_tmp[CHICKEN_NAME_LEN + 1];
+	int ret;
 
 	while (!SYS_server_exit && loop)
 	{
@@ -599,8 +606,15 @@ static int select_menu()
 
 			if (get_data(22, 1, "帮小鸡取个好名字：", name_tmp, sizeof(name_tmp), CHICKEN_NAME_LEN / 2) > 0)
 			{
-				strncpy(chicken_name, name_tmp, sizeof(chicken_name) - 1);
-				chicken_name[sizeof(chicken_name) - 1] = '\0';
+				if ((ret = check_badwords(name_tmp, '*')) < 0)
+				{
+					log_error("check_badwords(name) error\n");
+				}
+				else if (ret == 0)
+				{
+					strncpy(chicken_name, name_tmp, sizeof(chicken_name) - 1);
+					chicken_name[sizeof(chicken_name) - 1] = '\0';
+				}
 			}
 			break;
 		case 'q':

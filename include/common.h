@@ -36,6 +36,7 @@ extern const char APP_INFO[];
 extern const char CONF_BBSD[];
 extern const char CONF_MENU[];
 extern const char CONF_BBSNET[];
+extern const char CONF_BWF[];
 extern const char CONF_TOP10_MENU[];
 extern const char SSH_HOST_KEYFILE[];
 

@@ -1,4 +1,5 @@
 /conf/bbsd.conf
+/conf/badwords.conf
 /conf/ssh_host_rsa_key*
 /utils/conf/db_conn.conf.php
 /aclocal.m4
@@ -45,3 +46,4 @@ Makefile.in
 /src/test_article_view_log
 /src/test_memory_pool
 /src/test_bbs
+/src/test_bwf

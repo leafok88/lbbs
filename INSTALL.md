@@ -19,7 +19,8 @@ To install LBBS, please perform the following steps:
    sh ./autogen.sh
 
 3) Compile source files  
-   ./configure --prefix=/usr/local/lbbs  
+   export LBBS_HOME_DIR=/usr/local/lbbs
+   ./configure --prefix=$LBBS_HOME_DIR  
    make
 
 4) Create user and group  
@@ -27,22 +28,23 @@ To install LBBS, please perform the following steps:
 
 5) Install binary files and data files  
    sudo make install  
-   chown -R bbs:bbs /usr/local/lbbs
+   chown -R bbs:bbs $LBBS_HOME_DIR
 
 6) Modify following configuration files  
    Default configuration files is saved as *.default, you should rename them first.  
-   /usr/local/lbbs/conf/bbsd.conf  
-   /usr/local/lbbs/utils/conf/db_conn.conf.php  
+   $LBBS_HOME_DIR/conf/bbsd.conf  
+   $LBBS_HOME_DIR/conf/badwords.conf  
+   $LBBS_HOME_DIR/utils/conf/db_conn.conf.php  
 
 7) Generate menu configuration file with section data by running the script  
-   sudo -u bbs php /usr/local/lbbs/utils/bin/gen_section_menu.php  
-   sudo -u bbs php /usr/local/lbbs/utils/bin/gen_ex_list.php  
+   sudo -u bbs php $LBBS_HOME_DIR/utils/bin/gen_section_menu.php  
+   sudo -u bbs php $LBBS_HOME_DIR/utils/bin/gen_ex_list.php  
 
-8) Create or copy SSH2 RSA certificate into /usr/local/lbbs/conf  
-   ssh-keygen -t rsa -C "Your Server Name" -f ssh_host_rsa_key
+8) Create SSH2 RSA certificate  
+   ssh-keygen -t rsa -C "Your Server Name" -f $LBBS_HOME_DIR/conf/ssh_host_rsa_key
 
 9) Startup  
-   sudo -u bbs /usr/local/lbbs/bin/bbsd
+   sudo -u bbs $LBBS_HOME_DIR/bin/bbsd
 
 10) Set up systemd  
    Create your own /usr/lib/systemd/system/lbbs.service from the sample at conf/lbbs.service.default, and make any change if necessary.  
