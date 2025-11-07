@@ -592,7 +592,7 @@ int display_data(const void *p_data, long display_line_total, const long *p_line
 	loop = 1;
 	while (!SYS_server_exit && loop)
 	{
-		if (eof_exit > 0 && line_current >= display_line_total && display_line_total <= screen_row_total)
+		if (eof_exit > 0 && line_current >= display_line_total)
 		{
 			if (eof_exit == 1)
 			{
@@ -802,7 +802,7 @@ cleanup:
 	return ch;
 }
 
-static int display_file_key_handler(int *p_key, DISPLAY_CTX *p_ctx)
+int display_file_key_handler(int *p_key, DISPLAY_CTX *p_ctx)
 {
 	switch (*p_key)
 	{

@@ -21,6 +21,7 @@
 #include "user_info_update.h"
 #include "user_list_display.h"
 #include "user_priv.h"
+#include <ctype.h>
 #include <dlfcn.h>
 #include <errno.h>
 #include <signal.h>
