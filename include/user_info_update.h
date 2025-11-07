@@ -12,5 +12,6 @@
 #define _USER_INFO_UPDATE_
 
 extern int user_intro_edit(int);
+extern int user_sign_edit(int);
 
 #endif //_USER_INFO_UPDATE_
