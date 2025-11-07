@@ -3,7 +3,7 @@
 中文版本的ChangeLog.md位于[ChangeLog.zh_CN.md](ChangeLog.zh_CN.md)
 
 
-2025-10-22  v1.5
+2025-11-07  v1.5
 =================
 Add major features
 
@@ -13,6 +13,7 @@ Add major features
 4. Search user by username  
 5. Search article by username  
 6. Search article by title  
+7. Bad words filter  
 
 
 2025-10-15  v1.4
