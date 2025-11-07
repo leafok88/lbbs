@@ -23,6 +23,7 @@ PKG_PROG_PKG_CONFIG
 PKG_CHECK_MODULES([LIBSSH], [libssh])
 PKG_CHECK_MODULES([MYSQLCLIENT], [mysqlclient])
 PKG_CHECK_MODULES([SYSTEMD], [libsystemd])
+PKG_CHECK_MODULES([LIBPCRE2], [libpcre2-8])
 
 # Checks for libraries.
 AC_CHECK_LIB([mysqlclient], [mysql_connect])
