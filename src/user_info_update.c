@@ -9,6 +9,7 @@
  */
 
 #include "bbs.h"
+#include "bwf.h"
 #include "database.h"
 #include "editor.h"
 #include "io.h"
@@ -99,6 +100,13 @@ int user_intro_edit(int uid)
 			if (len_intro < 0)
 			{
 				log_error("editor_data_save() error\n");
+				ret = -3;
+				goto cleanup;
+			}
+
+			if (check_badwords(intro, '*') < 0)
+			{
+				log_error("check_badwords(introduction) error\n");
 				ret = -3;
 				goto cleanup;
 			}
