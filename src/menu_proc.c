@@ -141,11 +141,19 @@ int reload_bbs_conf(void *param)
 
 int shutdown_bbs(void *param)
 {
-	log_common("Notify main process to exit\n");
+	char buf[2] = "N";
 
-	if (kill(getppid(), SIGTERM) < 0)
+	clearscr();
+	get_data(1, 1, "真的要关闭系统吗[y/N]? ", buf, sizeof(buf), 1);
+
+	if (toupper(buf[0]) == 'Y')
 	{
-		log_error("Send SIGTERM signal failed (%d)\n", errno);
+		log_common("Notify main process to exit by [%s]\n", BBS_username);
+
+		if (kill(getppid(), SIGTERM) < 0)
+		{
+			log_error("Send SIGTERM signal failed (%d)\n", errno);
+		}
 	}
 
 	return REDRAW;
