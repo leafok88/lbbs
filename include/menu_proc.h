@@ -26,5 +26,6 @@ extern int favor_topic(void *param);
 extern int list_user(void *param);
 extern int list_online_user(void *param);
 extern int edit_intro(void *param);
+extern int edit_sign(void *param);
 
 #endif //_MENU_PROC_H_
