@@ -24,6 +24,8 @@ const char *str_in[] = {
 	"法轮小",
 	"大法轮小",
 	"法\n轮",
+	"fuckrape",
+	"1 rApe  \n FuCK   2",
 };
 
 const int str_cnt = sizeof(str_in) / sizeof(const char *);

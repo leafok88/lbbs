@@ -88,7 +88,7 @@ int bwf_load(const char *filename)
 #endif
 
 	bwf_unload();
-	
+
 	bwf_code = pcre2_compile((PCRE2_SPTR)bwf_pattern_str, PCRE2_ZERO_TERMINATED, PCRE2_CASELESS, &errorcode, &erroroffset, NULL);
 	if (bwf_code == NULL)
 	{
@@ -111,9 +111,12 @@ void bwf_unload(void)
 int check_badwords(char *str, char c_mask)
 {
 	pcre2_match_data *match_data;
+	PCRE2_SIZE startoffset = 0;
 	PCRE2_SIZE *ovector;
+	uint32_t match_count;
 	int ret;
 	int i;
+	int total_match_count = 0;
 
 	if (bwf_code == NULL)
 	{
@@ -123,37 +126,44 @@ int check_badwords(char *str, char c_mask)
 
 	match_data = pcre2_match_data_create_from_pattern(bwf_code, NULL);
 
-	ret = pcre2_match(bwf_code, (PCRE2_SPTR)str, PCRE2_ZERO_TERMINATED, 0, 0, match_data, NULL);
-	if (ret == PCRE2_ERROR_NOMATCH)
+	while (1)
 	{
-		ret = 0;
-	}
-	else if (ret < 0)
-	{
-		log_error("pcre2_match() error: %d\n", ret);
-	}
-	else if (ret == 0)
-	{
-		log_error("Vector of offsets is too small\n");
-	}
-	else // ret >= 1
-	{
-		ovector = pcre2_get_ovector_pointer(match_data);
-		i = ret - 1;
-
-		if (ovector[i * 2] == -1 || ovector[i * 2 + 1] == -1)
+		ret = pcre2_match(bwf_code, (PCRE2_SPTR)str, PCRE2_ZERO_TERMINATED, startoffset, 0, match_data, NULL);
+		if (ret == PCRE2_ERROR_NOMATCH)
 		{
-			log_error("Bug: match pattern #%d with invalid offsets [%d, %d)",
-					  i, ovector[i * 2], ovector[i * 2 + 1]);
-			ret = -2;
+			ret = total_match_count;
+			break;
 		}
-		else
+		else if (ret < 0)
 		{
+			log_error("pcre2_match() error: %d\n", ret);
+		}
+		else if (ret == 0)
+		{
+			log_error("Vector of offsets is too small\n");
+		}
+		else // ret >= 1
+		{
+			ovector = pcre2_get_ovector_pointer(match_data);
+			match_count = pcre2_get_ovector_count(match_data);
+
+			i = ret - 1;
+			if (ovector[i * 2] == -1 || ovector[i * 2 + 1] == -1)
+			{
+				log_error("Bug: match pattern #%d of %d with invalid offsets [%d, %d)",
+						  i, match_count, ovector[i * 2], ovector[i * 2 + 1]);
+				ret = -2;
+			}
+			else
+			{
 #ifdef _DEBUG
-			log_error("Debug: match pattern #%d at offsets [%d, %d]\n",
-					  i, ovector[i * 2], ovector[i * 2 + 1] - ovector[i * 2]);
+				log_error("Debug: match pattern #%d of %d at offsets [%d, %d]\n",
+						  i, match_count, ovector[i * 2], ovector[i * 2 + 1] - ovector[i * 2]);
 #endif
-			memset(str + ovector[i * 2], c_mask, ovector[i * 2 + 1] - ovector[i * 2]);
+				memset(str + ovector[i * 2], c_mask, ovector[i * 2 + 1] - ovector[i * 2]);
+				total_match_count++;
+				startoffset = ovector[i * 2 + 1];
+			}
 		}
 	}
 
