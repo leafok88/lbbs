@@ -9,6 +9,7 @@
 #include "article_cache.h"
 #include "article_post.h"
 #include "bbs.h"
+#include "bwf.h"
 #include "database.h"
 #include "editor.h"
 #include "io.h"
@@ -103,7 +104,7 @@ int article_post(const SECTION_LIST *p_section, ARTICLE *p_article_new)
 			ch = 0;
 		}
 
-		for (; !SYS_server_exit; ch = igetch_t(BBS_max_user_idle_time))
+		while (!SYS_server_exit)
 		{
 			switch (toupper(ch))
 			{
@@ -122,6 +123,15 @@ int article_post(const SECTION_LIST *p_section, ARTICLE *p_article_new)
 				len = q - p;
 				if (*p != '\0')
 				{
+					if ((ret = check_badwords(p, '*')) < 0)
+					{
+						log_error("check_badwords(title) error\n");
+					}
+					else if (ret > 0)
+					{
+						memcpy(title_input, p, (size_t)len + 1);
+						continue;
+					}
 					memcpy(p_article_new->title, p, (size_t)len + 1);
 					memcpy(title_input, p_article_new->title, (size_t)len + 1);
 				}
@@ -146,6 +156,7 @@ int article_post(const SECTION_LIST *p_section, ARTICLE *p_article_new)
 				sign_id = ch - '0';
 				break;
 			default: // Invalid selection
+				ch = igetch_t(BBS_max_user_idle_time);
 				continue;
 			}
 
@@ -217,6 +228,13 @@ int article_post(const SECTION_LIST *p_section, ARTICLE *p_article_new)
 	if (len_content < 0)
 	{
 		log_error("editor_data_save() error\n");
+		ret = -1;
+		goto cleanup;
+	}
+
+	if (check_badwords(content, '*') < 0)
+	{
+		log_error("check_badwords(content) error\n");
 		ret = -1;
 		goto cleanup;
 	}
@@ -563,6 +581,13 @@ int article_modify(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTI
 	if (len_content < 0)
 	{
 		log_error("editor_data_save() error\n");
+		ret = -1;
+		goto cleanup;
+	}
+
+	if (check_badwords(content, '*') < 0)
+	{
+		log_error("check_badwords(content) error\n");
 		ret = -1;
 		goto cleanup;
 	}
@@ -915,7 +940,7 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 			ch = 0;
 		}
 
-		for (; !SYS_server_exit; ch = igetch_t(BBS_max_user_idle_time))
+		while (!SYS_server_exit)
 		{
 			switch (toupper(ch))
 			{
@@ -934,6 +959,15 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 				len = q - p;
 				if (*p != '\0')
 				{
+					if ((ret = check_badwords(p, '*')) < 0)
+					{
+						log_error("check_badwords(title) error\n");
+					}
+					else if (ret > 0)
+					{
+						memcpy(title_input, p, (size_t)len + 1);
+						continue;
+					}
 					memcpy(p_article_new->title, p, (size_t)len + 1);
 					memcpy(title_input, p_article_new->title, (size_t)len + 1);
 				}
@@ -955,6 +989,7 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 				sign_id = ch - '0';
 				break;
 			default: // Invalid selection
+				ch = igetch_t(BBS_max_user_idle_time);
 				continue;
 			}
 
@@ -1026,6 +1061,13 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 	if (len_content < 0)
 	{
 		log_error("editor_data_save() error\n");
+		ret = -1;
+		goto cleanup;
+	}
+
+	if (check_badwords(content, '*') < 0)
+	{
+		log_error("check_badwords(content) error\n");
 		ret = -1;
 		goto cleanup;
 	}
