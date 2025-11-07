@@ -7,6 +7,7 @@
  */
 
 #include "bbs.h"
+#include "bwf.h"
 #include "common.h"
 #include "file_loader.h"
 #include "init.h"
@@ -151,6 +152,12 @@ int main(int argc, char *argv[])
 
 	// Load configuration
 	if (load_conf(CONF_BBSD) < 0)
+	{
+		return -2;
+	}
+
+	// Load BWF config
+	if (bwf_load(CONF_BWF) < 0)
 	{
 		return -2;
 	}
@@ -336,6 +343,9 @@ cleanup:
 	article_block_cleanup();
 	trie_dict_cleanup();
 	user_list_pool_cleanup();
+
+	// Cleanup BWF
+	bwf_unload();
 
 	if (unlink(VAR_ARTICLE_BLOCK_SHM) < 0)
 	{

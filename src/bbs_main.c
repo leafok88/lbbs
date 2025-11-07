@@ -11,6 +11,7 @@
 #include "bbs.h"
 #include "bbs_cmd.h"
 #include "bbs_main.h"
+#include "bwf.h"
 #include "common.h"
 #include "database.h"
 #include "editor.h"
@@ -391,6 +392,9 @@ cleanup:
 	detach_section_list_shm();
 	detach_article_block_shm();
 	detach_trie_dict_shm();
+
+	// Cleanup BWF
+	bwf_unload();
 
 	return 0;
 }

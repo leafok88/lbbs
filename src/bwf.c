@@ -87,6 +87,8 @@ int bwf_load(const char *filename)
 	log_error("Debug: bwf_pattern_str: %s\n", bwf_pattern_str);
 #endif
 
+	bwf_unload();
+	
 	bwf_code = pcre2_compile((PCRE2_SPTR)bwf_pattern_str, PCRE2_ZERO_TERMINATED, PCRE2_CASELESS, &errorcode, &erroroffset, NULL);
 	if (bwf_code == NULL)
 	{
