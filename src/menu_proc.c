@@ -376,3 +376,13 @@ int edit_intro(void *param)
 
 	return REDRAW;
 }
+
+int edit_sign(void *param)
+{
+	if (user_sign_edit(BBS_priv.uid) < 0)
+	{
+		log_error("user_sign_edit(%d) error\n", BBS_priv.uid);
+	}
+
+	return REDRAW;
+}
