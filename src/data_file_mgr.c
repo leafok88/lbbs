@@ -192,6 +192,11 @@ int data_file_mgr(void *param)
 		break;
 	}
 
+	if (SYS_server_exit) // Do not save data on shutdown
+	{
+		goto cleanup;
+	}
+
 	if ((fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, 0640)) < 0)
 	{
 		log_error("open(%s) error (%d)\n", path, errno);
@@ -210,19 +215,27 @@ int data_file_mgr(void *param)
 		fd = -1;
 		goto cleanup;
 	}
+
+	// Make another copy of the data file so that the user editored copy will be kept after upgrade / reinstall
+	if ((fd = open(data_file_list[i].path, O_WRONLY | O_CREAT | O_TRUNC, 0640)) < 0)
+	{
+		log_error("open(%s) error (%d)\n", data_file_list[i].path, errno);
+		goto cleanup;
+	}
+
+	if (write(fd, p_data_new, (size_t)len_data_new) < 0)
+	{
+		log_error("write(len=%ld) error (%d)\n", len_data_new, errno);
+		goto cleanup;
+	}
+
+	if (close(fd) < 0)
+	{
+		log_error("close(fd) error (%d)\n", errno);
+		fd = -1;
+		goto cleanup;
+	}
 	fd = -1;
-
-	if (unlink(data_file_list[i].path) < 0)
-	{
-		log_error("unlink(%s) error (%d)\n", data_file_list[i].path, errno);
-		goto cleanup;
-	}
-
-	if (link(path, data_file_list[i].path) < 0)
-	{
-		log_error("link(%s, %s) error (%d)\n", path, data_file_list[i].path, errno);
-		goto cleanup;
-	}
 
 	clearscr();
 	moveto(1, 1);
