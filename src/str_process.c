@@ -162,7 +162,7 @@ long split_data_lines(const char *p_buf, int max_display_len, long *p_line_offse
 		p_line_offsets[line_cnt + 1] = p_line_offsets[line_cnt] + len;
 		line_cnt++;
 		p_buf += len;
-	} while (p_buf[0] != '\0');
+	} while (len > 0);
 
 	return line_cnt;
 }
