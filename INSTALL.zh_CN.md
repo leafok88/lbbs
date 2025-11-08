@@ -7,19 +7,20 @@
    强烈建议先按照Web版本的说明完成基础功能的配置和验证，再开始Telnet版本的安装。
 
 1) 通用工具/基础库依赖  
-   gcc >= 14.2.0  
+   gcc >= 14.2  
    autoconf >= 2.68  
    automake >= 1.16  
-   libssh >= 0.11.1  
-   PHP >= 8.2  
-   MySQL >= 8.4
+   libssh >= 0.11  
+   pcre2 >= 10.38  
+   php >= 8.2  
+   mysql >= 8.4  
 
 2) 从Github导出或下载源代码文件  
    运行以下命令来初始化autoconf/automake环境：  
    sh ./autogen.sh
 
 3) 编译源代码  
-   export LBBS_HOME_DIR=/usr/local/lbbs
+   export LBBS_HOME_DIR=/usr/local/lbbs  
    ./configure --prefix=$LBBS_HOME_DIR  
    make
 
@@ -55,3 +56,4 @@
    sudo -u bbs ipcs  
    正常情况下不存在所有者是bbs的项。否则，请运行以下命令清理：  
    sudo -u bbs ipcrm -a
+
