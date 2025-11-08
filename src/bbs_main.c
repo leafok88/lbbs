@@ -26,6 +26,7 @@
 #include "trie_dict.h"
 #include "user_list.h"
 #include "user_priv.h"
+#include <ctype.h>
 #include <errno.h>
 #include <signal.h>
 #include <stdlib.h>
