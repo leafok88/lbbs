@@ -23,8 +23,6 @@
 #include <stdlib.h>
 #include <sys/param.h>
 
-#define BBS_user_intro_line_len 256
-
 int user_intro_edit(int uid)
 {
 	MYSQL *db = NULL;
