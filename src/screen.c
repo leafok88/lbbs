@@ -21,6 +21,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <wchar.h>
 #include <sys/param.h>
 #include <sys/stat.h>
 #include <sys/shm.h>
@@ -135,8 +136,9 @@ static int _str_input(char *buffer, int buf_size, int max_display_len, enum io_e
 	int offset = 0;
 	int eol;
 	int display_len;
-	char input_str[4];
+	char input_str[5];
 	int str_len = 0;
+	wchar_t wcs[2];
 	char c;
 
 	buffer[buf_size - 1] = '\0';
@@ -211,13 +213,18 @@ static int _str_input(char *buffer, int buf_size, int max_display_len, enum io_e
 					break;
 				}
 			}
+			input_str[str_len] = '\0';
 
 			if (str_len == 0) // Incomplete input
 			{
 				continue;
 			}
 
-			if (offset + str_len > buf_size - 1 || display_len + 2 > max_display_len) // No enough space for Chinese character
+			if (mbstowcs(wcs, input_str, 1) == (size_t)-1)
+			{
+				log_error("mbstowcs() error\n");
+			}
+			if (offset + str_len > buf_size - 1 || display_len + (UTF8_fixed_width ? 2 : wcwidth(wcs[0])) > max_display_len) // No enough space for Chinese character
 			{
 				outc('\a');
 				iflush();
@@ -295,8 +302,10 @@ int get_data(int row, int col, char *prompt, char *buffer, int buf_size, int max
 	int offset = 0;
 	int eol;
 	int display_len;
-	char input_str[4];
+	char input_str[5];
 	int str_len = 0;
+	wchar_t wcs[2];
+	int wc_len;
 	char c;
 
 	buffer[buf_size - 1] = '\0';
@@ -343,8 +352,18 @@ int get_data(int row, int col, char *prompt, char *buffer, int buf_size, int max
 						str_len++;
 						offset--;
 					}
-					display_len--;
-					col_cur--;
+
+					if (mbstowcs(wcs, buffer + offset, 1) == (size_t)-1)
+					{
+						log_error("mbstowcs() error\n");
+					}
+					wc_len = (UTF8_fixed_width ? 2 : wcwidth(wcs[0]));
+
+					if (wc_len == 2)
+					{
+						display_len--;
+						col_cur--;
+					}
 				}
 
 				memmove(buffer + offset, buffer + offset + str_len, (size_t)(len - offset - str_len));
@@ -407,7 +426,17 @@ int get_data(int row, int col, char *prompt, char *buffer, int buf_size, int max
 						str_len++;
 						offset--;
 					}
-					col_cur--;
+
+					if (mbstowcs(wcs, buffer + offset, 1) == (size_t)-1)
+					{
+						log_error("mbstowcs() error\n");
+					}
+					wc_len = (UTF8_fixed_width ? 2 : wcwidth(wcs[0]));
+
+					if (wc_len == 2)
+					{
+						col_cur--;
+					}
 				}
 				col_cur--;
 
@@ -429,7 +458,17 @@ int get_data(int row, int col, char *prompt, char *buffer, int buf_size, int max
 						str_len++;
 						c = (c & 0x7f) << 1;
 					}
-					col_cur++;
+
+					if (mbstowcs(wcs, buffer + offset, 1) == (size_t)-1)
+					{
+						log_error("mbstowcs() error\n");
+					}
+					wc_len = (UTF8_fixed_width ? 2 : wcwidth(wcs[0]));
+
+					if (wc_len == 2)
+					{
+						col_cur++;
+					}
 				}
 				else
 				{
@@ -498,13 +537,21 @@ int get_data(int row, int col, char *prompt, char *buffer, int buf_size, int max
 					break;
 				}
 			}
+			input_str[str_len] = '\0';
 
 			if (str_len == 0) // Incomplete input
 			{
 				continue;
 			}
 
-			if (len + str_len > buf_size - 1 || display_len + 2 > max_display_len) // No enough space for Chinese character
+			if (mbstowcs(wcs, input_str, 1) == (size_t)-1)
+			{
+				log_error("mbstowcs() error\n");
+			}
+			wc_len = (UTF8_fixed_width ? 2 : wcwidth(wcs[0]));
+
+			if (len + str_len > buf_size - 1 ||
+				display_len + wc_len > max_display_len) // No enough space for Chinese character
 			{
 				outc('\a');
 				iflush();
@@ -515,13 +562,13 @@ int get_data(int row, int col, char *prompt, char *buffer, int buf_size, int max
 			memcpy(buffer + offset, input_str, (size_t)str_len);
 			len += str_len;
 			buffer[len] = '\0';
-			display_len += 2;
+			display_len += wc_len;
 
 			moveto(row, col_cur);
 			prints("%s", buffer + offset);
 			prints("%*s", max_display_len - display_len, "");
 
-			col_cur += 2;
+			col_cur += wc_len;
 
 			moveto(row, col_cur);
 			iflush();
@@ -929,7 +976,8 @@ int show_bottom(const char *msg)
 	moveto(SCREEN_ROWS, 0);
 	clrtoeol();
 	prints("\033[1;44;33m时间[\033[36m%s\033[33m]%s%*s \033[33m用户[\033[36m%s\033[33m][%s\033[33m]\033[m",
-		   str_time, msg_f, 65 - len_str_time - len_msg - len_username - len_str_tm_online, "", BBS_username, str_tm_online);
+		   str_time, msg_f, 65 - len_str_time - len_msg - len_username - len_str_tm_online,
+		   "", BBS_username, str_tm_online);
 
 	return 0;
 }

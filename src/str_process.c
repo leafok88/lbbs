@@ -11,10 +11,18 @@
 #include "str_process.h"
 #include <ctype.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <wchar.h>
+
+int UTF8_fixed_width = 1;
 
 int str_length(const char *str, int skip_ctrl_seq)
 {
+	int str_len;
+	char input_str[5];
+	wchar_t wcs[2];
+	int wc_len;
 	int i;
 	char c;
 	int ret = 0;
@@ -52,14 +60,24 @@ int str_length(const char *str, int skip_ctrl_seq)
 		// Process UTF-8 Chinese characters
 		if (c & 0x80) // head of multi-byte character
 		{
-			c = (c & 0x70) << 1;
+			str_len = 0;
+			c = (char)(c & 0xf0);
 			while (c & 0x80)
 			{
-				i++;
+				input_str[str_len] = str[i + str_len];
+				str_len++;
 				c = (c & 0x7f) << 1;
 			}
+			input_str[str_len] = '\0';
 
-			ret += 2;
+			if (mbstowcs(wcs, input_str, 1) == (size_t)-1)
+			{
+				log_error("mbstowcs(%s) error\n", input_str);
+			}
+			wc_len = (UTF8_fixed_width ? 2 : wcwidth(wcs[0]));
+
+			i += (str_len - 1);
+			ret += wc_len;
 		}
 		else
 		{
@@ -76,6 +94,10 @@ int split_line(const char *buffer, int max_display_len, int *p_eol, int *p_displ
 	*p_eol = 0;
 	*p_display_len = 0;
 	char c;
+	int str_len;
+	char input_str[5];
+	wchar_t wcs[2];
+	int wc_len;
 
 	for (i = 0; buffer[i] != '\0'; i++)
 	{
@@ -98,19 +120,28 @@ int split_line(const char *buffer, int max_display_len, int *p_eol, int *p_displ
 
 		if (c & 0x80) // head of multi-byte character
 		{
-			if (*p_display_len + 2 > max_display_len)
+			str_len = 0;
+			c = (char)(c & 0xf0);
+			while (c & 0x80)
+			{
+				input_str[str_len] = buffer[i + str_len];
+				str_len++;
+				c = (c & 0x7f) << 1;
+			}
+			input_str[str_len] = '\0';
+
+			if (mbstowcs(wcs, input_str, 1) == (size_t)-1)
+			{
+				log_error("mbstowcs(%s) error\n", input_str);
+			}
+			wc_len = (UTF8_fixed_width ? 2 : wcwidth(wcs[0]));
+			if (*p_display_len + wc_len > max_display_len)
 			{
 				break;
 			}
 
-			c = (c & 0x70) << 1;
-			while (c & 0x80)
-			{
-				i++;
-				c = (c & 0x7f) << 1;
-			}
-
-			(*p_display_len) += 2;
+			i += (str_len - 1);
+			(*p_display_len) += wc_len;
 		}
 		else
 		{
