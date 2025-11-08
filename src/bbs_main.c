@@ -22,6 +22,7 @@
 #include "screen.h"
 #include "section_list.h"
 #include "section_list_display.h"
+#include "str_process.h"
 #include "trie_dict.h"
 #include "user_list.h"
 #include "user_priv.h"
@@ -204,31 +205,56 @@ int bbs_charset_select()
 	int ch;
 
 	snprintf(msg, sizeof(msg),
-			 "\rChoose character set in 5 seconds [UTF-8, GBK]: [U/g]");
+			 "\rChoose character set in 3 seconds [UTF-8, GBK]: [U/g]");
 
 	while (!SYS_server_exit)
 	{
-		ch = press_any_key_ex(msg, 5);
-		switch (ch)
+		ch = press_any_key_ex(msg, 3);
+		switch (toupper(ch))
 		{
 		case KEY_NULL:
 			return -1;
 		case KEY_TIMEOUT:
 		case CR:
-		case 'u':
 		case 'U':
-			return 0;
-		case 'g':
+			break;
 		case 'G':
 			if (io_conv_init("GBK") < 0)
 			{
 				log_error("io_conv_init(%s) error\n", "GBK");
 				return -1;
 			}
-			return 0;
+			break;
 		default:
 			continue;
 		}
+
+		break;
+	}
+
+	snprintf(msg, sizeof(msg),
+			 "\rChoose wide-character display in 3 seconds [Fixed, Dynamic]: [F/d]");
+
+	while (!SYS_server_exit)
+	{
+		ch = press_any_key_ex(msg, 3);
+		switch (toupper(ch))
+		{
+		case KEY_NULL:
+			return -1;
+		case KEY_TIMEOUT:
+		case CR:
+		case 'F':
+			UTF8_fixed_width = 1;
+			break;
+		case 'D':
+			UTF8_fixed_width = 0;
+			break;
+		default:
+			continue;
+		}
+
+		break;
 	}
 
 	return 0;

@@ -21,6 +21,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <wchar.h>
 #include <sys/param.h>
 #include <sys/stat.h>
 #include <sys/shm.h>
@@ -135,8 +136,9 @@ static int _str_input(char *buffer, int buf_size, int max_display_len, enum io_e
 	int offset = 0;
 	int eol;
 	int display_len;
-	char input_str[4];
+	char input_str[5];
 	int str_len = 0;
+	wchar_t wcs[2];
 	char c;
 
 	buffer[buf_size - 1] = '\0';
@@ -211,13 +213,18 @@ static int _str_input(char *buffer, int buf_size, int max_display_len, enum io_e
 					break;
 				}
 			}
+			input_str[str_len] = '\0';
 
 			if (str_len == 0) // Incomplete input
 			{
 				continue;
 			}
 
-			if (offset + str_len > buf_size - 1 || display_len + 2 > max_display_len) // No enough space for Chinese character
+			if (mbstowcs(wcs, input_str, 1) == (size_t)-1)
+			{
+				log_error("mbstowcs() error\n");
+			}
+			if (offset + str_len > buf_size - 1 || display_len + (UTF8_fixed_width ? 2 : wcwidth(wcs[0])) > max_display_len) // No enough space for Chinese character
 			{
 				outc('\a');
 				iflush();
@@ -295,7 +302,8 @@ int get_data(int row, int col, char *prompt, char *buffer, int buf_size, int max
 	int offset = 0;
 	int eol;
 	int display_len;
-	char input_str[4];
+	char input_str[5];
+	wchar_t wcs[2];
 	int str_len = 0;
 	char c;
 
@@ -498,13 +506,18 @@ int get_data(int row, int col, char *prompt, char *buffer, int buf_size, int max
 					break;
 				}
 			}
+			input_str[str_len] = '\0';
 
 			if (str_len == 0) // Incomplete input
 			{
 				continue;
 			}
 
-			if (len + str_len > buf_size - 1 || display_len + 2 > max_display_len) // No enough space for Chinese character
+			if (mbstowcs(wcs, input_str, 1) == (size_t)-1)
+			{
+				log_error("mbstowcs() error\n");
+			}
+			if (len + str_len > buf_size - 1 || display_len + (UTF8_fixed_width ? 2 : wcwidth(wcs[0])) > max_display_len) // No enough space for Chinese character
 			{
 				outc('\a');
 				iflush();
@@ -929,7 +942,8 @@ int show_bottom(const char *msg)
 	moveto(SCREEN_ROWS, 0);
 	clrtoeol();
 	prints("\033[1;44;33m时间[\033[36m%s\033[33m]%s%*s \033[33m用户[\033[36m%s\033[33m][%s\033[33m]\033[m",
-		   str_time, msg_f, 65 - len_str_time - len_msg - len_username - len_str_tm_online, "", BBS_username, str_tm_online);
+		   str_time, msg_f, 65 - len_str_time - len_msg - len_username - len_str_tm_online,
+		   "", BBS_username, str_tm_online);
 
 	return 0;
 }

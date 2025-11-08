@@ -16,6 +16,7 @@
 #include "str_process.h"
 #include <stdlib.h>
 #include <string.h>
+#include <wchar.h>
 #include <sys/param.h>
 
 enum _editor_constant_t
@@ -628,7 +629,8 @@ static int editor_display_key_handler(int *p_key, EDITOR_CTX *p_ctx)
 	{
 	case 0: // Set msg
 		snprintf(p_ctx->msg, sizeof(p_ctx->msg),
-				 "| 退出[\033[32mCtrl-W\033[33m] |");
+				 "| 退出[\033[32mCtrl-W\033[33m] | [\033[32m%s\033[33m]",
+				 (UTF8_fixed_width ? "定宽" : "变宽"));
 		break;
 	case KEY_CSI:
 		*p_key = KEY_ESC;
@@ -644,7 +646,8 @@ int editor_display(EDITOR_DATA *p_editor_data)
 	char buffer[MAX_EDITOR_DATA_LINE_LENGTH];
 	EDITOR_CTX ctx;
 	int ch = 0;
-	char input_str[4];
+	char input_str[5];
+	wchar_t wcs[2];
 	char c;
 	int str_len = 0;
 	int input_ok;
@@ -744,6 +747,7 @@ int editor_display(EDITOR_DATA *p_editor_data)
 							break;
 						}
 					}
+					input_str[str_len] = '\0';
 				}
 
 				if ((ch >= 32 && ch < 127) || str_len >= 2 || // Printable character or multi-byte character
@@ -821,7 +825,11 @@ int editor_display(EDITOR_DATA *p_editor_data)
 							}
 							if (offset_out > 0)
 							{
-								col_pos += (str_len == 1 ? 1 : 2);
+								if (mbstowcs(wcs, input_str, 1) == (size_t)-1)
+								{
+									log_error("mbstowcs() error\n");
+								}
+								col_pos += (str_len == 1 ? 1 : (UTF8_fixed_width ? 2 : wcwidth(wcs[0])));
 							}
 						}
 					}
@@ -859,15 +867,7 @@ int editor_display(EDITOR_DATA *p_editor_data)
 
 						offset_in = split_line(p_editor_data->p_display_lines[line_current - output_current_row + row_pos],
 											   (int)col_pos - 1, &eol, &display_len, 0);
-						if (offset_in >= 1 && p_editor_data->p_display_lines[line_current - output_current_row + row_pos][offset_in - 1] < 0) // UTF8
-						{
-							col_pos = display_len - 1;
-						}
-						else
-						{
-							col_pos = display_len;
-						}
-
+						col_pos = display_len;
 						if (col_pos < 1 && line_current - output_current_row + row_pos >= 0)
 						{
 							row_pos--;
@@ -1024,13 +1024,15 @@ int editor_display(EDITOR_DATA *p_editor_data)
 				case KEY_LEFT:
 					offset_in = split_line(p_editor_data->p_display_lines[line_current - output_current_row + row_pos],
 										   (int)col_pos - 1, &eol, &display_len, 0);
+					col_pos = display_len;
 					if (offset_in >= 1 && p_editor_data->p_display_lines[line_current - output_current_row + row_pos][offset_in - 1] < 0) // UTF8
 					{
-						col_pos = display_len - 1;
-					}
-					else
-					{
-						col_pos = display_len;
+						split_line(p_editor_data->p_display_lines[line_current - output_current_row + row_pos],
+								   (int)col_pos - 1, &eol, &display_len, 0);
+						if (display_len == col_pos - 2)
+						{
+							col_pos--;
+						}
 					}
 					if (col_pos >= 1)
 					{
@@ -1059,14 +1061,16 @@ int editor_display(EDITOR_DATA *p_editor_data)
 				case KEY_RIGHT:
 					offset_in = split_line(p_editor_data->p_display_lines[line_current - output_current_row + row_pos],
 										   (int)col_pos - 1, &eol, &display_len, 0);
+					col_pos = display_len + 2;
 					if (offset_in < p_editor_data->display_line_lengths[line_current - output_current_row + row_pos] &&
 						p_editor_data->p_display_lines[line_current - output_current_row + row_pos][offset_in] < 0) // UTF8
 					{
-						col_pos = display_len + 3;
-					}
-					else
-					{
-						col_pos = display_len + 2;
+						split_line(p_editor_data->p_display_lines[line_current - output_current_row + row_pos] + offset_in,
+								   1, &eol, &display_len, 0);
+						if (display_len == 0)
+						{
+							col_pos++;
+						}
 					}
 					if (col_pos <= p_editor_data->display_line_widths[line_current - output_current_row + row_pos])
 					{

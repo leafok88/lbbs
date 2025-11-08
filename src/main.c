@@ -19,6 +19,7 @@
 #include "user_list.h"
 #include <errno.h>
 #include <libgen.h>
+#include <locale.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -130,6 +131,13 @@ int main(int argc, char *argv[])
 	if (chdir("..") < 0)
 	{
 		fprintf(stderr, "chdir(..) error: %d\n", errno);
+		return -1;
+	}
+
+	// Apply the specified locale
+	if (setlocale(LC_ALL, "en_US.UTF-8") == NULL)
+	{
+		fprintf(stderr, "setlocale(LC_ALL, en_US.UTF-8) error\n");
 		return -1;
 	}
 
