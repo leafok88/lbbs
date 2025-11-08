@@ -1,0 +1,38 @@
+name: Makefile CI
+
+on:
+  push:
+    branches: [ "lbbs_dev" ]
+  pull_request:
+    branches: [ "lbbs_dev" ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: autogen
+      run: sh autogen.sh
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libssh-dev libsystemd-dev
+          
+    - name: Display GCC version
+      run: gcc -v
+
+    - name: configure
+      run: ./configure
+
+    - name: Run make
+      run: make V=1
+
+    - name: Run check
+      run: make check
+
+    - name: Run distcheck
+      run: make distcheck
