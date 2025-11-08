@@ -12,6 +12,7 @@
 /config.sub
 /configure
 /configure~
+/data/*.user
 /depcomp
 /INSTALL
 /install-sh

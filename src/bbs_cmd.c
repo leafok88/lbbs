@@ -7,6 +7,7 @@
  */
 
 #include "bbs_cmd.h"
+#include "data_file_mgr.h"
 #include "menu_proc.h"
 #include "trie_dict.h"
 #include <string.h>
@@ -19,6 +20,7 @@ static const BBS_CMD bbs_cmd_list[] = {
 	{"COPYRIGHT", copyright},
 	{"VERSION", version},
 	{"RELOADCONF", reload_bbs_conf},
+	{"DATAMGR", data_file_mgr},
 	{"SHUTDOWN", shutdown_bbs},
 	{"M_FAVOR_SECTION", favor_section_filter},
 	{"VIEW_EX_ARTICLE", view_ex_article},
