@@ -206,11 +206,11 @@ int bbs_charset_select()
 	int ch;
 
 	snprintf(msg, sizeof(msg),
-			 "\rChoose character set in 3 seconds [UTF-8, GBK]: [U/g]");
+			 "\rChoose character set in 5 seconds, (U)UTF-8, (G)GBK [U]: ");
 
 	while (!SYS_server_exit)
 	{
-		ch = press_any_key_ex(msg, 3);
+		ch = press_any_key_ex(msg, 5);
 		switch (toupper(ch))
 		{
 		case KEY_NULL:
@@ -234,22 +234,22 @@ int bbs_charset_select()
 	}
 
 	snprintf(msg, sizeof(msg),
-			 "\rChoose wide-character display in 3 seconds [Fixed, Dynamic]: [F/d]");
+			 "\r请在5秒内选择宽字符显示规则, (D)动态, (F)固定? [D]: ");
 
 	while (!SYS_server_exit)
 	{
-		ch = press_any_key_ex(msg, 3);
+		ch = press_any_key_ex(msg, 5);
 		switch (toupper(ch))
 		{
 		case KEY_NULL:
 			return -1;
 		case KEY_TIMEOUT:
 		case CR:
-		case 'F':
-			UTF8_fixed_width = 1;
-			break;
 		case 'D':
 			UTF8_fixed_width = 0;
+			break;
+		case 'F':
+			UTF8_fixed_width = 1;
 			break;
 		default:
 			continue;
