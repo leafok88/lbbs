@@ -17,16 +17,12 @@
 #include "log.h"
 #include "screen.h"
 #include "str_process.h"
+#include "user_info_update.h"
 #include "user_list.h"
 #include "user_priv.h"
 #include <ctype.h>
 #include <stdlib.h>
 #include <sys/param.h>
-
-#define BBS_user_intro_line_len 256
-#define BBS_user_sign_max_len 4096
-#define BBS_user_sign_max_line 10
-#define BBS_user_sign_cnt 3
 
 int user_intro_edit(int uid)
 {
@@ -201,12 +197,12 @@ int user_sign_edit(int uid)
 	long line_offsets[BBS_user_sign_max_line + 1];
 	long lines = 0L;
 	char buf[3] = "";
-	int sign_no = 0;
+	int sign_id = 0;
 
 	clearscr();
 	get_data(1, 1, "请输入需要编辑的签名档编号（1-3）: ", buf, sizeof(buf), 1);
-	sign_no = atoi(buf);
-	if (sign_no < 1 || sign_no > BBS_user_sign_cnt)
+	sign_id = atoi(buf);
+	if (sign_id < 1 || sign_id > BBS_user_sign_cnt)
 		goto cleanup;
 
 	db = db_open();
@@ -217,7 +213,7 @@ int user_sign_edit(int uid)
 		goto cleanup;
 	}
 
-	snprintf(sql_sign, sizeof(sql_sign), "SELECT sign_%d FROM user_pubinfo WHERE UID=%d", sign_no, uid);
+	snprintf(sql_sign, sizeof(sql_sign), "SELECT sign_%d FROM user_pubinfo WHERE UID=%d", sign_id, uid);
 	if (mysql_query(db, sql_sign) != 0)
 	{
 		log_error("Query user_pubinfo error: %s\n", mysql_error(db));
@@ -324,7 +320,7 @@ int user_sign_edit(int uid)
 	// Update user sign
 	snprintf(sql_sign, sizeof(sql_sign),
 			 "UPDATE user_pubinfo SET sign_%d = '%s' WHERE UID=%d",
-			 sign_no, sign_f, uid);
+			 sign_id, sign_f, uid);
 
 	if (mysql_query(db, sql_sign) != 0)
 	{
