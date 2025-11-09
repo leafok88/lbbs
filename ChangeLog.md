@@ -14,6 +14,7 @@ Add major features
 5. Search article by username  
 6. Search article by title  
 7. Bad words filter  
+8. Selection of variant / fixed display width of wide-character  
 
 
 2025-10-15  v1.4
