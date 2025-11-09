@@ -6,6 +6,7 @@
 /autom4te.cache
 /COPYING
 /compile
+/conf/*.user
 /config.guess
 /config.log
 /config.status
