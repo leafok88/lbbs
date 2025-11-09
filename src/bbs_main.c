@@ -234,7 +234,7 @@ int bbs_charset_select()
 	}
 
 	snprintf(msg, sizeof(msg),
-			 "\r请在5秒内选择宽字符显示规则, (D)动态, (F)固定? [D]: ");
+			 "\r请在5秒内选择宽字符显示规则, (V)变宽, (F)定宽? [V]: ");
 
 	while (!SYS_server_exit)
 	{
@@ -245,7 +245,7 @@ int bbs_charset_select()
 			return -1;
 		case KEY_TIMEOUT:
 		case CR:
-		case 'D':
+		case 'V':
 			UTF8_fixed_width = 0;
 			break;
 		case 'F':

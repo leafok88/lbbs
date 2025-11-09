@@ -10,5 +10,5 @@ install-data-local:
 	find $(prefix)/ -type d -exec chmod 750 {} \;
 
 uninstall-local:
-	cd $(srcdir)/conf; find . -type f -exec rm -f $(prefix)/conf/{} \;
-	cd $(srcdir)/data; find . -type f -exec rm -f $(prefix)/data/{} \;
+	cd $(srcdir)/conf; find . -type f -name *.default -exec rm -f $(prefix)/conf/{} \;
+	cd $(srcdir)/data; find . -type f -name *.txt -exec rm -f $(prefix)/data/{} \;

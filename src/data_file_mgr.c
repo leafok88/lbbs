@@ -42,6 +42,8 @@ static const DATA_FILE_ITEM data_file_list[] = {
 	{"活动看板", DATA_ACTIVE_BOARD},
 	{"浏览帮助", DATA_READ_HELP},
 	{"编辑帮助", DATA_EDITOR_HELP},
+	{"敏感词表", CONF_BWF},
+	{"穿梭配置", CONF_BBSNET},
 };
 
 static const int data_file_cnt = sizeof(data_file_list) / sizeof(DATA_FILE_ITEM);
