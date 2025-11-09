@@ -77,6 +77,7 @@ EDITOR_DATA *editor_data_load(const char *p_data)
 	long line_offsets[MAX_EDITOR_DATA_LINES + 1];
 	long current_data_line_length = 0;
 	long i;
+	int j;
 
 	if (p_data == NULL)
 	{
@@ -122,6 +123,15 @@ EDITOR_DATA *editor_data_load(const char *p_data)
 
 		memcpy(p_editor_data->p_display_lines[i], p_data + line_offsets[i], (size_t)p_editor_data->display_line_lengths[i]);
 		current_data_line_length += p_editor_data->display_line_lengths[i];
+
+		// Convert \t to single space
+		for (j = 0; j < p_editor_data->display_line_lengths[i]; j++)
+		{
+			if (p_editor_data->p_display_lines[i][j] == '\t')
+			{
+				p_editor_data->p_display_lines[i][j] = ' ';
+			}
+		}
 
 		// Trim \n from last line
 		if (i + 1 == p_editor_data->display_line_total &&
