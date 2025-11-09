@@ -16,6 +16,7 @@
 #include "str_process.h"
 #include <stdlib.h>
 #include <string.h>
+#include <wchar.h>
 #include <sys/param.h>
 
 enum _editor_constant_t
@@ -76,6 +77,7 @@ EDITOR_DATA *editor_data_load(const char *p_data)
 	long line_offsets[MAX_EDITOR_DATA_LINES + 1];
 	long current_data_line_length = 0;
 	long i;
+	int j;
 
 	if (p_data == NULL)
 	{
@@ -121,6 +123,15 @@ EDITOR_DATA *editor_data_load(const char *p_data)
 
 		memcpy(p_editor_data->p_display_lines[i], p_data + line_offsets[i], (size_t)p_editor_data->display_line_lengths[i]);
 		current_data_line_length += p_editor_data->display_line_lengths[i];
+
+		// Convert \t to single space
+		for (j = 0; j < p_editor_data->display_line_lengths[i]; j++)
+		{
+			if (p_editor_data->p_display_lines[i][j] == '\t')
+			{
+				p_editor_data->p_display_lines[i][j] = ' ';
+			}
+		}
 
 		// Trim \n from last line
 		if (i + 1 == p_editor_data->display_line_total &&
@@ -628,7 +639,8 @@ static int editor_display_key_handler(int *p_key, EDITOR_CTX *p_ctx)
 	{
 	case 0: // Set msg
 		snprintf(p_ctx->msg, sizeof(p_ctx->msg),
-				 "| 退出[\033[32mCtrl-W\033[33m] |");
+				 "| 退出[\033[32mCtrl-W\033[33m] | [\033[32m%s\033[33m]",
+				 (UTF8_fixed_width ? "定宽" : "变宽"));
 		break;
 	case KEY_CSI:
 		*p_key = KEY_ESC;
@@ -644,9 +656,11 @@ int editor_display(EDITOR_DATA *p_editor_data)
 	char buffer[MAX_EDITOR_DATA_LINE_LENGTH];
 	EDITOR_CTX ctx;
 	int ch = 0;
-	char input_str[4];
-	char c;
+	char input_str[5];
 	int str_len = 0;
+	wchar_t wcs[2];
+	int wc_len;
+	char c;
 	int input_ok;
 	const int screen_begin_row = 1;
 	const int screen_row_total = SCREEN_ROWS - screen_begin_row;
@@ -744,6 +758,7 @@ int editor_display(EDITOR_DATA *p_editor_data)
 							break;
 						}
 					}
+					input_str[str_len] = '\0';
 				}
 
 				if ((ch >= 32 && ch < 127) || str_len >= 2 || // Printable character or multi-byte character
@@ -821,7 +836,11 @@ int editor_display(EDITOR_DATA *p_editor_data)
 							}
 							if (offset_out > 0)
 							{
-								col_pos += (str_len == 1 ? 1 : 2);
+								if (mbstowcs(wcs, input_str, 1) == (size_t)-1)
+								{
+									log_error("mbstowcs() error\n");
+								}
+								col_pos += (str_len == 1 ? 1 : (UTF8_fixed_width ? 2 : wcwidth(wcs[0])));
 							}
 						}
 					}
@@ -859,15 +878,7 @@ int editor_display(EDITOR_DATA *p_editor_data)
 
 						offset_in = split_line(p_editor_data->p_display_lines[line_current - output_current_row + row_pos],
 											   (int)col_pos - 1, &eol, &display_len, 0);
-						if (offset_in >= 1 && p_editor_data->p_display_lines[line_current - output_current_row + row_pos][offset_in - 1] < 0) // UTF8
-						{
-							col_pos = display_len - 1;
-						}
-						else
-						{
-							col_pos = display_len;
-						}
-
+						col_pos = display_len;
 						if (col_pos < 1 && line_current - output_current_row + row_pos >= 0)
 						{
 							row_pos--;
@@ -1024,13 +1035,38 @@ int editor_display(EDITOR_DATA *p_editor_data)
 				case KEY_LEFT:
 					offset_in = split_line(p_editor_data->p_display_lines[line_current - output_current_row + row_pos],
 										   (int)col_pos - 1, &eol, &display_len, 0);
-					if (offset_in >= 1 && p_editor_data->p_display_lines[line_current - output_current_row + row_pos][offset_in - 1] < 0) // UTF8
+					col_pos = display_len;
+					if (offset_in > 0)
 					{
-						col_pos = display_len - 1;
-					}
-					else
-					{
-						col_pos = display_len;
+						str_len = 1;
+						offset_in--;
+						if (p_editor_data->p_display_lines[line_current - output_current_row + row_pos][offset_in] < 0 ||
+							p_editor_data->p_display_lines[line_current - output_current_row + row_pos][offset_in] > 127) // UTF8
+						{
+							while (offset_in > 0 &&
+								   (p_editor_data->p_display_lines[line_current - output_current_row + row_pos][offset_in] & 0xc0) != 0xc0)
+							{
+								str_len++;
+								offset_in--;
+							}
+
+							if (str_len > 4)
+							{
+								log_error("Invalid UTF-8 data detected: str_len > 4\n");
+							}
+
+							if (mbstowcs(wcs, p_editor_data->p_display_lines[line_current - output_current_row + row_pos] + offset_in, 1) ==
+								(size_t)-1)
+							{
+								log_error("mbstowcs() error\n");
+							}
+							wc_len = (UTF8_fixed_width ? 2 : wcwidth(wcs[0]));
+
+							if (wc_len == 2)
+							{
+								col_pos--;
+							}
+						}
 					}
 					if (col_pos >= 1)
 					{
@@ -1059,14 +1095,42 @@ int editor_display(EDITOR_DATA *p_editor_data)
 				case KEY_RIGHT:
 					offset_in = split_line(p_editor_data->p_display_lines[line_current - output_current_row + row_pos],
 										   (int)col_pos - 1, &eol, &display_len, 0);
-					if (offset_in < p_editor_data->display_line_lengths[line_current - output_current_row + row_pos] &&
-						p_editor_data->p_display_lines[line_current - output_current_row + row_pos][offset_in] < 0) // UTF8
+					col_pos = display_len + 2;
+					if (offset_in < p_editor_data->display_line_lengths[line_current - output_current_row + row_pos])
 					{
-						col_pos = display_len + 3;
-					}
-					else
-					{
-						col_pos = display_len + 2;
+						str_len = 0;
+						if ((p_editor_data->p_display_lines[line_current - output_current_row + row_pos][offset_in] & 0x80) ==
+							0x80) // head of multi-byte character
+						{
+							c = (char)(p_editor_data->p_display_lines[line_current - output_current_row + row_pos][offset_in] & 0xf0);
+							while (c & 0x80)
+							{
+								str_len++;
+								c = (c & 0x7f) << 1;
+							}
+
+							if (str_len > 4)
+							{
+								log_error("Invalid UTF-8 data detected: str_len > 4\n");
+							}
+
+							if (mbstowcs(wcs, p_editor_data->p_display_lines[line_current - output_current_row + row_pos] + offset_in, 1) ==
+								(size_t)-1)
+							{
+								log_error("mbstowcs() error\n");
+							}
+							wc_len = (UTF8_fixed_width ? 2 : wcwidth(wcs[0]));
+
+							if (wc_len == 2)
+							{
+								col_pos++;
+							}
+						}
+						else
+						{
+							str_len = 1;
+						}
+						offset_in += str_len;
 					}
 					if (col_pos <= p_editor_data->display_line_widths[line_current - output_current_row + row_pos])
 					{

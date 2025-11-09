@@ -3,7 +3,7 @@ EXTRA_PROGRAMS = test_trie_dict test_file_loader test_section_list test_lml test
 			   test_memory_pool test_bbs test_bwf
 
 bbsd_SOURCES = ${srcdir}/../include/*.h article_cache.c article_del.c article_favor.c article_favor_display.c article_op.c \
-			   article_post.c article_view_log.c bbs.c bbs_cmd.c bbs_main.c bwf.c common.c database.c \
+			   article_post.c article_view_log.c bbs.c bbs_cmd.c bbs_main.c bwf.c common.c data_file_mgr.c database.c \
 			   editor.c file_loader.c init.c io.c ip_mask.c lml.c log.c login.c memory_pool.c menu.c main.c menu_proc.c net_server.c \
 			   screen.c section_list.c section_list_display.c section_list_loader.c str_process.c \
 			   trie_dict.c user_list.c user_info_display.c user_info_update.c user_list_display.c user_priv.c user_stat.c

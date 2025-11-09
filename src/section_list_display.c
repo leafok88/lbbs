@@ -1176,7 +1176,7 @@ int section_list_display(const char *sname, int32_t aid)
 			moveto(SCREEN_ROWS, 1);
 			clrtoeol();
 			get_data(SCREEN_ROWS, 1,
-					 (direction == 1 ? "向下搜寻作者: " : "向上搜寻作者: "),
+					 (direction == 1 ? "↓搜寻作者: " : "↑搜寻作者: "),
 					 username, sizeof(username), BBS_username_max_len);
 
 			if (username[0] == '\0')
@@ -1265,7 +1265,7 @@ int section_list_display(const char *sname, int32_t aid)
 			moveto(SCREEN_ROWS, 1);
 			clrtoeol();
 			get_data(SCREEN_ROWS, 1,
-					 (direction == 1 ? "向下搜寻标题: " : "向上搜寻标题: "),
+					 (direction == 1 ? "↓搜寻标题: " : "↑搜寻标题: "),
 					 title, sizeof(title), TITLE_SEARCH_MAX_LEN);
 
 			if (title[0] == '\0')

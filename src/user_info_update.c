@@ -23,8 +23,6 @@
 #include <stdlib.h>
 #include <sys/param.h>
 
-#define BBS_user_intro_line_len 256
-
 int user_intro_edit(int uid)
 {
 	MYSQL *db = NULL;
@@ -132,6 +130,7 @@ int user_intro_edit(int uid)
 			press_any_key();
 			goto cleanup;
 		case 'E':
+			ch = 'E';
 			continue;
 		default: // Invalid selection
 			continue;

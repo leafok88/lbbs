@@ -56,9 +56,15 @@ int bwf_load(const char *filename)
 			return -3;
 		}
 
-		if (line[len_line - 1] == '\n')
+		while (len_line > 0 && (line[len_line - 1] == '\n' || line[len_line - 1] == '\r'))
 		{
 			line[len_line - 1] = '\0';
+			len_line--;
+		}
+
+		if (len_line == 0)
+		{
+			continue;
 		}
 
 		if (p > bwf_pattern_str)

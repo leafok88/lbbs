@@ -52,6 +52,8 @@ extern int display_data(const void *p_data, long display_line_total, const long 
                         display_data_key_handler key_handler, const char *help_filename);
 extern int display_file(const char *filename, int eof_exit);
 
+extern int display_file_key_handler(int *p_key, DISPLAY_CTX *p_ctx);
+
 extern int show_top(const char *str_left, const char *str_center, const char *str_right);
 extern int show_bottom(const char *msg);
 

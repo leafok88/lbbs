@@ -184,7 +184,7 @@ int user_list_load(MYSQL *db, USER_LIST *p_list)
 		p_list->users[i].signup_dt = (row[8] == NULL ? 0 : atol(row[8]));
 		p_list->users[i].last_login_dt = (row[9] == NULL ? 0 : atol(row[9]));
 		p_list->users[i].last_logout_dt = (row[10] == NULL ? 0 : atol(row[10]));
-		p_list->users[i].birthday = (row[10] == NULL ? 0 : atol(row[11]));
+		p_list->users[i].birthday = (row[11] == NULL ? 0 : atol(row[11]));
 		intro_len = strlen((row[12] == NULL ? "" : row[12]));
 		if (intro_len >= sizeof(p_list->user_intro_buf) - 1 - intro_buf_offset)
 		{
