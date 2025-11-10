@@ -23,6 +23,7 @@ enum _editor_constant_t
 {
 	EDITOR_MEM_POOL_LINE_PER_CHUNK = 1000,
 	EDITOR_MEM_POOL_CHUNK_LIMIT = (MAX_EDITOR_DATA_LINES / EDITOR_MEM_POOL_LINE_PER_CHUNK + 1),
+	TAB_SIZE = 4,
 };
 
 static const char EDITOR_ESC_DISPLAY_STR[] = "\033[32m*\033[m";
@@ -679,6 +680,7 @@ int editor_display(EDITOR_DATA *p_editor_data)
 	int i, j;
 	char *p_str;
 	int del_line;
+	int tab_width = 0;
 
 	clrline(output_current_row, SCREEN_ROWS);
 
@@ -717,6 +719,7 @@ int editor_display(EDITOR_DATA *p_editor_data)
 			moveto((int)row_pos, (int)col_pos);
 			iflush();
 
+			tab_width = 0;
 			str_len = 0;
 			ch = igetch_t(BBS_max_user_idle_time);
 			while (!SYS_server_exit)
@@ -730,6 +733,12 @@ int editor_display(EDITOR_DATA *p_editor_data)
 				if (editor_display_key_handler(&ch, &ctx) != 0)
 				{
 					goto cleanup;
+				}
+
+				if (ch == '\t')
+				{
+					ch = ' ';
+					tab_width = TAB_SIZE - ((int)(col_pos - 1) % TAB_SIZE) - 1;
 				}
 
 				if (ch < 256 && (ch & 0x80)) // head of multi-byte character
@@ -850,10 +859,17 @@ int editor_display(EDITOR_DATA *p_editor_data)
 						break;
 					}
 
-					ch = igetch(0);
-					if (ch == KEY_NULL || ch == KEY_TIMEOUT) // Output if no futher input
+					if (ch == ' ' && tab_width > 0)
 					{
-						break;
+						tab_width--;
+					}
+					else
+					{
+						ch = igetch(0);
+						if (ch == KEY_NULL || ch == KEY_TIMEOUT) // Output if no futher input
+						{
+							break;
+						}
 					}
 
 					str_len = 0;
