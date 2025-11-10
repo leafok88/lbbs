@@ -221,7 +221,7 @@ static int section_list_draw_screen(const char *sname, const char *stitle, const
 
 	if (master_list[0] != '\0')
 	{
-		snprintf(str_section_master, sizeof(str_section_master), "版主：%s", master_list);
+		snprintf(str_section_master, sizeof(str_section_master), "版主: %s", master_list);
 	}
 	snprintf(str_section_name, sizeof(str_section_name), "讨论区 [%s]", sname);
 

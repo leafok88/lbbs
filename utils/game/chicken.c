@@ -152,7 +152,7 @@ static int create_a_egg()
 
 	for (chicken_name[0] = '\0'; !SYS_server_exit && chicken_name[0] == '\0';)
 	{
-		if (get_data(2, 1, "帮小鸡取个好名字：", name_tmp, sizeof(name_tmp), CHICKEN_NAME_LEN / 2) > 0)
+		if (get_data(2, 1, "帮小鸡取个好名字: ", name_tmp, sizeof(name_tmp), CHICKEN_NAME_LEN / 2) > 0)
 		{
 			if ((ret = check_badwords(name_tmp, '*')) < 0)
 			{
@@ -403,7 +403,7 @@ static int select_menu()
 		moveto(23, 0);
 		prints("[0;46;31m  使用帮助  [0;47;34m c 改名字   k 杀鸡   t 消除非疲劳($50)   q 退出     [m");
 		inbuf[0] = '\0';
-		if (get_data(22, 1, "要做些什么呢?：", inbuf, sizeof(inbuf), 1) < 0)
+		if (get_data(22, 1, "要做些什么呢?: ", inbuf, sizeof(inbuf), 1) < 0)
 		{
 			return 0; // input timeout
 		}
@@ -604,7 +604,7 @@ static int select_menu()
 
 			clrline(22, 22);
 
-			if (get_data(22, 1, "帮小鸡取个好名字：", name_tmp, sizeof(name_tmp), CHICKEN_NAME_LEN / 2) > 0)
+			if (get_data(22, 1, "帮小鸡取个好名字: ", name_tmp, sizeof(name_tmp), CHICKEN_NAME_LEN / 2) > 0)
 			{
 				if ((ret = check_badwords(name_tmp, '*')) < 0)
 				{
@@ -677,7 +677,7 @@ int guess()
 	int ch, com;
 
 	moveto(23, 0);
-	prints("[1]-剪刀 [2]-石头 [3]-布：");
+	prints("[1]-剪刀 [2]-石头 [3]-布: ");
 	clrtoeol();
 	iflush();
 
