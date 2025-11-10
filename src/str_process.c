@@ -72,9 +72,15 @@ int str_length(const char *str, int skip_ctrl_seq)
 
 			if (mbstowcs(wcs, input_str, 1) == (size_t)-1)
 			{
+#ifdef _DEBUG
 				log_error("mbstowcs(%s) error\n", input_str);
+#endif
+				wc_len = (UTF8_fixed_width ? 2 : 1); // Fallback
 			}
-			wc_len = (UTF8_fixed_width ? 2 : wcwidth(wcs[0]));
+			else
+			{
+				wc_len = (UTF8_fixed_width ? 2 : wcwidth(wcs[0]));
+			}
 
 			i += (str_len - 1);
 			ret += wc_len;
@@ -132,9 +138,16 @@ int split_line(const char *buffer, int max_display_len, int *p_eol, int *p_displ
 
 			if (mbstowcs(wcs, input_str, 1) == (size_t)-1)
 			{
+#ifdef _DEBUG
 				log_error("mbstowcs(%s) error\n", input_str);
+#endif
+				wc_len = (UTF8_fixed_width ? 2 : 1); // Fallback
 			}
-			wc_len = (UTF8_fixed_width ? 2 : wcwidth(wcs[0]));
+			else
+			{
+				wc_len = (UTF8_fixed_width ? 2 : wcwidth(wcs[0]));
+			}
+
 			if (*p_display_len + wc_len > max_display_len)
 			{
 				break;
