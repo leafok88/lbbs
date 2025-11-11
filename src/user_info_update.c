@@ -29,8 +29,8 @@
 #include <sys/param.h>
 
 enum bbs_user_sign_const_t
-{    
-    BBS_user_sign_cnt = 3,
+{
+	BBS_user_sign_cnt = 3,
 };
 
 int user_intro_edit(int uid)
