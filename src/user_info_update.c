@@ -30,6 +30,8 @@
 
 enum bbs_user_sign_const_t
 {
+	BBS_user_sign_max_len = 4096,
+	BBS_user_sign_max_line = 10,
 	BBS_user_sign_cnt = 3,
 };
 
