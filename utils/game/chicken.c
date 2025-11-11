@@ -2,6 +2,10 @@
 
 /* Writed by Birdman From 140.116.102.125 创意哇哈哈*/
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "bbs.h"
 #include "bwf.h"
 #include "common.h"

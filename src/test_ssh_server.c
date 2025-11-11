@@ -8,6 +8,10 @@
 
 // This test was written based on libssh example/proxy.c
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "log.h"
 #include <stdio.h>
 #include <libssh/callbacks.h>
