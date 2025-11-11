@@ -179,7 +179,7 @@ int user_intro_edit(int uid)
 
 	clearscr();
 	moveto(1, 1);
-	prints("说明档修改完成");
+	prints("说明档修改完成，会在%d秒内生效", BBS_user_list_load_interval);
 	press_any_key();
 	ret = 1; // Success
 
@@ -252,6 +252,7 @@ int user_sign_edit(int uid)
 	}
 	mysql_free_result(rs);
 	rs = NULL;
+
 	mysql_close(db);
 	db = NULL;
 
@@ -348,7 +349,7 @@ int user_sign_edit(int uid)
 
 	clearscr();
 	moveto(1, 1);
-	prints("签名档修改完成，会在%d秒内生效", BBS_user_list_load_interval);
+	prints("签名档修改完成");
 	press_any_key();
 	ret = 1; // Success
 
