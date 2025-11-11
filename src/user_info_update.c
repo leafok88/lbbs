@@ -215,6 +215,7 @@ int user_sign_edit(int uid)
 	sign_id = atoi(buf);
 	if (sign_id < 1 || sign_id > BBS_user_sign_cnt)
 	{
+		ret = -1;
 		goto cleanup;
 	}
 
