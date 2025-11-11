@@ -24,6 +24,11 @@
 #include <stdlib.h>
 #include <sys/param.h>
 
+enum bbs_user_sign_const_t
+{    
+    BBS_user_sign_cnt = 3,
+};
+
 int user_intro_edit(int uid)
 {
 	MYSQL *db = NULL;
@@ -196,7 +201,7 @@ int user_sign_edit(int uid)
 	long len_sign = 0L;
 	long line_offsets[BBS_user_sign_max_line + 1];
 	long lines = 0L;
-	char buf[3] = "";
+	char buf[2] = "";
 	int sign_id = 0;
 
 	clearscr();
