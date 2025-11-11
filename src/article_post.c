@@ -6,6 +6,10 @@
  * Copyright (C) 2004-2025  Leaflet <leaflet@leafok.com>
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "article_cache.h"
 #include "article_post.h"
 #include "bbs.h"
@@ -25,7 +29,7 @@
 enum _article_post_constant_t
 {
 	TITLE_INPUT_MAX_LEN = 72,
-	ARTICLE_QUOTE_MAX_LINES = 20,
+	ARTICLE_QUOTE_DEFAULT_LINES = 20,
 	MODIFY_DT_MAX_LEN = 50,
 };
 
@@ -83,7 +87,7 @@ int article_post(const SECTION_LIST *p_section, ARTICLE *p_article_new)
 	{
 		clearscr();
 		moveto(21, 1);
-		prints("发表文章于 %s[%s] 讨论区，类型: %s，回复通知：%s",
+		prints("发表文章于 %s[%s] 讨论区，类型: %s，回复通知: %s",
 			   p_section->stitle, p_section->sname,
 			   (p_article_new->transship ? "转载" : "原创"),
 			   (reply_note ? "开启" : "关闭"));
@@ -736,7 +740,7 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 	MYSQL *db = NULL;
 	MYSQL_RES *rs = NULL;
 	MYSQL_ROW row;
-	long line_offsets[ARTICLE_QUOTE_MAX_LINES + 1];
+	long line_offsets[MAX_EDITOR_DATA_LINES + 1];
 	char sql[SQL_BUFFER_LEN];
 	char *sql_content = NULL;
 	EDITOR_DATA *p_editor_data = NULL;
@@ -749,6 +753,7 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 	char nickname_f[BBS_nickname_max_len * 2 + 1];
 	int sign_id = 0;
 	int reply_note = 0;
+	int full_quote = 0;
 	long len;
 	int ch;
 	char *p, *q;
@@ -873,44 +878,6 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 
 		// Remove control sequence
 		len = str_filter(content_f, 0);
-
-		len = snprintf(content, ARTICLE_CONTENT_MAX_LEN,
-					   "\n\n【 在 %s (%s) 的大作中提到: 】\n",
-					   p_article->username, p_article->nickname);
-
-		quote_content_lines = split_data_lines(content_f, MAX_EDITOR_DATA_LINE_LENGTH - 2, line_offsets, ARTICLE_QUOTE_MAX_LINES + 1, 0, NULL);
-		for (i = 0; i < quote_content_lines; i++)
-		{
-			memcpy(content + len, ": ", 2); // quote line prefix
-			len += 2;
-			memcpy(content + len, content_f + line_offsets[i], (size_t)(line_offsets[i + 1] - line_offsets[i]));
-			len += (line_offsets[i + 1] - line_offsets[i]);
-			if (content[len - 1] != '\n') // Appennd \n if not exist
-			{
-				content[len] = '\n';
-				len++;
-			}
-		}
-		if (content[len - 1] != '\n') // Appennd \n if not exist
-		{
-			content[len] = '\n';
-			len++;
-		}
-		content[len] = '\0';
-
-		free(content_f);
-		content_f = NULL;
-
-		p_editor_data = editor_data_load(content);
-		if (p_editor_data == NULL)
-		{
-			log_error("editor_data_load(aid=%d, cid=%d) error\n", p_article->aid, atoi(row[0]));
-			ret = -1;
-			goto cleanup;
-		}
-
-		free(content);
-		content = NULL;
 	}
 	mysql_free_result(rs);
 	rs = NULL;
@@ -923,7 +890,10 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 	{
 		clearscr();
 		moveto(21, 1);
-		prints("回复文章于 %s[%s] 讨论区，回复通知：%s", p_section->stitle, p_section->sname, (reply_note ? "开启" : "关闭"));
+		prints("回复文章于 %s[%s] 讨论区, 回复通知: %s, 引用模式: %s",
+			   p_section->stitle, p_section->sname,
+			   (reply_note ? "开启" : "关闭"),
+			   (full_quote ? "完整" : "精简"));
 		moveto(22, 1);
 		prints("标题: %s", (p_article_new->title[0] == '\0' ? "[无]" : p_article_new->title));
 		moveto(23, 1);
@@ -934,8 +904,8 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 			prints("    按[1;32m0[m~[1;32m3[m选签名档(0表示不使用)");
 
 			moveto(24, 1);
-			prints("[1;32mT[m改标题, [1;32mC[m取消, [1;32mN[m%s, [1;32mEnter[m继续: ",
-				   (reply_note ? "关闭回复通知" : "开启回复通知"));
+			prints("[1;32mT[m改标题, [1;32mC[m取消, [1;32mN[m%s, [1;32mQ[m%s, [1;32mEnter[m继续: ",
+				   (reply_note ? "关闭回复通知" : "开启回复通知"), (full_quote ? "精简引用" : "完整引用"));
 			iflush();
 			ch = 0;
 		}
@@ -982,6 +952,9 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 			case 'N':
 				reply_note = (reply_note ? 0 : 1);
 				break;
+			case 'Q':
+				full_quote = (full_quote ? 0 : 1);
+				break;
 			case '0':
 			case '1':
 			case '2':
@@ -1000,6 +973,47 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 		{
 			continue;
 		}
+
+		len = snprintf(content, ARTICLE_CONTENT_MAX_LEN,
+					   "\n\n【 在 %s (%s) 的大作中提到: 】\n",
+					   p_article->username, p_article->nickname);
+
+		quote_content_lines = split_data_lines(content_f,
+											   MAX_EDITOR_DATA_LINE_LENGTH - 2, line_offsets,
+											   (full_quote ? MAX_EDITOR_DATA_LINES : ARTICLE_QUOTE_DEFAULT_LINES) + 1,
+											   0, NULL);
+		for (i = 0; i < quote_content_lines; i++)
+		{
+			memcpy(content + len, ": ", 2); // quote line prefix
+			len += 2;
+			memcpy(content + len, content_f + line_offsets[i], (size_t)(line_offsets[i + 1] - line_offsets[i]));
+			len += (line_offsets[i + 1] - line_offsets[i]);
+			if (content[len - 1] != '\n') // Appennd \n if not exist
+			{
+				content[len] = '\n';
+				len++;
+			}
+		}
+		if (content[len - 1] != '\n') // Appennd \n if not exist
+		{
+			content[len] = '\n';
+			len++;
+		}
+		content[len] = '\0';
+
+		free(content_f);
+		content_f = NULL;
+
+		p_editor_data = editor_data_load(content);
+		if (p_editor_data == NULL)
+		{
+			log_error("editor_data_load(aid=%d, cid=%d) error\n", p_article->aid, atoi(row[0]));
+			ret = -1;
+			goto cleanup;
+		}
+
+		free(content);
+		content = NULL;
 
 		for (ch = 'E'; !SYS_server_exit && toupper(ch) == 'E';)
 		{

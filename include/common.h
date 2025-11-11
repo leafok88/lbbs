@@ -22,6 +22,8 @@ enum common_constant_t
     SCREEN_ROWS = 24,
     SCREEN_COLS = 80,
 
+    TAB_SIZE = 4,
+
     // Network
     MAX_CLIENT_LIMIT = 2000,
     MAX_CLIENT_PER_IP_LIMIT = 100,

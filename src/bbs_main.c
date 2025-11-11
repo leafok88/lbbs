@@ -6,6 +6,10 @@
  * Copyright (C) 2004-2025  Leaflet <leaflet@leafok.com>
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "article_favor.h"
 #include "article_view_log.h"
 #include "bbs.h"
@@ -81,7 +85,7 @@ int bbs_welcome(void)
 		   "\033[32m目前上站人数 [\033[36m%d/%d\033[32m] "
 		   "匿名游客[\033[36m%d\033[32m] "
 		   "注册用户数[\033[36m%d/%d\033[32m]\r\n"
-		   "从 [\033[36m%s\033[32m] 起，累计访问人次：[\033[36m%d\033[32m]\033[m\r\n",
+		   "从 [\033[36m%s\033[32m] 起，累计访问人次: [\033[36m%d\033[32m]\033[m\r\n",
 		   BBS_name, u_online, BBS_max_client, u_anonymous, u_total,
 		   BBS_max_user_count, BBS_start_dt, u_login_count);
 

@@ -6,6 +6,10 @@
  * Copyright (C) 2004-2025  Leaflet <leaflet@leafok.com>
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "ip_mask.h"
 #include <string.h>
 

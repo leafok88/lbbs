@@ -26,8 +26,11 @@
 /var
 CVS
 .cvsignore
+config.h
+config.h.in
 Makefile
 Makefile.in
+stamp-h1
 *.o
 *.Po
 *.Plo
