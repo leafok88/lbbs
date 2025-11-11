@@ -6,6 +6,10 @@
  * Copyright (C) 2004-2025  Leaflet <leaflet@leafok.com>
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "bbs.h"
 #include "ip_mask.h"
 #include "lml.h"
@@ -169,8 +173,8 @@ int user_info_display(USER_INFO *p_user_info)
 			 p_user_info->username, p_user_info->nickname, p_user_info->visit_count, article_cnt,
 			 str_last_login_dt, (session_cnt > 0 ? login_ip : "未知"), p_user_info->exp,
 			 (session_cnt > 0 ? "在线或因断线不详" : str_last_logout_dt), life, user_level_name, user_level + 1, astro_str,
-			 (session_cnt > 0 ? "目前在线，状态如下：\n" : ""), (session_cnt > 0 ? action_str : ""),
-			 (intro_len > 0 ? "\033[0;36m个人说明档如下：\033[m" : "\033[0;36m没有个人说明档\033[m"),
+			 (session_cnt > 0 ? "目前在线，状态如下: \n" : ""), (session_cnt > 0 ? action_str : ""),
+			 (intro_len > 0 ? "\033[0;36m个人说明档如下: \033[m" : "\033[0;36m没有个人说明档\033[m"),
 			 intro_f);
 
 	lines = split_data_lines(user_info_f, SCREEN_COLS + 1, line_offsets, MIN(SCREEN_ROWS - 1, BBS_user_intro_max_line + 8), 1, NULL);

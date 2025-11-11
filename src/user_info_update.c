@@ -8,6 +8,10 @@
  * Author:                  ytht <2391669999@qq.com>
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "bbs.h"
 #include "bwf.h"
 #include "database.h"

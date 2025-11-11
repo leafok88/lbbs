@@ -6,6 +6,7 @@
 /autom4te.cache
 /COPYING
 /compile
+/conf/*.user
 /config.guess
 /config.log
 /config.status
@@ -25,8 +26,11 @@
 /var
 CVS
 .cvsignore
+config.h
+config.h.in
 Makefile
 Makefile.in
+stamp-h1
 *.o
 *.Po
 *.Plo

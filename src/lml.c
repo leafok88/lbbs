@@ -6,6 +6,10 @@
  * Copyright (C) 2004-2025  Leaflet <leaflet@leafok.com>
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "common.h"
 #include "lml.h"
 #include "log.h"
@@ -209,6 +213,8 @@ int lml_render(const char *str_in, char *str_out, int buf_len, int width, int qu
 	int fb_quote_level = 0;
 	int tag_name_found;
 	int line_width = 0;
+	char tab_spaces[TAB_SIZE + 1];
+	int tab_width = 0;
 
 	clock_begin = clock();
 
@@ -322,6 +328,26 @@ int lml_render(const char *str_in, char *str_out, int buf_len, int width, int qu
 		else if (str_in[i] == '\r' || str_in[i] == '\7')
 		{
 			continue; // Skip special characters
+		}
+		else if (str_in[i] == '\t')
+		{
+			tab_width = TAB_SIZE - (line_width % TAB_SIZE);
+			if (line_width + tab_width > width)
+			{
+				CHECK_AND_APPEND_OUTPUT(str_out, buf_len, j, "\n", 1, line_width);
+				new_line = 1;
+				line_width = 0;
+				// skip current Tab
+				continue;
+			}
+
+			for (k = 0; k < tab_width; k++)
+			{
+				tab_spaces[k] = ' ';
+			}
+			tab_spaces[tab_width] = '\0';
+			CHECK_AND_APPEND_OUTPUT(str_out, buf_len, j, tab_spaces, tab_width, line_width);
+			continue;
 		}
 
 		if (!lml_tag_disabled && str_in[i] == '[')
