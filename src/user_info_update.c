@@ -214,7 +214,9 @@ int user_sign_edit(int uid)
 	get_data(1, 1, "请输入需要编辑的签名档编号（1-3）: ", buf, sizeof(buf), 1);
 	sign_id = atoi(buf);
 	if (sign_id < 1 || sign_id > BBS_user_sign_cnt)
+	{
 		goto cleanup;
+	}
 
 	db = db_open();
 	if (db == NULL)
