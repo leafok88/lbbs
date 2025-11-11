@@ -179,7 +179,7 @@ int user_intro_edit(int uid)
 
 	clearscr();
 	moveto(1, 1);
-	prints("说明档修改完成，会在%d秒内生效", BBS_user_list_load_interval);
+	prints("说明档修改完成");
 	press_any_key();
 	ret = 1; // Success
 
