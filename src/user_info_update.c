@@ -5,7 +5,7 @@
  *
  * Copyright (C) 2004-2025  Leaflet <leaflet@leafok.com>
  *
- * Author:                  ytht <2391669999@qq.com>
+ * Co-author:               老黑噜 <2391669999@qq.com>
  */
 
 #ifdef HAVE_CONFIG_H
