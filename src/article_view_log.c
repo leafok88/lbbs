@@ -6,6 +6,10 @@
  * Copyright (C) 2004-2025  Leaflet <leaflet@leafok.com>
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "article_view_log.h"
 #include "common.h"
 #include "database.h"
