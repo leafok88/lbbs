@@ -16,6 +16,7 @@
 #include "common.h"
 #include "database.h"
 #include "file_loader.h"
+#include "hash_dict.h"
 #include "io.h"
 #include "init.h"
 #include "log.h"
@@ -51,15 +52,6 @@ enum _net_server_constant_t
 
 	SSH_AUTH_MAX_DURATION = 60 * 1000, // milliseconds
 };
-
-struct process_sockaddr_t
-{
-	pid_t pid;
-	in_addr_t s_addr;
-};
-typedef struct process_sockaddr_t PROCESS_SOCKADDR;
-
-static PROCESS_SOCKADDR process_sockaddr_pool[MAX_CLIENT_LIMIT];
 
 static const char SFTP_SERVER_PATH[] = "/usr/lib/sftp-server";
 
@@ -456,6 +448,9 @@ cleanup:
 
 int net_server(const char *hostaddr, in_port_t port[])
 {
+	HASH_DICT *hash_dict_pid_sockaddr = NULL;
+	HASH_DICT *hash_dict_sockaddr_count = NULL;
+
 	unsigned int addrlen;
 	int ret;
 	int flags[2];
@@ -551,6 +546,19 @@ int net_server(const char *hostaddr, in_port_t port[])
 		fcntl(socket_server[i], F_SETFL, flags[i] | O_NONBLOCK);
 	}
 
+	hash_dict_pid_sockaddr = hash_dict_create(MAX_CLIENT_LIMIT);
+	if (hash_dict_pid_sockaddr == NULL)
+	{
+		log_error("hash_dict_create(hash_dict_pid_sockaddr) error\n");
+		return -1;
+	}
+	hash_dict_sockaddr_count = hash_dict_create(MAX_CLIENT_LIMIT);
+	if (hash_dict_sockaddr_count == NULL)
+	{
+		log_error("hash_dict_create(hash_dict_sockaddr_count) error\n");
+		return -1;
+	}
+
 	// Startup complete
 	sd_notifyf(0, "READY=1\n"
 				  "STATUS=Listening at %s:%d (Telnet) and %s:%d (SSH2)\n"
@@ -580,18 +588,39 @@ int net_server(const char *hostaddr, in_port_t port[])
 
 				if (siginfo.si_pid != section_list_loader_pid)
 				{
-					i = 0;
-					for (; i < BBS_max_client; i++)
+					j = 0;
+					ret = hash_dict_get(hash_dict_pid_sockaddr, (uint64_t)siginfo.si_pid, (int64_t *)&j);
+					if (ret < 0)
 					{
-						if (process_sockaddr_pool[i].pid == siginfo.si_pid)
-						{
-							process_sockaddr_pool[i].pid = 0;
-							break;
-						}
+						log_error("hash_dict_get(hash_dict_pid_sockaddr, %d) error\n", siginfo.si_pid);
 					}
-					if (i >= BBS_max_client)
+					else
 					{
-						log_error("Child process (%d) not found in process sockaddr pool\n", siginfo.si_pid);
+						sin.sin_addr.s_addr = (uint32_t)j;
+						j = 0;
+						ret = hash_dict_get(hash_dict_sockaddr_count, sin.sin_addr.s_addr, (int64_t *)&j);
+						if (ret < 0)
+						{
+							log_error("hash_dict_get(hash_dict_sockaddr_count, %d) error\n", sin.sin_addr.s_addr);
+						}
+						else if (ret == 0)
+						{
+							log_error("hash_dict_get(hash_dict_sockaddr_count, %d) not found\n", sin.sin_addr.s_addr);
+							j = 1;
+						}
+
+						j--;
+						ret = hash_dict_set(hash_dict_sockaddr_count, sin.sin_addr.s_addr, j);
+						if (ret < 0)
+						{
+							log_error("hash_dict_set(hash_dict_sockaddr_count, %d, %d) error\n", sin.sin_addr.s_addr, j);
+						}
+
+						ret = hash_dict_del(hash_dict_pid_sockaddr, (uint64_t)siginfo.si_pid);
+						if (ret < 0)
+						{
+							log_error("hash_dict_del(hash_dict_pid_sockaddr, %d) error\n", siginfo.si_pid);
+						}
 					}
 				}
 			}
@@ -613,7 +642,7 @@ int net_server(const char *hostaddr, in_port_t port[])
 				sd_notifyf(0, "STATUS=Notify %d child process to exit", SYS_child_process_count);
 				log_common("Notify %d child process to exit\n", SYS_child_process_count);
 
-				if (kill(0, SIGTERM) < 0)
+				if (kill(-getpid(), SIGTERM) < 0)
 				{
 					log_error("Send SIGTERM signal failed (%d)\n", errno);
 				}
@@ -625,16 +654,9 @@ int net_server(const char *hostaddr, in_port_t port[])
 			{
 				sd_notifyf(0, "STATUS=Kill %d child process", SYS_child_process_count);
 
-				for (i = 0; i < BBS_max_client; i++)
+				if (kill(-getpid(), SIGKILL) < 0)
 				{
-					if (process_sockaddr_pool[i].pid != 0)
-					{
-						log_error("Kill child process (pid=%d)\n", process_sockaddr_pool[i].pid);
-						if (kill(process_sockaddr_pool[i].pid, SIGKILL) < 0)
-						{
-							log_error("Send SIGKILL signal failed (%d)\n", errno);
-						}
-					}
+					log_error("Send SIGKILL signal failed (%d)\n", errno);
 				}
 
 				notify_child_exit = 2;
@@ -766,17 +788,10 @@ int net_server(const char *hostaddr, in_port_t port[])
 					if (SYS_child_process_count - 1 < BBS_max_client)
 					{
 						j = 0;
-						for (i = 0; i < BBS_max_client; i++)
+						ret = hash_dict_get(hash_dict_sockaddr_count, (uint64_t)sin.sin_addr.s_addr, (int64_t *)&j);
+						if (ret < 0)
 						{
-							if (process_sockaddr_pool[i].pid != 0 && process_sockaddr_pool[i].s_addr == sin.sin_addr.s_addr)
-							{
-								j++;
-								if (j >= BBS_max_client_per_ip)
-								{
-									log_common("Too many client connections (%d) from %s\n", j, hostaddr_client);
-									break;
-								}
-							}
+							log_error("hash_dict_get(hash_dict_sockaddr_count, %s) error\n", hostaddr_client);
 						}
 
 						if (j < BBS_max_client_per_ip)
@@ -787,25 +802,22 @@ int net_server(const char *hostaddr, in_port_t port[])
 							}
 							else if (pid > 0)
 							{
-								i = 0;
-								for (; i < BBS_max_client; i++)
+								ret = hash_dict_set(hash_dict_pid_sockaddr, (uint64_t)pid, sin.sin_addr.s_addr);
+								if (ret < 0)
 								{
-									if (process_sockaddr_pool[i].pid == 0)
-									{
-										break;
-									}
+									log_error("hash_dict_set(hash_dict_pid_sockaddr, %d, %s) error\n", pid, hostaddr_client);
 								}
 
-								if (i >= BBS_max_client)
+								ret = hash_dict_set(hash_dict_sockaddr_count, (uint64_t)sin.sin_addr.s_addr, j + 1);
+								if (ret < 0)
 								{
-									log_error("Process sockaddr pool depleted\n");
-								}
-								else
-								{
-									process_sockaddr_pool[i].pid = pid;
-									process_sockaddr_pool[i].s_addr = sin.sin_addr.s_addr;
+									log_error("hash_dict_set(hash_dict_sockaddr_count, %s, %d) error\n", hostaddr_client, j + 1);
 								}
 							}
+						}
+						else
+						{
+							log_error("Rejected client connection from %s over limit per IP (%d)\n", hostaddr_client, BBS_max_client_per_ip);
 						}
 					}
 					else
@@ -836,6 +848,9 @@ int net_server(const char *hostaddr, in_port_t port[])
 			log_error("Close server socket failed\n");
 		}
 	}
+
+	hash_dict_destroy(hash_dict_pid_sockaddr);
+	hash_dict_destroy(hash_dict_sockaddr_count);
 
 	ssh_bind_free(sshbind);
 	ssh_finalize();
