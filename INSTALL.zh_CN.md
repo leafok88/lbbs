@@ -3,7 +3,7 @@
 请按照以下步骤进行LBBS的编译和安装:
 
 0) 准备工作  
-   按照[leafok_bbs](https://github.com/leafok88/leafok_bbs)下README.md的说明，初始化Web/Telnet版本共享的数据库。   
+   按照[leafok_bbs](https://github.com/leafok/leafok_bbs)下README.md的说明，初始化Web/Telnet版本共享的数据库。   
    强烈建议先按照Web版本的说明完成基础功能的配置和验证，再开始Telnet版本的安装。
 
 1) 通用工具/基础库依赖  

@@ -1,11 +1,11 @@
 LeafOK Bulletin Board System  (Web version)
 Copyright (C) 2001-2025       Leaflet <leaflet@leafok.com>
-Source code repository        https://github.com/leafok88/leafok_bbs
+Source code repository        https://github.com/leafok/leafok_bbs
 
 
 LeafOK Bulletin Board System  (Telnet version)
 Copyright (C) 2004-2025       Leaflet <leaflet@leafok.com>
-Source code repository        https://github.com/leafok88/lbbs
+Source code repository        https://github.com/leafok/lbbs
 
 
 

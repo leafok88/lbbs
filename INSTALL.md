@@ -3,7 +3,7 @@ Installation
 To install LBBS, please perform the following steps:
 
 0) Prerequisite  
-   Follow README.md under [leafok_bbs](https://github.com/leafok88/leafok_bbs) to initialize the database structure shared by both web version and telnet version.   
+   Follow README.md under [leafok_bbs](https://github.com/leafok/leafok_bbs) to initialize the database structure shared by both web version and telnet version.   
    It is highly recommended to finish the configuration steps of web version first and make sure those features could work properly.
 
 1) Common requirements  
