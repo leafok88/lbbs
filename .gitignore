@@ -52,3 +52,4 @@ stamp-h1
 /src/test_memory_pool
 /src/test_bbs
 /src/test_bwf
+/src/test_hash_dict
