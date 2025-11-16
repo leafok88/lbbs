@@ -331,6 +331,12 @@ int main(int argc, char *argv[])
 		log_error("set signal action of SIGTERM error: %d\n", errno);
 		goto cleanup;
 	}
+	act.sa_handler = SIG_IGN;
+	if (sigaction(SIGUSR1, &act, NULL) == -1)
+	{
+		log_error("set signal action of SIGUSR1 error: %d\n", errno);
+		goto cleanup;
+	}
 
 	// Launch section_list_loader process
 	if (section_list_loader_launch() < 0)

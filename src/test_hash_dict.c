@@ -55,10 +55,21 @@ int main(int argc, char *argv[])
 	for (i = 0; i < dict_item_count; i++)
 	{
 		key = i * 37 + 13;
-		if (hash_dict_set(p_dict, key, i * 3 + 7) != 0)
+		if (i % 2 == 0)
 		{
-			printf("hash_dict_set(%lu) error\n", key);
-			break;
+			if (hash_dict_set(p_dict, key, i * 3 + 7) != 0)
+			{
+				printf("hash_dict_set(%lu) error\n", key);
+				break;
+			}
+		}
+		else
+		{
+			if (hash_dict_inc(p_dict, key, i * 3 + 7) != 0)
+			{
+				printf("hash_dict_inc(%lu) error\n", key);
+				break;
+			}
 		}
 	}
 
@@ -87,7 +98,7 @@ int main(int argc, char *argv[])
 	for (i = 0; i < dict_item_count; i++)
 	{
 		key = i * 37 + 13;
-		if (hash_dict_set(p_dict, key, i * 3 + 7) != 0)
+		if (hash_dict_inc(p_dict, key, i * 5 + 17) != 0)
 		{
 			printf("hash_dict_set(%lu) error\n", key);
 			break;
@@ -103,7 +114,7 @@ int main(int argc, char *argv[])
 			printf("hash_dict_get(%lu) ret=%d error\n", key, ret);
 			break;
 		}
-		if (value != i * 3 + 7)
+		if (value != i * 3 + 7 + i * 5 + 17)
 		{
 			printf("hash_dict_get(%lu) value=%ld error\n", key, value);
 			break;

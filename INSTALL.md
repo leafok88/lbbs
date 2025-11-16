@@ -47,11 +47,15 @@ To install LBBS, please perform the following steps:
 10) Startup  
    sudo -u bbs $LBBS_HOME_DIR/bin/bbsd
 
-11) Set up systemd  
+11) (Optional) Set up systemd  
    Create your own /usr/lib/systemd/system/lbbs.service from the sample at conf/lbbs.service.default, and make any change if necessary.  
    Reload daemon config and start the service.  
 
-12) Cleanup on abnormal service termination  
+12) (Optional) Set up logrotate  
+   Create your own /etc/logrotate.d/bbsd from the sample at conf/logrotate_bbsd.conf.default, and make any change if necessary.  
+   Restart logrotate service.  
+
+13) Cleanup on abnormal service termination  
    In case of any unexpected failure or improper operation which results in abnormal termination of lbbs process, manual cleanup of shared memory / semaphore might be required before re-launch the process. Run the following command to check first:  
    sudo -u bbs ipcs  
    There should be no item owned by bbs. Otherwise, run the following command to cleanup:  

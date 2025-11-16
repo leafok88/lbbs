@@ -28,4 +28,6 @@ extern int log_printf(enum log_level_t log_level, const char *app_file, int app_
 extern int log_common_redir(int fd);
 extern int log_error_redir(int fd);
 
+extern int log_restart(void);
+
 #endif //_LOG_H_

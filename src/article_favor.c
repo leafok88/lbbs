@@ -469,7 +469,7 @@ int query_favor_articles(ARTICLE_FAVOR *p_favor, int page_id, ARTICLE **p_articl
 		return -2;
 	}
 
-	*p_page_count = p_favor->aid_base_cnt / BBS_article_limit_per_page + (p_favor->aid_base_cnt % BBS_article_limit_per_page == 0 ? 0 : 1);
+	*p_page_count = (p_favor->aid_base_cnt + BBS_article_limit_per_page - 1) / BBS_article_limit_per_page;
 	*p_article_count = 0;
 
 	if (p_favor->aid_base_cnt == 0)

@@ -393,7 +393,6 @@ static int fork_server(void)
 	}
 
 	// Redirect Input
-	close(STDIN_FILENO);
 	if (dup2(socket_client, STDIN_FILENO) == -1)
 	{
 		log_error("Redirect stdin to client socket failed\n");
@@ -401,7 +400,6 @@ static int fork_server(void)
 	}
 
 	// Redirect Output
-	close(STDOUT_FILENO);
 	if (dup2(socket_client, STDOUT_FILENO) == -1)
 	{
 		log_error("Redirect stdout to client socket failed\n");
@@ -596,24 +594,10 @@ int net_server(const char *hostaddr, in_port_t port[])
 					}
 					else
 					{
-						sin.sin_addr.s_addr = (uint32_t)j;
-						j = 0;
-						ret = hash_dict_get(hash_dict_sockaddr_count, sin.sin_addr.s_addr, (int64_t *)&j);
+						ret = hash_dict_inc(hash_dict_sockaddr_count, (uint64_t)j, -1);
 						if (ret < 0)
 						{
-							log_error("hash_dict_get(hash_dict_sockaddr_count, %d) error\n", sin.sin_addr.s_addr);
-						}
-						else if (ret == 0)
-						{
-							log_error("hash_dict_get(hash_dict_sockaddr_count, %d) not found\n", sin.sin_addr.s_addr);
-							j = 1;
-						}
-
-						j--;
-						ret = hash_dict_set(hash_dict_sockaddr_count, sin.sin_addr.s_addr, j);
-						if (ret < 0)
-						{
-							log_error("hash_dict_set(hash_dict_sockaddr_count, %d, %d) error\n", sin.sin_addr.s_addr, j);
+							log_error("hash_dict_inc(hash_dict_sockaddr_count, %d, -1) error\n", j);
 						}
 
 						ret = hash_dict_del(hash_dict_pid_sockaddr, (uint64_t)siginfo.si_pid);
@@ -674,6 +658,12 @@ int net_server(const char *hostaddr, in_port_t port[])
 			SYS_conf_reload = 0;
 			sd_notify(0, "RELOADING=1");
 
+			// Restart log
+			if (log_restart() < 0)
+			{
+				log_error("Restart logging failed\n");
+			}
+
 			// Reload configuration
 			if (load_conf(CONF_BBSD) < 0)
 			{
@@ -728,6 +718,12 @@ int net_server(const char *hostaddr, in_port_t port[])
 			else
 			{
 				log_common("Reload section config and gen_ex successfully\n");
+			}
+
+			// Notify child processes to reload configuration
+			if (kill(-getpid(), SIGUSR1) < 0)
+			{
+				log_error("Send SIGUSR1 signal failed (%d)\n", errno);
 			}
 
 			sd_notify(0, "READY=1");
@@ -808,10 +804,10 @@ int net_server(const char *hostaddr, in_port_t port[])
 									log_error("hash_dict_set(hash_dict_pid_sockaddr, %d, %s) error\n", pid, hostaddr_client);
 								}
 
-								ret = hash_dict_set(hash_dict_sockaddr_count, (uint64_t)sin.sin_addr.s_addr, j + 1);
+								ret = hash_dict_inc(hash_dict_sockaddr_count, (uint64_t)sin.sin_addr.s_addr, 1);
 								if (ret < 0)
 								{
-									log_error("hash_dict_set(hash_dict_sockaddr_count, %s, %d) error\n", hostaddr_client, j + 1);
+									log_error("hash_dict_inc(hash_dict_sockaddr_count, %s, %d) error\n", hostaddr_client, 1);
 								}
 							}
 						}

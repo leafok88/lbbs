@@ -38,6 +38,15 @@
 #include <time.h>
 #include <unistd.h>
 
+static void child_proc_sig_usr1_handler(int i)
+{
+	// Restart log
+	if (log_restart() < 0)
+	{
+		log_error("Restart logging failed\n");
+	}
+}
+
 int bbs_info()
 {
 	prints("欢迎光临 \033[1;33m%s \033[32m[%s]  \033[37m( %s )\033[m\r\n",
@@ -281,6 +290,12 @@ int bbs_main()
 	if (sigaction(SIGCHLD, &act, NULL) == -1)
 	{
 		log_error("set signal action of SIGCHLD error: %d\n", errno);
+		goto cleanup;
+	}
+	act.sa_handler = child_proc_sig_usr1_handler;
+	if (sigaction(SIGUSR1, &act, NULL) == -1)
+	{
+		log_error("set signal action of SIGUSR1 error: %d\n", errno);
 		goto cleanup;
 	}
 

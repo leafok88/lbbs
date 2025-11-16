@@ -1063,8 +1063,8 @@ int section_list_page_count_with_ontop(SECTION_LIST *p_section)
 	}
 
 	page_count = p_section->page_count - 1 +
-				 (p_section->last_page_visible_article_count + p_section->ontop_article_count) / BBS_article_limit_per_page +
-				 ((p_section->last_page_visible_article_count + p_section->ontop_article_count) % BBS_article_limit_per_page ? 1 : 0);
+				 (p_section->last_page_visible_article_count + p_section->ontop_article_count + BBS_article_limit_per_page - 1) /
+					 BBS_article_limit_per_page;
 
 	if (page_count < 0)
 	{

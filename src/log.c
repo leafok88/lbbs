@@ -24,24 +24,36 @@ enum _log_constant_t
 	STR_LOG_TIME_MAX_LEN = 50,
 };
 
+static char path_common_log[FILE_PATH_LEN];
+static char path_error_log[FILE_PATH_LEN];
 static FILE *fp_common_log;
 static FILE *fp_error_log;
+static int redir_common_log = 0;
+static int redir_error_log = 0;
 
 int log_begin(const char *common_log_file, const char *error_log_file)
 {
-	fp_common_log = fopen(common_log_file, "a");
+	strncpy(path_common_log, common_log_file, sizeof(path_common_log) - 1);
+	path_common_log[sizeof(path_common_log) - 1] = '\0';
+	strncpy(path_error_log, error_log_file, sizeof(path_error_log) - 1);
+	path_error_log[sizeof(path_error_log) - 1] = '\0';
+
+	fp_common_log = fopen(path_common_log, "a");
 	if (fp_common_log == NULL)
 	{
-		perror("log_begin failed\n");
+		perror("log_begin(common_log) failed\n");
 		return -1;
 	}
 
-	fp_error_log = fopen(error_log_file, "a");
+	fp_error_log = fopen(path_error_log, "a");
 	if (fp_error_log == NULL)
 	{
-		perror("log_begin failed\n");
+		perror("log_begin(error_log) failed\n");
 		return -2;
 	}
+
+	redir_common_log = 0;
+	redir_error_log = 0;
 
 	return 0;
 }
@@ -95,16 +107,43 @@ int log_printf(enum log_level_t log_level, const char *app_file, int app_line, c
 
 int log_common_redir(int fd)
 {
-	int ret;
-	close(fileno(fp_common_log));
-	ret = dup2(fd, fileno(fp_common_log));
-	return ret;
+	redir_common_log = 1;
+	return dup2(fd, fileno(fp_common_log));
 }
 
 int log_error_redir(int fd)
 {
-	int ret;
-	close(fileno(fp_error_log));
-	ret = dup2(fd, fileno(fp_error_log));
-	return ret;
+	redir_error_log = 1;
+	return dup2(fd, fileno(fp_error_log));
+}
+
+int log_restart(void)
+{
+	FILE *fp;
+
+	if (!redir_common_log)
+	{
+		fp = fopen(path_common_log, "a");
+		if (fp == NULL)
+		{
+			log_error("fopen(%s) error\n", path_common_log);
+			return -1;
+		}
+		fclose(fp_common_log);
+		fp_common_log = fp;
+	}
+
+	if (!redir_error_log)
+	{
+		fp = fopen(path_error_log, "a");
+		if (fp == NULL)
+		{
+			log_error("fopen(%s) error\n", path_error_log);
+			return -2;
+		}
+		fclose(fp_error_log);
+		fp_error_log = fp;
+	}
+
+	return 0;
 }

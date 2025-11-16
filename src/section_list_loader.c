@@ -30,6 +30,15 @@
 int section_list_loader_pid;
 int last_article_op_log_mid;
 
+static void loader_proc_sig_usr1_handler(int i)
+{
+	// Restart log
+	if (log_restart() < 0)
+	{
+		log_error("Restart logging failed\n");
+	}
+}
+
 int load_section_config_from_db(int update_gen_ex)
 {
 	MYSQL *db = NULL;
@@ -728,6 +737,11 @@ int section_list_loader_launch(void)
 	if (sigaction(SIGCHLD, &act, NULL) == -1)
 	{
 		log_error("set signal action of SIGCHLD error: %d\n", errno);
+	}
+	act.sa_handler = loader_proc_sig_usr1_handler;
+	if (sigaction(SIGUSR1, &act, NULL) == -1)
+	{
+		log_error("set signal action of SIGUSR1 error: %d\n", errno);
 	}
 
 	// Do section data loader periodically
