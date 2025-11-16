@@ -8,6 +8,9 @@
 /compile
 /conf/*.user
 /config.guess
+/config.h
+/config.h.in
+/config.h.in~
 /config.log
 /config.status
 /config.sub
@@ -26,8 +29,6 @@
 /var
 CVS
 .cvsignore
-config.h
-config.h.in
 Makefile
 Makefile.in
 stamp-h1

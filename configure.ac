@@ -22,12 +22,12 @@ AC_PROG_MAKE_SET
 AC_SUBST([PKG_CONFIG_PATH])
 PKG_PROG_PKG_CONFIG
 PKG_CHECK_MODULES([LIBSSH], [libssh])
-PKG_CHECK_MODULES([MYSQLCLIENT], [mariadb])
+PKG_CHECK_MODULES([MYSQLCLIENT], [mariadb, mysqlclient])
 PKG_CHECK_MODULES([SYSTEMD], [libsystemd])
 PKG_CHECK_MODULES([LIBPCRE2], [libpcre2-8])
 
 # Checks for libraries.
-AC_CHECK_LIB([mariadb], [mysql_real_connect])
+AC_CHECK_LIB([mysqlclient], [mysql_real_connect])
 AC_CHECK_LIB([z], [unzip])
 AC_CHECK_LIB([ssh], [ssh_init])
 
