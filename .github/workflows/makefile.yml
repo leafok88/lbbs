@@ -26,7 +26,7 @@ jobs:
       run: gcc -v
 
     - name: configure
-      run: ./configure
+      run: ./configure --enable-systemd
 
     - name: Run make
       run: make V=1
