@@ -40,6 +40,7 @@ extern HASH_DICT *hash_dict_create(int item_count_limit);
 extern void hash_dict_destroy(HASH_DICT *p_dict);
 
 extern int hash_dict_set(HASH_DICT *p_dict, uint64_t key, int64_t value);
+extern int hash_dict_inc(HASH_DICT *p_dict, uint64_t key, int64_t value_inc);
 extern int hash_dict_get(HASH_DICT *p_dict, uint64_t key, int64_t *p_value);
 extern int hash_dict_del(HASH_DICT *p_dict, uint64_t key);
 

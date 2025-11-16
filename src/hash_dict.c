@@ -169,6 +169,49 @@ int hash_dict_set(HASH_DICT *p_dict, uint64_t key, int64_t value)
 	return 0;
 }
 
+int hash_dict_inc(HASH_DICT *p_dict, uint64_t key, int64_t value_inc)
+{
+	uint64_t bucket_index;
+	uint64_t item_index_in_bucket;
+	HASH_ITEM *p_item;
+
+	if (p_dict == NULL)
+	{
+		log_error("NULL pointer error\n");
+		return -1;
+	}
+
+	bucket_index = (key % (HASH_DICT_BUCKET_SIZE * p_dict->bucket_count)) / HASH_DICT_BUCKET_SIZE;
+	item_index_in_bucket = key % HASH_DICT_BUCKET_SIZE;
+
+	p_item = p_dict->buckets[bucket_index][item_index_in_bucket];
+	while (p_item != NULL)
+	{
+		if (p_item->key == key)
+		{
+			p_item->value += value_inc;
+			return 0;
+		}
+		p_item = p_item->p_next;
+	}
+
+	p_item = (HASH_ITEM *)memory_pool_alloc(p_dict->p_item_pool);
+	if (p_item == NULL)
+	{
+		log_error("memory_pool_alloc(HASH_ITEM) error\n");
+		return -1;
+	}
+
+	p_item->key = key;
+	p_item->value = value_inc;
+	p_item->p_next = p_dict->buckets[bucket_index][item_index_in_bucket];
+	p_dict->buckets[bucket_index][item_index_in_bucket] = p_item;
+
+	(p_dict->item_count)++;
+
+	return 0;
+}
+
 int hash_dict_get(HASH_DICT *p_dict, uint64_t key, int64_t *p_value)
 {
 	uint64_t bucket_index;
