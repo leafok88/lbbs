@@ -43,11 +43,10 @@ AS_IF([test "x$enable_systemd" = xyes],
 
 # Checks for libraries.
 AS_IF([test "x$with_mariadb" = xyes],
-      [AC_CHECK_LIB([libmariadb], [mysql_real_connect])])
+      [AC_CHECK_LIB([mariadb], [mysql_real_connect])])
 AS_IF([test "x$with_mysqlclient" = xyes],
       [AC_CHECK_LIB([mysqlclient], [mysql_real_connect])])
 
-AC_CHECK_LIB([z], [unzip])
 AC_CHECK_LIB([ssh], [ssh_init])
 
 AC_HEADER_STAT
