@@ -1,0 +1,13 @@
+/usr/local/lbbs/log/*log {
+    daily
+    missingok
+    rotate 14
+    compress
+    delaycompress
+    notifempty
+    create 640 root bbs
+    sharedscripts
+    postrotate
+        systemctl reload bbsd.service > /dev/null 2>/dev/null || true
+    endscript
+}
