@@ -819,8 +819,8 @@ int query_user_list(int page_id, USER_INFO *p_users, int *p_user_count, int *p_p
 		goto cleanup;
 	}
 
-	*p_page_count = p_user_list_pool->p_current->user_count / BBS_user_limit_per_page +
-					(p_user_list_pool->p_current->user_count % BBS_user_limit_per_page == 0 ? 0 : 1);
+	*p_page_count = (p_user_list_pool->p_current->user_count + BBS_user_limit_per_page - 1) /
+					BBS_user_limit_per_page;
 
 	if (page_id < 0 || page_id >= *p_page_count)
 	{
@@ -875,8 +875,7 @@ int query_user_online_list(int page_id, USER_ONLINE_INFO *p_online_users, int *p
 		goto cleanup;
 	}
 
-	*p_page_count = p_user_list_pool->p_online_current->user_count / BBS_user_limit_per_page +
-					(p_user_list_pool->p_online_current->user_count % BBS_user_limit_per_page == 0 ? 0 : 1);
+	*p_page_count = (p_user_list_pool->p_online_current->user_count + BBS_user_limit_per_page - 1) / BBS_user_limit_per_page;
 
 	if (page_id < 0 || page_id >= *p_page_count)
 	{
