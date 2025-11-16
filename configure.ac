@@ -26,8 +26,13 @@ PKG_CHECK_MODULES([LIBPCRE2], [libpcre2-8])
 
 AC_ARG_WITH([mariadb],
             [AS_HELP_STRING([--with-mariadb], [With MariaDB library])],
-            [PKG_CHECK_MODULES([MYSQLCLIENT], [libmariadb])],
-            [PKG_CHECK_MODULES([MYSQLCLIENT], [mysqlclient])])
+            [with_mariadb="yes"],
+            [with_mysqlclient="yes"])
+
+AS_IF([test "x$with_mariadb" = xyes],
+      [PKG_CHECK_MODULES([MYSQLCLIENT], [libmariadb])])
+AS_IF([test "x$with_mysqlclient" = xyes],
+      [PKG_CHECK_MODULES([MYSQLCLIENT], [mysqlclient])])
 
 AC_ARG_ENABLE([systemd],
               [AS_HELP_STRING([--enable-systemd], [Enable systemd daemon])],
@@ -37,7 +42,11 @@ AS_IF([test "x$enable_systemd" = xyes],
       [PKG_CHECK_MODULES([SYSTEMD], [libsystemd])])
 
 # Checks for libraries.
-AC_CHECK_LIB([mysqlclient], [mysql_real_connect])
+AS_IF([test "x$with_mariadb" = xyes],
+      [AC_CHECK_LIB([libmariadb], [mysql_real_connect])])
+AS_IF([test "x$with_mysqlclient" = xyes],
+      [AC_CHECK_LIB([mysqlclient], [mysql_real_connect])])
+
 AC_CHECK_LIB([z], [unzip])
 AC_CHECK_LIB([ssh], [ssh_init])
 
