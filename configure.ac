@@ -22,9 +22,19 @@ AC_PROG_MAKE_SET
 AC_SUBST([PKG_CONFIG_PATH])
 PKG_PROG_PKG_CONFIG
 PKG_CHECK_MODULES([LIBSSH], [libssh])
-PKG_CHECK_MODULES([MYSQLCLIENT], [mysqlclient])
-PKG_CHECK_MODULES([SYSTEMD], [libsystemd])
 PKG_CHECK_MODULES([LIBPCRE2], [libpcre2-8])
+
+AC_ARG_WITH([mariadb],
+            [AS_HELP_STRING([--with-mariadb], [With MariaDB library])],
+            [PKG_CHECK_MODULES([MYSQLCLIENT], [mariadb])],
+            [PKG_CHECK_MODULES([MYSQLCLIENT], [mysqlclient])])
+
+AC_ARG_ENABLE([systemd],
+              [AS_HELP_STRING([--enable-systemd], [Enable systemd daemon])],
+			  [enable_systemd="yes"])
+
+AS_IF([test "x$enable_systemd" = xyes],
+      [PKG_CHECK_MODULES([SYSTEMD], [libsystemd])])
 
 # Checks for libraries.
 AC_CHECK_LIB([mysqlclient], [mysql_real_connect])
@@ -38,8 +48,11 @@ AC_HEADER_RESOLV
 AC_HEADER_SYS_WAIT
 AC_CHECK_HEADERS([arpa/inet.h dflcn.h fcntl.h iconv.h libssh/libssh.h libssh/server.h memory.h mysql.h net/if.h netdb.h netinet/in.h \
 					pty.h signal.h stdint.h stdlib.h string.h sys/epoll.h sys/ioctl.h sys/ipc.h sys/mman.h sys/param.h sys/socket.h \
-					sys/time.h sys/types.h sys/sem.h sys/shm.h sys/stat.h sys/syscall.h sys/wait.h systemd/sd-daemon.h \
+					sys/time.h sys/types.h sys/sem.h sys/shm.h sys/stat.h sys/syscall.h sys/wait.h \
 					unistd.h utmp.h wchar.h])
+
+AS_IF([test "x$enable_systemd" = xyes],
+      [AC_CHECK_HEADERS([systemd/sd-daemon.h])])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST

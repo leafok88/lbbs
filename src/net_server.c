@@ -43,7 +43,10 @@
 #include <sys/syscall.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+
+#ifdef HAVE_SYSTEMD_SD_DAEMON_H
 #include <systemd/sd-daemon.h>
+#endif
 
 enum _net_server_constant_t
 {
@@ -458,12 +461,14 @@ int net_server(const char *hostaddr, in_port_t port[])
 	siginfo_t siginfo;
 	int notify_child_exit = 0;
 	time_t tm_notify_child_exit = time(NULL);
-	int sd_notify_stopping = 0;
 	MENU_SET bbs_menu_new;
 	MENU_SET top10_menu_new;
 	int i, j;
 	pid_t pid;
 	int ssh_log_level = SSH_LOG_NOLOG;
+#ifdef HAVE_SYSTEMD_SD_DAEMON_H
+	int sd_notify_stopping = 0;
+#endif
 
 	ssh_init();
 
@@ -558,18 +563,22 @@ int net_server(const char *hostaddr, in_port_t port[])
 	}
 
 	// Startup complete
+#ifdef HAVE_SYSTEMD_SD_DAEMON_H
 	sd_notifyf(0, "READY=1\n"
 				  "STATUS=Listening at %s:%d (Telnet) and %s:%d (SSH2)\n"
 				  "MAINPID=%d",
 			   hostaddr, port[0], hostaddr, port[1], getpid());
+#endif
 
 	while (!SYS_server_exit || SYS_child_process_count > 0)
 	{
+#ifdef HAVE_SYSTEMD_SD_DAEMON_H
 		if (SYS_server_exit && !sd_notify_stopping)
 		{
 			sd_notify(0, "STOPPING=1");
 			sd_notify_stopping = 1;
 		}
+#endif
 
 		while ((SYS_child_exit || SYS_server_exit) && SYS_child_process_count > 0)
 		{
@@ -623,8 +632,10 @@ int net_server(const char *hostaddr, in_port_t port[])
 		{
 			if (notify_child_exit == 0)
 			{
+#ifdef HAVE_SYSTEMD_SD_DAEMON_H
 				sd_notifyf(0, "STATUS=Notify %d child process to exit", SYS_child_process_count);
 				log_common("Notify %d child process to exit\n", SYS_child_process_count);
+#endif
 
 				if (kill(-getpid(), SIGTERM) < 0)
 				{
@@ -636,7 +647,9 @@ int net_server(const char *hostaddr, in_port_t port[])
 			}
 			else if (notify_child_exit == 1 && time(NULL) - tm_notify_child_exit >= WAIT_CHILD_PROCESS_EXIT_TIMEOUT)
 			{
+#ifdef HAVE_SYSTEMD_SD_DAEMON_H
 				sd_notifyf(0, "STATUS=Kill %d child process", SYS_child_process_count);
+#endif
 
 				if (kill(-getpid(), SIGKILL) < 0)
 				{
@@ -656,7 +669,10 @@ int net_server(const char *hostaddr, in_port_t port[])
 		if (SYS_conf_reload && !SYS_server_exit)
 		{
 			SYS_conf_reload = 0;
+
+#ifdef HAVE_SYSTEMD_SD_DAEMON_H
 			sd_notify(0, "RELOADING=1");
+#endif
 
 			// Restart log
 			if (log_restart() < 0)
@@ -726,7 +742,9 @@ int net_server(const char *hostaddr, in_port_t port[])
 				log_error("Send SIGUSR1 signal failed (%d)\n", errno);
 			}
 
+#ifdef HAVE_SYSTEMD_SD_DAEMON_H
 			sd_notify(0, "READY=1");
+#endif
 		}
 
 		nfds = epoll_wait(epollfd, events, MAX_EVENTS, 100); // 0.1 second
