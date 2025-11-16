@@ -672,6 +672,12 @@ int net_server(const char *hostaddr, in_port_t port[])
 			SYS_conf_reload = 0;
 			sd_notify(0, "RELOADING=1");
 
+			// Restart log
+			if (log_restart() < 0)
+			{
+				log_error("Restart logging failed\n");
+			}
+
 			// Reload configuration
 			if (load_conf(CONF_BBSD) < 0)
 			{
@@ -726,6 +732,12 @@ int net_server(const char *hostaddr, in_port_t port[])
 			else
 			{
 				log_common("Reload section config and gen_ex successfully\n");
+			}
+
+			// Notify child processes to reload configuration
+			if (kill(-getpid(), SIGUSR1) < 0)
+			{
+				log_error("Send SIGUSR1 signal failed (%d)\n", errno);
 			}
 
 			sd_notify(0, "READY=1");
