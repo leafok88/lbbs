@@ -393,7 +393,6 @@ static int fork_server(void)
 	}
 
 	// Redirect Input
-	close(STDIN_FILENO);
 	if (dup2(socket_client, STDIN_FILENO) == -1)
 	{
 		log_error("Redirect stdin to client socket failed\n");
@@ -401,7 +400,6 @@ static int fork_server(void)
 	}
 
 	// Redirect Output
-	close(STDOUT_FILENO);
 	if (dup2(socket_client, STDOUT_FILENO) == -1)
 	{
 		log_error("Redirect stdout to client socket failed\n");

@@ -95,16 +95,10 @@ int log_printf(enum log_level_t log_level, const char *app_file, int app_line, c
 
 int log_common_redir(int fd)
 {
-	int ret;
-	close(fileno(fp_common_log));
-	ret = dup2(fd, fileno(fp_common_log));
-	return ret;
+	return dup2(fd, fileno(fp_common_log));
 }
 
 int log_error_redir(int fd)
 {
-	int ret;
-	close(fileno(fp_error_log));
-	ret = dup2(fd, fileno(fp_error_log));
-	return ret;
+	return dup2(fd, fileno(fp_error_log));
 }
