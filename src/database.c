@@ -14,7 +14,7 @@
 #include "database.h"
 #include "log.h"
 #include <stdio.h>
-#include <mysql/mysql.h>
+#include <mysql.h>
 
 // Global declaration for database
 char DB_host[DB_host_max_len + 1];

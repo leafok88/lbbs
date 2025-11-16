@@ -25,7 +25,7 @@
 #include <string.h>
 #include <regex.h>
 #include <unistd.h>
-#include <mysql/mysql.h>
+#include <mysql.h>
 #include <sys/param.h>
 
 static const int BBS_username_min_len = 3; // common len = 5, special len = 3

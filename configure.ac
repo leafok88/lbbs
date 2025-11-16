@@ -22,12 +22,12 @@ AC_PROG_MAKE_SET
 AC_SUBST([PKG_CONFIG_PATH])
 PKG_PROG_PKG_CONFIG
 PKG_CHECK_MODULES([LIBSSH], [libssh])
-PKG_CHECK_MODULES([MYSQLCLIENT], [mysqlclient])
+PKG_CHECK_MODULES([MYSQLCLIENT], [mariadb])
 PKG_CHECK_MODULES([SYSTEMD], [libsystemd])
 PKG_CHECK_MODULES([LIBPCRE2], [libpcre2-8])
 
 # Checks for libraries.
-AC_CHECK_LIB([mysqlclient], [mysql_connect])
+AC_CHECK_LIB([mariadb], [mysql_real_connect])
 AC_CHECK_LIB([z], [unzip])
 AC_CHECK_LIB([ssh], [ssh_init])
 
@@ -36,7 +36,7 @@ AC_PROG_EGREP
 
 AC_HEADER_RESOLV
 AC_HEADER_SYS_WAIT
-AC_CHECK_HEADERS([arpa/inet.h dflcn.h fcntl.h iconv.h libssh/libssh.h libssh/server.h memory.h mysql/mysql.h net/if.h netdb.h netinet/in.h \
+AC_CHECK_HEADERS([arpa/inet.h dflcn.h fcntl.h iconv.h libssh/libssh.h libssh/server.h memory.h mysql.h net/if.h netdb.h netinet/in.h \
 					pty.h signal.h stdint.h stdlib.h string.h sys/epoll.h sys/ioctl.h sys/ipc.h sys/mman.h sys/param.h sys/socket.h \
 					sys/time.h sys/types.h sys/sem.h sys/shm.h sys/stat.h sys/syscall.h sys/wait.h systemd/sd-daemon.h \
 					unistd.h utmp.h wchar.h])

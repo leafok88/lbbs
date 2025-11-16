@@ -9,7 +9,7 @@
 #ifndef _DATABASE_H_
 #define _DATABASE_H_
 
-#include <mysql/mysql.h>
+#include <mysql.h>
 
 enum database_constant_t
 {

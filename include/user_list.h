@@ -11,7 +11,7 @@
 
 #include "bbs.h"
 #include "common.h"
-#include <mysql/mysql.h>
+#include <mysql.h>
 
 enum user_list_constant_t
 {

@@ -17,7 +17,7 @@
 #include "user_priv.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include <mysql/mysql.h>
+#include <mysql.h>
 
 BBS_user_priv BBS_priv;
 
