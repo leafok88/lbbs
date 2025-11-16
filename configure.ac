@@ -26,7 +26,7 @@ PKG_CHECK_MODULES([LIBPCRE2], [libpcre2-8])
 
 AC_ARG_WITH([mariadb],
             [AS_HELP_STRING([--with-mariadb], [With MariaDB library])],
-            [PKG_CHECK_MODULES([MYSQLCLIENT], [mariadb])],
+            [PKG_CHECK_MODULES([MYSQLCLIENT], [libmariadb])],
             [PKG_CHECK_MODULES([MYSQLCLIENT], [mysqlclient])])
 
 AC_ARG_ENABLE([systemd],
