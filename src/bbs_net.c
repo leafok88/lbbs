@@ -35,7 +35,12 @@
 #include <sys/select.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
+
+#ifdef HAVE_SYS_EPOLL_H
 #include <sys/epoll.h>
+#else
+#include <poll.h>
+#endif
 
 static const char MENU_CONF_DELIM[] = " \t\r\n";
 
@@ -215,8 +220,15 @@ static int bbsnet_connect(int n)
 	iconv_t input_cd = NULL;
 	iconv_t output_cd = NULL;
 	char tocode[32];
+
+#ifdef HAVE_SYS_EPOLL_H
 	struct epoll_event ev, events[MAX_EVENTS];
-	int nfds, epollfd;
+	int epollfd;
+#else
+	struct pollfd pfds[3];
+#endif
+
+	int nfds;
 	int stdin_read_wait = 0;
 	int stdout_write_wait = 0;
 	int sock_read_wait = 0;
@@ -295,6 +307,7 @@ static int bbsnet_connect(int n)
 	fcntl(STDIN_FILENO, F_SETFL, flags_stdin | O_NONBLOCK);
 	fcntl(STDOUT_FILENO, F_SETFL, flags_stdout | O_NONBLOCK);
 
+#ifdef HAVE_SYS_EPOLL_H
 	epollfd = epoll_create1(0);
 	if (epollfd < 0)
 	{
@@ -317,6 +330,7 @@ static int bbsnet_connect(int n)
 		log_error("epoll_ctl(STDIN_FILENO) error (%d)\n", errno);
 		goto cleanup;
 	}
+#endif
 
 	while (!SYS_server_exit)
 	{
@@ -347,17 +361,31 @@ static int bbsnet_connect(int n)
 
 	for (int j = 0; j < MAX_PROCESS_BAR_LEN && !sock_connected && !SYS_server_exit; j++)
 	{
+#ifdef HAVE_SYS_EPOLL_H
 		nfds = epoll_wait(epollfd, events, MAX_EVENTS, 500); // 0.5 second
+		ret = nfds;
+#else
+		pfds[0].fd = sock;
+		pfds[0].events = POLLOUT;
+		pfds[1].fd = STDIN_FILENO;
+		pfds[1].events = POLLIN;
+		nfds = 2;
+		ret = poll(pfds, (nfds_t)nfds, 500); // 0.5 second
+#endif
 
-		if (nfds < 0)
+		if (ret < 0)
 		{
 			if (errno != EINTR)
 			{
+#ifdef HAVE_SYS_EPOLL_H
 				log_error("epoll_wait() error (%d)\n", errno);
+#else
+				log_error("poll() error (%d)\n", errno);
+#endif
 				break;
 			}
 		}
-		else if (nfds == 0) // timeout
+		else if (ret == 0) // timeout
 		{
 			process_bar(j + 1, MAX_PROCESS_BAR_LEN);
 		}
@@ -365,7 +393,11 @@ static int bbsnet_connect(int n)
 		{
 			for (int i = 0; i < nfds; i++)
 			{
+#ifdef HAVE_SYS_EPOLL_H
 				if (events[i].data.fd == sock)
+#else
+				if (pfds[i].fd == sock && (pfds[i].revents & POLLOUT))
+#endif
 				{
 					len = sizeof(error);
 					if (getsockopt(sock, SOL_SOCKET, SO_ERROR, &error, (socklen_t *)&len) < 0)
@@ -378,7 +410,11 @@ static int bbsnet_connect(int n)
 						sock_connected = 1;
 					}
 				}
+#ifdef HAVE_SYS_EPOLL_H
 				else if (events[i].data.fd == STDIN_FILENO)
+#else
+				else if (pfds[i].fd == STDIN_FILENO && (pfds[i].revents & POLLIN))
+#endif
 				{
 					ch = igetch(0);
 					if (ch == Ctrl('C') || ch == KEY_ESC)
@@ -442,6 +478,7 @@ static int bbsnet_connect(int n)
 		goto cleanup;
 	}
 
+#ifdef HAVE_SYS_EPOLL_H
 	ev.events = EPOLLIN | EPOLLOUT | EPOLLET;
 	ev.data.fd = sock;
 	if (epoll_ctl(epollfd, EPOLL_CTL_MOD, sock, &ev) == -1)
@@ -457,6 +494,7 @@ static int bbsnet_connect(int n)
 		log_error("epoll_ctl(STDOUT_FILENO) error (%d)\n", errno);
 		goto cleanup;
 	}
+#endif
 
 	BBS_last_access_tm = t_used = time(NULL);
 	loop = 1;
@@ -470,18 +508,34 @@ static int bbsnet_connect(int n)
 			break;
 		}
 
+#ifdef HAVE_SYS_EPOLL_H
 		nfds = epoll_wait(epollfd, events, MAX_EVENTS, 100); // 0.1 second
+		ret = nfds;
+#else
+		pfds[0].fd = STDIN_FILENO;
+		pfds[0].events = POLLIN;
+		pfds[1].fd = sock;
+		pfds[1].events = POLLIN | POLLOUT;
+		pfds[2].fd = STDOUT_FILENO;
+		pfds[2].events = POLLOUT;
+		nfds = 3;
+		ret = poll(pfds, (nfds_t)nfds, 100); // 0.1 second
+#endif
 
-		if (nfds < 0)
+		if (ret < 0)
 		{
 			if (errno != EINTR)
 			{
+#ifdef HAVE_SYS_EPOLL_H
 				log_error("epoll_wait() error (%d)\n", errno);
+#else
+				log_error("poll() error (%d)\n", errno);
+#endif
 				break;
 			}
 			continue;
 		}
-		else if (nfds == 0) // timeout
+		else if (ret == 0) // timeout
 		{
 			if (time(NULL) - BBS_last_access_tm >= BBS_max_user_idle_time)
 			{
@@ -491,24 +545,45 @@ static int bbsnet_connect(int n)
 
 		for (int i = 0; i < nfds; i++)
 		{
+#ifdef HAVE_SYS_EPOLL_H
 			if (events[i].data.fd == STDIN_FILENO)
+#else
+			if (pfds[i].fd == STDIN_FILENO && (pfds[i].revents & POLLIN))
+#endif
 			{
 				stdin_read_wait = 1;
 			}
 
+#ifdef HAVE_SYS_EPOLL_H
 			if (events[i].data.fd == sock)
+#else
+			if (pfds[i].fd == sock)
+#endif
 			{
+#ifdef HAVE_SYS_EPOLL_H
 				if (events[i].events & EPOLLIN)
+#else
+				if (pfds[i].revents & POLLIN)
+#endif
 				{
 					sock_read_wait = 1;
 				}
+
+#ifdef HAVE_SYS_EPOLL_H
 				if (events[i].events & EPOLLOUT)
+#else
+				if (pfds[i].revents & POLLOUT)
+#endif
 				{
 					sock_write_wait = 1;
 				}
 			}
 
+#ifdef HAVE_SYS_EPOLL_H
 			if (events[i].data.fd == STDOUT_FILENO)
+#else
+			if (pfds[i].fd == STDOUT_FILENO && (pfds[i].revents & POLLOUT))
+#endif	
 			{
 				stdout_write_wait = 1;
 			}
@@ -777,17 +852,16 @@ static int bbsnet_connect(int n)
 	iconv_close(output_cd);
 
 cleanup:
+#ifdef HAVE_SYS_EPOLL_H
 	if (close(epollfd) < 0)
 	{
 		log_error("close(epoll) error (%d)\n");
 	}
+#endif
 
 	// Restore STDIN/STDOUT flags
 	fcntl(STDIN_FILENO, F_SETFL, flags_stdin);
 	fcntl(STDOUT_FILENO, F_SETFL, flags_stdout);
-
-	// Restore socket flags
-	fcntl(sock, F_SETFL, flags_sock);
 
 	if (close(sock) == -1)
 	{

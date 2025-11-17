@@ -20,21 +20,29 @@
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
-#include <sys/epoll.h>
 #include <sys/ioctl.h>
 #include <sys/select.h>
 #include <libssh/callbacks.h>
 #include <libssh/libssh.h>
 #include <libssh/server.h>
 
+#ifdef HAVE_SYS_EPOLL_H
+#include <sys/epoll.h>
+#else
+#include <poll.h>
+#endif
+
 const char BBS_default_charset[CHARSET_MAX_LEN + 1] = "UTF-8";
 char stdio_charset[CHARSET_MAX_LEN + 1] = "UTF-8";
 
+#ifdef HAVE_SYS_EPOLL_H
 // epoll for STDIO
 static int stdin_epollfd = -1;
 static int stdout_epollfd = -1;
-static int stdin_flags;
-static int stdout_flags;
+#endif
+
+static int stdin_flags = 0;
+static int stdout_flags = 0;
 
 // static input / output buffer
 static char stdin_buf[LINE_BUFFER_LEN];
@@ -56,6 +64,7 @@ static iconv_t stdout_cd = NULL;
 
 int io_init(void)
 {
+#ifdef HAVE_SYS_EPOLL_H
 	struct epoll_event ev;
 
 	if (stdin_epollfd == -1)
@@ -106,19 +115,33 @@ int io_init(void)
 			return -1;
 		}
 
-		// Set STDOUT as non-blocking
 		stdout_flags = fcntl(STDOUT_FILENO, F_GETFL, 0);
 		fcntl(STDOUT_FILENO, F_SETFL, stdout_flags | O_NONBLOCK);
 	}
+#else
+	if (stdin_flags == 0)
+	{
+		stdin_flags = fcntl(STDIN_FILENO, F_GETFL, 0);
+		fcntl(STDIN_FILENO, F_SETFL, stdin_flags | O_NONBLOCK);
+	}
+
+	if (stdout_flags == 0)
+	{
+		stdout_flags = fcntl(STDOUT_FILENO, F_GETFL, 0);
+		fcntl(STDOUT_FILENO, F_SETFL, stdout_flags | O_NONBLOCK);
+	}
+#endif
 
 	return 0;
 }
 
 void io_cleanup(void)
 {
+#ifdef HAVE_SYS_EPOLL_H
 	if (stdin_epollfd != -1)
 	{
 		fcntl(STDIN_FILENO, F_SETFL, stdin_flags);
+		stdin_flags = 0;
 
 		if (close(stdin_epollfd) < 0)
 		{
@@ -130,6 +153,7 @@ void io_cleanup(void)
 	if (stdout_epollfd != -1)
 	{
 		fcntl(STDOUT_FILENO, F_SETFL, stdout_flags);
+		stdout_flags = 0;
 
 		if (close(stdout_epollfd) < 0)
 		{
@@ -137,6 +161,19 @@ void io_cleanup(void)
 		}
 		stdout_epollfd = -1;
 	}
+#else
+	if (stdin_flags != 0)
+	{
+		fcntl(STDIN_FILENO, F_SETFL, stdin_flags);
+		stdin_flags = 0;
+	}
+
+	if (stdout_flags != 0)
+	{
+		fcntl(STDOUT_FILENO, F_SETFL, stdout_flags);
+		stdout_flags = 0;
+	}
+#endif
 }
 
 int prints(const char *format, ...)
@@ -197,7 +234,12 @@ int outc(char c)
 
 int iflush(void)
 {
+#ifdef HAVE_SYS_EPOLL_H
 	struct epoll_event events[MAX_EVENTS];
+#else
+	struct pollfd pfds[1];
+#endif
+
 	int nfds;
 	int retry;
 	int ret = 0;
@@ -208,25 +250,41 @@ int iflush(void)
 	{
 		retry--;
 
+#ifdef HAVE_SYS_EPOLL_H
 		nfds = epoll_wait(stdout_epollfd, events, MAX_EVENTS, 100); // 0.1 second
+		ret = nfds;
+#else
+		pfds[0].fd = STDOUT_FILENO;
+		pfds[0].events = POLLOUT;
+		nfds = 1;
+		ret = poll(pfds, (nfds_t)nfds, 100); // 0.1 second
+#endif
 
-		if (nfds < 0)
+		if (ret < 0)
 		{
 			if (errno != EINTR)
 			{
+#ifdef HAVE_SYS_EPOLL_H
 				log_error("epoll_wait() error (%d)\n", errno);
+#else
+				log_error("poll() error (%d)\n", errno);
+#endif
 				break;
 			}
 			continue;
 		}
-		else if (nfds == 0) // timeout
+		else if (ret == 0) // timeout
 		{
 			continue;
 		}
 
 		for (int i = 0; i < nfds; i++)
 		{
+#ifdef HAVE_SYS_EPOLL_H
 			if (events[i].data.fd == STDOUT_FILENO)
+#else
+			if (pfds[i].fd == STDOUT_FILENO && (pfds[i].revents & POLLOUT))
+#endif
 			{
 				if (stdout_buf_offset < stdout_buf_len)
 				{
@@ -303,7 +361,12 @@ int igetch(int timeout)
 {
 	static int stdin_read_wait = 0;
 
+#ifdef HAVE_SYS_EPOLL_H
 	struct epoll_event events[MAX_EVENTS];
+#else
+	struct pollfd pfds[1];
+#endif
+
 	int nfds;
 	int ret;
 	int loop;
@@ -331,18 +394,30 @@ int igetch(int timeout)
 
 			if (!stdin_read_wait)
 			{
+#ifdef HAVE_SYS_EPOLL_H
 				nfds = epoll_wait(stdin_epollfd, events, MAX_EVENTS, timeout);
+				ret = nfds;
+#else
+				pfds[0].fd = STDIN_FILENO;
+				pfds[0].events = POLLIN;
+				nfds = 1;
+				ret = poll(pfds, (nfds_t)nfds, timeout);
+#endif
 
-				if (nfds < 0)
+				if (ret < 0)
 				{
 					if (errno != EINTR)
 					{
+#ifdef HAVE_SYS_EPOLL_H
 						log_error("epoll_wait() error (%d)\n", errno);
+#else
+						log_error("poll() error (%d)\n", errno);
+#endif
 						break;
 					}
 					continue;
 				}
-				else if (nfds == 0) // timeout
+				else if (ret == 0) // timeout
 				{
 					out = KEY_TIMEOUT;
 					break;
@@ -350,7 +425,11 @@ int igetch(int timeout)
 
 				for (int i = 0; i < nfds; i++)
 				{
+#ifdef HAVE_SYS_EPOLL_H
 					if (events[i].data.fd == STDIN_FILENO)
+#else
+					if (pfds[i].fd == STDIN_FILENO && (pfds[i].revents & POLLIN))
+#endif
 					{
 						stdin_read_wait = 1;
 					}

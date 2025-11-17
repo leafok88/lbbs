@@ -38,11 +38,16 @@
 #include <libssh/libssh.h>
 #include <libssh/server.h>
 #include <netinet/in.h>
-#include <sys/epoll.h>
 #include <sys/socket.h>
 #include <sys/syscall.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+
+#ifdef HAVE_SYS_EPOLL_H
+#include <sys/epoll.h>
+#else
+#include <poll.h>
+#endif
 
 #ifdef HAVE_SYSTEMD_SD_DAEMON_H
 #include <systemd/sd-daemon.h>
@@ -84,7 +89,11 @@ struct channel_data_struct
 
 static int socket_server[2];
 static int socket_client;
+
+#ifdef HAVE_SYS_EPOLL_H
 static int epollfd_server = -1;
+#endif
+
 static ssh_bind sshbind;
 
 static HASH_DICT *hash_dict_pid_sockaddr = NULL;
@@ -318,10 +327,12 @@ static int fork_server(void)
 	}
 
 	// Child process
+#ifdef HAVE_SYS_EPOLL_H
 	if (close(epollfd_server) < 0)
 	{
 		log_error("close(epollfd_server) error (%d)\n");
 	}
+#endif
 
 	for (i = 0; i < 2; i++)
 	{
@@ -490,7 +501,13 @@ int net_server(const char *hostaddr, in_port_t port[])
 	int ret;
 	int flags_server[2];
 	struct sockaddr_in sin;
+
+#ifdef HAVE_SYS_EPOLL_H
 	struct epoll_event ev, events[MAX_EVENTS];
+#else
+	struct pollfd pfds[2];
+#endif
+
 	int nfds;
 	siginfo_t siginfo;
 	int notify_child_exit = 0;
@@ -500,6 +517,7 @@ int net_server(const char *hostaddr, in_port_t port[])
 	int i, j;
 	pid_t pid;
 	int ssh_log_level = SSH_LOG_NOLOG;
+
 #ifdef HAVE_SYSTEMD_SD_DAEMON_H
 	int sd_notify_stopping = 0;
 #endif
@@ -519,12 +537,14 @@ int net_server(const char *hostaddr, in_port_t port[])
 		return -1;
 	}
 
+#ifdef HAVE_SYS_EPOLL_H
 	epollfd_server = epoll_create1(0);
 	if (epollfd_server == -1)
 	{
 		log_error("epoll_create1() error (%d)\n", errno);
 		return -1;
 	}
+#endif
 
 	// Server socket
 	for (i = 0; i < 2; i++)
@@ -567,6 +587,7 @@ int net_server(const char *hostaddr, in_port_t port[])
 
 		log_common("Listening at %s:%u\n", inet_ntoa(sin.sin_addr), ntohs(sin.sin_port));
 
+#ifdef HAVE_SYS_EPOLL_H
 		ev.events = EPOLLIN;
 		ev.data.fd = socket_server[i];
 		if (epoll_ctl(epollfd_server, EPOLL_CTL_ADD, socket_server[i], &ev) == -1)
@@ -578,6 +599,7 @@ int net_server(const char *hostaddr, in_port_t port[])
 			}
 			return -1;
 		}
+#endif
 
 		flags_server[i] = fcntl(socket_server[i], F_GETFL, 0);
 		fcntl(socket_server[i], F_SETFL, flags_server[i] | O_NONBLOCK);
@@ -781,13 +803,26 @@ int net_server(const char *hostaddr, in_port_t port[])
 #endif
 		}
 
+#ifdef HAVE_SYS_EPOLL_H
 		nfds = epoll_wait(epollfd_server, events, MAX_EVENTS, 100); // 0.1 second
-
-		if (nfds < 0)
+		ret = nfds;
+#else
+		pfds[0].fd = socket_server[0];
+		pfds[0].events = POLLIN;
+		pfds[1].fd = socket_server[1];
+		pfds[1].events = POLLIN;
+		nfds = 2;
+		ret = poll(pfds, (nfds_t)nfds, 100); // 0.1 second
+#endif
+		if (ret < 0)
 		{
 			if (errno != EINTR)
 			{
+#ifdef HAVE_SYS_EPOLL_H
 				log_error("epoll_wait() error (%d)\n", errno);
+#else
+				log_error("poll() error (%d)\n", errno);
+#endif
 				break;
 			}
 			continue;
@@ -801,9 +836,17 @@ int net_server(const char *hostaddr, in_port_t port[])
 
 		for (int i = 0; i < nfds; i++)
 		{
+#ifdef HAVE_SYS_EPOLL_H
 			if (events[i].data.fd == socket_server[0] || events[i].data.fd == socket_server[1])
+#else
+			if ((pfds[i].fd == socket_server[0] || pfds[i].fd == socket_server[1]) && (pfds[i].revents & POLLIN))
+#endif
 			{
+#ifdef HAVE_SYS_EPOLL_H
 				SSH_v2 = (events[i].data.fd == socket_server[1] ? 1 : 0);
+#else
+				SSH_v2 = (pfds[i].fd == socket_server[1] ? 1 : 0);
+#endif
 
 				while (!SYS_server_exit) // Accept all incoming connections until error
 				{
@@ -882,10 +925,12 @@ int net_server(const char *hostaddr, in_port_t port[])
 		}
 	}
 
+#ifdef HAVE_SYS_EPOLL_H
 	if (close(epollfd_server) < 0)
 	{
 		log_error("close(epollfd_server) error (%d)\n");
 	}
+#endif
 
 	for (i = 0; i < 2; i++)
 	{

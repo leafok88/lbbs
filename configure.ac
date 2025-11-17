@@ -56,12 +56,19 @@ AC_PROG_EGREP
 AC_HEADER_RESOLV
 AC_HEADER_SYS_WAIT
 AC_CHECK_HEADERS([arpa/inet.h dflcn.h fcntl.h iconv.h libssh/libssh.h libssh/server.h memory.h mysql/mysql.h net/if.h netdb.h netinet/in.h \
-                  pty.h signal.h stdint.h stdlib.h string.h sys/epoll.h sys/ioctl.h sys/ipc.h sys/mman.h sys/param.h sys/socket.h \
-                  sys/time.h sys/types.h sys/sem.h sys/shm.h sys/stat.h sys/syscall.h sys/wait.h \
-                  unistd.h utmp.h wchar.h])
+                  poll.h pty.h signal.h stdint.h stdlib.h string.h sys/ioctl.h sys/ipc.h sys/mman.h sys/param.h sys/socket.h \
+                  sys/time.h sys/types.h sys/sem.h sys/shm.h sys/stat.h sys/syscall.h sys/wait.h unistd.h utmp.h wchar.h])
 
 AS_IF([test "x$enable_systemd" = xyes],
       [AC_CHECK_HEADERS([systemd/sd-daemon.h])])
+
+AC_ARG_WITH([epoll],
+            [AS_HELP_STRING([--with-epoll], [Use epoll instead of poll])],
+            [],
+            [with_epoll="yes"])
+
+AS_IF([test "x$with_epoll" = xyes],
+      [AC_CHECK_HEADERS([sys/epoll.h])])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
