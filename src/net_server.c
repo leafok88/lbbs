@@ -566,10 +566,12 @@ int net_server(const char *hostaddr, in_port_t port[])
 		{
 			log_error("setsockopt SO_REUSEADDR error (%d)\n", errno);
 		}
+#if defined(SO_REUSEPORT)
 		if (setsockopt(socket_server[i], SOL_SOCKET, SO_REUSEPORT, &flags_server[i], sizeof(flags_server[i])) < 0)
 		{
 			log_error("setsockopt SO_REUSEPORT error (%d)\n", errno);
 		}
+#endif
 
 		if (bind(socket_server[i], (struct sockaddr *)&sin, sizeof(sin)) < 0)
 		{
