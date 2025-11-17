@@ -41,14 +41,14 @@ int log_begin(const char *common_log_file, const char *error_log_file)
 	fp_common_log = fopen(path_common_log, "a");
 	if (fp_common_log == NULL)
 	{
-		perror("log_begin(common_log) failed\n");
+		fprintf(stderr, "fopen(%s) error\n", path_common_log);
 		return -1;
 	}
 
 	fp_error_log = fopen(path_error_log, "a");
 	if (fp_error_log == NULL)
 	{
-		perror("log_begin(error_log) failed\n");
+		fprintf(stderr, "fopen(%s) error\n", path_error_log);
 		return -2;
 	}
 
