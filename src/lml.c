@@ -265,14 +265,14 @@ int lml_render(const char *str_in, char *str_out, int buf_len, int width, int qu
 
 		if (!quote_mode && !lml_tag_disabled && str_in[i] == '\033' && str_in[i + 1] == '[') // Escape sequence
 		{
-			for (k = i + 2; isdigit(str_in[k]) || str_in[k] == ';' || str_in[k] == '?'; k++)
+			for (k = i + 2; isdigit((int)str_in[k]) || str_in[k] == ';' || str_in[k] == '?'; k++)
 				;
 
 			if (str_in[k] == 'm') // valid -- copy directly
 			{
 				CHECK_AND_APPEND_OUTPUT(str_out, buf_len, j, str_in + i, k - i + 1, line_width);
 			}
-			else if (isalpha(str_in[k]))
+			else if (isalpha((int)str_in[k]))
 			{
 				// unsupported ANSI CSI command
 			}
