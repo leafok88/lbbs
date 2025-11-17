@@ -56,8 +56,6 @@ enum _net_server_constant_t
 	SSH_AUTH_MAX_DURATION = 60 * 1000, // milliseconds
 };
 
-static const char SFTP_SERVER_PATH[] = "/usr/lib/sftp-server";
-
 /* A userdata struct for session. */
 struct session_data_struct
 {
@@ -83,6 +81,16 @@ struct channel_data_struct
 	/* Terminal size struct. */
 	struct winsize *winsize;
 };
+
+static int socket_server[2];
+static int socket_client;
+static int epollfd_server = -1;
+static ssh_bind sshbind;
+
+static HASH_DICT *hash_dict_pid_sockaddr = NULL;
+static HASH_DICT *hash_dict_sockaddr_count = NULL;
+
+static const char SFTP_SERVER_PATH[] = "/usr/lib/sftp-server";
 
 static int auth_password(ssh_session session, const char *user,
 						 const char *password, void *userdata)
@@ -310,11 +318,21 @@ static int fork_server(void)
 	}
 
 	// Child process
-
-	if (close(socket_server[0]) == -1 || close(socket_server[1]) == -1)
+	if (close(epollfd_server) < 0)
 	{
-		log_error("Close server socket failed\n");
+		log_error("close(epollfd_server) error (%d)\n");
 	}
+
+	for (i = 0; i < 2; i++)
+	{
+		if (close(socket_server[i]) == -1)
+		{
+			log_error("Close server socket failed\n");
+		}
+	}
+
+	hash_dict_destroy(hash_dict_pid_sockaddr);
+	hash_dict_destroy(hash_dict_sockaddr_count);
 
 	SSH_session = ssh_new();
 
@@ -409,6 +427,12 @@ static int fork_server(void)
 		goto cleanup;
 	}
 
+	if (io_init() < 0)
+	{
+		log_error("io_init() error\n");
+		goto cleanup;
+	}
+
 	SYS_child_process_count = 0;
 
 	bbs_main();
@@ -419,10 +443,22 @@ cleanup:
 
 	if (SSH_v2)
 	{
-		close(cdata.pty_master);
-		close(cdata.child_stdin);
-		close(cdata.child_stdout);
-		close(cdata.child_stderr);
+		if (cdata.pty_master != -1)
+		{
+			close(cdata.pty_master);
+		}
+		if (cdata.child_stdin != -1)
+		{
+			close(cdata.child_stdin);
+		}
+		if (cdata.child_stdout != -1)
+		{
+			close(cdata.child_stdout);
+		}
+		if (cdata.child_stderr != -1)
+		{
+			close(cdata.child_stderr);
+		}
 
 		ssh_channel_free(SSH_channel);
 		ssh_disconnect(SSH_session);
@@ -436,6 +472,7 @@ cleanup:
 	ssh_finalize();
 
 	// Close Input and Output for client
+	io_cleanup();
 	close(STDIN_FILENO);
 	close(STDOUT_FILENO);
 
@@ -449,15 +486,12 @@ cleanup:
 
 int net_server(const char *hostaddr, in_port_t port[])
 {
-	HASH_DICT *hash_dict_pid_sockaddr = NULL;
-	HASH_DICT *hash_dict_sockaddr_count = NULL;
-
 	unsigned int addrlen;
 	int ret;
-	int flags[2];
+	int flags_server[2];
 	struct sockaddr_in sin;
 	struct epoll_event ev, events[MAX_EVENTS];
-	int nfds, epollfd;
+	int nfds;
 	siginfo_t siginfo;
 	int notify_child_exit = 0;
 	time_t tm_notify_child_exit = time(NULL);
@@ -485,8 +519,8 @@ int net_server(const char *hostaddr, in_port_t port[])
 		return -1;
 	}
 
-	epollfd = epoll_create1(0);
-	if (epollfd < 0)
+	epollfd_server = epoll_create1(0);
+	if (epollfd_server == -1)
 	{
 		log_error("epoll_create1() error (%d)\n", errno);
 		return -1;
@@ -508,12 +542,12 @@ int net_server(const char *hostaddr, in_port_t port[])
 		sin.sin_port = htons(port[i]);
 
 		// Reuse address and port
-		flags[i] = 1;
-		if (setsockopt(socket_server[i], SOL_SOCKET, SO_REUSEADDR, &flags[i], sizeof(flags[i])) < 0)
+		flags_server[i] = 1;
+		if (setsockopt(socket_server[i], SOL_SOCKET, SO_REUSEADDR, &flags_server[i], sizeof(flags_server[i])) < 0)
 		{
 			log_error("setsockopt SO_REUSEADDR error (%d)\n", errno);
 		}
-		if (setsockopt(socket_server[i], SOL_SOCKET, SO_REUSEPORT, &flags[i], sizeof(flags[i])) < 0)
+		if (setsockopt(socket_server[i], SOL_SOCKET, SO_REUSEPORT, &flags_server[i], sizeof(flags_server[i])) < 0)
 		{
 			log_error("setsockopt SO_REUSEPORT error (%d)\n", errno);
 		}
@@ -535,18 +569,18 @@ int net_server(const char *hostaddr, in_port_t port[])
 
 		ev.events = EPOLLIN;
 		ev.data.fd = socket_server[i];
-		if (epoll_ctl(epollfd, EPOLL_CTL_ADD, socket_server[i], &ev) == -1)
+		if (epoll_ctl(epollfd_server, EPOLL_CTL_ADD, socket_server[i], &ev) == -1)
 		{
 			log_error("epoll_ctl(socket_server[%d]) error (%d)\n", i, errno);
-			if (close(epollfd) < 0)
+			if (close(epollfd_server) < 0)
 			{
 				log_error("close(epoll) error (%d)\n");
 			}
 			return -1;
 		}
 
-		flags[i] = fcntl(socket_server[i], F_GETFL, 0);
-		fcntl(socket_server[i], F_SETFL, flags[i] | O_NONBLOCK);
+		flags_server[i] = fcntl(socket_server[i], F_GETFL, 0);
+		fcntl(socket_server[i], F_SETFL, flags_server[i] | O_NONBLOCK);
 	}
 
 	hash_dict_pid_sockaddr = hash_dict_create(MAX_CLIENT_LIMIT);
@@ -747,7 +781,7 @@ int net_server(const char *hostaddr, in_port_t port[])
 #endif
 		}
 
-		nfds = epoll_wait(epollfd, events, MAX_EVENTS, 100); // 0.1 second
+		nfds = epoll_wait(epollfd_server, events, MAX_EVENTS, 100); // 0.1 second
 
 		if (nfds < 0)
 		{
@@ -848,15 +882,13 @@ int net_server(const char *hostaddr, in_port_t port[])
 		}
 	}
 
-	if (close(epollfd) < 0)
+	if (close(epollfd_server) < 0)
 	{
-		log_error("close(epoll) error (%d)\n");
+		log_error("close(epollfd_server) error (%d)\n");
 	}
 
 	for (i = 0; i < 2; i++)
 	{
-		fcntl(socket_server[i], F_SETFL, flags[i]);
-
 		if (close(socket_server[i]) == -1)
 		{
 			log_error("Close server socket failed\n");

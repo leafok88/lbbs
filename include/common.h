@@ -72,14 +72,11 @@ extern const char *data_files_load_startup[];
 extern const int data_files_load_startup_count;
 
 // Network
-extern int socket_server[2];
-extern int socket_client;
 extern char hostaddr_client[IP_ADDR_LEN];
 extern int port_client;
 
 // SSHv2
 extern int SSH_v2;
-extern ssh_bind sshbind;
 extern ssh_session SSH_session;
 extern ssh_channel SSH_channel;
 

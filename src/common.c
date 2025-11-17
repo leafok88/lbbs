@@ -65,14 +65,11 @@ const char *data_files_load_startup[] = {
 const int data_files_load_startup_count = sizeof(data_files_load_startup) / sizeof(const char *);
 
 // Global declaration for sockets
-int socket_server[2];
-int socket_client;
 char hostaddr_client[IP_ADDR_LEN];
 int port_client;
 
 // SSHv2
 int SSH_v2 = 0;
-ssh_bind sshbind;
 ssh_session SSH_session;
 ssh_channel SSH_channel;
 
