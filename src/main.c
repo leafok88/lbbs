@@ -101,7 +101,8 @@ int main(int argc, char *argv[])
 				}
 				if (strcmp(argv[i] + 2, "version") == 0)
 				{
-					puts(APP_INFO);
+					printf("%s\n", APP_INFO);
+					printf("%s\n", COPYRIGHT_INFO);
 					return 0;
 				}
 				if (strcmp(argv[i] + 2, "display-log") == 0)

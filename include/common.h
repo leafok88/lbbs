@@ -33,6 +33,7 @@ enum common_constant_t
 
 // Version
 extern const char APP_INFO[];
+extern const char COPYRIGHT_INFO[];
 
 // Enviroment
 extern const char CONF_BBSD[];
