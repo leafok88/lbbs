@@ -24,6 +24,14 @@ PKG_PROG_PKG_CONFIG
 PKG_CHECK_MODULES([LIBSSH], [libssh])
 PKG_CHECK_MODULES([LIBPCRE2], [libpcre2-8])
 
+AC_ARG_WITH([iconv],
+            [AS_HELP_STRING([--with-iconv], [Use iconv library package config])],
+            [],
+            [with_iconv="no"])
+
+AS_IF([test "x$with_iconv" = xyes],
+      [PKG_CHECK_MODULES([LIBICONV], [libiconv])])
+
 AC_ARG_WITH([mariadb],
             [AS_HELP_STRING([--with-mariadb], [Use MariaDB library instead of MySQL client library])],
             [],

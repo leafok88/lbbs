@@ -27,10 +27,10 @@ lib_LTLIBRARIES = libbbs.la
 
 libbbs_la_SOURCES = bbs_net.c
 
-AM_CFLAGS = -I${srcdir}/../include ${LIBSSH_CFLAGS} ${MYSQLCLIENT_CFLAGS} ${SYSTEMD_CFLAGS} ${LIBPCRE2_CFLAGS} \
+AM_CFLAGS = -I${srcdir}/../include ${LIBSSH_CFLAGS} ${MYSQLCLIENT_CFLAGS} ${SYSTEMD_CFLAGS} ${LIBPCRE2_CFLAGS} ${LIBICONV_CFLAGS} \
 			-std=c17 -Wall -Werror -Wno-unused-parameter -Wformat -Wpedantic -Wformat-security -Wconversion \
 			-Wdeprecated -finline-functions
-LIBS = ${LIBSSH_LIBS} ${MYSQLCLIENT_LIBS} ${SYSTEMD_LIBS} ${LIBPCRE2_LIBS} -ldl
+LIBS = ${LIBSSH_LIBS} ${MYSQLCLIENT_LIBS} ${SYSTEMD_LIBS} ${LIBPCRE2_LIBS} ${LIBICONV_LIBS} -ldl
 
 libdir = ${prefix}/lib
 
