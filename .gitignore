@@ -7,7 +7,14 @@
 /COPYING
 /compile
 /conf/*.user
+/conf/lbbs.logrotate
+/conf/lbbs.logrotate~
+/conf/lbbs.service
+/conf/lbbs.service~
 /config.guess
+/config.h
+/config.h.in
+/config.h.in~
 /config.log
 /config.status
 /config.sub
@@ -26,10 +33,9 @@
 /var
 CVS
 .cvsignore
-config.h
-config.h.in
 Makefile
 Makefile.in
+lt-bbsd.c
 stamp-h1
 *.o
 *.Po
@@ -42,6 +48,7 @@ stamp-h1
 *.lo
 *.Tpo
 /src/bbsd
+/src/bbsd.exe
 /src/test_trie_dict
 /src/test_file_loader
 /src/test_section_list

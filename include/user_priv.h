@@ -10,7 +10,7 @@
 #define _USER_PRIV_H_
 
 #include "bbs.h"
-#include <mysql/mysql.h>
+#include <mysql.h>
 
 // User privilege
 enum user_priv_t

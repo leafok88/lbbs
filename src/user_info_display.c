@@ -28,6 +28,8 @@ enum _user_info_display_constant_t
 {
 	BBS_max_sessions_per_user = 10,
 	LAST_LOGIN_DT_MAX_LEN = 50,
+	ASTRO_STR_MAX_LEN = 64,
+	USER_INFO_MAX_LEN = 8192,
 };
 
 static int display_user_info_key_handler(int *p_key, DISPLAY_CTX *p_ctx)
@@ -41,7 +43,7 @@ int user_info_display(USER_INFO *p_user_info)
 	int session_cnt = BBS_max_sessions_per_user;
 	int article_cnt;
 	const char *astro_name;
-	char astro_str[LINE_BUFFER_LEN];
+	char astro_str[ASTRO_STR_MAX_LEN];
 	struct tm tm_last_login;
 	char str_last_login_dt[LAST_LOGIN_DT_MAX_LEN + 1];
 	struct tm tm_last_logout;
@@ -55,7 +57,7 @@ int user_info_display(USER_INFO *p_user_info)
 	const char *user_level_name;
 	char intro_f[BBS_user_intro_max_len + 1];
 	int intro_len;
-	char user_info_f[BUFSIZ];
+	char user_info_f[USER_INFO_MAX_LEN];
 	long line_offsets[BBS_user_intro_max_line + 1];
 	long lines;
 	char *p;

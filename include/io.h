@@ -101,6 +101,9 @@ enum io_iconv_t
 extern const char BBS_default_charset[CHARSET_MAX_LEN + 1];
 extern char stdio_charset[CHARSET_MAX_LEN + 1];
 
+extern int io_init(void);
+extern void io_cleanup(void);
+
 extern int prints(const char *format, ...);
 extern int outc(char c);
 extern int iflush(void);

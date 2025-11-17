@@ -20,26 +20,45 @@
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
-#include <sys/epoll.h>
 #include <sys/ioctl.h>
 #include <sys/select.h>
 #include <libssh/callbacks.h>
 #include <libssh/libssh.h>
 #include <libssh/server.h>
 
+#ifdef HAVE_SYS_EPOLL_H
+#include <sys/epoll.h>
+#else
+#include <poll.h>
+#endif
+
+enum _io_constant_t
+{
+	OUTPUT_BUF_SIZE = 8192,
+};
+
 const char BBS_default_charset[CHARSET_MAX_LEN + 1] = "UTF-8";
 char stdio_charset[CHARSET_MAX_LEN + 1] = "UTF-8";
 
+#ifdef HAVE_SYS_EPOLL_H
+// epoll for STDIO
+static int stdin_epollfd = -1;
+static int stdout_epollfd = -1;
+#endif
+
+static int stdin_flags = 0;
+static int stdout_flags = 0;
+
 // static input / output buffer
 static char stdin_buf[LINE_BUFFER_LEN];
-static char stdout_buf[BUFSIZ];
+static char stdout_buf[OUTPUT_BUF_SIZE];
 static int stdin_buf_len = 0;
 static int stdout_buf_len = 0;
 static int stdin_buf_offset = 0;
 static int stdout_buf_offset = 0;
 
 static char stdin_conv[LINE_BUFFER_LEN * 2];
-static char stdout_conv[BUFSIZ * 2];
+static char stdout_conv[OUTPUT_BUF_SIZE * 2];
 static int stdin_conv_len = 0;
 static int stdout_conv_len = 0;
 static int stdin_conv_offset = 0;
@@ -48,9 +67,123 @@ static int stdout_conv_offset = 0;
 static iconv_t stdin_cd = NULL;
 static iconv_t stdout_cd = NULL;
 
+int io_init(void)
+{
+#ifdef HAVE_SYS_EPOLL_H
+	struct epoll_event ev;
+
+	if (stdin_epollfd == -1)
+	{
+		stdin_epollfd = epoll_create1(0);
+		if (stdin_epollfd == -1)
+		{
+			log_error("epoll_create1() error (%d)\n", errno);
+			return -1;
+		}
+
+		ev.events = EPOLLIN;
+		ev.data.fd = STDIN_FILENO;
+		if (epoll_ctl(stdin_epollfd, EPOLL_CTL_ADD, STDIN_FILENO, &ev) == -1)
+		{
+			log_error("epoll_ctl(STDIN_FILENO) error (%d)\n", errno);
+			if (close(stdin_epollfd) < 0)
+			{
+				log_error("close(stdin_epollfd) error (%d)\n");
+			}
+			stdin_epollfd = -1;
+			return -1;
+		}
+
+		stdin_flags = fcntl(STDIN_FILENO, F_GETFL, 0);
+		fcntl(STDIN_FILENO, F_SETFL, stdin_flags | O_NONBLOCK);
+	}
+
+	if (stdout_epollfd == -1)
+	{
+		stdout_epollfd = epoll_create1(0);
+		if (stdout_epollfd == -1)
+		{
+			log_error("epoll_create1() error (%d)\n", errno);
+			return -1;
+		}
+
+		ev.events = EPOLLOUT;
+		ev.data.fd = STDOUT_FILENO;
+		if (epoll_ctl(stdout_epollfd, EPOLL_CTL_ADD, STDOUT_FILENO, &ev) == -1)
+		{
+			log_error("epoll_ctl(STDOUT_FILENO) error (%d)\n", errno);
+			if (close(stdout_epollfd) < 0)
+			{
+				log_error("close(stdout_epollfd) error (%d)\n");
+			}
+			stdout_epollfd = -1;
+			return -1;
+		}
+
+		stdout_flags = fcntl(STDOUT_FILENO, F_GETFL, 0);
+		fcntl(STDOUT_FILENO, F_SETFL, stdout_flags | O_NONBLOCK);
+	}
+#else
+	if (stdin_flags == 0)
+	{
+		stdin_flags = fcntl(STDIN_FILENO, F_GETFL, 0);
+		fcntl(STDIN_FILENO, F_SETFL, stdin_flags | O_NONBLOCK);
+	}
+
+	if (stdout_flags == 0)
+	{
+		stdout_flags = fcntl(STDOUT_FILENO, F_GETFL, 0);
+		fcntl(STDOUT_FILENO, F_SETFL, stdout_flags | O_NONBLOCK);
+	}
+#endif
+
+	return 0;
+}
+
+void io_cleanup(void)
+{
+#ifdef HAVE_SYS_EPOLL_H
+	if (stdin_epollfd != -1)
+	{
+		fcntl(STDIN_FILENO, F_SETFL, stdin_flags);
+		stdin_flags = 0;
+
+		if (close(stdin_epollfd) < 0)
+		{
+			log_error("close(stdin_epollfd) error (%d)\n");
+		}
+		stdin_epollfd = -1;
+	}
+
+	if (stdout_epollfd != -1)
+	{
+		fcntl(STDOUT_FILENO, F_SETFL, stdout_flags);
+		stdout_flags = 0;
+
+		if (close(stdout_epollfd) < 0)
+		{
+			log_error("close(stdout_epollfd) error (%d)\n");
+		}
+		stdout_epollfd = -1;
+	}
+#else
+	if (stdin_flags != 0)
+	{
+		fcntl(STDIN_FILENO, F_SETFL, stdin_flags);
+		stdin_flags = 0;
+	}
+
+	if (stdout_flags != 0)
+	{
+		fcntl(STDOUT_FILENO, F_SETFL, stdout_flags);
+		stdout_flags = 0;
+	}
+#endif
+}
+
 int prints(const char *format, ...)
 {
-	char buf[BUFSIZ];
+	char buf[OUTPUT_BUF_SIZE];
 	va_list args;
 	int ret;
 
@@ -60,12 +193,12 @@ int prints(const char *format, ...)
 
 	if (ret > 0)
 	{
-		if (stdout_buf_len + ret > BUFSIZ)
+		if (stdout_buf_len + ret > OUTPUT_BUF_SIZE)
 		{
 			iflush();
 		}
 
-		if (stdout_buf_len + ret <= BUFSIZ)
+		if (stdout_buf_len + ret <= OUTPUT_BUF_SIZE)
 		{
 			memcpy(stdout_buf + stdout_buf_len, buf, (size_t)ret);
 			stdout_buf_len += ret;
@@ -73,7 +206,7 @@ int prints(const char *format, ...)
 		else
 		{
 			errno = EAGAIN;
-			ret = (BUFSIZ - stdout_buf_len - ret);
+			ret = (OUTPUT_BUF_SIZE - stdout_buf_len - ret);
 			log_error("Output buffer is full, additional %d is required\n", ret);
 		}
 	}
@@ -85,12 +218,12 @@ int outc(char c)
 {
 	int ret;
 
-	if (stdout_buf_len + 1 > BUFSIZ)
+	if (stdout_buf_len + 1 > OUTPUT_BUF_SIZE)
 	{
 		iflush();
 	}
 
-	if (stdout_buf_len + 1 <= BUFSIZ)
+	if (stdout_buf_len + 1 <= OUTPUT_BUF_SIZE)
 	{
 		stdout_buf[stdout_buf_len] = c;
 		stdout_buf_len++;
@@ -106,34 +239,15 @@ int outc(char c)
 
 int iflush(void)
 {
-	int flags;
-	struct epoll_event ev, events[MAX_EVENTS];
-	int nfds, epollfd;
+#ifdef HAVE_SYS_EPOLL_H
+	struct epoll_event events[MAX_EVENTS];
+#else
+	struct pollfd pfds[1];
+#endif
+
+	int nfds;
 	int retry;
 	int ret = 0;
-
-	epollfd = epoll_create1(0);
-	if (epollfd < 0)
-	{
-		log_error("epoll_create1() error (%d)\n", errno);
-		return -1;
-	}
-
-	ev.events = EPOLLOUT;
-	ev.data.fd = STDOUT_FILENO;
-	if (epoll_ctl(epollfd, EPOLL_CTL_ADD, STDOUT_FILENO, &ev) == -1)
-	{
-		log_error("epoll_ctl(STDOUT_FILENO) error (%d)\n", errno);
-		if (close(epollfd) < 0)
-		{
-			log_error("close(epoll) error (%d)\n");
-		}
-		return -1;
-	}
-
-	// Set STDOUT as non-blocking
-	flags = fcntl(STDOUT_FILENO, F_GETFL, 0);
-	fcntl(STDOUT_FILENO, F_SETFL, flags | O_NONBLOCK);
 
 	// Retry wait / flush for at most 3 times
 	retry = 3;
@@ -141,25 +255,41 @@ int iflush(void)
 	{
 		retry--;
 
-		nfds = epoll_wait(epollfd, events, MAX_EVENTS, 100); // 0.1 second
+#ifdef HAVE_SYS_EPOLL_H
+		nfds = epoll_wait(stdout_epollfd, events, MAX_EVENTS, 100); // 0.1 second
+		ret = nfds;
+#else
+		pfds[0].fd = STDOUT_FILENO;
+		pfds[0].events = POLLOUT;
+		nfds = 1;
+		ret = poll(pfds, (nfds_t)nfds, 100); // 0.1 second
+#endif
 
-		if (nfds < 0)
+		if (ret < 0)
 		{
 			if (errno != EINTR)
 			{
+#ifdef HAVE_SYS_EPOLL_H
 				log_error("epoll_wait() error (%d)\n", errno);
+#else
+				log_error("poll() error (%d)\n", errno);
+#endif
 				break;
 			}
 			continue;
 		}
-		else if (nfds == 0) // timeout
+		else if (ret == 0) // timeout
 		{
 			continue;
 		}
 
 		for (int i = 0; i < nfds; i++)
 		{
+#ifdef HAVE_SYS_EPOLL_H
 			if (events[i].data.fd == STDOUT_FILENO)
+#else
+			if (pfds[i].fd == STDOUT_FILENO && (pfds[i].revents & POLLOUT))
+#endif
 			{
 				if (stdout_buf_offset < stdout_buf_len)
 				{
@@ -229,14 +359,6 @@ int iflush(void)
 		}
 	}
 
-	// Restore STDOUT flags
-	fcntl(STDOUT_FILENO, F_SETFL, flags);
-
-	if (close(epollfd) < 0)
-	{
-		log_error("close(epoll) error (%d)\n");
-	}
-
 	return ret;
 }
 
@@ -244,8 +366,13 @@ int igetch(int timeout)
 {
 	static int stdin_read_wait = 0;
 
-	struct epoll_event ev, events[MAX_EVENTS];
-	int nfds, epollfd;
+#ifdef HAVE_SYS_EPOLL_H
+	struct epoll_event events[MAX_EVENTS];
+#else
+	struct pollfd pfds[1];
+#endif
+
+	int nfds;
 	int ret;
 	int loop;
 
@@ -255,35 +382,11 @@ int igetch(int timeout)
 	int in_ascii = 0;
 	int in_control = 0;
 	int i = 0;
-	int flags;
 
 	if (stdin_conv_offset >= stdin_conv_len)
 	{
 		stdin_conv_len = 0;
 		stdin_conv_offset = 0;
-
-		epollfd = epoll_create1(0);
-		if (epollfd < 0)
-		{
-			log_error("epoll_create1() error (%d)\n", errno);
-			return -1;
-		}
-
-		ev.events = EPOLLIN;
-		ev.data.fd = STDIN_FILENO;
-		if (epoll_ctl(epollfd, EPOLL_CTL_ADD, STDIN_FILENO, &ev) == -1)
-		{
-			log_error("epoll_ctl(STDIN_FILENO) error (%d)\n", errno);
-
-			if (close(epollfd) < 0)
-			{
-				log_error("close(epoll) error (%d)\n");
-			}
-			return -1;
-		}
-
-		flags = fcntl(STDIN_FILENO, F_GETFL, 0);
-		fcntl(STDIN_FILENO, F_SETFL, flags | O_NONBLOCK);
 
 		for (loop = 1; loop && stdin_buf_len < sizeof(stdin_buf) && stdin_conv_offset >= stdin_conv_len && !SYS_server_exit;)
 		{
@@ -296,18 +399,30 @@ int igetch(int timeout)
 
 			if (!stdin_read_wait)
 			{
-				nfds = epoll_wait(epollfd, events, MAX_EVENTS, timeout);
+#ifdef HAVE_SYS_EPOLL_H
+				nfds = epoll_wait(stdin_epollfd, events, MAX_EVENTS, timeout);
+				ret = nfds;
+#else
+				pfds[0].fd = STDIN_FILENO;
+				pfds[0].events = POLLIN;
+				nfds = 1;
+				ret = poll(pfds, (nfds_t)nfds, timeout);
+#endif
 
-				if (nfds < 0)
+				if (ret < 0)
 				{
 					if (errno != EINTR)
 					{
+#ifdef HAVE_SYS_EPOLL_H
 						log_error("epoll_wait() error (%d)\n", errno);
+#else
+						log_error("poll() error (%d)\n", errno);
+#endif
 						break;
 					}
 					continue;
 				}
-				else if (nfds == 0) // timeout
+				else if (ret == 0) // timeout
 				{
 					out = KEY_TIMEOUT;
 					break;
@@ -315,7 +430,11 @@ int igetch(int timeout)
 
 				for (int i = 0; i < nfds; i++)
 				{
+#ifdef HAVE_SYS_EPOLL_H
 					if (events[i].data.fd == STDIN_FILENO)
+#else
+					if (pfds[i].fd == STDIN_FILENO && (pfds[i].revents & POLLIN))
+#endif
 					{
 						stdin_read_wait = 1;
 					}
@@ -396,13 +515,6 @@ int igetch(int timeout)
 				log_error("Debug input: <--[%u]\n", (stdin_buf[j] + 256) % 256);
 			}
 #endif
-		}
-
-		fcntl(STDIN_FILENO, F_SETFL, flags);
-
-		if (close(epollfd) < 0)
-		{
-			log_error("close(epoll) error (%d)\n");
 		}
 
 		if (stdin_buf_offset < stdin_buf_len)

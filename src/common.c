@@ -14,6 +14,11 @@
 
 // Version
 const char APP_INFO[] = PACKAGE_STRING " build on " __DATE__ " " __TIME__;
+const char COPYRIGHT_INFO[] = "Copyright (C) 2004-2025  Leaflet <leaflet@leafok.com>\n"
+							  "This program comes with ABSOLUTELY NO WARRANTY.\n"
+							  "This is free software, and you are welcome to redistribute it \n"
+							  "under certain conditions; see the GNU General Public License \n"
+							  "version 3 for details.\n";
 
 // Enviroment
 const char CONF_BBSD[] = "conf/bbsd.conf";
@@ -65,14 +70,11 @@ const char *data_files_load_startup[] = {
 const int data_files_load_startup_count = sizeof(data_files_load_startup) / sizeof(const char *);
 
 // Global declaration for sockets
-int socket_server[2];
-int socket_client;
 char hostaddr_client[IP_ADDR_LEN];
 int port_client;
 
 // SSHv2
 int SSH_v2 = 0;
-ssh_bind sshbind;
 ssh_session SSH_session;
 ssh_channel SSH_channel;
 

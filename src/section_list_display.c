@@ -1191,7 +1191,7 @@ int section_list_display(const char *sname, int32_t aid)
 			// Verify format
 			for (i = 0, ok = 1; ok && username[i] != '\0'; i++)
 			{
-				if (!(isalpha(username[i]) || (i > 0 && (isdigit(username[i]) || username[i] == '_'))))
+				if (!(isalpha((int)username[i]) || (i > 0 && (isdigit((int)username[i]) || username[i] == '_'))))
 				{
 					ok = 0;
 				}

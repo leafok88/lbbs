@@ -30,10 +30,10 @@ jobs:
       run: gcc -v
 
     - name: configure
-      run: ./configure
+      run: ./configure --enable-systemd --disable-silent-rules
 
     - name: Run make
-      run: make V=1
+      run: make
 
     - name: Run check
       run: make check

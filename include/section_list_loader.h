@@ -11,7 +11,7 @@
 
 #include "menu.h"
 #include "section_list.h"
-#include <mysql/mysql.h>
+#include <mysql.h>
 
 enum section_list_loader_constant_t
 {

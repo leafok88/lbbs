@@ -48,11 +48,11 @@
    sudo -u bbs $LBBS_HOME_DIR/bin/bbsd
 
 10) (可选) 配置systemd  
-   基于conf/lbbs.service.default创建/usr/lib/systemd/system/lbbs.service，并进行必要的修改。  
+   基于conf/lbbs.service创建/usr/lib/systemd/system/lbbs.service，并进行必要的修改。  
    刷新配置并启动服务。  
 
 11) (可选) 配置logrotate  
-   基于conf/logrotate_bbsd.conf.default创建/etc/logrotate.d/bbsd，并进行必要的修改。  
+   基于conf/lbbs.logrotate创建/etc/logrotate.d/bbsd，并进行必要的修改。  
    重启logrotate服务。  
 
 12) 服务异常终止时的清理  

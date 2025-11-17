@@ -13,6 +13,7 @@
 #include "common.h"
 #include "io.h"
 #include "log.h"
+#include <errno.h>
 #include <stdarg.h>
 #include <string.h>
 #include <time.h>
@@ -41,14 +42,14 @@ int log_begin(const char *common_log_file, const char *error_log_file)
 	fp_common_log = fopen(path_common_log, "a");
 	if (fp_common_log == NULL)
 	{
-		perror("log_begin(common_log) failed\n");
+		fprintf(stderr, "fopen(%s) error: %d\n", path_common_log, errno);
 		return -1;
 	}
 
 	fp_error_log = fopen(path_error_log, "a");
 	if (fp_error_log == NULL)
 	{
-		perror("log_begin(error_log) failed\n");
+		fprintf(stderr, "fopen(%s) error: %d\n", path_error_log, errno);
 		return -2;
 	}
 
@@ -126,7 +127,7 @@ int log_restart(void)
 		fp = fopen(path_common_log, "a");
 		if (fp == NULL)
 		{
-			log_error("fopen(%s) error\n", path_common_log);
+			log_error("fopen(%s) error: %d\n", path_common_log, errno);
 			return -1;
 		}
 		fclose(fp_common_log);
@@ -138,7 +139,7 @@ int log_restart(void)
 		fp = fopen(path_error_log, "a");
 		if (fp == NULL)
 		{
-			log_error("fopen(%s) error\n", path_error_log);
+			log_error("fopen(%s) error: %d\n", path_error_log, errno);
 			return -2;
 		}
 		fclose(fp_error_log);

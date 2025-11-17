@@ -42,14 +42,14 @@ int str_length(const char *str, int skip_ctrl_seq)
 
 		if (skip_ctrl_seq && c == '\033' && str[i + 1] == '[') // Skip control sequence
 		{
-			for (i = i + 2; isdigit(str[i]) || str[i] == ';' || str[i] == '?'; i++)
+			for (i = i + 2; isdigit((int)str[i]) || str[i] == ';' || str[i] == '?'; i++)
 				;
 
 			if (str[i] == 'm') // valid
 			{
 				// skip
 			}
-			else if (isalpha(str[i]))
+			else if (isalpha((int)str[i]))
 			{
 				// unsupported ANSI CSI command
 			}

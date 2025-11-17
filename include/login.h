@@ -9,7 +9,7 @@
 #ifndef _LOGIN_H_
 #define _LOGIN_H_
 
-#include <mysql/mysql.h>
+#include <mysql.h>
 
 extern const int BBS_login_retry_times;
 

@@ -38,12 +38,20 @@
 #include <libssh/libssh.h>
 #include <libssh/server.h>
 #include <netinet/in.h>
-#include <sys/epoll.h>
+#include <sys/ioctl.h>
 #include <sys/socket.h>
-#include <sys/syscall.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+
+#ifdef HAVE_SYS_EPOLL_H
+#include <sys/epoll.h>
+#else
+#include <poll.h>
+#endif
+
+#ifdef HAVE_SYSTEMD_SD_DAEMON_H
 #include <systemd/sd-daemon.h>
+#endif
 
 enum _net_server_constant_t
 {
@@ -52,8 +60,6 @@ enum _net_server_constant_t
 
 	SSH_AUTH_MAX_DURATION = 60 * 1000, // milliseconds
 };
-
-static const char SFTP_SERVER_PATH[] = "/usr/lib/sftp-server";
 
 /* A userdata struct for session. */
 struct session_data_struct
@@ -80,6 +86,20 @@ struct channel_data_struct
 	/* Terminal size struct. */
 	struct winsize *winsize;
 };
+
+static int socket_server[2];
+static int socket_client;
+
+#ifdef HAVE_SYS_EPOLL_H
+static int epollfd_server = -1;
+#endif
+
+static ssh_bind sshbind;
+
+static HASH_DICT *hash_dict_pid_sockaddr = NULL;
+static HASH_DICT *hash_dict_sockaddr_count = NULL;
+
+static const char SFTP_SERVER_PATH[] = "/usr/lib/sftp-server";
 
 static int auth_password(ssh_session session, const char *user,
 						 const char *password, void *userdata)
@@ -307,11 +327,23 @@ static int fork_server(void)
 	}
 
 	// Child process
-
-	if (close(socket_server[0]) == -1 || close(socket_server[1]) == -1)
+#ifdef HAVE_SYS_EPOLL_H
+	if (close(epollfd_server) < 0)
 	{
-		log_error("Close server socket failed\n");
+		log_error("close(epollfd_server) error (%d)\n");
 	}
+#endif
+
+	for (i = 0; i < 2; i++)
+	{
+		if (close(socket_server[i]) == -1)
+		{
+			log_error("Close server socket failed\n");
+		}
+	}
+
+	hash_dict_destroy(hash_dict_pid_sockaddr);
+	hash_dict_destroy(hash_dict_sockaddr_count);
 
 	SSH_session = ssh_new();
 
@@ -406,6 +438,12 @@ static int fork_server(void)
 		goto cleanup;
 	}
 
+	if (io_init() < 0)
+	{
+		log_error("io_init() error\n");
+		goto cleanup;
+	}
+
 	SYS_child_process_count = 0;
 
 	bbs_main();
@@ -416,10 +454,22 @@ cleanup:
 
 	if (SSH_v2)
 	{
-		close(cdata.pty_master);
-		close(cdata.child_stdin);
-		close(cdata.child_stdout);
-		close(cdata.child_stderr);
+		if (cdata.pty_master != -1)
+		{
+			close(cdata.pty_master);
+		}
+		if (cdata.child_stdin != -1)
+		{
+			close(cdata.child_stdin);
+		}
+		if (cdata.child_stdout != -1)
+		{
+			close(cdata.child_stdout);
+		}
+		if (cdata.child_stderr != -1)
+		{
+			close(cdata.child_stderr);
+		}
 
 		ssh_channel_free(SSH_channel);
 		ssh_disconnect(SSH_session);
@@ -433,6 +483,7 @@ cleanup:
 	ssh_finalize();
 
 	// Close Input and Output for client
+	io_cleanup();
 	close(STDIN_FILENO);
 	close(STDOUT_FILENO);
 
@@ -446,24 +497,29 @@ cleanup:
 
 int net_server(const char *hostaddr, in_port_t port[])
 {
-	HASH_DICT *hash_dict_pid_sockaddr = NULL;
-	HASH_DICT *hash_dict_sockaddr_count = NULL;
-
 	unsigned int addrlen;
 	int ret;
-	int flags[2];
+	int flags_server[2];
 	struct sockaddr_in sin;
+
+#ifdef HAVE_SYS_EPOLL_H
 	struct epoll_event ev, events[MAX_EVENTS];
-	int nfds, epollfd;
-	siginfo_t siginfo;
+#else
+	struct pollfd pfds[2];
+#endif
+
+	int nfds;
 	int notify_child_exit = 0;
 	time_t tm_notify_child_exit = time(NULL);
-	int sd_notify_stopping = 0;
 	MENU_SET bbs_menu_new;
 	MENU_SET top10_menu_new;
 	int i, j;
 	pid_t pid;
 	int ssh_log_level = SSH_LOG_NOLOG;
+
+#ifdef HAVE_SYSTEMD_SD_DAEMON_H
+	int sd_notify_stopping = 0;
+#endif
 
 	ssh_init();
 
@@ -480,12 +536,14 @@ int net_server(const char *hostaddr, in_port_t port[])
 		return -1;
 	}
 
-	epollfd = epoll_create1(0);
-	if (epollfd < 0)
+#ifdef HAVE_SYS_EPOLL_H
+	epollfd_server = epoll_create1(0);
+	if (epollfd_server == -1)
 	{
 		log_error("epoll_create1() error (%d)\n", errno);
 		return -1;
 	}
+#endif
 
 	// Server socket
 	for (i = 0; i < 2; i++)
@@ -503,15 +561,17 @@ int net_server(const char *hostaddr, in_port_t port[])
 		sin.sin_port = htons(port[i]);
 
 		// Reuse address and port
-		flags[i] = 1;
-		if (setsockopt(socket_server[i], SOL_SOCKET, SO_REUSEADDR, &flags[i], sizeof(flags[i])) < 0)
+		flags_server[i] = 1;
+		if (setsockopt(socket_server[i], SOL_SOCKET, SO_REUSEADDR, &flags_server[i], sizeof(flags_server[i])) < 0)
 		{
 			log_error("setsockopt SO_REUSEADDR error (%d)\n", errno);
 		}
-		if (setsockopt(socket_server[i], SOL_SOCKET, SO_REUSEPORT, &flags[i], sizeof(flags[i])) < 0)
+#if defined(SO_REUSEPORT)
+		if (setsockopt(socket_server[i], SOL_SOCKET, SO_REUSEPORT, &flags_server[i], sizeof(flags_server[i])) < 0)
 		{
 			log_error("setsockopt SO_REUSEPORT error (%d)\n", errno);
 		}
+#endif
 
 		if (bind(socket_server[i], (struct sockaddr *)&sin, sizeof(sin)) < 0)
 		{
@@ -528,20 +588,22 @@ int net_server(const char *hostaddr, in_port_t port[])
 
 		log_common("Listening at %s:%u\n", inet_ntoa(sin.sin_addr), ntohs(sin.sin_port));
 
+#ifdef HAVE_SYS_EPOLL_H
 		ev.events = EPOLLIN;
 		ev.data.fd = socket_server[i];
-		if (epoll_ctl(epollfd, EPOLL_CTL_ADD, socket_server[i], &ev) == -1)
+		if (epoll_ctl(epollfd_server, EPOLL_CTL_ADD, socket_server[i], &ev) == -1)
 		{
 			log_error("epoll_ctl(socket_server[%d]) error (%d)\n", i, errno);
-			if (close(epollfd) < 0)
+			if (close(epollfd_server) < 0)
 			{
 				log_error("close(epoll) error (%d)\n");
 			}
 			return -1;
 		}
+#endif
 
-		flags[i] = fcntl(socket_server[i], F_GETFL, 0);
-		fcntl(socket_server[i], F_SETFL, flags[i] | O_NONBLOCK);
+		flags_server[i] = fcntl(socket_server[i], F_GETFL, 0);
+		fcntl(socket_server[i], F_SETFL, flags_server[i] | O_NONBLOCK);
 	}
 
 	hash_dict_pid_sockaddr = hash_dict_create(MAX_CLIENT_LIMIT);
@@ -558,39 +620,42 @@ int net_server(const char *hostaddr, in_port_t port[])
 	}
 
 	// Startup complete
+#ifdef HAVE_SYSTEMD_SD_DAEMON_H
 	sd_notifyf(0, "READY=1\n"
 				  "STATUS=Listening at %s:%d (Telnet) and %s:%d (SSH2)\n"
 				  "MAINPID=%d",
 			   hostaddr, port[0], hostaddr, port[1], getpid());
+#endif
 
 	while (!SYS_server_exit || SYS_child_process_count > 0)
 	{
+#ifdef HAVE_SYSTEMD_SD_DAEMON_H
 		if (SYS_server_exit && !sd_notify_stopping)
 		{
 			sd_notify(0, "STOPPING=1");
 			sd_notify_stopping = 1;
 		}
+#endif
 
 		while ((SYS_child_exit || SYS_server_exit) && SYS_child_process_count > 0)
 		{
 			SYS_child_exit = 0;
 
-			siginfo.si_pid = 0;
-			ret = waitid(P_ALL, 0, &siginfo, WEXITED | WNOHANG);
-			if (ret == 0 && siginfo.si_pid > 0)
+			pid = waitpid(-1, NULL, WNOHANG);
+			if (pid > 0)
 			{
 				SYS_child_exit = 1; // Retry waitid
 
 				SYS_child_process_count--;
-				log_common("Child process (%d) exited\n", siginfo.si_pid);
+				log_common("Child process (%d) exited\n", pid);
 
-				if (siginfo.si_pid != section_list_loader_pid)
+				if (pid != section_list_loader_pid)
 				{
 					j = 0;
-					ret = hash_dict_get(hash_dict_pid_sockaddr, (uint64_t)siginfo.si_pid, (int64_t *)&j);
+					ret = hash_dict_get(hash_dict_pid_sockaddr, (uint64_t)pid, (int64_t *)&j);
 					if (ret < 0)
 					{
-						log_error("hash_dict_get(hash_dict_pid_sockaddr, %d) error\n", siginfo.si_pid);
+						log_error("hash_dict_get(hash_dict_pid_sockaddr, %d) error\n", pid);
 					}
 					else
 					{
@@ -600,21 +665,21 @@ int net_server(const char *hostaddr, in_port_t port[])
 							log_error("hash_dict_inc(hash_dict_sockaddr_count, %d, -1) error\n", j);
 						}
 
-						ret = hash_dict_del(hash_dict_pid_sockaddr, (uint64_t)siginfo.si_pid);
+						ret = hash_dict_del(hash_dict_pid_sockaddr, (uint64_t)pid);
 						if (ret < 0)
 						{
-							log_error("hash_dict_del(hash_dict_pid_sockaddr, %d) error\n", siginfo.si_pid);
+							log_error("hash_dict_del(hash_dict_pid_sockaddr, %d) error\n", pid);
 						}
 					}
 				}
 			}
-			else if (ret == 0)
+			else if (pid == 0)
 			{
 				break;
 			}
-			else if (ret < 0)
+			else if (pid < 0)
 			{
-				log_error("Error in waitid: %d\n", errno);
+				log_error("Error in waitpid(): %d\n", errno);
 				break;
 			}
 		}
@@ -623,8 +688,10 @@ int net_server(const char *hostaddr, in_port_t port[])
 		{
 			if (notify_child_exit == 0)
 			{
+#ifdef HAVE_SYSTEMD_SD_DAEMON_H
 				sd_notifyf(0, "STATUS=Notify %d child process to exit", SYS_child_process_count);
 				log_common("Notify %d child process to exit\n", SYS_child_process_count);
+#endif
 
 				if (kill(-getpid(), SIGTERM) < 0)
 				{
@@ -636,7 +703,9 @@ int net_server(const char *hostaddr, in_port_t port[])
 			}
 			else if (notify_child_exit == 1 && time(NULL) - tm_notify_child_exit >= WAIT_CHILD_PROCESS_EXIT_TIMEOUT)
 			{
+#ifdef HAVE_SYSTEMD_SD_DAEMON_H
 				sd_notifyf(0, "STATUS=Kill %d child process", SYS_child_process_count);
+#endif
 
 				if (kill(-getpid(), SIGKILL) < 0)
 				{
@@ -656,7 +725,10 @@ int net_server(const char *hostaddr, in_port_t port[])
 		if (SYS_conf_reload && !SYS_server_exit)
 		{
 			SYS_conf_reload = 0;
+
+#ifdef HAVE_SYSTEMD_SD_DAEMON_H
 			sd_notify(0, "RELOADING=1");
+#endif
 
 			// Restart log
 			if (log_restart() < 0)
@@ -726,16 +798,31 @@ int net_server(const char *hostaddr, in_port_t port[])
 				log_error("Send SIGUSR1 signal failed (%d)\n", errno);
 			}
 
+#ifdef HAVE_SYSTEMD_SD_DAEMON_H
 			sd_notify(0, "READY=1");
+#endif
 		}
 
-		nfds = epoll_wait(epollfd, events, MAX_EVENTS, 100); // 0.1 second
-
-		if (nfds < 0)
+#ifdef HAVE_SYS_EPOLL_H
+		nfds = epoll_wait(epollfd_server, events, MAX_EVENTS, 100); // 0.1 second
+		ret = nfds;
+#else
+		pfds[0].fd = socket_server[0];
+		pfds[0].events = POLLIN;
+		pfds[1].fd = socket_server[1];
+		pfds[1].events = POLLIN;
+		nfds = 2;
+		ret = poll(pfds, (nfds_t)nfds, 100); // 0.1 second
+#endif
+		if (ret < 0)
 		{
 			if (errno != EINTR)
 			{
+#ifdef HAVE_SYS_EPOLL_H
 				log_error("epoll_wait() error (%d)\n", errno);
+#else
+				log_error("poll() error (%d)\n", errno);
+#endif
 				break;
 			}
 			continue;
@@ -749,14 +836,22 @@ int net_server(const char *hostaddr, in_port_t port[])
 
 		for (int i = 0; i < nfds; i++)
 		{
+#ifdef HAVE_SYS_EPOLL_H
 			if (events[i].data.fd == socket_server[0] || events[i].data.fd == socket_server[1])
+#else
+			if ((pfds[i].fd == socket_server[0] || pfds[i].fd == socket_server[1]) && (pfds[i].revents & POLLIN))
+#endif
 			{
+#ifdef HAVE_SYS_EPOLL_H
 				SSH_v2 = (events[i].data.fd == socket_server[1] ? 1 : 0);
+#else
+				SSH_v2 = (pfds[i].fd == socket_server[1] ? 1 : 0);
+#endif
 
 				while (!SYS_server_exit) // Accept all incoming connections until error
 				{
 					addrlen = sizeof(sin);
-					socket_client = accept(socket_server[SSH_v2], (struct sockaddr *)&sin, &addrlen);
+					socket_client = accept(socket_server[SSH_v2], (struct sockaddr *)&sin, (socklen_t *)&addrlen);
 					if (socket_client < 0)
 					{
 						if (errno == EAGAIN || errno == EWOULDBLOCK)
@@ -830,15 +925,15 @@ int net_server(const char *hostaddr, in_port_t port[])
 		}
 	}
 
-	if (close(epollfd) < 0)
+#ifdef HAVE_SYS_EPOLL_H
+	if (close(epollfd_server) < 0)
 	{
-		log_error("close(epoll) error (%d)\n");
+		log_error("close(epollfd_server) error (%d)\n");
 	}
+#endif
 
 	for (i = 0; i < 2; i++)
 	{
-		fcntl(socket_server[i], F_SETFL, flags[i]);
-
 		if (close(socket_server[i]) == -1)
 		{
 			log_error("Close server socket failed\n");
