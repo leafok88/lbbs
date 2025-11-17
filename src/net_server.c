@@ -851,7 +851,7 @@ int net_server(const char *hostaddr, in_port_t port[])
 				while (!SYS_server_exit) // Accept all incoming connections until error
 				{
 					addrlen = sizeof(sin);
-					socket_client = accept(socket_server[SSH_v2], (struct sockaddr *)&sin, &addrlen);
+					socket_client = accept(socket_server[SSH_v2], (struct sockaddr *)&sin, (socklen_t *)&addrlen);
 					if (socket_client < 0)
 					{
 						if (errno == EAGAIN || errno == EWOULDBLOCK)
