@@ -1428,7 +1428,7 @@ int set_menu_shm_readonly(MENU_SET *p_menu_set)
 	void *p_shm;
 
 	// Remap shared memory in read-only mode
-#if defined(__MSYS__) || defined(__MINGW32__)
+#if defined(__CYGWIN__)
 	if (shmdt(p_menu_set->p_reserved) == -1)
 	{
 		log_error("shmdt() error (%d)\n", errno);

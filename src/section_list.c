@@ -25,7 +25,7 @@
 #include <sys/sem.h>
 #include <sys/shm.h>
 
-#if defined(_SEM_SEMUN_UNDEFINED) || defined(__MSYS__) || defined(__MINGW32__)
+#if defined(_SEM_SEMUN_UNDEFINED) || defined(__CYGWIN__)
 union semun
 {
 	int val;			   /* Value for SETVAL */
@@ -240,7 +240,7 @@ int set_article_block_shm_readonly(void)
 		shmid = (p_article_block_pool->shm_pool + i)->shmid;
 
 		// Remap shared memory in read-only mode
-#if defined(__MSYS__) || defined(__MINGW32__)
+#if defined(__CYGWIN__)
 		if (shmdt((p_article_block_pool->shm_pool + i)->p_shm) == -1)
 		{
 			log_error("shmdt(shmid = %d) error (%d)\n", (p_article_block_pool->shm_pool + i)->shmid, errno);
@@ -561,7 +561,7 @@ int set_section_list_shm_readonly(void)
 	shmid = p_section_list_pool->shmid;
 
 	// Remap shared memory in read-only mode
-#if defined(__MSYS__) || defined(__MINGW32__)
+#if defined(__CYGWIN__)
 	if (shmdt(p_section_list_pool) == -1)
 	{
 		log_error("shmdt(section_list_pool) error (%d)\n", errno);
@@ -1627,7 +1627,7 @@ int section_list_try_rd_lock(SECTION_LIST *p_section, int wait_sec)
 {
 	int index;
 	struct sembuf sops[4];
-#if !defined(__MSYS__) && !defined(__MINGW32__)
+#if !defined(__CYGWIN__)
 	struct timespec timeout;
 #endif
 	int ret;
@@ -1660,7 +1660,7 @@ int section_list_try_rd_lock(SECTION_LIST *p_section, int wait_sec)
 		sops[3].sem_flg = SEM_UNDO;			   // undo on terminate
 	}
 
-#if defined(__MSYS__) || defined(__MINGW32__)
+#if defined(__CYGWIN__)
 	ret = semop(p_section_list_pool->semid, sops, (index == BBS_max_section ? 2 : 4));
 #else
 	timeout.tv_sec = wait_sec;
@@ -1680,7 +1680,7 @@ int section_list_try_rw_lock(SECTION_LIST *p_section, int wait_sec)
 {
 	int index;
 	struct sembuf sops[3];
-#if !defined(__MSYS__) && !defined(__MINGW32__)
+#if !defined(__CYGWIN__)
 	struct timespec timeout;
 #endif
 	int ret;
@@ -1703,7 +1703,7 @@ int section_list_try_rw_lock(SECTION_LIST *p_section, int wait_sec)
 	sops[2].sem_op = 0;							   // wait until unlocked
 	sops[2].sem_flg = 0;
 
-#if defined(__MSYS__) || defined(__MINGW32__)
+#if defined(__CYGWIN__)
 	ret = semop(p_section_list_pool->semid, sops, 3);
 #else
 	timeout.tv_sec = wait_sec;

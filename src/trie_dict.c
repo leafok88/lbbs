@@ -126,7 +126,7 @@ int set_trie_dict_shm_readonly(void)
 	shmid = p_trie_node_pool->shmid;
 
 	// Remap shared memory in read-only mode
-#if defined(__MSYS__) || defined(__MINGW32__)
+#if defined(__CYGWIN__)
 	if (shmdt(p_trie_node_pool) == -1)
 	{
 		log_error("shmdt(trie_node_pool) error (%d)\n", errno);

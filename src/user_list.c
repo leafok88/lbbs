@@ -26,7 +26,7 @@
 #include <sys/sem.h>
 #include <sys/shm.h>
 
-#if defined(_SEM_SEMUN_UNDEFINED) || defined(__MSYS__) || defined(__MINGW32__)
+#if defined(_SEM_SEMUN_UNDEFINED) || defined(__CYGWIN__)
 union semun
 {
 	int val;			   /* Value for SETVAL */
@@ -531,7 +531,7 @@ int set_user_list_pool_shm_readonly(void)
 	shmid = p_user_list_pool->shmid;
 
 	// Remap shared memory in read-only mode
-#if defined(__MSYS__) || defined(__MINGW32__)
+#if defined(__CYGWIN__)
 	if (shmdt(p_user_list_pool) == -1)
 	{
 		log_error("shmdt(user_list_pool) error (%d)\n", errno);
@@ -652,7 +652,7 @@ cleanup:
 int user_list_try_rd_lock(int semid, int wait_sec)
 {
 	struct sembuf sops[2];
-#if !defined(__MSYS__) && !defined(__MINGW32__)
+#if !defined(__CYGWIN__)
 	struct timespec timeout;
 #endif
 	int ret;
@@ -665,7 +665,7 @@ int user_list_try_rd_lock(int semid, int wait_sec)
 	sops[1].sem_op = 1;			// lock
 	sops[1].sem_flg = SEM_UNDO; // undo on terminate
 
-#if defined(__MSYS__) || defined(__MINGW32__)
+#if defined(__CYGWIN__)
 	ret = semop(semid, sops, 2);
 #else
 	timeout.tv_sec = wait_sec;
@@ -684,7 +684,7 @@ int user_list_try_rd_lock(int semid, int wait_sec)
 int user_list_try_rw_lock(int semid, int wait_sec)
 {
 	struct sembuf sops[3];
-#if !defined(__MSYS__) && !defined(__MINGW32__)
+#if !defined(__CYGWIN__)
 	struct timespec timeout;
 #endif
 	int ret;
@@ -701,7 +701,7 @@ int user_list_try_rw_lock(int semid, int wait_sec)
 	sops[2].sem_op = 0;	 // wait until unlocked
 	sops[2].sem_flg = 0;
 
-#if defined(__MSYS__) || defined(__MINGW32__)
+#if defined(__CYGWIN__)
 	ret = semop(semid, sops, 3);
 #else
 	timeout.tv_sec = wait_sec;
