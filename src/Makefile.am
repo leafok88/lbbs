@@ -1,6 +1,8 @@
 bin_PROGRAMS = bbsd
-EXTRA_PROGRAMS = test_trie_dict test_file_loader test_section_list test_lml test_ssh_server test_article_favor test_article_view_log \
+test_PROGRAMS = test_trie_dict test_file_loader test_section_list test_lml test_ssh_server test_article_favor test_article_view_log \
 			   test_memory_pool test_bbs test_bwf test_hash_dict
+
+testdir = ${prefix}/test
 
 bbsd_SOURCES = ${srcdir}/../include/*.h article_cache.c article_del.c article_favor.c article_favor_display.c article_op.c \
 			   article_post.c article_view_log.c bbs.c bbs_cmd.c bbs_main.c bwf.c common.c data_file_mgr.c database.c \
@@ -33,5 +35,3 @@ AM_CFLAGS = -I${srcdir}/../include ${LIBSSH_CFLAGS} ${MYSQLCLIENT_CFLAGS} ${SYST
 LIBS = ${LIBSSH_LIBS} ${MYSQLCLIENT_LIBS} ${SYSTEMD_LIBS} ${LIBPCRE2_LIBS} ${ICONV_LIBS} -ldl
 
 libdir = ${prefix}/lib
-
-CLEANFILES = ${EXTRA_PROGRAMS}
