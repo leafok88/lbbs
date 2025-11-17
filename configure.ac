@@ -25,18 +25,19 @@ PKG_CHECK_MODULES([LIBSSH], [libssh])
 PKG_CHECK_MODULES([LIBPCRE2], [libpcre2-8])
 
 AC_ARG_WITH([mariadb],
-            [AS_HELP_STRING([--with-mariadb], [With MariaDB library])],
-            [with_mariadb="yes"],
-            [with_mysqlclient="yes"])
+            [AS_HELP_STRING([--with-mariadb], [Use MariaDB library instead of MySQL client library])],
+            [],
+            [with_mariadb="no"])
 
 AS_IF([test "x$with_mariadb" = xyes],
       [PKG_CHECK_MODULES([MYSQLCLIENT], [libmariadb])])
-AS_IF([test "x$with_mysqlclient" = xyes],
+AS_IF([test "x$with_mariadb" = xno],
       [PKG_CHECK_MODULES([MYSQLCLIENT], [mysqlclient])])
 
 AC_ARG_ENABLE([systemd],
               [AS_HELP_STRING([--enable-systemd], [Enable systemd daemon])],
-			            [enable_systemd="yes"])
+              [],
+              [enable_systemd="no"])
 
 AS_IF([test "x$enable_systemd" = xyes],
       [PKG_CHECK_MODULES([SYSTEMD], [libsystemd])])
@@ -44,7 +45,7 @@ AS_IF([test "x$enable_systemd" = xyes],
 # Checks for libraries.
 AS_IF([test "x$with_mariadb" = xyes],
       [AC_CHECK_LIB([mariadb], [mysql_real_connect])])
-AS_IF([test "x$with_mysqlclient" = xyes],
+AS_IF([test "x$with_mariadb" = xno],
       [AC_CHECK_LIB([mysqlclient], [mysql_real_connect])])
 
 AC_CHECK_LIB([ssh], [ssh_init])
@@ -55,9 +56,9 @@ AC_PROG_EGREP
 AC_HEADER_RESOLV
 AC_HEADER_SYS_WAIT
 AC_CHECK_HEADERS([arpa/inet.h dflcn.h fcntl.h iconv.h libssh/libssh.h libssh/server.h memory.h mysql/mysql.h net/if.h netdb.h netinet/in.h \
-			pty.h signal.h stdint.h stdlib.h string.h sys/epoll.h sys/ioctl.h sys/ipc.h sys/mman.h sys/param.h sys/socket.h \
-			sys/time.h sys/types.h sys/sem.h sys/shm.h sys/stat.h sys/syscall.h sys/wait.h \
-			unistd.h utmp.h wchar.h])
+                  pty.h signal.h stdint.h stdlib.h string.h sys/epoll.h sys/ioctl.h sys/ipc.h sys/mman.h sys/param.h sys/socket.h \
+                  sys/time.h sys/types.h sys/sem.h sys/shm.h sys/stat.h sys/syscall.h sys/wait.h \
+                  unistd.h utmp.h wchar.h])
 
 AS_IF([test "x$enable_systemd" = xyes],
       [AC_CHECK_HEADERS([systemd/sd-daemon.h])])
@@ -77,15 +78,15 @@ AC_FUNC_MMAP
 AC_FUNC_MKTIME
 
 AC_DEFINE_UNQUOTED([RETSIGTYPE],[$ac_cv_type_signal],[Define as the return type of signal handlers
-		    (`int' or `void').])
+                (`int' or `void').])
 
 AC_FUNC_STRFTIME
 AC_FUNC_VPRINTF
 AC_CHECK_FUNCS([dup2 gethostbyname inet_ntoa memset mkdir rmdir regcomp select socket strstr])
 
 AC_CONFIG_FILES([Makefile
-		     src/Makefile
-		     utils/Makefile
+                 src/Makefile
+                 utils/Makefile
                  utils/game/Makefile
                  conf/lbbs.service
                  conf/lbbs.logrotate])
