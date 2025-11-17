@@ -25,7 +25,7 @@
 #include <sys/sem.h>
 #include <sys/shm.h>
 
-#ifdef _SEM_SEMUN_UNDEFINED
+#if defined(_SEM_SEMUN_UNDEFINED) || defined(__MSYS__) || defined(__MINGW32__)
 union semun
 {
 	int val;			   /* Value for SETVAL */
@@ -34,7 +34,7 @@ union semun
 	struct seminfo *__buf; /* Buffer for IPC_INFO
 							  (Linux-specific) */
 };
-#endif // #ifdef _SEM_SEMUN_UNDEFINED
+#endif // #if defined(_SEM_SEMUN_UNDEFINED)
 
 enum _section_list_constant_t
 {
@@ -1609,7 +1609,9 @@ int section_list_try_rd_lock(SECTION_LIST *p_section, int wait_sec)
 {
 	int index;
 	struct sembuf sops[4];
+#if !defined(__MSYS__) && !defined(__MINGW32__)
 	struct timespec timeout;
+#endif
 	int ret;
 
 	index = get_section_index(p_section);
@@ -1640,13 +1642,17 @@ int section_list_try_rd_lock(SECTION_LIST *p_section, int wait_sec)
 		sops[3].sem_flg = SEM_UNDO;			   // undo on terminate
 	}
 
+#if defined(__MSYS__) || defined(__MINGW32__)
+	ret = semop(p_section_list_pool->semid, sops, (index == BBS_max_section ? 2 : 4));
+#else
 	timeout.tv_sec = wait_sec;
 	timeout.tv_nsec = 0;
 
 	ret = semtimedop(p_section_list_pool->semid, sops, (index == BBS_max_section ? 2 : 4), &timeout);
+#endif
 	if (ret == -1 && errno != EAGAIN && errno != EINTR)
 	{
-		log_error("semtimedop(index = %d, lock read) error %d\n", index, errno);
+		log_error("semop(index = %d, lock read) error %d\n", index, errno);
 	}
 
 	return ret;
@@ -1656,7 +1662,9 @@ int section_list_try_rw_lock(SECTION_LIST *p_section, int wait_sec)
 {
 	int index;
 	struct sembuf sops[3];
+#if !defined(__MSYS__) && !defined(__MINGW32__)
 	struct timespec timeout;
+#endif
 	int ret;
 
 	index = get_section_index(p_section);
@@ -1677,13 +1685,17 @@ int section_list_try_rw_lock(SECTION_LIST *p_section, int wait_sec)
 	sops[2].sem_op = 0;							   // wait until unlocked
 	sops[2].sem_flg = 0;
 
+#if defined(__MSYS__) || defined(__MINGW32__)
+	ret = semop(p_section_list_pool->semid, sops, 3);
+#else
 	timeout.tv_sec = wait_sec;
 	timeout.tv_nsec = 0;
 
 	ret = semtimedop(p_section_list_pool->semid, sops, 3, &timeout);
+#endif
 	if (ret == -1 && errno != EAGAIN && errno != EINTR)
 	{
-		log_error("semtimedop(index = %d, lock write) error %d\n", index, errno);
+		log_error("semop(index = %d, lock write) error %d\n", index, errno);
 	}
 
 	return ret;
