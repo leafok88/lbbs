@@ -119,7 +119,7 @@ int check_user(const char *username, const char *password)
 	// Verify format
 	for (i = 0; ok && username[i] != '\0'; i++)
 	{
-		if (!(isalpha(username[i]) || (i > 0 && (isdigit(username[i]) || username[i] == '_'))))
+		if (!(isalpha((int)username[i]) || (i > 0 && (isdigit((int)username[i]) || username[i] == '_'))))
 		{
 			ok = 0;
 		}
@@ -130,7 +130,7 @@ int check_user(const char *username, const char *password)
 	}
 	for (i = 0; ok && password[i] != '\0'; i++)
 	{
-		if (!isalnum(password[i]))
+		if (!isalnum((int)password[i]))
 		{
 			ok = 0;
 		}
