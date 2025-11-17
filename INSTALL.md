@@ -17,7 +17,7 @@ To install LBBS, please perform the following steps:
 
 3) Extract the source files from a tarball or export from GitHub  
    Run the following command to set up the autoconf/automake environment,  
-   sh ./autogen.sh
+   autoreconf --install --force
 
 4) Compile source files  
    export LBBS_HOME_DIR=/usr/local/lbbs  

@@ -17,7 +17,7 @@
 
 2) 从Github导出或下载源代码文件  
    运行以下命令来初始化autoconf/automake环境:  
-   sh ./autogen.sh
+   autoreconf --install --force
 
 3) 编译源代码  
    export LBBS_HOME_DIR=/usr/local/lbbs  
