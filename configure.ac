@@ -36,7 +36,7 @@ AS_IF([test "x$with_mysqlclient" = xyes],
 
 AC_ARG_ENABLE([systemd],
               [AS_HELP_STRING([--enable-systemd], [Enable systemd daemon])],
-			  [enable_systemd="yes"])
+			            [enable_systemd="yes"])
 
 AS_IF([test "x$enable_systemd" = xyes],
       [PKG_CHECK_MODULES([SYSTEMD], [libsystemd])])
@@ -55,9 +55,9 @@ AC_PROG_EGREP
 AC_HEADER_RESOLV
 AC_HEADER_SYS_WAIT
 AC_CHECK_HEADERS([arpa/inet.h dflcn.h fcntl.h iconv.h libssh/libssh.h libssh/server.h memory.h mysql/mysql.h net/if.h netdb.h netinet/in.h \
-					pty.h signal.h stdint.h stdlib.h string.h sys/epoll.h sys/ioctl.h sys/ipc.h sys/mman.h sys/param.h sys/socket.h \
-					sys/time.h sys/types.h sys/sem.h sys/shm.h sys/stat.h sys/syscall.h sys/wait.h \
-					unistd.h utmp.h wchar.h])
+			pty.h signal.h stdint.h stdlib.h string.h sys/epoll.h sys/ioctl.h sys/ipc.h sys/mman.h sys/param.h sys/socket.h \
+			sys/time.h sys/types.h sys/sem.h sys/shm.h sys/stat.h sys/syscall.h sys/wait.h \
+			unistd.h utmp.h wchar.h])
 
 AS_IF([test "x$enable_systemd" = xyes],
       [AC_CHECK_HEADERS([systemd/sd-daemon.h])])
@@ -84,13 +84,15 @@ AC_FUNC_VPRINTF
 AC_CHECK_FUNCS([dup2 gethostbyname inet_ntoa memset mkdir rmdir regcomp select socket strstr])
 
 AC_CONFIG_FILES([Makefile
-		src/Makefile
-		utils/Makefile
-        utils/game/Makefile])
+		     src/Makefile
+		     utils/Makefile
+                 utils/game/Makefile
+                 conf/lbbs.service
+                 conf/lbbs.logrotate])
 
 AC_ARG_ENABLE([debug],
-  [AS_HELP_STRING([--enable-debug], [Enable debug log])],
-  [AS_IF([test "x$enable_debug" = xyes],
-    [AC_DEFINE([_DEBUG], [1], [Define if debug log is enabled])])])
+              [AS_HELP_STRING([--enable-debug], [Enable debug log])],
+              [AS_IF([test "x$enable_debug" = xyes],
+                     [AC_DEFINE([_DEBUG], [1], [Define if debug log is enabled])])])
 
 AC_OUTPUT
