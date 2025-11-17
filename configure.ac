@@ -30,7 +30,7 @@ AC_ARG_WITH([iconv],
             [with_iconv="no"])
 
 AS_IF([test "x$with_iconv" = xyes],
-      [PKG_CHECK_MODULES([LIBICONV], [libiconv])])
+      [PKG_CHECK_MODULES([ICONV], [iconv])])
 
 AC_ARG_WITH([mariadb],
             [AS_HELP_STRING([--with-mariadb], [Use MariaDB library instead of MySQL client library])],
