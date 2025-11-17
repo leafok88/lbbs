@@ -240,7 +240,16 @@ int set_article_block_shm_readonly(void)
 		shmid = (p_article_block_pool->shm_pool + i)->shmid;
 
 		// Remap shared memory in read-only mode
+#if defined(__MSYS__) || defined(__MINGW32__)
+		if (shmdt((p_article_block_pool->shm_pool + i)->p_shm) == -1)
+		{
+			log_error("shmdt(shmid = %d) error (%d)\n", (p_article_block_pool->shm_pool + i)->shmid, errno);
+			return -2;
+		}
+		p_shm = shmat(shmid, (p_article_block_pool->shm_pool + i)->p_shm, SHM_RDONLY);
+#else
 		p_shm = shmat(shmid, (p_article_block_pool->shm_pool + i)->p_shm, SHM_RDONLY | SHM_REMAP);
+#endif
 		if (p_shm == (void *)-1)
 		{
 			log_error("shmat(article_block_pool shmid = %d) error (%d)\n", shmid, errno);
@@ -552,7 +561,16 @@ int set_section_list_shm_readonly(void)
 	shmid = p_section_list_pool->shmid;
 
 	// Remap shared memory in read-only mode
+#if defined(__MSYS__) || defined(__MINGW32__)
+	if (shmdt(p_section_list_pool) == -1)
+	{
+		log_error("shmdt(section_list_pool) error (%d)\n", errno);
+		return -1;
+	}
+	p_shm = shmat(shmid, p_section_list_pool, SHM_RDONLY);
+#else
 	p_shm = shmat(shmid, p_section_list_pool, SHM_RDONLY | SHM_REMAP);
+#endif
 	if (p_shm == (void *)-1)
 	{
 		log_error("shmat(section_list_pool shmid = %d) error (%d)\n", shmid, errno);

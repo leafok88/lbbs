@@ -35,6 +35,7 @@ CVS
 .cvsignore
 Makefile
 Makefile.in
+lt-bbsd.c
 stamp-h1
 *.o
 *.Po
@@ -47,6 +48,7 @@ stamp-h1
 *.lo
 *.Tpo
 /src/bbsd
+/src/bbsd.exe
 /src/test_trie_dict
 /src/test_file_loader
 /src/test_section_list

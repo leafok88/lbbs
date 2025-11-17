@@ -192,7 +192,7 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 					return -1;
 				}
 				p = q;
-				while (isalnum(*q) || *q == '_' || *q == '-')
+				while (isalnum((int)*q) || *q == '_' || *q == '-')
 				{
 					q++;
 				}
@@ -275,7 +275,7 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 						else
 						{
 							q = p;
-							while (isalnum(*q) || *q == '_' || *q == '-')
+							while (isalnum((int)*q) || *q == '_' || *q == '-')
 							{
 								q++;
 							}
@@ -302,7 +302,7 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 							return -1;
 						}
 						p = q;
-						while (isdigit(*q))
+						while (isdigit((int)*q))
 						{
 							q++;
 						}
@@ -321,7 +321,7 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 							return -1;
 						}
 						p = q;
-						while (isdigit(*q))
+						while (isdigit((int)*q))
 						{
 							q++;
 						}
@@ -340,7 +340,7 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 							return -1;
 						}
 						p = q;
-						while (isdigit(*q))
+						while (isdigit((int)*q))
 						{
 							q++;
 						}
@@ -359,7 +359,7 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 							return -1;
 						}
 						p = q;
-						while (isdigit(*q))
+						while (isdigit((int)*q))
 						{
 							q++;
 						}
@@ -464,7 +464,7 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 							return -1;
 						}
 						p = q;
-						while (isdigit(*q))
+						while (isdigit((int)*q))
 						{
 							q++;
 						}
@@ -483,7 +483,7 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 							return -1;
 						}
 						p = q;
-						while (isdigit(*q))
+						while (isdigit((int)*q))
 						{
 							q++;
 						}
@@ -551,7 +551,7 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 							return -1;
 						}
 						p = q;
-						while (isdigit(*q))
+						while (isdigit((int)*q))
 						{
 							q++;
 						}
@@ -570,7 +570,7 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 							return -1;
 						}
 						p = q;
-						while (isdigit(*q))
+						while (isdigit((int)*q))
 						{
 							q++;
 						}
@@ -589,7 +589,7 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 							return -1;
 						}
 						p = q;
-						while (isalnum(*q) || *q == '_' || *q == '-')
+						while (isalnum((int)*q) || *q == '_' || *q == '-')
 						{
 							q++;
 						}
@@ -619,7 +619,7 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 							return -1;
 						}
 						p = q;
-						while (isdigit(*q))
+						while (isdigit((int)*q))
 						{
 							q++;
 						}
@@ -638,7 +638,7 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 							return -1;
 						}
 						p = q;
-						while (isdigit(*q))
+						while (isdigit((int)*q))
 						{
 							q++;
 						}
@@ -657,7 +657,7 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 							return -1;
 						}
 						p = q;
-						while (isdigit(*q))
+						while (isdigit((int)*q))
 						{
 							q++;
 						}
@@ -703,7 +703,7 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 				p_screen = get_menu_screen_by_id(p_menu_set, screen_id);
 
 				q = p;
-				while (isalnum(*q) || *q == '_' || *q == '-')
+				while (isalnum((int)*q) || *q == '_' || *q == '-')
 				{
 					q++;
 				}
@@ -1428,7 +1428,16 @@ int set_menu_shm_readonly(MENU_SET *p_menu_set)
 	void *p_shm;
 
 	// Remap shared memory in read-only mode
+#if defined(__MSYS__) || defined(__MINGW32__)
+	if (shmdt(p_menu_set->p_reserved) == -1)
+	{
+		log_error("shmdt() error (%d)\n", errno);
+		return -1;
+	}
+	p_shm = shmat(p_menu_set->shmid, p_menu_set->p_reserved, SHM_RDONLY);
+#else
 	p_shm = shmat(p_menu_set->shmid, p_menu_set->p_reserved, SHM_RDONLY | SHM_REMAP);
+#endif
 	if (p_shm == (void *)-1)
 	{
 		log_error("shmat(menu_shm shmid = %d) error (%d)\n", p_menu_set->shmid, errno);

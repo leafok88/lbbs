@@ -500,7 +500,7 @@ int user_list_search(void)
 		// Verify format
 		for (i = 0, ok = 1; ok && username[i] != '\0'; i++)
 		{
-			if (!(isalpha(username[i]) || (i > 0 && (isdigit(username[i]) || username[i] == '_'))))
+			if (!(isalpha((int)username[i]) || (i > 0 && (isdigit((int)username[i]) || username[i] == '_'))))
 			{
 				ok = 0;
 			}
@@ -556,7 +556,7 @@ int user_list_search(void)
 				break;
 			default:
 				i = (int)strnlen(username, sizeof(username) - 1);
-				if (i + 1 <= BBS_username_max_len && (isalnum((char)ch) || ch == '_'))
+				if (i + 1 <= BBS_username_max_len && (isalnum(ch) || ch == '_'))
 				{
 					username[i] = (char)ch;
 					username[i + 1] = '\0';
