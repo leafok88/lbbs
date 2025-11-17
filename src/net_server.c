@@ -38,8 +38,8 @@
 #include <libssh/libssh.h>
 #include <libssh/server.h>
 #include <netinet/in.h>
+#include <sys/ioctl.h>
 #include <sys/socket.h>
-#include <sys/syscall.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 
@@ -509,7 +509,6 @@ int net_server(const char *hostaddr, in_port_t port[])
 #endif
 
 	int nfds;
-	siginfo_t siginfo;
 	int notify_child_exit = 0;
 	time_t tm_notify_child_exit = time(NULL);
 	MENU_SET bbs_menu_new;
@@ -640,22 +639,21 @@ int net_server(const char *hostaddr, in_port_t port[])
 		{
 			SYS_child_exit = 0;
 
-			siginfo.si_pid = 0;
-			ret = waitid(P_ALL, 0, &siginfo, WEXITED | WNOHANG);
-			if (ret == 0 && siginfo.si_pid > 0)
+			pid = waitpid(-1, NULL, WNOHANG);
+			if (pid > 0)
 			{
 				SYS_child_exit = 1; // Retry waitid
 
 				SYS_child_process_count--;
-				log_common("Child process (%d) exited\n", siginfo.si_pid);
+				log_common("Child process (%d) exited\n", pid);
 
-				if (siginfo.si_pid != section_list_loader_pid)
+				if (pid != section_list_loader_pid)
 				{
 					j = 0;
-					ret = hash_dict_get(hash_dict_pid_sockaddr, (uint64_t)siginfo.si_pid, (int64_t *)&j);
+					ret = hash_dict_get(hash_dict_pid_sockaddr, (uint64_t)pid, (int64_t *)&j);
 					if (ret < 0)
 					{
-						log_error("hash_dict_get(hash_dict_pid_sockaddr, %d) error\n", siginfo.si_pid);
+						log_error("hash_dict_get(hash_dict_pid_sockaddr, %d) error\n", pid);
 					}
 					else
 					{
@@ -665,21 +663,21 @@ int net_server(const char *hostaddr, in_port_t port[])
 							log_error("hash_dict_inc(hash_dict_sockaddr_count, %d, -1) error\n", j);
 						}
 
-						ret = hash_dict_del(hash_dict_pid_sockaddr, (uint64_t)siginfo.si_pid);
+						ret = hash_dict_del(hash_dict_pid_sockaddr, (uint64_t)pid);
 						if (ret < 0)
 						{
-							log_error("hash_dict_del(hash_dict_pid_sockaddr, %d) error\n", siginfo.si_pid);
+							log_error("hash_dict_del(hash_dict_pid_sockaddr, %d) error\n", pid);
 						}
 					}
 				}
 			}
-			else if (ret == 0)
+			else if (pid == 0)
 			{
 				break;
 			}
-			else if (ret < 0)
+			else if (pid < 0)
 			{
-				log_error("Error in waitid: %d\n", errno);
+				log_error("Error in waitpid(): %d\n", errno);
 				break;
 			}
 		}
