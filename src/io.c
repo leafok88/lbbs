@@ -32,6 +32,11 @@
 #include <poll.h>
 #endif
 
+enum _io_constant_t
+{
+	OUTPUT_BUF_SIZE = 8192,
+};
+
 const char BBS_default_charset[CHARSET_MAX_LEN + 1] = "UTF-8";
 char stdio_charset[CHARSET_MAX_LEN + 1] = "UTF-8";
 
@@ -46,14 +51,14 @@ static int stdout_flags = 0;
 
 // static input / output buffer
 static char stdin_buf[LINE_BUFFER_LEN];
-static char stdout_buf[BUFSIZ];
+static char stdout_buf[OUTPUT_BUF_SIZE];
 static int stdin_buf_len = 0;
 static int stdout_buf_len = 0;
 static int stdin_buf_offset = 0;
 static int stdout_buf_offset = 0;
 
 static char stdin_conv[LINE_BUFFER_LEN * 2];
-static char stdout_conv[BUFSIZ * 2];
+static char stdout_conv[OUTPUT_BUF_SIZE * 2];
 static int stdin_conv_len = 0;
 static int stdout_conv_len = 0;
 static int stdin_conv_offset = 0;
@@ -178,7 +183,7 @@ void io_cleanup(void)
 
 int prints(const char *format, ...)
 {
-	char buf[BUFSIZ];
+	char buf[OUTPUT_BUF_SIZE];
 	va_list args;
 	int ret;
 
@@ -188,12 +193,12 @@ int prints(const char *format, ...)
 
 	if (ret > 0)
 	{
-		if (stdout_buf_len + ret > BUFSIZ)
+		if (stdout_buf_len + ret > OUTPUT_BUF_SIZE)
 		{
 			iflush();
 		}
 
-		if (stdout_buf_len + ret <= BUFSIZ)
+		if (stdout_buf_len + ret <= OUTPUT_BUF_SIZE)
 		{
 			memcpy(stdout_buf + stdout_buf_len, buf, (size_t)ret);
 			stdout_buf_len += ret;
@@ -201,7 +206,7 @@ int prints(const char *format, ...)
 		else
 		{
 			errno = EAGAIN;
-			ret = (BUFSIZ - stdout_buf_len - ret);
+			ret = (OUTPUT_BUF_SIZE - stdout_buf_len - ret);
 			log_error("Output buffer is full, additional %d is required\n", ret);
 		}
 	}
@@ -213,12 +218,12 @@ int outc(char c)
 {
 	int ret;
 
-	if (stdout_buf_len + 1 > BUFSIZ)
+	if (stdout_buf_len + 1 > OUTPUT_BUF_SIZE)
 	{
 		iflush();
 	}
 
-	if (stdout_buf_len + 1 <= BUFSIZ)
+	if (stdout_buf_len + 1 <= OUTPUT_BUF_SIZE)
 	{
 		stdout_buf[stdout_buf_len] = c;
 		stdout_buf_len++;
