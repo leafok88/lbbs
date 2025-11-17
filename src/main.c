@@ -79,7 +79,8 @@ int main(int argc, char *argv[])
 						app_help();
 						return 0;
 					case 'v':
-						puts(APP_INFO);
+						printf("%s\n", APP_INFO);
+						printf("%s\n", COPYRIGHT_INFO);
 						return 0;
 					default:
 						arg_error();
@@ -219,7 +220,7 @@ int main(int argc, char *argv[])
 
 	if (trie_dict_init(VAR_TRIE_DICT_SHM, TRIE_NODE_PER_POOL) < 0)
 	{
-		printf("trie_dict_init(%s, %d) error\n", VAR_TRIE_DICT_SHM, TRIE_NODE_PER_POOL);
+		log_error("trie_dict_init(%s, %d) error\n", VAR_TRIE_DICT_SHM, TRIE_NODE_PER_POOL);
 		goto cleanup;
 	}
 	if (article_block_init(VAR_ARTICLE_BLOCK_SHM, BBS_article_limit_per_section * BBS_max_section / BBS_article_count_per_block) < 0)
