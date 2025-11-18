@@ -142,13 +142,6 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "chdir(..) error: %d\n", errno);
 		return -1;
 	}
-#ifdef __CYGWIN__
-	if (chdir("..") < 0)
-	{
-		fprintf(stderr, "chdir(..) error: %d\n", errno);
-		return -1;
-	}
-#endif
 
 	// Apply the specified locale
 	if (setlocale(LC_ALL, "en_US.UTF-8") == NULL)
