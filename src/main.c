@@ -31,6 +31,7 @@
 #include <unistd.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <sys/wait.h>
 
 static void app_help(void)
 {
@@ -59,16 +60,18 @@ int main(int argc, char *argv[])
 	int ret;
 	int last_aid;
 	struct sigaction act = {0};
+	int i;
+	int j;
 
 	// Parse args
-	for (int i = 1; i < argc; i++)
+	for (i = 1; i < argc; i++)
 	{
 		switch (argv[i][0])
 		{
 		case '-':
 			if (argv[i][1] != '-')
 			{
-				for (int j = 1; j < strlen(argv[i]); j++)
+				for (j = 1; j < strlen(argv[i]); j++)
 				{
 					switch (argv[i][j])
 					{
@@ -358,6 +361,35 @@ int main(int argc, char *argv[])
 	net_server(BBS_address, BBS_port);
 
 cleanup:
+	// Cleanup loader process if still running
+	if (SYS_child_process_count > 0)
+	{
+		SYS_child_exit = 0;
+		
+		if (kill(section_list_loader_pid, SIGTERM) < 0)
+		{
+			log_error("Send SIGTERM signal failed (%d)\n", errno);
+		}
+
+		for(i = 0; SYS_child_exit == 0 && i < 5; i++)
+		{
+			sleep(1); // second
+		}
+
+		if ((ret = waitpid(section_list_loader_pid, NULL, WNOHANG)) < 0)
+		{
+			log_error("waitpid(%d) error (%d)\n", section_list_loader_pid, errno);
+		}
+		else if (ret == 0)
+		{
+			log_common("Force kill section_list_loader process (%d)\n", section_list_loader_pid);
+			if (kill(section_list_loader_pid, SIGKILL) < 0)
+			{
+				log_error("Send SIGKILL signal failed (%d)\n", errno);
+			}
+		}
+	}
+
 	// Cleanup loaded data files
 	file_loader_cleanup();
 
