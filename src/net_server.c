@@ -641,13 +641,24 @@ int net_server(const char *hostaddr, in_port_t port[])
 		{
 			SYS_child_exit = 0;
 
-			pid = waitpid(-1, NULL, WNOHANG);
+			pid = waitpid(-1, &ret, WNOHANG);
 			if (pid > 0)
 			{
 				SYS_child_exit = 1; // Retry waitid
-
 				SYS_child_process_count--;
-				log_common("Child process (%d) exited\n", pid);
+
+				if (WIFEXITED(ret))
+				{
+					log_common("Child process (%d) exited, status=%d\n", pid, WEXITSTATUS(ret));
+				}
+				else if (WIFSIGNALED(ret))
+				{
+					log_common("Child process (%d) is killed, status=%d\n", pid, WTERMSIG(ret));
+				}
+				else
+				{
+					log_common("Child process (%d) exited abnormally, status=%d\n", pid, ret);
+				}
 
 				if (pid != section_list_loader_pid)
 				{
