@@ -48,11 +48,11 @@ struct user_list_pool_t
 	int shmid;
 	int semid;
 	USER_LIST user_list[2];
-	USER_LIST *p_current;
-	USER_LIST *p_new;
+	int user_list_index_current;
+	int user_list_index_new;
 	USER_ONLINE_LIST user_online_list[2];
-	USER_ONLINE_LIST *p_online_current;
-	USER_ONLINE_LIST *p_online_new;
+	int user_online_list_index_current;
+	int user_online_list_index_new;
 	USER_STAT_MAP user_stat_map;
 	int user_login_count;
 };
@@ -470,11 +470,11 @@ int user_list_pool_init(const char *filename)
 	p_user_list_pool->user_list[0].user_count = 0;
 	p_user_list_pool->user_list[1].user_count = 0;
 
-	p_user_list_pool->p_current = &(p_user_list_pool->user_list[0]);
-	p_user_list_pool->p_new = &(p_user_list_pool->user_list[1]);
+	p_user_list_pool->user_list_index_current = 0;
+	p_user_list_pool->user_list_index_new = 1;
 
-	p_user_list_pool->p_online_current = &(p_user_list_pool->user_online_list[0]);
-	p_user_list_pool->p_online_new = &(p_user_list_pool->user_online_list[1]);
+	p_user_list_pool->user_online_list_index_current = 0;
+	p_user_list_pool->user_online_list_index_new = 1;
 
 	user_stat_map_init(&(p_user_list_pool->user_stat_map));
 
@@ -568,8 +568,7 @@ int detach_user_list_pool_shm(void)
 int user_list_pool_reload(int online_user)
 {
 	MYSQL *db = NULL;
-	USER_LIST *p_tmp;
-	USER_ONLINE_LIST *p_online_tmp;
+	int tmp;
 	int ret = 0;
 
 	if (p_user_list_pool == NULL)
@@ -587,7 +586,7 @@ int user_list_pool_reload(int online_user)
 
 	if (online_user)
 	{
-		if (user_online_list_load(db, p_user_list_pool->p_online_new) < 0)
+		if (user_online_list_load(db, &(p_user_list_pool->user_online_list[p_user_list_pool->user_online_list_index_new])) < 0)
 		{
 			log_error("user_online_list_load() error\n");
 			ret = -2;
@@ -603,7 +602,7 @@ int user_list_pool_reload(int online_user)
 	}
 	else
 	{
-		if (user_list_load(db, p_user_list_pool->p_new) < 0)
+		if (user_list_load(db, &(p_user_list_pool->user_list[p_user_list_pool->user_list_index_new])) < 0)
 		{
 			log_error("user_list_load() error\n");
 			ret = -2;
@@ -624,16 +623,16 @@ int user_list_pool_reload(int online_user)
 	if (online_user)
 	{
 		// Swap p_online_current and p_online_new
-		p_online_tmp = p_user_list_pool->p_online_current;
-		p_user_list_pool->p_online_current = p_user_list_pool->p_online_new;
-		p_user_list_pool->p_online_new = p_online_tmp;
+		tmp = p_user_list_pool->user_online_list_index_current;
+		p_user_list_pool->user_online_list_index_current = p_user_list_pool->user_online_list_index_new;
+		p_user_list_pool->user_online_list_index_new = tmp;
 	}
 	else
 	{
-		// Swap p_current and p_new
-		p_tmp = p_user_list_pool->p_current;
-		p_user_list_pool->p_current = p_user_list_pool->p_new;
-		p_user_list_pool->p_new = p_tmp;
+		// Swap index_current and index_new
+		tmp = p_user_list_pool->user_list_index_current;
+		p_user_list_pool->user_list_index_current = p_user_list_pool->user_list_index_new;
+		p_user_list_pool->user_list_index_new = tmp;
 	}
 
 	if (user_list_rw_unlock(p_user_list_pool->semid) < 0)
@@ -833,14 +832,14 @@ int query_user_list(int page_id, USER_INFO *p_users, int *p_user_count, int *p_p
 		return -2;
 	}
 
-	if (p_user_list_pool->p_current->user_count == 0)
+	if (p_user_list_pool->user_list[p_user_list_pool->user_list_index_current].user_count == 0)
 	{
 		// empty list
 		ret = 0;
 		goto cleanup;
 	}
 
-	*p_page_count = (p_user_list_pool->p_current->user_count + BBS_user_limit_per_page - 1) /
+	*p_page_count = (p_user_list_pool->user_list[p_user_list_pool->user_list_index_current].user_count + BBS_user_limit_per_page - 1) /
 					BBS_user_limit_per_page;
 
 	if (page_id < 0 || page_id >= *p_page_count)
@@ -851,11 +850,11 @@ int query_user_list(int page_id, USER_INFO *p_users, int *p_user_count, int *p_p
 	}
 
 	*p_user_count = MIN(BBS_user_limit_per_page,
-						p_user_list_pool->p_current->user_count -
+						p_user_list_pool->user_list[p_user_list_pool->user_list_index_current].user_count -
 							page_id * BBS_user_limit_per_page);
 
 	memcpy(p_users,
-		   p_user_list_pool->p_current->users + page_id * BBS_user_limit_per_page,
+		   p_user_list_pool->user_list[p_user_list_pool->user_list_index_current].users + page_id * BBS_user_limit_per_page,
 		   sizeof(USER_INFO) * (size_t)(*p_user_count));
 
 cleanup:
@@ -889,14 +888,14 @@ int query_user_online_list(int page_id, USER_ONLINE_INFO *p_online_users, int *p
 		return -2;
 	}
 
-	if (p_user_list_pool->p_online_current->user_count == 0)
+	if (p_user_list_pool->user_online_list[p_user_list_pool->user_online_list_index_current].user_count == 0)
 	{
 		// empty list
 		ret = 0;
 		goto cleanup;
 	}
 
-	*p_page_count = (p_user_list_pool->p_online_current->user_count + BBS_user_limit_per_page - 1) / BBS_user_limit_per_page;
+	*p_page_count = (p_user_list_pool->user_online_list[p_user_list_pool->user_online_list_index_current].user_count + BBS_user_limit_per_page - 1) / BBS_user_limit_per_page;
 
 	if (page_id < 0 || page_id >= *p_page_count)
 	{
@@ -906,11 +905,11 @@ int query_user_online_list(int page_id, USER_ONLINE_INFO *p_online_users, int *p
 	}
 
 	*p_user_count = MIN(BBS_user_limit_per_page,
-						p_user_list_pool->p_online_current->user_count -
+						p_user_list_pool->user_online_list[p_user_list_pool->user_online_list_index_current].user_count -
 							page_id * BBS_user_limit_per_page);
 
 	memcpy(p_online_users,
-		   p_user_list_pool->p_online_current->users + page_id * BBS_user_limit_per_page,
+		   p_user_list_pool->user_online_list[p_user_list_pool->user_online_list_index_current].users + page_id * BBS_user_limit_per_page,
 		   sizeof(USER_ONLINE_INFO) * (size_t)(*p_user_count));
 
 cleanup:
@@ -939,7 +938,7 @@ int get_user_list_count(int *p_user_cnt)
 		return -2;
 	}
 
-	*p_user_cnt = p_user_list_pool->p_current->user_count;
+	*p_user_cnt = p_user_list_pool->user_list[p_user_list_pool->user_list_index_current].user_count;
 
 	// release lock of user list
 	if (user_list_rd_unlock(p_user_list_pool->semid) < 0)
@@ -966,8 +965,8 @@ int get_user_online_list_count(int *p_user_cnt, int *p_guest_cnt)
 		return -2;
 	}
 
-	*p_user_cnt = p_user_list_pool->p_online_current->user_count;
-	*p_guest_cnt = p_user_list_pool->p_online_current->guest_count;
+	*p_user_cnt = p_user_list_pool->user_online_list[p_user_list_pool->user_online_list_index_current].user_count;
+	*p_guest_cnt = p_user_list_pool->user_online_list[p_user_list_pool->user_online_list_index_current].guest_count;
 
 	// release lock of user list
 	if (user_list_rd_unlock(p_user_list_pool->semid) < 0)
@@ -1009,9 +1008,9 @@ int query_user_info(int32_t id, USER_INFO *p_user)
 		return -2;
 	}
 
-	if (id >= 0 && id < p_user_list_pool->p_current->user_count) // Found
+	if (id >= 0 && id < p_user_list_pool->user_list[p_user_list_pool->user_list_index_current].user_count) // Found
 	{
-		*p_user = p_user_list_pool->p_current->users[id];
+		*p_user = p_user_list_pool->user_list[p_user_list_pool->user_list_index_current].users[id];
 		ret = 1;
 	}
 
@@ -1047,35 +1046,35 @@ int query_user_info_by_uid(int32_t uid, USER_INFO *p_user, char *p_intro_buf, si
 	}
 
 	left = 0;
-	right = p_user_list_pool->p_current->user_count - 1;
+	right = p_user_list_pool->user_list[p_user_list_pool->user_list_index_current].user_count - 1;
 
 	while (left < right)
 	{
 		mid = (left + right) / 2;
-		if (uid < p_user_list_pool->p_current->index_uid[mid].uid)
+		if (uid < p_user_list_pool->user_list[p_user_list_pool->user_list_index_current].index_uid[mid].uid)
 		{
 			right = mid - 1;
 		}
-		else if (uid > p_user_list_pool->p_current->index_uid[mid].uid)
+		else if (uid > p_user_list_pool->user_list[p_user_list_pool->user_list_index_current].index_uid[mid].uid)
 		{
 			left = mid + 1;
 		}
-		else // if (uid == p_user_list_pool->p_current->index_uid[mid].uid)
+		else // if (uid == p_user_list_pool->user_list[p_user_list_pool->user_list_index_current].index_uid[mid].uid)
 		{
 			left = mid;
 			break;
 		}
 	}
 
-	if (uid == p_user_list_pool->p_current->index_uid[left].uid) // Found
+	if (uid == p_user_list_pool->user_list[p_user_list_pool->user_list_index_current].index_uid[left].uid) // Found
 	{
-		id = p_user_list_pool->p_current->index_uid[left].id;
-		*p_user = p_user_list_pool->p_current->users[id];
+		id = p_user_list_pool->user_list[p_user_list_pool->user_list_index_current].index_uid[left].id;
+		*p_user = p_user_list_pool->user_list[p_user_list_pool->user_list_index_current].users[id];
 		ret = 1;
 
 		if (p_intro_buf != NULL)
 		{
-			strncpy(p_intro_buf, p_user_list_pool->p_current->users[id].intro, intro_buf_len - 1);
+			strncpy(p_intro_buf, p_user_list_pool->user_list[p_user_list_pool->user_list_index_current].users[id].intro, intro_buf_len - 1);
 			p_intro_buf[intro_buf_len - 1] = '\0';
 			p_user->intro = p_intro_buf;
 		}
@@ -1119,12 +1118,12 @@ int query_user_info_by_username(const char *username_prefix, int max_user_cnt,
 	}
 
 	left = 0;
-	right = p_user_list_pool->p_current->user_count - 1;
+	right = p_user_list_pool->user_list[p_user_list_pool->user_list_index_current].user_count - 1;
 
 	while (left < right)
 	{
 		mid = (left + right) / 2;
-		comp = strncasecmp(username_prefix, p_user_list_pool->p_current->users[mid].username, prefix_len);
+		comp = strncasecmp(username_prefix, p_user_list_pool->user_list[p_user_list_pool->user_list_index_current].users[mid].username, prefix_len);
 		if (comp < 0)
 		{
 			right = mid - 1;
@@ -1140,7 +1139,7 @@ int query_user_info_by_username(const char *username_prefix, int max_user_cnt,
 		}
 	}
 
-	if (strncasecmp(username_prefix, p_user_list_pool->p_current->users[left].username, prefix_len) == 0) // Found
+	if (strncasecmp(username_prefix, p_user_list_pool->user_list[p_user_list_pool->user_list_index_current].users[left].username, prefix_len) == 0) // Found
 	{
 #ifdef _DEBUG
 		log_error("Debug: match found, pos=%d\n", left);
@@ -1153,7 +1152,7 @@ int query_user_info_by_username(const char *username_prefix, int max_user_cnt,
 		while (left < right)
 		{
 			mid = (left + right) / 2;
-			comp = strncasecmp(username_prefix, p_user_list_pool->p_current->users[mid].username, prefix_len);
+			comp = strncasecmp(username_prefix, p_user_list_pool->user_list[p_user_list_pool->user_list_index_current].users[mid].username, prefix_len);
 			if (comp > 0)
 			{
 				left = mid + 1;
@@ -1176,12 +1175,12 @@ int query_user_info_by_username(const char *username_prefix, int max_user_cnt,
 
 		left = left_save;
 		left_save = right;
-		right = p_user_list_pool->p_current->user_count - 1;
+		right = p_user_list_pool->user_list[p_user_list_pool->user_list_index_current].user_count - 1;
 
 		while (left < right)
 		{
 			mid = (left + right) / 2 + (left + right) % 2;
-			comp = strncasecmp(username_prefix, p_user_list_pool->p_current->users[mid].username, prefix_len);
+			comp = strncasecmp(username_prefix, p_user_list_pool->user_list[p_user_list_pool->user_list_index_current].users[mid].username, prefix_len);
 			if (comp < 0)
 			{
 				right = mid - 1;
@@ -1207,8 +1206,8 @@ int query_user_info_by_username(const char *username_prefix, int max_user_cnt,
 
 		for (i = 0; i < max_user_cnt && left + i <= right; i++)
 		{
-			uid_list[i] = p_user_list_pool->p_current->users[left + i].uid;
-			strncpy(username_list[i], p_user_list_pool->p_current->users[left + i].username, sizeof(username_list[i]) - 1);
+			uid_list[i] = p_user_list_pool->user_list[p_user_list_pool->user_list_index_current].users[left + i].uid;
+			strncpy(username_list[i], p_user_list_pool->user_list[p_user_list_pool->user_list_index_current].users[left + i].username, sizeof(username_list[i]) - 1);
 			username_list[i][sizeof(username_list[i]) - 1] = '\0';
 		}
 		ret = i;
@@ -1242,9 +1241,9 @@ int query_user_online_info(int32_t id, USER_ONLINE_INFO *p_user)
 		return -2;
 	}
 
-	if (id >= 0 && id < p_user_list_pool->p_online_current->user_count) // Found
+	if (id >= 0 && id < p_user_list_pool->user_online_list[p_user_list_pool->user_online_list_index_current].user_count) // Found
 	{
-		*p_user = p_user_list_pool->p_online_current->users[id];
+		*p_user = p_user_list_pool->user_online_list[p_user_list_pool->user_online_list_index_current].users[id];
 		ret = 1;
 	}
 
@@ -1285,27 +1284,27 @@ int query_user_online_info_by_uid(int32_t uid, USER_ONLINE_INFO *p_users, int *p
 	}
 
 	left = start_id;
-	right = p_user_list_pool->p_online_current->user_count - 1;
+	right = p_user_list_pool->user_online_list[p_user_list_pool->user_online_list_index_current].user_count - 1;
 
 	while (left < right)
 	{
 		mid = (left + right) / 2;
-		if (uid < p_user_list_pool->p_online_current->index_uid[mid].uid)
+		if (uid < p_user_list_pool->user_online_list[p_user_list_pool->user_online_list_index_current].index_uid[mid].uid)
 		{
 			right = mid - 1;
 		}
-		else if (uid > p_user_list_pool->p_online_current->index_uid[mid].uid)
+		else if (uid > p_user_list_pool->user_online_list[p_user_list_pool->user_online_list_index_current].index_uid[mid].uid)
 		{
 			left = mid + 1;
 		}
-		else // if (uid == p_user_list_pool->p_online_current->index_uid[mid].uid)
+		else // if (uid == p_user_list_pool->user_online_list[p_user_list_pool->user_online_list_index_current].index_uid[mid].uid)
 		{
 			left = mid;
 			break;
 		}
 	}
 
-	if (uid == p_user_list_pool->p_online_current->index_uid[left].uid)
+	if (uid == p_user_list_pool->user_online_list[p_user_list_pool->user_online_list_index_current].index_uid[left].uid)
 	{
 		right = left;
 		left = start_id;
@@ -1313,23 +1312,23 @@ int query_user_online_info_by_uid(int32_t uid, USER_ONLINE_INFO *p_users, int *p
 		while (left < right)
 		{
 			mid = (left + right) / 2;
-			if (uid - 1 < p_user_list_pool->p_online_current->index_uid[mid].uid)
+			if (uid - 1 < p_user_list_pool->user_online_list[p_user_list_pool->user_online_list_index_current].index_uid[mid].uid)
 			{
 				right = mid;
 			}
-			else // if (uid - 1 >= p_user_list_pool->p_online_current->index_uid[mid].uid)
+			else // if (uid - 1 >= p_user_list_pool->user_online_list[p_user_list_pool->user_online_list_index_current].index_uid[mid].uid)
 			{
 				left = mid + 1;
 			}
 		}
 
 		for (i = 0;
-			 left < p_user_list_pool->p_online_current->user_count && i < user_cnt &&
-			 uid == p_user_list_pool->p_online_current->index_uid[left].uid;
+			 left < p_user_list_pool->user_online_list[p_user_list_pool->user_online_list_index_current].user_count && i < user_cnt &&
+			 uid == p_user_list_pool->user_online_list[p_user_list_pool->user_online_list_index_current].index_uid[left].uid;
 			 left++, i++)
 		{
-			id = p_user_list_pool->p_online_current->index_uid[left].id;
-			p_users[i] = p_user_list_pool->p_online_current->users[id];
+			id = p_user_list_pool->user_online_list[p_user_list_pool->user_online_list_index_current].index_uid[left].id;
+			p_users[i] = p_user_list_pool->user_online_list[p_user_list_pool->user_online_list_index_current].users[id];
 		}
 
 		if (i > 0)
@@ -1371,29 +1370,29 @@ int get_user_id_list(int32_t *p_uid_list, int *p_user_cnt, int start_uid)
 	}
 
 	left = 0;
-	right = p_user_list_pool->p_current->user_count - 1;
+	right = p_user_list_pool->user_list[p_user_list_pool->user_list_index_current].user_count - 1;
 
 	while (left < right)
 	{
 		mid = (left + right) / 2;
-		if (start_uid < p_user_list_pool->p_current->index_uid[mid].uid)
+		if (start_uid < p_user_list_pool->user_list[p_user_list_pool->user_list_index_current].index_uid[mid].uid)
 		{
 			right = mid - 1;
 		}
-		else if (start_uid > p_user_list_pool->p_current->index_uid[mid].uid)
+		else if (start_uid > p_user_list_pool->user_list[p_user_list_pool->user_list_index_current].index_uid[mid].uid)
 		{
 			left = mid + 1;
 		}
-		else // if (start_uid == p_user_list_pool->p_current->index_uid[mid].uid)
+		else // if (start_uid == p_user_list_pool->user_list[p_user_list_pool->user_list_index_current].index_uid[mid].uid)
 		{
 			left = mid;
 			break;
 		}
 	}
 
-	for (i = 0; i < *p_user_cnt && left + i < p_user_list_pool->p_current->user_count; i++)
+	for (i = 0; i < *p_user_cnt && left + i < p_user_list_pool->user_list[p_user_list_pool->user_list_index_current].user_count; i++)
 	{
-		p_uid_list[i] = p_user_list_pool->p_current->index_uid[left + i].uid;
+		p_uid_list[i] = p_user_list_pool->user_list[p_user_list_pool->user_list_index_current].index_uid[left + i].uid;
 	}
 	*p_user_cnt = i;
 
