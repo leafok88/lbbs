@@ -333,7 +333,10 @@ int bbs_main()
 	set_input_echo(0);
 
 	// Set user charset
-	bbs_charset_select();
+	if (bbs_charset_select() < 0)
+	{
+		goto cleanup;
+	}
 
 	// System info
 	if (bbs_info() < 0)
