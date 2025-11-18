@@ -68,9 +68,10 @@ For Cygwin User
 ==================
 Installation of LBBS on Cygwin is similar to the above steps for Linux, except that:
 
-a. Use additional config switches to keep compatible with the Cygwin environment.  
+1) Use additional config switches to keep compatible with the Cygwin environment.  
    ./configure --prefix=$LBBS_HOME_DIR --with-mariadb --without-epoll  
 
-b. Enable Cygserver with optimized parameters (as large as possible) of XSI semaphore and shared memory in /etc/cygserver.conf  
+2) Enable Cygserver with optimized parameters (as large as possible) of XSI semaphore and shared memory in /etc/cygserver.conf  
 
-c. Skip those steps not supported by Cygwin (e.g. systemd and logrotate).  
+3) Skip those steps not supported by Cygwin (e.g. systemd and logrotate).  
+
