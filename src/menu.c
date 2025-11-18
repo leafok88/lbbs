@@ -1425,19 +1425,11 @@ int get_menu_shm_readonly(MENU_SET *p_menu_set)
 
 int set_menu_shm_readonly(MENU_SET *p_menu_set)
 {
+#ifndef __CYGWIN__
 	void *p_shm;
 
 	// Remap shared memory in read-only mode
-#if defined(__CYGWIN__)
-	if (shmdt(p_menu_set->p_reserved) == -1)
-	{
-		log_error("shmdt() error (%d)\n", errno);
-		return -1;
-	}
-	p_shm = shmat(p_menu_set->shmid, p_menu_set->p_reserved, SHM_RDONLY);
-#else
 	p_shm = shmat(p_menu_set->shmid, p_menu_set->p_reserved, SHM_RDONLY | SHM_REMAP);
-#endif
 	if (p_shm == (void *)-1)
 	{
 		log_error("shmat(menu_shm shmid = %d) error (%d)\n", p_menu_set->shmid, errno);
@@ -1445,6 +1437,7 @@ int set_menu_shm_readonly(MENU_SET *p_menu_set)
 	}
 
 	p_menu_set->p_reserved = p_shm;
+#endif
 
 	return 0;
 }

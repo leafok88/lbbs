@@ -14,7 +14,7 @@
 
 enum bbs_const_t
 {
-#if defined(__CYGWIN__)
+#ifdef __CYGWIN__
     BBS_max_section = 50,
 #else
     BBS_max_section = 200,

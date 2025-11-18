@@ -17,7 +17,7 @@
 enum section_list_constant_t
 {
 	BBS_article_title_max_len = 160,
-#if defined(__CYGWIN__)
+#ifdef __CYGWIN__
 	BBS_article_limit_per_section = 10000,
 #else
 	BBS_article_limit_per_section = 50000,

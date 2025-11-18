@@ -519,6 +519,7 @@ void user_list_pool_cleanup(void)
 
 int set_user_list_pool_shm_readonly(void)
 {
+#ifndef __CYGWIN__
 	int shmid;
 	void *p_shm;
 
@@ -531,16 +532,7 @@ int set_user_list_pool_shm_readonly(void)
 	shmid = p_user_list_pool->shmid;
 
 	// Remap shared memory in read-only mode
-#if defined(__CYGWIN__)
-	if (shmdt(p_user_list_pool) == -1)
-	{
-		log_error("shmdt(user_list_pool) error (%d)\n", errno);
-		return -1;
-	}
-	p_shm = shmat(shmid, p_user_list_pool, SHM_RDONLY);
-#else
 	p_shm = shmat(shmid, p_user_list_pool, SHM_RDONLY | SHM_REMAP);
-#endif
 	if (p_shm == (void *)-1)
 	{
 		log_error("shmat(user_list_pool shmid = %d) error (%d)\n", shmid, errno);
@@ -548,6 +540,7 @@ int set_user_list_pool_shm_readonly(void)
 	}
 
 	p_user_list_pool = p_shm;
+#endif
 
 	return 0;
 }
@@ -651,7 +644,7 @@ cleanup:
 int user_list_try_rd_lock(int semid, int wait_sec)
 {
 	struct sembuf sops[2];
-#if !defined(__CYGWIN__)
+#ifndef __CYGWIN__
 	struct timespec timeout;
 #endif
 	int ret;
@@ -664,7 +657,7 @@ int user_list_try_rd_lock(int semid, int wait_sec)
 	sops[1].sem_op = 1;			// lock
 	sops[1].sem_flg = SEM_UNDO; // undo on terminate
 
-#if defined(__CYGWIN__)
+#ifdef __CYGWIN__
 	ret = semop(semid, sops, 2);
 #else
 	timeout.tv_sec = wait_sec;
@@ -683,7 +676,7 @@ int user_list_try_rd_lock(int semid, int wait_sec)
 int user_list_try_rw_lock(int semid, int wait_sec)
 {
 	struct sembuf sops[3];
-#if !defined(__CYGWIN__)
+#ifndef __CYGWIN__
 	struct timespec timeout;
 #endif
 	int ret;
@@ -700,7 +693,7 @@ int user_list_try_rw_lock(int semid, int wait_sec)
 	sops[2].sem_op = 0;	 // wait until unlocked
 	sops[2].sem_flg = 0;
 
-#if defined(__CYGWIN__)
+#ifdef __CYGWIN__
 	ret = semop(semid, sops, 3);
 #else
 	timeout.tv_sec = wait_sec;

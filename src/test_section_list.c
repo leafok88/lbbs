@@ -947,7 +947,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
-#if !defined(__CYGWIN__)
+#ifndef __CYGWIN__
 	printf("Try rw_lock for 5 sec...\n");
 	if (section_list_try_rw_lock(NULL, 5) == 0)
 	{
@@ -969,7 +969,7 @@ int main(int argc, char *argv[])
 		printf("section_list_rd_lock(sid = %d) error\n", p_section[i]->sid);
 	}
 
-#if !defined(__CYGWIN__)
+#ifndef __CYGWIN__
 	for (i = 0; i < section_count; i++)
 	{
 		if (section_list_try_rd_lock(p_section[i], 0) == 0)

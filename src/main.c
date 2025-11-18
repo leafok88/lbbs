@@ -142,7 +142,7 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "chdir(..) error: %d\n", errno);
 		return -1;
 	}
-#if defined(__CYGWIN__)
+#ifdef __CYGWIN__
 	if (chdir("..") < 0)
 	{
 		fprintf(stderr, "chdir(..) error: %d\n", errno);
