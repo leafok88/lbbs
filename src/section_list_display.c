@@ -712,7 +712,7 @@ int section_list_display(const char *sname, int32_t aid)
 		{
 		case EXIT_SECTION:
 			// Update current aid location
-			if (p_articles[selected_index] != NULL)
+			if (selected_index < article_count && p_articles[selected_index] != NULL)
 			{
 				if (selected_index >= ontop_start_offset)
 				{
