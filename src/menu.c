@@ -44,7 +44,8 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 {
 	char filepath[FILE_PATH_LEN];
 	int fd;
-	void *p_shm = NULL;
+	size_t size;
+	void *p_shm;
 	FILE *fin;
 	int fin_line = 0;
 	char buffer[LINE_BUFFER_LEN];
@@ -59,7 +60,6 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 	MENU_ID menu_id;
 	MENU_ITEM_ID menu_item_id;
 	MENU_SCREEN_ID screen_id;
-	size_t size;
 
 	if (p_menu_set == NULL || conf_file == NULL)
 	{
