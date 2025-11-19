@@ -49,7 +49,7 @@ static void child_proc_sig_usr1_handler(int i)
 
 int bbs_info()
 {
-	prints("欢迎光临 \033[1;33m%s \033[32m[%s]  \033[37m( %s )\033[m\r\n",
+	prints("\r\n欢迎光临 \033[1;33m%s \033[32m[%s] \033[37m(%s)\033[m\r\n",
 		   BBS_name, BBS_server, APP_INFO);
 
 	return iflush();
@@ -333,7 +333,10 @@ int bbs_main()
 	set_input_echo(0);
 
 	// Set user charset
-	bbs_charset_select();
+	if (bbs_charset_select() < 0)
+	{
+		goto cleanup;
+	}
 
 	// System info
 	if (bbs_info() < 0)

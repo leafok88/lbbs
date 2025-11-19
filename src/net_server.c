@@ -641,13 +641,24 @@ int net_server(const char *hostaddr, in_port_t port[])
 		{
 			SYS_child_exit = 0;
 
-			pid = waitpid(-1, NULL, WNOHANG);
+			pid = waitpid(-1, &ret, WNOHANG);
 			if (pid > 0)
 			{
 				SYS_child_exit = 1; // Retry waitid
-
 				SYS_child_process_count--;
-				log_common("Child process (%d) exited\n", pid);
+
+				if (WIFEXITED(ret))
+				{
+					log_common("Child process (%d) exited, status=%d\n", pid, WEXITSTATUS(ret));
+				}
+				else if (WIFSIGNALED(ret))
+				{
+					log_common("Child process (%d) is killed, status=%d\n", pid, WTERMSIG(ret));
+				}
+				else
+				{
+					log_common("Child process (%d) exited abnormally, status=%d\n", pid, ret);
+				}
 
 				if (pid != section_list_loader_pid)
 				{
@@ -693,7 +704,7 @@ int net_server(const char *hostaddr, in_port_t port[])
 				log_common("Notify %d child process to exit\n", SYS_child_process_count);
 #endif
 
-				if (kill(-getpid(), SIGTERM) < 0)
+				if (kill(0, SIGTERM) < 0)
 				{
 					log_error("Send SIGTERM signal failed (%d)\n", errno);
 				}
@@ -707,7 +718,7 @@ int net_server(const char *hostaddr, in_port_t port[])
 				sd_notifyf(0, "STATUS=Kill %d child process", SYS_child_process_count);
 #endif
 
-				if (kill(-getpid(), SIGKILL) < 0)
+				if (kill(0, SIGKILL) < 0)
 				{
 					log_error("Send SIGKILL signal failed (%d)\n", errno);
 				}
@@ -793,7 +804,7 @@ int net_server(const char *hostaddr, in_port_t port[])
 			}
 
 			// Notify child processes to reload configuration
-			if (kill(-getpid(), SIGUSR1) < 0)
+			if (kill(0, SIGUSR1) < 0)
 			{
 				log_error("Send SIGUSR1 signal failed (%d)\n", errno);
 			}

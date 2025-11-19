@@ -12,13 +12,12 @@
 
 #include "file_loader.h"
 #include "log.h"
-#include "trie_dict.h"
 #include <errno.h>
+#include <libgen.h>
 #include <stdio.h>
+#include <string.h>
 #include <unistd.h>
 #include <sys/shm.h>
-
-static const char TRIE_DICT_SHM_FILE[] = "~trie_dict_shm.dat";
 
 const char *files[] = {
 	"../data/welcome.txt",
@@ -32,14 +31,23 @@ int files_cnt = 6;
 
 int main(int argc, char *argv[])
 {
-	int ret;
+	char file_path_temp[FILE_PATH_LEN];
 	int i;
-	const void *p_shm;
+	void *p_shm;
 	size_t data_len;
 	long line_total;
 	const void *p_data;
 	const long *p_line_offsets;
-	FILE *fp;
+
+	// Change current dir
+	strncpy(file_path_temp, argv[0], sizeof(file_path_temp) - 1);
+	file_path_temp[sizeof(file_path_temp) - 1] = '\0';
+
+	if (chdir(dirname(file_path_temp)) < 0)
+	{
+		fprintf(stderr, "chdir(%s) error: %d\n", dirname(file_path_temp), errno);
+		return -1;
+	}
 
 	if (log_begin("../log/bbsd.log", "../log/error.log") < 0)
 	{
@@ -49,32 +57,6 @@ int main(int argc, char *argv[])
 
 	log_common_redir(STDOUT_FILENO);
 	log_error_redir(STDERR_FILENO);
-
-	if ((fp = fopen(TRIE_DICT_SHM_FILE, "w")) == NULL)
-	{
-		log_error("fopen(%s) error\n", TRIE_DICT_SHM_FILE);
-		return -1;
-	}
-	fclose(fp);
-
-	if (trie_dict_init(TRIE_DICT_SHM_FILE, TRIE_NODE_PER_POOL) < 0)
-	{
-		printf("trie_dict_init failed\n");
-		return -1;
-	}
-
-	ret = file_loader_init();
-	if (ret < 0)
-	{
-		printf("file_loader_init() error (%d)\n", ret);
-		return ret;
-	}
-
-	ret = file_loader_init();
-	if (ret == 0)
-	{
-		printf("Rerun file_loader_init() error\n");
-	}
 
 	printf("Testing #1\n");
 
@@ -157,17 +139,6 @@ int main(int argc, char *argv[])
 				}
 			}
 		}
-	}
-
-	file_loader_cleanup();
-	file_loader_cleanup();
-
-	trie_dict_cleanup();
-
-	if (unlink(TRIE_DICT_SHM_FILE) < 0)
-	{
-		log_error("unlink(%s) error\n", TRIE_DICT_SHM_FILE);
-		return -1;
 	}
 
 	log_end();

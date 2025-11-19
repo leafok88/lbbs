@@ -1,6 +1,6 @@
 Installation
 ==================
-To install LBBS, please perform the following steps:
+To install LBBS on Linux (e.g. Debian 13, CentOS Stream 10), please perform the following steps:
 
 0) Prerequisite  
    Follow README.md under [leafok_bbs](https://github.com/leafok/leafok_bbs) to initialize the database structure shared by both web version and telnet version.   
@@ -48,6 +48,8 @@ To install LBBS, please perform the following steps:
    sudo -u bbs $LBBS_HOME_DIR/bin/bbsd
 
 11) (Optional) Set up systemd  
+   Enable systemd related feature during config, by running:  
+     ./configure --prefix=$LBBS_HOME_DIR --enable-systemd
    Create your own /usr/lib/systemd/system/lbbs.service from the sample at conf/lbbs.service, and make any change if necessary.  
    Reload daemon config and start the service.  
 
@@ -60,4 +62,16 @@ To install LBBS, please perform the following steps:
    sudo -u bbs ipcs  
    There should be no item owned by bbs. Otherwise, run the following command to cleanup:  
    sudo -u bbs ipcrm -a
+
+
+For Cygwin User
+==================
+Installation of LBBS on Cygwin is similar to the above steps for Linux, except that:
+
+1) Use additional config switches to keep compatible with the Cygwin environment.  
+   ./configure --prefix=$LBBS_HOME_DIR --with-mariadb --without-epoll  
+
+2) Enable Cygserver with optimized parameters (as large as possible) of XSI semaphore and shared memory in /etc/cygserver.conf  
+
+3) Skip those steps not supported by Cygwin (e.g. systemd and logrotate).  
 

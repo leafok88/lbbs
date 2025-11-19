@@ -25,7 +25,7 @@
 #include <sys/sem.h>
 #include <sys/shm.h>
 
-#if defined(_SEM_SEMUN_UNDEFINED) || defined(__MSYS__) || defined(__MINGW32__)
+#if defined(_SEM_SEMUN_UNDEFINED) || defined(__CYGWIN__)
 union semun
 {
 	int val;			   /* Value for SETVAL */
@@ -225,6 +225,7 @@ void article_block_cleanup(void)
 
 int set_article_block_shm_readonly(void)
 {
+#ifndef __CYGWIN__
 	int shmid;
 	void *p_shm;
 	int i;
@@ -240,22 +241,14 @@ int set_article_block_shm_readonly(void)
 		shmid = (p_article_block_pool->shm_pool + i)->shmid;
 
 		// Remap shared memory in read-only mode
-#if defined(__MSYS__) || defined(__MINGW32__)
-		if (shmdt((p_article_block_pool->shm_pool + i)->p_shm) == -1)
-		{
-			log_error("shmdt(shmid = %d) error (%d)\n", (p_article_block_pool->shm_pool + i)->shmid, errno);
-			return -2;
-		}
-		p_shm = shmat(shmid, (p_article_block_pool->shm_pool + i)->p_shm, SHM_RDONLY);
-#else
 		p_shm = shmat(shmid, (p_article_block_pool->shm_pool + i)->p_shm, SHM_RDONLY | SHM_REMAP);
-#endif
 		if (p_shm == (void *)-1)
 		{
 			log_error("shmat(article_block_pool shmid = %d) error (%d)\n", shmid, errno);
 			return -2;
 		}
 	}
+#endif
 
 	return 0;
 }
@@ -549,6 +542,7 @@ void section_list_cleanup(void)
 
 int set_section_list_shm_readonly(void)
 {
+#ifndef __CYGWIN__
 	int shmid;
 	void *p_shm;
 
@@ -561,16 +555,7 @@ int set_section_list_shm_readonly(void)
 	shmid = p_section_list_pool->shmid;
 
 	// Remap shared memory in read-only mode
-#if defined(__MSYS__) || defined(__MINGW32__)
-	if (shmdt(p_section_list_pool) == -1)
-	{
-		log_error("shmdt(section_list_pool) error (%d)\n", errno);
-		return -1;
-	}
-	p_shm = shmat(shmid, p_section_list_pool, SHM_RDONLY);
-#else
 	p_shm = shmat(shmid, p_section_list_pool, SHM_RDONLY | SHM_REMAP);
-#endif
 	if (p_shm == (void *)-1)
 	{
 		log_error("shmat(section_list_pool shmid = %d) error (%d)\n", shmid, errno);
@@ -578,6 +563,7 @@ int set_section_list_shm_readonly(void)
 	}
 
 	p_section_list_pool = p_shm;
+#endif
 
 	return 0;
 }
@@ -1627,7 +1613,7 @@ int section_list_try_rd_lock(SECTION_LIST *p_section, int wait_sec)
 {
 	int index;
 	struct sembuf sops[4];
-#if !defined(__MSYS__) && !defined(__MINGW32__)
+#ifndef __CYGWIN__
 	struct timespec timeout;
 #endif
 	int ret;
@@ -1660,7 +1646,7 @@ int section_list_try_rd_lock(SECTION_LIST *p_section, int wait_sec)
 		sops[3].sem_flg = SEM_UNDO;			   // undo on terminate
 	}
 
-#if defined(__MSYS__) || defined(__MINGW32__)
+#ifdef __CYGWIN__
 	ret = semop(p_section_list_pool->semid, sops, (index == BBS_max_section ? 2 : 4));
 #else
 	timeout.tv_sec = wait_sec;
@@ -1680,7 +1666,7 @@ int section_list_try_rw_lock(SECTION_LIST *p_section, int wait_sec)
 {
 	int index;
 	struct sembuf sops[3];
-#if !defined(__MSYS__) && !defined(__MINGW32__)
+#ifndef __CYGWIN__
 	struct timespec timeout;
 #endif
 	int ret;
@@ -1703,7 +1689,7 @@ int section_list_try_rw_lock(SECTION_LIST *p_section, int wait_sec)
 	sops[2].sem_op = 0;							   // wait until unlocked
 	sops[2].sem_flg = 0;
 
-#if defined(__MSYS__) || defined(__MINGW32__)
+#ifdef __CYGWIN__
 	ret = semop(p_section_list_pool->semid, sops, 3);
 #else
 	timeout.tv_sec = wait_sec;

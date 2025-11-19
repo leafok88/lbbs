@@ -31,6 +31,7 @@
 #include <unistd.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <sys/wait.h>
 
 static void app_help(void)
 {
@@ -59,16 +60,18 @@ int main(int argc, char *argv[])
 	int ret;
 	int last_aid;
 	struct sigaction act = {0};
+	int i;
+	int j;
 
 	// Parse args
-	for (int i = 1; i < argc; i++)
+	for (i = 1; i < argc; i++)
 	{
 		switch (argv[i][0])
 		{
 		case '-':
 			if (argv[i][1] != '-')
 			{
-				for (int j = 1; j < strlen(argv[i]); j++)
+				for (j = 1; j < strlen(argv[i]); j++)
 				{
 					switch (argv[i][j])
 					{
@@ -139,13 +142,6 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "chdir(..) error: %d\n", errno);
 		return -1;
 	}
-#if defined(__MSYS__) || defined(__MINGW32__)
-	if (chdir("..") < 0)
-	{
-		fprintf(stderr, "chdir(..) error: %d\n", errno);
-		return -1;
-	}
-#endif
 
 	// Apply the specified locale
 	if (setlocale(LC_ALL, "en_US.UTF-8") == NULL)
@@ -261,11 +257,6 @@ int main(int argc, char *argv[])
 	top10_menu.allow_exit = 1;
 
 	// Load data files
-	if (file_loader_init() < 0)
-	{
-		log_error("file_loader_init() error\n");
-		goto cleanup;
-	}
 	for (int i = 0; i < data_files_load_startup_count; i++)
 	{
 		if (load_file(data_files_load_startup[i]) < 0)
@@ -358,8 +349,43 @@ int main(int argc, char *argv[])
 	net_server(BBS_address, BBS_port);
 
 cleanup:
+	// Cleanup loader process if still running
+	if (SYS_child_process_count > 0)
+	{
+		SYS_child_exit = 0;
+		
+		if (kill(section_list_loader_pid, SIGTERM) < 0)
+		{
+			log_error("Send SIGTERM signal failed (%d)\n", errno);
+		}
+
+		for(i = 0; SYS_child_exit == 0 && i < 5; i++)
+		{
+			sleep(1); // second
+		}
+
+		if ((ret = waitpid(section_list_loader_pid, NULL, WNOHANG)) < 0)
+		{
+			log_error("waitpid(%d) error (%d)\n", section_list_loader_pid, errno);
+		}
+		else if (ret == 0)
+		{
+			log_common("Force kill section_list_loader process (%d)\n", section_list_loader_pid);
+			if (kill(section_list_loader_pid, SIGKILL) < 0)
+			{
+				log_error("Send SIGKILL signal failed (%d)\n", errno);
+			}
+		}
+	}
+
 	// Cleanup loaded data files
-	file_loader_cleanup();
+	for (int i = 0; i < data_files_load_startup_count; i++)
+	{
+		if (unload_file(data_files_load_startup[i]) < 0)
+		{
+			log_error("unload_file(%s) error\n", data_files_load_startup[i]);
+		}
+	}
 
 	// Cleanup menu
 	unload_menu(&bbs_menu);

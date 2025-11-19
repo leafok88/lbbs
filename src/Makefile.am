@@ -1,6 +1,8 @@
 bin_PROGRAMS = bbsd
-EXTRA_PROGRAMS = test_trie_dict test_file_loader test_section_list test_lml test_ssh_server test_article_favor test_article_view_log \
+test_PROGRAMS = test_trie_dict test_file_loader test_section_list test_lml test_ssh_server test_article_favor test_article_view_log \
 			   test_memory_pool test_bbs test_bwf test_hash_dict
+
+testdir = ${prefix}/test
 
 bbsd_SOURCES = ${srcdir}/../include/*.h article_cache.c article_del.c article_favor.c article_favor_display.c article_op.c \
 			   article_post.c article_view_log.c bbs.c bbs_cmd.c bbs_main.c bwf.c common.c data_file_mgr.c database.c \
@@ -11,7 +13,7 @@ bbsd_SOURCES = ${srcdir}/../include/*.h article_cache.c article_del.c article_fa
 bbsd_LDFLAGS=-export-dynamic
 
 test_trie_dict_SOURCES = log.c test_trie_dict.c trie_dict.c
-test_file_loader_SOURCES = file_loader.c log.c str_process.c test_file_loader.c trie_dict.c
+test_file_loader_SOURCES = file_loader.c log.c str_process.c test_file_loader.c
 test_section_list_SOURCES = bbs.c common.c database.c log.c section_list.c test_section_list.c trie_dict.c user_list.c user_priv.c user_stat.c
 test_lml_SOURCES = lml.c log.c str_process.c test_lml.c
 test_ssh_server_SOURCES = log.c test_ssh_server.c
@@ -33,5 +35,3 @@ AM_CFLAGS = -I${srcdir}/../include ${LIBSSH_CFLAGS} ${MYSQLCLIENT_CFLAGS} ${SYST
 LIBS = ${LIBSSH_LIBS} ${MYSQLCLIENT_LIBS} ${SYSTEMD_LIBS} ${LIBPCRE2_LIBS} ${ICONV_LIBS} -ldl
 
 libdir = ${prefix}/lib
-
-CLEANFILES = ${EXTRA_PROGRAMS}

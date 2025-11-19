@@ -1,6 +1,6 @@
 安装说明
 ==================
-请按照以下步骤进行LBBS的编译和安装:
+请按照以下步骤在Linux (例如: Debian 13, CentOS Stream 10) 上进行LBBS的编译和安装:
 
 0) 准备工作  
    按照[leafok_bbs](https://github.com/leafok/leafok_bbs)下README.md的说明，初始化Web/Telnet版本共享的数据库。   
@@ -48,6 +48,8 @@
    sudo -u bbs $LBBS_HOME_DIR/bin/bbsd
 
 10) (可选) 配置systemd  
+   配置时启用systemd相关功能，运行:  
+     ./configure --prefix=$LBBS_HOME_DIR --enable-systemd
    基于conf/lbbs.service创建/usr/lib/systemd/system/lbbs.service，并进行必要的修改。  
    刷新配置并启动服务。  
 

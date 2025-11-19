@@ -871,7 +871,7 @@ int display_file_key_handler(int *p_key, DISPLAY_CTX *p_ctx)
 int display_file(const char *filename, int eof_exit)
 {
 	int ret;
-	const void *p_shm;
+	void *p_shm;
 	size_t data_len;
 	long line_total;
 	const void *p_data;

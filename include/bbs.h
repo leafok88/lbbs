@@ -14,7 +14,11 @@
 
 enum bbs_const_t
 {
+#ifdef __CYGWIN__
+    BBS_max_section = 50,
+#else
     BBS_max_section = 200,
+#endif
     BBS_section_name_max_len = 20,
     BBS_section_title_max_len = 40,
     BBS_username_max_len = 12,
