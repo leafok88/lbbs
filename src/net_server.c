@@ -704,7 +704,7 @@ int net_server(const char *hostaddr, in_port_t port[])
 				log_common("Notify %d child process to exit\n", SYS_child_process_count);
 #endif
 
-				if (kill(-getpid(), SIGTERM) < 0)
+				if (kill(0, SIGTERM) < 0)
 				{
 					log_error("Send SIGTERM signal failed (%d)\n", errno);
 				}
@@ -718,7 +718,7 @@ int net_server(const char *hostaddr, in_port_t port[])
 				sd_notifyf(0, "STATUS=Kill %d child process", SYS_child_process_count);
 #endif
 
-				if (kill(-getpid(), SIGKILL) < 0)
+				if (kill(0, SIGKILL) < 0)
 				{
 					log_error("Send SIGKILL signal failed (%d)\n", errno);
 				}
@@ -804,7 +804,7 @@ int net_server(const char *hostaddr, in_port_t port[])
 			}
 
 			// Notify child processes to reload configuration
-			if (kill(-getpid(), SIGUSR1) < 0)
+			if (kill(0, SIGUSR1) < 0)
 			{
 				log_error("Send SIGUSR1 signal failed (%d)\n", errno);
 			}
