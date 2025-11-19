@@ -257,11 +257,6 @@ int main(int argc, char *argv[])
 	top10_menu.allow_exit = 1;
 
 	// Load data files
-	if (file_loader_init() < 0)
-	{
-		log_error("file_loader_init() error\n");
-		goto cleanup;
-	}
 	for (int i = 0; i < data_files_load_startup_count; i++)
 	{
 		if (load_file(data_files_load_startup[i]) < 0)
@@ -384,7 +379,13 @@ cleanup:
 	}
 
 	// Cleanup loaded data files
-	file_loader_cleanup();
+	for (int i = 0; i < data_files_load_startup_count; i++)
+	{
+		if (unload_file(data_files_load_startup[i]) < 0)
+		{
+			log_error("unload_file(%s) error\n", data_files_load_startup[i]);
+		}
+	}
 
 	// Cleanup menu
 	unload_menu(&bbs_menu);
