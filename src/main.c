@@ -246,12 +246,12 @@ int main(int argc, char *argv[])
 	// Load menus
 	if (load_menu(&bbs_menu, CONF_MENU) < 0)
 	{
-		log_error("load_menu(%s) error\n", CONF_MENU);
+		log_error("load_menu(bbs_menu) error\n");
 		goto cleanup;
 	}
 	if (load_menu(&top10_menu, CONF_TOP10_MENU) < 0)
 	{
-		log_error("load_menu(%s) error\n", CONF_TOP10_MENU);
+		log_error("load_menu(top10_menu) error\n");
 		goto cleanup;
 	}
 	top10_menu.allow_exit = 1;

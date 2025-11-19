@@ -49,7 +49,6 @@ int load_section_config_from_db(int update_gen_ex)
 	char master_list[(BBS_username_max_len + 1) * 3 + 1];
 	SECTION_LIST *p_section;
 	char ex_menu_conf[FILE_PATH_LEN];
-	MENU_SET ex_menu_set_new;
 	int ret = 0;
 
 	db = db_open();
@@ -161,22 +160,18 @@ int load_section_config_from_db(int update_gen_ex)
 		{
 			snprintf(ex_menu_conf, sizeof(ex_menu_conf), "%s/%d", VAR_GEN_EX_MENU_DIR, p_section->sid);
 
-			ret = load_menu(&ex_menu_set_new, ex_menu_conf);
-			if (ret < 0)
+			if (detach_menu_shm(&(p_section->ex_menu_set)) < 0)
 			{
-				unload_menu(&ex_menu_set_new);
-				log_error("load_menu(%s) error: %d\n", ex_menu_conf, ret);
+				log_error("detach_menu_shm(%s) error\n", ex_menu_conf);
+			}
+			if (load_menu(&(p_section->ex_menu_set), ex_menu_conf) < 0)
+			{
+				log_error("load_menu(%s) error\n", ex_menu_conf);
+				unload_menu(&(p_section->ex_menu_set));
 			}
 			else
 			{
-				if (p_section->ex_menu_tm > 0)
-				{
-					unload_menu(&(p_section->ex_menu_set));
-				}
-
-				ex_menu_set_new.allow_exit = 1; // Allow exit menu
-				memcpy(&(p_section->ex_menu_set), &ex_menu_set_new, sizeof(ex_menu_set_new));
-
+				p_section->ex_menu_set.allow_exit = 1; // Allow exit menu
 				p_section->ex_menu_tm = atol(row[7]);
 #ifdef _DEBUG
 				log_common("Loaded gen_ex_menu of section %d [%s]\n", p_section->sid, p_section->sname);
