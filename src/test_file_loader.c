@@ -17,7 +17,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
-#include <sys/shm.h>
 
 const char *files[] = {
 	"../data/welcome.txt",

@@ -28,7 +28,6 @@
 #include <wchar.h>
 #include <sys/param.h>
 #include <sys/stat.h>
-#include <sys/shm.h>
 #include <sys/types.h>
 
 const char CTRL_SEQ_CLR_LINE[] = "\033[K";
