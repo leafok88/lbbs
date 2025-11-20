@@ -514,12 +514,16 @@ int user_list_pool_cleanup(void)
 		return -1;
 	}
 
+	if (semctl(p_user_list_pool->semid, 0, IPC_RMID) == -1)
+	{
+		log_error("semctl(semid = %d, IPC_RMID) error (%d)\n", p_user_list_pool->semid, errno);
+	}
+
 	detach_user_list_pool_shm();
 
 	if (shm_unlink(user_list_shm_name) == -1 && errno != ENOENT)
 	{
 		log_error("shm_unlink(%s) error (%d)\n", user_list_shm_name, errno);
-		return -2;
 	}
 
 	user_list_shm_name[0] = '\0';

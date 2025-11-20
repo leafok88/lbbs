@@ -129,7 +129,6 @@ int trie_dict_cleanup(void)
 	if (shm_unlink(trie_node_shm_name) == -1 && errno != ENOENT)
 	{
 		log_error("shm_unlink(%s) error (%d)\n", trie_node_shm_name, errno);
-		return -2;
 	}
 
 	trie_node_shm_name[0] = '\0';
