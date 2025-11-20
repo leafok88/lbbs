@@ -80,7 +80,7 @@ typedef struct section_list_t SECTION_LIST;
 
 struct section_list_pool_t
 {
-	int shmid;
+	size_t shm_size;
 	SECTION_LIST sections[BBS_max_section];
 	int section_count;
 	int semid;

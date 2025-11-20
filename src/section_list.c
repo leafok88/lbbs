@@ -15,15 +15,16 @@
 #include "trie_dict.h"
 #include "user_list.h"
 #include <errno.h>
+#include <fcntl.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <sys/ipc.h>
+#include <sys/mman.h>
 #include <sys/param.h>
 #include <sys/sem.h>
-#include <sys/shm.h>
+#include <sys/stat.h>
 
 #if defined(_SEM_SEMUN_UNDEFINED) || defined(__CYGWIN__)
 union semun
@@ -60,10 +61,10 @@ typedef struct article_block_t ARTICLE_BLOCK;
 
 struct article_block_pool_t
 {
-	int shmid;
+	size_t shm_size;
 	struct
 	{
-		int shmid;
+		size_t shm_size;
 		void *p_shm;
 	} shm_pool[ARTICLE_BLOCK_SHM_COUNT_LIMIT];
 	int shm_count;
@@ -73,15 +74,16 @@ struct article_block_pool_t
 };
 typedef struct article_block_pool_t ARTICLE_BLOCK_POOL;
 
+static char article_block_shm_name[FILE_NAME_LEN];
 static ARTICLE_BLOCK_POOL *p_article_block_pool = NULL;
 
+static char section_list_shm_name[FILE_NAME_LEN];
 SECTION_LIST_POOL *p_section_list_pool = NULL;
 
 int article_block_init(const char *filename, int block_count)
 {
-	int shmid;
-	int proj_id;
-	key_t key;
+	char filepath[FILE_PATH_LEN];
+	int fd;
 	size_t size;
 	void *p_shm;
 	int i;
@@ -101,31 +103,48 @@ int article_block_init(const char *filename, int block_count)
 		return -2;
 	}
 
+	strncpy(filepath, filename, sizeof(filepath) - 1);
+	filepath[sizeof(filepath) - 1] = '\0';
+	snprintf(article_block_shm_name, sizeof(article_block_shm_name), "/ARTICLE_BLOCK_SHM_%s", basename(filepath));
+
 	// Allocate shared memory
-	proj_id = ARTICLE_BLOCK_SHM_COUNT_LIMIT; // keep different from proj_id used to create block shm
-	key = ftok(filename, proj_id);
-	if (key == -1)
+	size = sizeof(ARTICLE_BLOCK_POOL);
+	snprintf(filepath, sizeof(filepath), "%s_%d", article_block_shm_name, ARTICLE_BLOCK_SHM_COUNT_LIMIT);
+
+	if (shm_unlink(filepath) == -1 && errno != ENOENT)
 	{
-		log_error("ftok(%s, %d) error (%d)\n", filename, proj_id, errno);
-		return -3;
+		log_error("shm_unlink(%s) error (%d)\n", filepath, errno);
+		return -2;
 	}
 
-	size = sizeof(ARTICLE_BLOCK_POOL);
-	shmid = shmget(key, size, IPC_CREAT | IPC_EXCL | 0600);
-	if (shmid == -1)
+	if ((fd = shm_open(filepath, O_CREAT | O_EXCL | O_RDWR, 0600)) == -1)
 	{
-		log_error("shmget(article_block_pool_shm, size = %d) error (%d)\n", size, errno);
-		return -3;
+		log_error("shm_open(%s) error (%d)\n", filepath, errno);
+		return -2;
 	}
-	p_shm = shmat(shmid, NULL, 0);
-	if (p_shm == (void *)-1)
+	if (ftruncate(fd, (off_t)size) == -1)
 	{
-		log_error("shmat(shmid = %d) error (%d)\n", shmid, errno);
-		return -3;
+		log_error("ftruncate(size=%d) error (%d)\n", size, errno);
+		close(fd);
+		return -2;
+	}
+
+	p_shm = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0L);
+	if (p_shm == MAP_FAILED)
+	{
+		log_error("mmap() error (%d)\n", errno);
+		close(fd);
+		return -2;
+	}
+
+	if (close(fd) < 0)
+	{
+		log_error("close(fd) error (%d)\n", errno);
+		return -1;
 	}
 
 	p_article_block_pool = p_shm;
-	p_article_block_pool->shmid = shmid;
+	p_article_block_pool->shm_size = size;
 
 	p_article_block_pool->shm_count = 0;
 	pp_block_next = &(p_article_block_pool->p_block_free_list);
@@ -135,32 +154,42 @@ int article_block_init(const char *filename, int block_count)
 		block_count_in_shm = MIN(block_count, ARTICLE_BLOCK_PER_SHM);
 		block_count -= block_count_in_shm;
 
-		proj_id = p_article_block_pool->shm_count;
-		key = ftok(filename, proj_id);
-		if (key == -1)
-		{
-			log_error("ftok(%s, %d) error (%d)\n", filename, proj_id, errno);
-			article_block_cleanup();
-			return -3;
-		}
-
 		size = sizeof(ARTICLE_BLOCK) * (size_t)block_count_in_shm;
-		shmid = shmget(key, size, IPC_CREAT | IPC_EXCL | 0600);
-		if (shmid == -1)
+		snprintf(filepath, sizeof(filepath), "%s_%d", article_block_shm_name, p_article_block_pool->shm_count);
+
+		if (shm_unlink(filepath) == -1 && errno != ENOENT)
 		{
-			log_error("shmget(shm_index = %d, size = %d) error (%d)\n", p_article_block_pool->shm_count, size, errno);
-			article_block_cleanup();
-			return -3;
-		}
-		p_shm = shmat(shmid, NULL, 0);
-		if (p_shm == (void *)-1)
-		{
-			log_error("shmat(shmid = %d) error (%d)\n", shmid, errno);
-			article_block_cleanup();
-			return -3;
+			log_error("shm_unlink(%s) error (%d)\n", filepath, errno);
+			return -2;
 		}
 
-		(p_article_block_pool->shm_pool + p_article_block_pool->shm_count)->shmid = shmid;
+		if ((fd = shm_open(filepath, O_CREAT | O_EXCL | O_RDWR, 0600)) == -1)
+		{
+			log_error("shm_open(%s) error (%d)\n", filepath, errno);
+			return -2;
+		}
+		if (ftruncate(fd, (off_t)size) == -1)
+		{
+			log_error("ftruncate(size=%d) error (%d)\n", size, errno);
+			close(fd);
+			return -2;
+		}
+
+		p_shm = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0L);
+		if (p_shm == MAP_FAILED)
+		{
+			log_error("mmap() error (%d)\n", errno);
+			close(fd);
+			return -2;
+		}
+
+		if (close(fd) < 0)
+		{
+			log_error("close(fd) error (%d)\n", errno);
+			return -1;
+		}
+
+		(p_article_block_pool->shm_pool + p_article_block_pool->shm_count)->shm_size = size;
 		(p_article_block_pool->shm_pool + p_article_block_pool->shm_count)->p_shm = p_shm;
 		p_article_block_pool->shm_count++;
 
@@ -188,7 +217,7 @@ int article_block_init(const char *filename, int block_count)
 
 void article_block_cleanup(void)
 {
-	int shmid;
+	char filepath[FILE_PATH_LEN];
 
 	if (p_article_block_pool == NULL)
 	{
@@ -197,37 +226,26 @@ void article_block_cleanup(void)
 
 	for (int i = 0; i < p_article_block_pool->shm_count; i++)
 	{
-		if (shmdt((p_article_block_pool->shm_pool + i)->p_shm) == -1)
-		{
-			log_error("shmdt(shmid = %d) error (%d)\n", (p_article_block_pool->shm_pool + i)->shmid, errno);
-		}
+		snprintf(filepath, sizeof(filepath), "%s_%d", article_block_shm_name, i);
 
-		if (shmctl((p_article_block_pool->shm_pool + i)->shmid, IPC_RMID, NULL) == -1)
+		if (shm_unlink(filepath) == -1 && errno != ENOENT)
 		{
-			log_error("shmctl(shmid = %d, IPC_RMID) error (%d)\n", (p_article_block_pool->shm_pool + i)->shmid, errno);
+			log_error("shm_unlink(%s) error (%d)\n", filepath, errno);
 		}
 	}
 
-	shmid = p_article_block_pool->shmid;
+	snprintf(filepath, sizeof(filepath), "%s_%d", article_block_shm_name, ARTICLE_BLOCK_SHM_COUNT_LIMIT);
 
-	if (shmdt(p_article_block_pool) == -1)
+	if (shm_unlink(filepath) == -1 && errno != ENOENT)
 	{
-		log_error("shmdt(shmid = %d) error (%d)\n", shmid, errno);
+		log_error("shm_unlink(%s) error (%d)\n", filepath, errno);
 	}
 
-	if (shmid != 0 && shmctl(shmid, IPC_RMID, NULL) == -1)
-	{
-		log_error("shmctl(shmid = %d, IPC_RMID) error (%d)\n", shmid, errno);
-	}
-
-	p_article_block_pool = NULL;
+	detach_article_block_shm();
 }
 
 int set_article_block_shm_readonly(void)
 {
-#ifndef __CYGWIN__
-	int shmid;
-	void *p_shm;
 	int i;
 
 	if (p_article_block_pool == NULL)
@@ -238,25 +256,26 @@ int set_article_block_shm_readonly(void)
 
 	for (i = 0; i < p_article_block_pool->shm_count; i++)
 	{
-		shmid = (p_article_block_pool->shm_pool + i)->shmid;
-
-		// Remap shared memory in read-only mode
-		p_shm = shmat(shmid, (p_article_block_pool->shm_pool + i)->p_shm, SHM_RDONLY | SHM_REMAP);
-		if (p_shm == (void *)-1)
+		if ((p_article_block_pool->shm_pool + i)->p_shm != NULL &&
+			mprotect((p_article_block_pool->shm_pool + i)->p_shm, (p_article_block_pool->shm_pool + i)->shm_size, PROT_READ) < 0)
 		{
-			log_error("shmat(article_block_pool shmid = %d) error (%d)\n", shmid, errno);
+			log_error("mprotect() error (%d)\n", errno);
 			return -2;
 		}
 	}
-#endif
+
+	if (p_article_block_pool != NULL &&
+		mprotect(p_article_block_pool, p_article_block_pool->shm_size, PROT_READ) < 0)
+	{
+		log_error("mprotect() error (%d)\n", errno);
+		return -3;
+	}
 
 	return 0;
 }
 
 int detach_article_block_shm(void)
 {
-	int shmid;
-
 	if (p_article_block_pool == NULL)
 	{
 		return -1;
@@ -264,18 +283,17 @@ int detach_article_block_shm(void)
 
 	for (int i = 0; i < p_article_block_pool->shm_count; i++)
 	{
-		if ((p_article_block_pool->shm_pool + i)->p_shm != NULL && shmdt((p_article_block_pool->shm_pool + i)->p_shm) == -1)
+		if ((p_article_block_pool->shm_pool + i)->p_shm != NULL &&
+			munmap((p_article_block_pool->shm_pool + i)->p_shm, (p_article_block_pool->shm_pool + i)->shm_size) < 0)
 		{
-			log_error("shmdt(shmid = %d) error (%d)\n", (p_article_block_pool->shm_pool + i)->shmid, errno);
+			log_error("munmap() error (%d)\n", errno);
 			return -2;
 		}
 	}
 
-	shmid = p_article_block_pool->shmid;
-
-	if (shmdt(p_article_block_pool) == -1)
+	if (p_article_block_pool != NULL && munmap(p_article_block_pool, p_article_block_pool->shm_size) < 0)
 	{
-		log_error("shmdt(shmid = %d) error (%d)\n", shmid, errno);
+		log_error("munmap() error (%d)\n", errno);
 		return -3;
 	}
 
@@ -419,12 +437,13 @@ ARTICLE *article_block_find_by_index(int index)
 
 extern int section_list_init(const char *filename)
 {
-	int semid;
-	int shmid;
-	int proj_id;
-	key_t key;
+	char filepath[FILE_PATH_LEN];
+	int fd;
 	size_t size;
 	void *p_shm;
+	int semid;
+	int proj_id;
+	key_t key;
 	union semun arg;
 	int i;
 
@@ -433,6 +452,50 @@ extern int section_list_init(const char *filename)
 		section_list_cleanup();
 	}
 
+	// Allocate shared memory
+	size = sizeof(SECTION_LIST_POOL);
+
+	strncpy(filepath, filename, sizeof(filepath) - 1);
+	filepath[sizeof(filepath) - 1] = '\0';
+	snprintf(section_list_shm_name, sizeof(section_list_shm_name), "/SECTION_LIST_SHM_%s", basename(filepath));
+
+	if (shm_unlink(section_list_shm_name) == -1 && errno != ENOENT)
+	{
+		log_error("shm_unlink(%s) error (%d)\n", section_list_shm_name, errno);
+		return -2;
+	}
+
+	if ((fd = shm_open(section_list_shm_name, O_CREAT | O_EXCL | O_RDWR, 0600)) == -1)
+	{
+		log_error("shm_open(%s) error (%d)\n", section_list_shm_name, errno);
+		return -2;
+	}
+	if (ftruncate(fd, (off_t)size) == -1)
+	{
+		log_error("ftruncate(size=%d) error (%d)\n", size, errno);
+		close(fd);
+		return -2;
+	}
+
+	p_shm = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0L);
+	if (p_shm == MAP_FAILED)
+	{
+		log_error("mmap() error (%d)\n", errno);
+		close(fd);
+		return -2;
+	}
+
+	if (close(fd) < 0)
+	{
+		log_error("close(fd) error (%d)\n", errno);
+		return -1;
+	}
+
+	p_section_list_pool = p_shm;
+	p_section_list_pool->shm_size = size;
+	p_section_list_pool->section_count = 0;
+
+	// Allocate semaphore as section locks
 	proj_id = (int)(time(NULL) % getpid());
 	key = ftok(filename, proj_id);
 	if (key == -1)
@@ -441,26 +504,6 @@ extern int section_list_init(const char *filename)
 		return -3;
 	}
 
-	// Allocate shared memory
-	size = sizeof(SECTION_LIST_POOL);
-	shmid = shmget(key, size, IPC_CREAT | IPC_EXCL | 0600);
-	if (shmid == -1)
-	{
-		log_error("shmget(section_list_pool_shm, size = %d) error (%d)\n", size, errno);
-		return -3;
-	}
-	p_shm = shmat(shmid, NULL, 0);
-	if (p_shm == (void *)-1)
-	{
-		log_error("shmat(shmid = %d) error (%d)\n", shmid, errno);
-		return -3;
-	}
-
-	p_section_list_pool = p_shm;
-	p_section_list_pool->shmid = shmid;
-	p_section_list_pool->section_count = 0;
-
-	// Allocate semaphore as section locks
 	size = 2 * (BBS_max_section + 1); // r_sem and w_sem per section, the last pair for all sections
 	semid = semget(key, (int)size, IPC_CREAT | IPC_EXCL | 0600);
 	if (semid == -1)
@@ -501,8 +544,6 @@ extern int section_list_init(const char *filename)
 
 void section_list_cleanup(void)
 {
-	int shmid;
-
 	if (p_section_list_pool == NULL)
 	{
 		return;
@@ -520,59 +561,42 @@ void section_list_cleanup(void)
 		p_section_list_pool->p_trie_dict_section_by_sid = NULL;
 	}
 
-	shmid = p_section_list_pool->shmid;
-
 	if (semctl(p_section_list_pool->semid, 0, IPC_RMID) == -1)
 	{
 		log_error("semctl(semid = %d, IPC_RMID) error (%d)\n", p_section_list_pool->semid, errno);
 	}
 
-	if (shmdt(p_section_list_pool) == -1)
-	{
-		log_error("shmdt(shmid = %d) error (%d)\n", shmid, errno);
-	}
+	detach_section_list_shm();
 
-	if (shmid != 0 && shmctl(shmid, IPC_RMID, NULL) == -1)
+	if (shm_unlink(section_list_shm_name) == -1 && errno != ENOENT)
 	{
-		log_error("shmctl(shmid = %d, IPC_RMID) error (%d)\n", shmid, errno);
+		log_error("shm_unlink(%s) error (%d)\n", section_list_shm_name, errno);
 	}
-
-	p_section_list_pool = NULL;
 }
 
 int set_section_list_shm_readonly(void)
 {
-#ifndef __CYGWIN__
-	int shmid;
-	void *p_shm;
-
 	if (p_section_list_pool == NULL)
 	{
 		log_error("p_section_list_pool not initialized\n");
 		return -1;
 	}
 
-	shmid = p_section_list_pool->shmid;
-
-	// Remap shared memory in read-only mode
-	p_shm = shmat(shmid, p_section_list_pool, SHM_RDONLY | SHM_REMAP);
-	if (p_shm == (void *)-1)
+	if (p_section_list_pool != NULL &&
+		mprotect(p_section_list_pool, p_section_list_pool->shm_size, PROT_READ) < 0)
 	{
-		log_error("shmat(section_list_pool shmid = %d) error (%d)\n", shmid, errno);
-		return -3;
+		log_error("mprotect() error (%d)\n", errno);
+		return -2;
 	}
-
-	p_section_list_pool = p_shm;
-#endif
 
 	return 0;
 }
 
 int detach_section_list_shm(void)
 {
-	if (p_section_list_pool != NULL && shmdt(p_section_list_pool) == -1)
+	if (p_section_list_pool != NULL && munmap(p_section_list_pool, p_section_list_pool->shm_size) < 0)
 	{
-		log_error("shmdt(section_list_pool) error (%d)\n", errno);
+		log_error("munmap() error (%d)\n", errno);
 		return -1;
 	}
 
