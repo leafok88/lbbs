@@ -66,11 +66,11 @@ To install LBBS on Linux (e.g. Debian 13, CentOS Stream 10), please perform the 
    sudo -u bbs ipcrm -a
 
 
-For MSYS2 / MinGW User
+For MSYS2 / CygWin User
 ==================
 Installation of LBBS on MSYS2 is similar to the above steps for Linux, except that:
 
-1) Use additional config switches to keep compatible with the MSYS2 / MinGW environment.  
+1) Use additional config switches to keep compatible with the MSYS2 / CygWin environment.  
    ./configure --prefix=$LBBS_HOME_DIR --with-mariadb --without-epoll --without-sysv  
 
 2) Skip those steps not supported by Cygwin (e.g. systemd and logrotate).  
