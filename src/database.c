@@ -28,7 +28,7 @@ char DB_timezone[DB_timezone_max_len + 1];
 MYSQL *db_open()
 {
 	MYSQL *db = NULL;
-	my_bool disabled = 0;
+	int8_t disabled = 0;
 	char sql[SQL_BUFFER_LEN];
 
 	db = mysql_init(NULL);
