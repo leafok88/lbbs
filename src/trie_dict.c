@@ -187,16 +187,10 @@ int get_trie_dict_shm_readonly(void)
 
 int set_trie_dict_shm_readonly(void)
 {
-	if (p_trie_node_pool != NULL && munmap(p_trie_node_pool, p_trie_node_pool->shm_size) < 0)
+	if (p_trie_node_pool != NULL && mprotect(p_trie_node_pool, p_trie_node_pool->shm_size, PROT_READ) < 0)
 	{
-		log_error("munmap() error (%d)\n", errno);
-		return -2;
-	}
-
-	if (get_trie_dict_shm_readonly() < 0)
-	{
-		log_error("get_trie_dict_shm_readonly() error\n");
-		return -3;
+		log_error("mprotect() error (%d)\n", errno);
+		return -1;
 	}
 
 	return 0;

@@ -1472,16 +1472,10 @@ int set_menu_shm_readonly(MENU_SET *p_menu_set)
 		return -1;
 	}
 
-	if (p_menu_set->p_reserved != NULL && munmap(p_menu_set->p_reserved, p_menu_set->shm_size) < 0)
+	if (p_menu_set->p_reserved != NULL && mprotect(p_menu_set->p_reserved, p_menu_set->shm_size, PROT_READ) < 0)
 	{
-		log_error("munmap() error (%d)\n", errno);
+		log_error("mprotect() error (%d)\n", errno);
 		return -2;
-	}
-
-	if (get_menu_shm_readonly(p_menu_set) < 0)
-	{
-		log_error("get_menu_shm_readonly() error\n");
-		return -3;
 	}
 
 	return 0;
