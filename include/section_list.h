@@ -14,6 +14,12 @@
 #include "menu.h"
 #include <time.h>
 
+#ifdef HAVE_SYSTEM_V
+#include <sys/sem.h>
+#else
+#include <semaphore.h>
+#endif
+
 enum section_list_constant_t
 {
 	BBS_article_title_max_len = 160,
@@ -83,7 +89,13 @@ struct section_list_pool_t
 	size_t shm_size;
 	SECTION_LIST sections[BBS_max_section];
 	int section_count;
+#ifndef HAVE_SYSTEM_V
+	sem_t sem[BBS_max_section + 1];
+	uint16_t read_lock_count[BBS_max_section + 1];
+	uint16_t write_lock_count[BBS_max_section + 1];
+#else
 	int semid;
+#endif
 	TRIE_NODE *p_trie_dict_section_by_name;
 	TRIE_NODE *p_trie_dict_section_by_sid;
 };

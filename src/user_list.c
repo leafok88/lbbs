@@ -54,8 +54,8 @@ struct user_list_pool_t
 	size_t shm_size;
 #ifndef HAVE_SYSTEM_V
 	sem_t sem;
-	int read_lock_count;
-	int write_lock_count;
+	uint16_t read_lock_count;
+	uint16_t write_lock_count;
 #else
 	int semid;
 #endif
@@ -829,7 +829,7 @@ int user_list_rd_unlock(void)
 	{
 		if (errno != ETIMEDOUT && errno != EAGAIN && errno != EINTR)
 		{
-			log_error("sem_timedwait() error %d\n", errno);
+			log_error("sem_wait() error %d\n", errno);
 		}
 		return -1;
 	}
@@ -881,7 +881,7 @@ int user_list_rw_unlock(void)
 	{
 		if (errno != ETIMEDOUT && errno != EAGAIN && errno != EINTR)
 		{
-			log_error("sem_timedwait() error %d\n", errno);
+			log_error("sem_wait() error %d\n", errno);
 		}
 		return -1;
 	}
