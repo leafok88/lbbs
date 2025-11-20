@@ -238,11 +238,6 @@ int main(int argc, char *argv[])
 		printf("load_trie_dict_shm_readonly() error\n");
 	}
 
-	// if (unload_trie_dict_shm() < 0)
-	// {
-	// 	printf("unload_trie_dict_shm() error\n");
-	// }
-
 	printf("Total nodes used = %d, after set_shm_readonly\n", trie_dict_used_nodes());
 
 	trie_dict_cleanup();
