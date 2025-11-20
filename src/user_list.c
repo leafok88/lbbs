@@ -23,19 +23,25 @@
 #include <time.h>
 #include <sys/mman.h>
 #include <sys/param.h>
-#include <sys/sem.h>
 #include <sys/stat.h>
 
-#if defined(_SEM_SEMUN_UNDEFINED) || defined(__CYGWIN__)
+#ifdef HAVE_SYSTEM_V
+#include <sys/sem.h>
+
+#ifdef _SEM_SEMUN_UNDEFINED
 union semun
 {
 	int val;			   /* Value for SETVAL */
 	struct semid_ds *buf;  /* Buffer for IPC_STAT, IPC_SET */
 	unsigned short *array; /* Array for GETALL, SETALL */
 	struct seminfo *__buf; /* Buffer for IPC_INFO
-							  (Linux-specific) */
+							(Linux-specific) */
 };
-#endif // #if defined(_SEM_SEMUN_UNDEFINED)
+#endif // #ifdef _SEM_SEMUN_UNDEFINED
+
+#else
+#include <semaphore.h>
+#endif
 
 enum _user_list_constant_t
 {
@@ -46,7 +52,13 @@ enum _user_list_constant_t
 struct user_list_pool_t
 {
 	size_t shm_size;
+#ifndef HAVE_SYSTEM_V
+	sem_t sem;
+	int read_lock_count;
+	int write_lock_count;
+#else
 	int semid;
+#endif
 	USER_LIST user_list[2];
 	int user_list_index_current;
 	int user_list_index_new;
@@ -393,10 +405,12 @@ int user_list_pool_init(const char *filename)
 	int fd;
 	size_t size;
 	void *p_shm;
+#ifdef HAVE_SYSTEM_V
 	int proj_id;
 	key_t key;
 	int semid;
 	union semun arg;
+#endif
 	int i;
 
 	if (p_user_list_pool != NULL || p_trie_action_dict != NULL)
@@ -463,6 +477,16 @@ int user_list_pool_init(const char *filename)
 	p_user_list_pool->shm_size = size;
 
 	// Allocate semaphore as user list pool lock
+#ifndef HAVE_SYSTEM_V
+	if (sem_init(&(p_user_list_pool->sem), 1, 1) == -1)
+	{
+		log_error("sem_init() error (%d)\n", errno);
+		return -3;
+	}
+
+	p_user_list_pool->read_lock_count = 0;
+	p_user_list_pool->write_lock_count = 0;
+#else
 	proj_id = (int)(time(NULL) % getpid());
 	key = ftok(filename, proj_id);
 	if (key == -1)
@@ -491,6 +515,7 @@ int user_list_pool_init(const char *filename)
 	}
 
 	p_user_list_pool->semid = semid;
+#endif
 
 	// Set user counts to 0
 	p_user_list_pool->user_list[0].user_count = 0;
@@ -514,10 +539,17 @@ void user_list_pool_cleanup(void)
 		return;
 	}
 
+#ifdef HAVE_SYSTEM_V
 	if (semctl(p_user_list_pool->semid, 0, IPC_RMID) == -1)
 	{
 		log_error("semctl(semid = %d, IPC_RMID) error (%d)\n", p_user_list_pool->semid, errno);
 	}
+#else
+	if (sem_destroy(&(p_user_list_pool->sem)) == -1)
+	{
+		log_error("sem_destroy() error (%d)\n", errno);
+	}
+#endif
 
 	detach_user_list_pool_shm();
 
@@ -645,11 +677,11 @@ cleanup:
 
 int user_list_try_rd_lock(int wait_sec)
 {
+#ifdef HAVE_SYSTEM_V
 	struct sembuf sops[2];
-#ifndef __CYGWIN__
-	struct timespec timeout;
 #endif
-	int ret;
+	struct timespec timeout;
+	int ret = 0;
 
 	if (p_user_list_pool == NULL)
 	{
@@ -657,6 +689,10 @@ int user_list_try_rd_lock(int wait_sec)
 		return -1;
 	}
 
+	timeout.tv_sec = wait_sec;
+	timeout.tv_nsec = 0;
+
+#ifdef HAVE_SYSTEM_V
 	sops[0].sem_num = 1; // w_sem
 	sops[0].sem_op = 0;	 // wait until unlocked
 	sops[0].sem_flg = 0;
@@ -665,29 +701,48 @@ int user_list_try_rd_lock(int wait_sec)
 	sops[1].sem_op = 1;			// lock
 	sops[1].sem_flg = SEM_UNDO; // undo on terminate
 
-#ifdef __CYGWIN__
-	ret = semop(p_user_list_pool->semid, sops, 2);
-#else
-	timeout.tv_sec = wait_sec;
-	timeout.tv_nsec = 0;
-
 	ret = semtimedop(p_user_list_pool->semid, sops, 2, &timeout);
-#endif
 	if (ret == -1 && errno != EAGAIN && errno != EINTR)
 	{
 		log_error("semop(lock read) error %d\n", errno);
 	}
+#else
+	if (sem_timedwait(&(p_user_list_pool->sem), &timeout) == -1)
+	{
+		if (errno != ETIMEDOUT && errno != EAGAIN && errno != EINTR)
+		{
+			log_error("sem_timedwait() error %d\n", errno);
+		}
+		return -1;
+	}
+
+	if (p_user_list_pool->write_lock_count == 0)
+	{
+		p_user_list_pool->read_lock_count++;
+	}
+	else
+	{
+		errno = EAGAIN;
+		ret = -1;
+	}
+
+	if (sem_post(&(p_user_list_pool->sem)) == -1)
+	{
+		log_error("sem_post() error %d\n", errno);
+		return -1;
+	}
+#endif
 
 	return ret;
 }
 
 int user_list_try_rw_lock(int wait_sec)
 {
+#ifdef HAVE_SYSTEM_V
 	struct sembuf sops[3];
-#ifndef __CYGWIN__
-	struct timespec timeout;
 #endif
-	int ret;
+	struct timespec timeout;
+	int ret = 0;
 
 	if (p_user_list_pool == NULL)
 	{
@@ -695,6 +750,10 @@ int user_list_try_rw_lock(int wait_sec)
 		return -1;
 	}
 
+	timeout.tv_sec = wait_sec;
+	timeout.tv_nsec = 0;
+
+#ifdef HAVE_SYSTEM_V
 	sops[0].sem_num = 1; // w_sem
 	sops[0].sem_op = 0;	 // wait until unlocked
 	sops[0].sem_flg = 0;
@@ -707,26 +766,47 @@ int user_list_try_rw_lock(int wait_sec)
 	sops[2].sem_op = 0;	 // wait until unlocked
 	sops[2].sem_flg = 0;
 
-#ifdef __CYGWIN__
-	ret = semop(p_user_list_pool->semid, sops, 3);
-#else
-	timeout.tv_sec = wait_sec;
-	timeout.tv_nsec = 0;
-
 	ret = semtimedop(p_user_list_pool->semid, sops, 3, &timeout);
-#endif
 	if (ret == -1 && errno != EAGAIN && errno != EINTR)
 	{
 		log_error("semop(lock write) error %d\n", errno);
 	}
+#else
+	if (sem_timedwait(&(p_user_list_pool->sem), &timeout) == -1)
+	{
+		if (errno != ETIMEDOUT && errno != EAGAIN && errno != EINTR)
+		{
+			log_error("sem_timedwait() error %d\n", errno);
+		}
+		return -1;
+	}
+
+	if (p_user_list_pool->read_lock_count == 0 && p_user_list_pool->write_lock_count == 0)
+	{
+		p_user_list_pool->write_lock_count++;
+	}
+	else
+	{
+		errno = EAGAIN;
+		ret = -1;
+	}
+
+	if (sem_post(&(p_user_list_pool->sem)) == -1)
+	{
+		log_error("sem_post() error %d\n", errno);
+		return -1;
+	}
+#endif
 
 	return ret;
 }
 
 int user_list_rd_unlock(void)
 {
+#ifdef HAVE_SYSTEM_V
 	struct sembuf sops[2];
-	int ret;
+#endif
+	int ret = 0;
 
 	if (p_user_list_pool == NULL)
 	{
@@ -734,6 +814,7 @@ int user_list_rd_unlock(void)
 		return -1;
 	}
 
+#ifdef HAVE_SYSTEM_V
 	sops[0].sem_num = 0;					 // r_sem
 	sops[0].sem_op = -1;					 // unlock
 	sops[0].sem_flg = IPC_NOWAIT | SEM_UNDO; // no wait
@@ -743,14 +824,41 @@ int user_list_rd_unlock(void)
 	{
 		log_error("semop(unlock read) error %d\n", errno);
 	}
+#else
+	if (sem_wait(&(p_user_list_pool->sem)) == -1)
+	{
+		if (errno != ETIMEDOUT && errno != EAGAIN && errno != EINTR)
+		{
+			log_error("sem_timedwait() error %d\n", errno);
+		}
+		return -1;
+	}
+
+	if (p_user_list_pool->read_lock_count > 0)
+	{
+		p_user_list_pool->read_lock_count--;
+	}
+	else
+	{
+		log_error("read_lock_count already 0\n");
+	}
+
+	if (sem_post(&(p_user_list_pool->sem)) == -1)
+	{
+		log_error("sem_post() error %d\n", errno);
+		return -1;
+	}
+#endif
 
 	return ret;
 }
 
 int user_list_rw_unlock(void)
 {
+#ifdef HAVE_SYSTEM_V
 	struct sembuf sops[1];
-	int ret;
+#endif
+	int ret = 0;
 
 	if (p_user_list_pool == NULL)
 	{
@@ -758,6 +866,7 @@ int user_list_rw_unlock(void)
 		return -1;
 	}
 
+#ifdef HAVE_SYSTEM_V
 	sops[0].sem_num = 1;					 // w_sem
 	sops[0].sem_op = -1;					 // unlock
 	sops[0].sem_flg = IPC_NOWAIT | SEM_UNDO; // no wait
@@ -767,6 +876,31 @@ int user_list_rw_unlock(void)
 	{
 		log_error("semop(unlock write) error %d\n", errno);
 	}
+#else
+	if (sem_wait(&(p_user_list_pool->sem)) == -1)
+	{
+		if (errno != ETIMEDOUT && errno != EAGAIN && errno != EINTR)
+		{
+			log_error("sem_timedwait() error %d\n", errno);
+		}
+		return -1;
+	}
+
+	if (p_user_list_pool->write_lock_count > 0)
+	{
+		p_user_list_pool->write_lock_count--;
+	}
+	else
+	{
+		log_error("write_lock_count already 0\n");
+	}
+
+	if (sem_post(&(p_user_list_pool->sem)) == -1)
+	{
+		log_error("sem_post() error %d\n", errno);
+		return -1;
+	}
+#endif
 
 	return ret;
 }
@@ -796,6 +930,7 @@ int user_list_rd_lock(void)
 			{
 				log_error("user_list_try_rd_lock() tried %d times\n", timer);
 			}
+			usleep(100 * 1000); // 0.1 second
 		}
 		else // failed
 		{
@@ -832,6 +967,7 @@ int user_list_rw_lock(void)
 			{
 				log_error("user_list_try_rw_lock() tried %d times\n", timer);
 			}
+			usleep(100 * 1000); // 0.1 second
 		}
 		else // failed
 		{
