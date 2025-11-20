@@ -17,7 +17,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
-#include <sys/shm.h>
 
 const char *files[] = {
 	"../data/welcome.txt",
@@ -31,23 +30,12 @@ int files_cnt = 6;
 
 int main(int argc, char *argv[])
 {
-	char file_path_temp[FILE_PATH_LEN];
 	int i;
 	void *p_shm;
 	size_t data_len;
 	long line_total;
 	const void *p_data;
 	const long *p_line_offsets;
-
-	// Change current dir
-	strncpy(file_path_temp, argv[0], sizeof(file_path_temp) - 1);
-	file_path_temp[sizeof(file_path_temp) - 1] = '\0';
-
-	if (chdir(dirname(file_path_temp)) < 0)
-	{
-		fprintf(stderr, "chdir(%s) error: %d\n", dirname(file_path_temp), errno);
-		return -1;
-	}
 
 	if (log_begin("../log/bbsd.log", "../log/error.log") < 0)
 	{

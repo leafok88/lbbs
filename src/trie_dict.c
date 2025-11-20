@@ -10,37 +10,45 @@
 #include "config.h"
 #endif
 
+#include "common.h"
 #include "log.h"
 #include "trie_dict.h"
 #include <errno.h>
+#include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
-#include <sys/ipc.h>
-#include <sys/shm.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
 
 struct trie_node_pool_t
 {
-	int shmid;
+	size_t shm_size;
 	int node_count_limit;
 	int node_count;
 	TRIE_NODE *p_node_free_list;
 };
 typedef struct trie_node_pool_t TRIE_NODE_POOL;
 
+static char trie_node_shm_name[FILE_NAME_LEN];
 static TRIE_NODE_POOL *p_trie_node_pool;
 
 int trie_dict_init(const char *filename, int node_count_limit)
 {
-	int shmid;
-	int proj_id;
-	key_t key;
+	char filepath[FILE_PATH_LEN];
+	int fd;
 	size_t size;
 	void *p_shm;
 	TRIE_NODE *p_trie_nodes;
 	int i;
+
+	if (filename == NULL)
+	{
+		log_error("NULL pointer error\n");
+		return -1;
+	}
 
 	if (p_trie_node_pool != NULL)
 	{
@@ -55,30 +63,46 @@ int trie_dict_init(const char *filename, int node_count_limit)
 	}
 
 	// Allocate shared memory
-	proj_id = (int)(time(NULL) % getpid());
-	key = ftok(filename, proj_id);
-	if (key == -1)
+	size = sizeof(TRIE_NODE_POOL) + sizeof(TRIE_NODE) * (size_t)node_count_limit;
+
+	strncpy(filepath, filename, sizeof(filepath) - 1);
+	filepath[sizeof(filepath) - 1] = '\0';
+	snprintf(trie_node_shm_name, sizeof(trie_node_shm_name), "/TRIE_DICT_SHM_%s", basename(filepath));
+
+	if (shm_unlink(trie_node_shm_name) == -1 && errno != ENOENT)
 	{
-		log_error("ftok(%s, %d) error (%d)\n", filename, proj_id, errno);
+		log_error("shm_unlink(%s) error (%d)\n", trie_node_shm_name, errno);
 		return -2;
 	}
 
-	size = sizeof(TRIE_NODE_POOL) + sizeof(TRIE_NODE) * (size_t)node_count_limit;
-	shmid = shmget(key, size, IPC_CREAT | IPC_EXCL | 0600);
-	if (shmid == -1)
+	if ((fd = shm_open(trie_node_shm_name, O_CREAT | O_EXCL | O_RDWR, 0600)) == -1)
 	{
-		log_error("shmget(size = %d) error (%d)\n", size, errno);
-		return -3;
+		log_error("shm_open(%s) error (%d)\n", trie_node_shm_name, errno);
+		return -2;
 	}
-	p_shm = shmat(shmid, NULL, 0);
-	if (p_shm == (void *)-1)
+	if (ftruncate(fd, (off_t)size) == -1)
 	{
-		log_error("shmat(shmid = %d) error (%d)\n", shmid, errno);
-		return -3;
+		log_error("ftruncate(size=%d) error (%d)\n", size, errno);
+		close(fd);
+		return -2;
+	}
+
+	p_shm = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0L);
+	if (p_shm == MAP_FAILED)
+	{
+		log_error("mmap() error (%d)\n", errno);
+		close(fd);
+		return -2;
+	}
+
+	if (close(fd) < 0)
+	{
+		log_error("close(fd) error (%d)\n", errno);
+		return -1;
 	}
 
 	p_trie_node_pool = p_shm;
-	p_trie_node_pool->shmid = shmid;
+	p_trie_node_pool->shm_size = size;
 	p_trie_node_pool->node_count_limit = node_count_limit;
 	p_trie_node_pool->node_count = 0;
 
@@ -95,56 +119,85 @@ int trie_dict_init(const char *filename, int node_count_limit)
 
 void trie_dict_cleanup(void)
 {
-	int shmid;
-
 	if (p_trie_node_pool == NULL)
 	{
 		return;
 	}
 
-	shmid = p_trie_node_pool->shmid;
-
 	detach_trie_dict_shm();
 
-	if (shmid != 0 && shmctl(shmid, IPC_RMID, NULL) == -1)
+	if (shm_unlink(trie_node_shm_name) == -1 && errno != ENOENT)
 	{
-		log_error("shmctl(shmid = %d, IPC_RMID) error (%d)\n", shmid, errno);
+		log_error("shm_unlink(%s) error (%d)\n", trie_node_shm_name, errno);
 	}
+
+	trie_node_shm_name[0] = '\0';
+}
+
+int get_trie_dict_shm_readonly(void)
+{
+	int fd;
+	struct stat sb;
+	size_t size;
+	void *p_shm;
+
+	if ((fd = shm_open(trie_node_shm_name, O_RDONLY, 0600)) == -1)
+	{
+		log_error("shm_open(%s) error (%d)\n", trie_node_shm_name, errno);
+		return -2;
+	}
+
+	if (fstat(fd, &sb) < 0)
+	{
+		log_error("fstat(fd) error (%d)\n", errno);
+		close(fd);
+		return -2;
+	}
+
+	size = (size_t)sb.st_size;
+
+	p_shm = mmap(NULL, size, PROT_READ, MAP_SHARED, fd, 0L);
+	if (p_shm == MAP_FAILED)
+	{
+		log_error("mmap() error (%d)\n", errno);
+		close(fd);
+		return -2;
+	}
+
+	if (close(fd) < 0)
+	{
+		log_error("close(fd) error (%d)\n", errno);
+		return -1;
+	}
+
+	if (p_trie_node_pool->shm_size != size)
+	{
+		log_error("Shared memory size mismatch (%ld != %ld)\n", p_trie_node_pool->shm_size, size);
+		munmap(p_shm, size);
+		return -3;
+	}
+
+	p_trie_node_pool = p_shm;
+
+	return 0;
 }
 
 int set_trie_dict_shm_readonly(void)
 {
-#ifndef __CYGWIN__
-	int shmid;
-	void *p_shm;
-
-	if (p_trie_node_pool == NULL)
+	if (p_trie_node_pool != NULL && mprotect(p_trie_node_pool, p_trie_node_pool->shm_size, PROT_READ) < 0)
 	{
-		log_error("trie_dict_pool not initialized\n");
+		log_error("mprotect() error (%d)\n", errno);
 		return -1;
 	}
-
-	shmid = p_trie_node_pool->shmid;
-
-	// Remap shared memory in read-only mode
-	p_shm = shmat(shmid, p_trie_node_pool, SHM_RDONLY | SHM_REMAP);
-	if (p_shm == (void *)-1)
-	{
-		log_error("shmat(trie_node_pool shmid=%d) error (%d)\n", shmid, errno);
-		return -1;
-	}
-
-	p_trie_node_pool = p_shm;
-#endif
 
 	return 0;
 }
 
 int detach_trie_dict_shm(void)
 {
-	if (p_trie_node_pool != NULL && shmdt(p_trie_node_pool) == -1)
+	if (p_trie_node_pool != NULL && munmap(p_trie_node_pool, p_trie_node_pool->shm_size) < 0)
 	{
-		log_error("shmdt(trie_node_pool) error (%d)\n", errno);
+		log_error("munmap() error (%d)\n", errno);
 		return -1;
 	}
 

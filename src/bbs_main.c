@@ -308,6 +308,7 @@ int bbs_main()
 	{
 		goto cleanup;
 	}
+#ifdef HAVE_SYSTEM_V
 	if (set_section_list_shm_readonly() < 0)
 	{
 		goto cleanup;
@@ -316,6 +317,7 @@ int bbs_main()
 	{
 		goto cleanup;
 	}
+#endif
 
 	// Load menu in shared memory
 	if (set_menu_shm_readonly(&bbs_menu) < 0)

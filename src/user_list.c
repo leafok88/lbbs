@@ -17,25 +17,31 @@
 #include "user_list.h"
 #include "user_stat.h"
 #include <errno.h>
+#include <fcntl.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include <sys/ipc.h>
 #include <sys/mman.h>
 #include <sys/param.h>
-#include <sys/sem.h>
-#include <sys/shm.h>
+#include <sys/stat.h>
 
-#if defined(_SEM_SEMUN_UNDEFINED) || defined(__CYGWIN__)
+#ifdef HAVE_SYSTEM_V
+#include <sys/sem.h>
+
+#ifdef _SEM_SEMUN_UNDEFINED
 union semun
 {
 	int val;			   /* Value for SETVAL */
 	struct semid_ds *buf;  /* Buffer for IPC_STAT, IPC_SET */
 	unsigned short *array; /* Array for GETALL, SETALL */
 	struct seminfo *__buf; /* Buffer for IPC_INFO
-							  (Linux-specific) */
+							(Linux-specific) */
 };
-#endif // #if defined(_SEM_SEMUN_UNDEFINED)
+#endif // #ifdef _SEM_SEMUN_UNDEFINED
+
+#else
+#include <semaphore.h>
+#endif
 
 enum _user_list_constant_t
 {
@@ -45,8 +51,14 @@ enum _user_list_constant_t
 
 struct user_list_pool_t
 {
-	int shmid;
+	size_t shm_size;
+#ifndef HAVE_SYSTEM_V
+	sem_t sem;
+	uint16_t read_lock_count;
+	uint16_t write_lock_count;
+#else
 	int semid;
+#endif
 	USER_LIST user_list[2];
 	int user_list_index_current;
 	int user_list_index_new;
@@ -58,6 +70,7 @@ struct user_list_pool_t
 };
 typedef struct user_list_pool_t USER_LIST_POOL;
 
+static char user_list_shm_name[FILE_NAME_LEN];
 static USER_LIST_POOL *p_user_list_pool = NULL;
 static TRIE_NODE *p_trie_action_dict = NULL;
 
@@ -85,12 +98,12 @@ const USER_ACTION_MAP user_action_map[] =
 
 const int user_action_map_size = sizeof(user_action_map) / sizeof(USER_ACTION_MAP);
 
-static int user_list_try_rd_lock(int semid, int wait_sec);
-static int user_list_try_rw_lock(int semid, int wait_sec);
-static int user_list_rd_unlock(int semid);
-static int user_list_rw_unlock(int semid);
-static int user_list_rd_lock(int semid);
-static int user_list_rw_lock(int semid);
+static int user_list_try_rd_lock(int wait_sec);
+static int user_list_try_rw_lock(int wait_sec);
+static int user_list_rd_unlock(void);
+static int user_list_rw_unlock(void);
+static int user_list_rd_lock(void);
+static int user_list_rw_lock(void);
 
 static int user_list_load(MYSQL *db, USER_LIST *p_list);
 static int user_online_list_load(MYSQL *db, USER_ONLINE_LIST *p_online_list);
@@ -388,13 +401,16 @@ int user_login_count_load(MYSQL *db)
 
 int user_list_pool_init(const char *filename)
 {
-	int shmid;
-	int semid;
-	int proj_id;
-	key_t key;
+	char filepath[FILE_PATH_LEN];
+	int fd;
 	size_t size;
 	void *p_shm;
+#ifdef HAVE_SYSTEM_V
+	int proj_id;
+	key_t key;
+	int semid;
 	union semun arg;
+#endif
 	int i;
 
 	if (p_user_list_pool != NULL || p_trie_action_dict != NULL)
@@ -419,6 +435,58 @@ int user_list_pool_init(const char *filename)
 	}
 
 	// Allocate shared memory
+	size = sizeof(USER_LIST_POOL);
+
+	strncpy(filepath, filename, sizeof(filepath) - 1);
+	filepath[sizeof(filepath) - 1] = '\0';
+	snprintf(user_list_shm_name, sizeof(user_list_shm_name), "/USER_LIST_SHM_%s", basename(filepath));
+
+	if (shm_unlink(user_list_shm_name) == -1 && errno != ENOENT)
+	{
+		log_error("shm_unlink(%s) error (%d)\n", user_list_shm_name, errno);
+		return -2;
+	}
+
+	if ((fd = shm_open(user_list_shm_name, O_CREAT | O_EXCL | O_RDWR, 0600)) == -1)
+	{
+		log_error("shm_open(%s) error (%d)\n", user_list_shm_name, errno);
+		return -2;
+	}
+	if (ftruncate(fd, (off_t)size) == -1)
+	{
+		log_error("ftruncate(size=%d) error (%d)\n", size, errno);
+		close(fd);
+		return -2;
+	}
+
+	p_shm = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0L);
+	if (p_shm == MAP_FAILED)
+	{
+		log_error("mmap() error (%d)\n", errno);
+		close(fd);
+		return -2;
+	}
+
+	if (close(fd) < 0)
+	{
+		log_error("close(fd) error (%d)\n", errno);
+		return -1;
+	}
+
+	p_user_list_pool = p_shm;
+	p_user_list_pool->shm_size = size;
+
+	// Allocate semaphore as user list pool lock
+#ifndef HAVE_SYSTEM_V
+	if (sem_init(&(p_user_list_pool->sem), 1, 1) == -1)
+	{
+		log_error("sem_init() error (%d)\n", errno);
+		return -3;
+	}
+
+	p_user_list_pool->read_lock_count = 0;
+	p_user_list_pool->write_lock_count = 0;
+#else
 	proj_id = (int)(time(NULL) % getpid());
 	key = ftok(filename, proj_id);
 	if (key == -1)
@@ -427,24 +495,6 @@ int user_list_pool_init(const char *filename)
 		return -2;
 	}
 
-	size = sizeof(USER_LIST_POOL);
-	shmid = shmget(key, size, IPC_CREAT | IPC_EXCL | 0600);
-	if (shmid == -1)
-	{
-		log_error("shmget(size = %d) error (%d)\n", size, errno);
-		return -3;
-	}
-	p_shm = shmat(shmid, NULL, 0);
-	if (p_shm == (void *)-1)
-	{
-		log_error("shmat(shmid=%d) error (%d)\n", shmid, errno);
-		return -3;
-	}
-
-	p_user_list_pool = p_shm;
-	p_user_list_pool->shmid = shmid;
-
-	// Allocate semaphore as user list pool lock
 	size = 2; // r_sem and w_sem
 	semid = semget(key, (int)size, IPC_CREAT | IPC_EXCL | 0600);
 	if (semid == -1)
@@ -465,6 +515,7 @@ int user_list_pool_init(const char *filename)
 	}
 
 	p_user_list_pool->semid = semid;
+#endif
 
 	// Set user counts to 0
 	p_user_list_pool->user_list[0].user_count = 0;
@@ -483,31 +534,31 @@ int user_list_pool_init(const char *filename)
 
 void user_list_pool_cleanup(void)
 {
-	int shmid;
-
 	if (p_user_list_pool == NULL)
 	{
 		return;
 	}
 
-	shmid = p_user_list_pool->shmid;
-
+#ifdef HAVE_SYSTEM_V
 	if (semctl(p_user_list_pool->semid, 0, IPC_RMID) == -1)
 	{
 		log_error("semctl(semid = %d, IPC_RMID) error (%d)\n", p_user_list_pool->semid, errno);
 	}
-
-	if (shmdt(p_user_list_pool) == -1)
+#else
+	if (sem_destroy(&(p_user_list_pool->sem)) == -1)
 	{
-		log_error("shmdt(shmid = %d) error (%d)\n", shmid, errno);
+		log_error("sem_destroy() error (%d)\n", errno);
+	}
+#endif
+
+	detach_user_list_pool_shm();
+
+	if (shm_unlink(user_list_shm_name) == -1 && errno != ENOENT)
+	{
+		log_error("shm_unlink(%s) error (%d)\n", user_list_shm_name, errno);
 	}
 
-	if (shmid != 0 && shmctl(shmid, IPC_RMID, NULL) == -1)
-	{
-		log_error("shmctl(shmid = %d, IPC_RMID) error (%d)\n", shmid, errno);
-	}
-
-	p_user_list_pool = NULL;
+	user_list_shm_name[0] = '\0';
 
 	if (p_trie_action_dict != NULL)
 	{
@@ -519,37 +570,20 @@ void user_list_pool_cleanup(void)
 
 int set_user_list_pool_shm_readonly(void)
 {
-#ifndef __CYGWIN__
-	int shmid;
-	void *p_shm;
-
-	if (p_user_list_pool == NULL)
+	if (p_user_list_pool != NULL && mprotect(p_user_list_pool, p_user_list_pool->shm_size, PROT_READ) < 0)
 	{
-		log_error("p_user_list_pool not initialized\n");
+		log_error("mprotect() error (%d)\n", errno);
 		return -1;
 	}
-
-	shmid = p_user_list_pool->shmid;
-
-	// Remap shared memory in read-only mode
-	p_shm = shmat(shmid, p_user_list_pool, SHM_RDONLY | SHM_REMAP);
-	if (p_shm == (void *)-1)
-	{
-		log_error("shmat(user_list_pool shmid = %d) error (%d)\n", shmid, errno);
-		return -3;
-	}
-
-	p_user_list_pool = p_shm;
-#endif
 
 	return 0;
 }
 
 int detach_user_list_pool_shm(void)
 {
-	if (p_user_list_pool != NULL && shmdt(p_user_list_pool) == -1)
+	if (p_user_list_pool != NULL && munmap(p_user_list_pool, p_user_list_pool->shm_size) < 0)
 	{
-		log_error("shmdt(user_list_pool) error (%d)\n", errno);
+		log_error("munmap() error (%d)\n", errno);
 		return -1;
 	}
 
@@ -606,7 +640,7 @@ int user_list_pool_reload(int online_user)
 	mysql_close(db);
 	db = NULL;
 
-	if (user_list_rw_lock(p_user_list_pool->semid) < 0)
+	if (user_list_rw_lock() < 0)
 	{
 		log_error("user_list_rw_lock() error\n");
 		ret = -3;
@@ -628,7 +662,7 @@ int user_list_pool_reload(int online_user)
 		p_user_list_pool->user_list_index_new = tmp;
 	}
 
-	if (user_list_rw_unlock(p_user_list_pool->semid) < 0)
+	if (user_list_rw_unlock() < 0)
 	{
 		log_error("user_list_rw_unlock() error\n");
 		ret = -3;
@@ -641,14 +675,24 @@ cleanup:
 	return ret;
 }
 
-int user_list_try_rd_lock(int semid, int wait_sec)
+int user_list_try_rd_lock(int wait_sec)
 {
+#ifdef HAVE_SYSTEM_V
 	struct sembuf sops[2];
-#ifndef __CYGWIN__
-	struct timespec timeout;
 #endif
-	int ret;
+	struct timespec timeout;
+	int ret = 0;
 
+	if (p_user_list_pool == NULL)
+	{
+		log_error("p_user_list_pool not initialized\n");
+		return -1;
+	}
+
+	timeout.tv_sec = wait_sec;
+	timeout.tv_nsec = 0;
+
+#ifdef HAVE_SYSTEM_V
 	sops[0].sem_num = 1; // w_sem
 	sops[0].sem_op = 0;	 // wait until unlocked
 	sops[0].sem_flg = 0;
@@ -657,30 +701,59 @@ int user_list_try_rd_lock(int semid, int wait_sec)
 	sops[1].sem_op = 1;			// lock
 	sops[1].sem_flg = SEM_UNDO; // undo on terminate
 
-#ifdef __CYGWIN__
-	ret = semop(semid, sops, 2);
-#else
-	timeout.tv_sec = wait_sec;
-	timeout.tv_nsec = 0;
-
-	ret = semtimedop(semid, sops, 2, &timeout);
-#endif
+	ret = semtimedop(p_user_list_pool->semid, sops, 2, &timeout);
 	if (ret == -1 && errno != EAGAIN && errno != EINTR)
 	{
 		log_error("semop(lock read) error %d\n", errno);
 	}
+#else
+	if (sem_timedwait(&(p_user_list_pool->sem), &timeout) == -1)
+	{
+		if (errno != ETIMEDOUT && errno != EAGAIN && errno != EINTR)
+		{
+			log_error("sem_timedwait() error %d\n", errno);
+		}
+		return -1;
+	}
+
+	if (p_user_list_pool->write_lock_count == 0)
+	{
+		p_user_list_pool->read_lock_count++;
+	}
+	else
+	{
+		errno = EAGAIN;
+		ret = -1;
+	}
+
+	if (sem_post(&(p_user_list_pool->sem)) == -1)
+	{
+		log_error("sem_post() error %d\n", errno);
+		return -1;
+	}
+#endif
 
 	return ret;
 }
 
-int user_list_try_rw_lock(int semid, int wait_sec)
+int user_list_try_rw_lock(int wait_sec)
 {
+#ifdef HAVE_SYSTEM_V
 	struct sembuf sops[3];
-#ifndef __CYGWIN__
-	struct timespec timeout;
 #endif
-	int ret;
+	struct timespec timeout;
+	int ret = 0;
 
+	if (p_user_list_pool == NULL)
+	{
+		log_error("p_user_list_pool not initialized\n");
+		return -1;
+	}
+
+	timeout.tv_sec = wait_sec;
+	timeout.tv_nsec = 0;
+
+#ifdef HAVE_SYSTEM_V
 	sops[0].sem_num = 1; // w_sem
 	sops[0].sem_op = 0;	 // wait until unlocked
 	sops[0].sem_flg = 0;
@@ -693,66 +766,159 @@ int user_list_try_rw_lock(int semid, int wait_sec)
 	sops[2].sem_op = 0;	 // wait until unlocked
 	sops[2].sem_flg = 0;
 
-#ifdef __CYGWIN__
-	ret = semop(semid, sops, 3);
-#else
-	timeout.tv_sec = wait_sec;
-	timeout.tv_nsec = 0;
-
-	ret = semtimedop(semid, sops, 3, &timeout);
-#endif
+	ret = semtimedop(p_user_list_pool->semid, sops, 3, &timeout);
 	if (ret == -1 && errno != EAGAIN && errno != EINTR)
 	{
 		log_error("semop(lock write) error %d\n", errno);
 	}
+#else
+	if (sem_timedwait(&(p_user_list_pool->sem), &timeout) == -1)
+	{
+		if (errno != ETIMEDOUT && errno != EAGAIN && errno != EINTR)
+		{
+			log_error("sem_timedwait() error %d\n", errno);
+		}
+		return -1;
+	}
+
+	if (p_user_list_pool->read_lock_count == 0 && p_user_list_pool->write_lock_count == 0)
+	{
+		p_user_list_pool->write_lock_count++;
+	}
+	else
+	{
+		errno = EAGAIN;
+		ret = -1;
+	}
+
+	if (sem_post(&(p_user_list_pool->sem)) == -1)
+	{
+		log_error("sem_post() error %d\n", errno);
+		return -1;
+	}
+#endif
 
 	return ret;
 }
 
-int user_list_rd_unlock(int semid)
+int user_list_rd_unlock(void)
 {
+#ifdef HAVE_SYSTEM_V
 	struct sembuf sops[2];
-	int ret;
+#endif
+	int ret = 0;
 
+	if (p_user_list_pool == NULL)
+	{
+		log_error("p_user_list_pool not initialized\n");
+		return -1;
+	}
+
+#ifdef HAVE_SYSTEM_V
 	sops[0].sem_num = 0;					 // r_sem
 	sops[0].sem_op = -1;					 // unlock
 	sops[0].sem_flg = IPC_NOWAIT | SEM_UNDO; // no wait
 
-	ret = semop(semid, sops, 1);
+	ret = semop(p_user_list_pool->semid, sops, 1);
 	if (ret == -1 && errno != EAGAIN && errno != EINTR)
 	{
 		log_error("semop(unlock read) error %d\n", errno);
 	}
+#else
+	if (sem_wait(&(p_user_list_pool->sem)) == -1)
+	{
+		if (errno != ETIMEDOUT && errno != EAGAIN && errno != EINTR)
+		{
+			log_error("sem_wait() error %d\n", errno);
+		}
+		return -1;
+	}
+
+	if (p_user_list_pool->read_lock_count > 0)
+	{
+		p_user_list_pool->read_lock_count--;
+	}
+	else
+	{
+		log_error("read_lock_count already 0\n");
+	}
+
+	if (sem_post(&(p_user_list_pool->sem)) == -1)
+	{
+		log_error("sem_post() error %d\n", errno);
+		return -1;
+	}
+#endif
 
 	return ret;
 }
 
-int user_list_rw_unlock(int semid)
+int user_list_rw_unlock(void)
 {
+#ifdef HAVE_SYSTEM_V
 	struct sembuf sops[1];
-	int ret;
+#endif
+	int ret = 0;
 
+	if (p_user_list_pool == NULL)
+	{
+		log_error("p_user_list_pool not initialized\n");
+		return -1;
+	}
+
+#ifdef HAVE_SYSTEM_V
 	sops[0].sem_num = 1;					 // w_sem
 	sops[0].sem_op = -1;					 // unlock
 	sops[0].sem_flg = IPC_NOWAIT | SEM_UNDO; // no wait
 
-	ret = semop(semid, sops, 1);
+	ret = semop(p_user_list_pool->semid, sops, 1);
 	if (ret == -1 && errno != EAGAIN && errno != EINTR)
 	{
 		log_error("semop(unlock write) error %d\n", errno);
 	}
+#else
+	if (sem_wait(&(p_user_list_pool->sem)) == -1)
+	{
+		if (errno != ETIMEDOUT && errno != EAGAIN && errno != EINTR)
+		{
+			log_error("sem_wait() error %d\n", errno);
+		}
+		return -1;
+	}
+
+	if (p_user_list_pool->write_lock_count > 0)
+	{
+		p_user_list_pool->write_lock_count--;
+	}
+	else
+	{
+		log_error("write_lock_count already 0\n");
+	}
+
+	if (sem_post(&(p_user_list_pool->sem)) == -1)
+	{
+		log_error("sem_post() error %d\n", errno);
+		return -1;
+	}
+#endif
 
 	return ret;
 }
 
-int user_list_rd_lock(int semid)
+int user_list_rd_lock(void)
 {
 	int timer = 0;
 	int ret = -1;
 
+	if (p_user_list_pool == NULL)
+	{
+		log_error("p_user_list_pool not initialized\n");
+		return -1;
+	}
+
 	while (!SYS_server_exit)
 	{
-		ret = user_list_try_rd_lock(semid, USER_LIST_TRY_LOCK_WAIT_TIME);
+		ret = user_list_try_rd_lock(USER_LIST_TRY_LOCK_WAIT_TIME);
 		if (ret == 0) // success
 		{
 			break;
@@ -764,6 +930,7 @@ int user_list_rd_lock(int semid)
 			{
 				log_error("user_list_try_rd_lock() tried %d times\n", timer);
 			}
+			usleep(100 * 1000); // 0.1 second
 		}
 		else // failed
 		{
@@ -775,14 +942,20 @@ int user_list_rd_lock(int semid)
 	return ret;
 }
 
-int user_list_rw_lock(int semid)
+int user_list_rw_lock(void)
 {
 	int timer = 0;
 	int ret = -1;
 
+	if (p_user_list_pool == NULL)
+	{
+		log_error("p_user_list_pool not initialized\n");
+		return -1;
+	}
+
 	while (!SYS_server_exit)
 	{
-		ret = user_list_try_rw_lock(semid, USER_LIST_TRY_LOCK_WAIT_TIME);
+		ret = user_list_try_rw_lock(USER_LIST_TRY_LOCK_WAIT_TIME);
 		if (ret == 0) // success
 		{
 			break;
@@ -794,6 +967,7 @@ int user_list_rw_lock(int semid)
 			{
 				log_error("user_list_try_rw_lock() tried %d times\n", timer);
 			}
+			usleep(100 * 1000); // 0.1 second
 		}
 		else // failed
 		{
@@ -819,7 +993,7 @@ int query_user_list(int page_id, USER_INFO *p_users, int *p_user_count, int *p_p
 	*p_page_count = 0;
 
 	// acquire lock of user list
-	if (user_list_rd_lock(p_user_list_pool->semid) < 0)
+	if (user_list_rd_lock() < 0)
 	{
 		log_error("user_list_rd_lock() error\n");
 		return -2;
@@ -852,7 +1026,7 @@ int query_user_list(int page_id, USER_INFO *p_users, int *p_user_count, int *p_p
 
 cleanup:
 	// release lock of user list
-	if (user_list_rd_unlock(p_user_list_pool->semid) < 0)
+	if (user_list_rd_unlock() < 0)
 	{
 		log_error("user_list_rd_unlock() error\n");
 		ret = -1;
@@ -875,7 +1049,7 @@ int query_user_online_list(int page_id, USER_ONLINE_INFO *p_online_users, int *p
 	*p_page_count = 0;
 
 	// acquire lock of user list
-	if (user_list_rd_lock(p_user_list_pool->semid) < 0)
+	if (user_list_rd_lock() < 0)
 	{
 		log_error("user_list_rd_lock() error\n");
 		return -2;
@@ -907,7 +1081,7 @@ int query_user_online_list(int page_id, USER_ONLINE_INFO *p_online_users, int *p
 
 cleanup:
 	// release lock of user list
-	if (user_list_rd_unlock(p_user_list_pool->semid) < 0)
+	if (user_list_rd_unlock() < 0)
 	{
 		log_error("user_list_rd_unlock() error\n");
 		ret = -1;
@@ -925,7 +1099,7 @@ int get_user_list_count(int *p_user_cnt)
 	}
 
 	// acquire lock of user list
-	if (user_list_rd_lock(p_user_list_pool->semid) < 0)
+	if (user_list_rd_lock() < 0)
 	{
 		log_error("user_list_rd_lock() error\n");
 		return -2;
@@ -934,7 +1108,7 @@ int get_user_list_count(int *p_user_cnt)
 	*p_user_cnt = p_user_list_pool->user_list[p_user_list_pool->user_list_index_current].user_count;
 
 	// release lock of user list
-	if (user_list_rd_unlock(p_user_list_pool->semid) < 0)
+	if (user_list_rd_unlock() < 0)
 	{
 		log_error("user_list_rd_unlock() error\n");
 		return -2;
@@ -952,7 +1126,7 @@ int get_user_online_list_count(int *p_user_cnt, int *p_guest_cnt)
 	}
 
 	// acquire lock of user list
-	if (user_list_rd_lock(p_user_list_pool->semid) < 0)
+	if (user_list_rd_lock() < 0)
 	{
 		log_error("user_list_rd_lock() error\n");
 		return -2;
@@ -962,7 +1136,7 @@ int get_user_online_list_count(int *p_user_cnt, int *p_guest_cnt)
 	*p_guest_cnt = p_user_list_pool->user_online_list[p_user_list_pool->user_online_list_index_current].guest_count;
 
 	// release lock of user list
-	if (user_list_rd_unlock(p_user_list_pool->semid) < 0)
+	if (user_list_rd_unlock() < 0)
 	{
 		log_error("user_list_rd_unlock() error\n");
 		return -2;
@@ -995,7 +1169,7 @@ int query_user_info(int32_t id, USER_INFO *p_user)
 	}
 
 	// acquire lock of user list
-	if (user_list_rd_lock(p_user_list_pool->semid) < 0)
+	if (user_list_rd_lock() < 0)
 	{
 		log_error("user_list_rd_lock() error\n");
 		return -2;
@@ -1008,7 +1182,7 @@ int query_user_info(int32_t id, USER_INFO *p_user)
 	}
 
 	// release lock of user list
-	if (user_list_rd_unlock(p_user_list_pool->semid) < 0)
+	if (user_list_rd_unlock() < 0)
 	{
 		log_error("user_list_rd_unlock() error\n");
 		ret = -1;
@@ -1032,7 +1206,7 @@ int query_user_info_by_uid(int32_t uid, USER_INFO *p_user, char *p_intro_buf, si
 	}
 
 	// acquire lock of user list
-	if (user_list_rd_lock(p_user_list_pool->semid) < 0)
+	if (user_list_rd_lock() < 0)
 	{
 		log_error("user_list_rd_lock() error\n");
 		return -2;
@@ -1074,7 +1248,7 @@ int query_user_info_by_uid(int32_t uid, USER_INFO *p_user, char *p_intro_buf, si
 	}
 
 	// release lock of user list
-	if (user_list_rd_unlock(p_user_list_pool->semid) < 0)
+	if (user_list_rd_unlock() < 0)
 	{
 		log_error("user_list_rd_unlock() error\n");
 		ret = -1;
@@ -1104,7 +1278,7 @@ int query_user_info_by_username(const char *username_prefix, int max_user_cnt,
 	prefix_len = strlen(username_prefix);
 
 	// acquire lock of user list
-	if (user_list_rd_lock(p_user_list_pool->semid) < 0)
+	if (user_list_rd_lock() < 0)
 	{
 		log_error("user_list_rd_lock() error\n");
 		return -2;
@@ -1208,7 +1382,7 @@ int query_user_info_by_username(const char *username_prefix, int max_user_cnt,
 
 cleanup:
 	// release lock of user list
-	if (user_list_rd_unlock(p_user_list_pool->semid) < 0)
+	if (user_list_rd_unlock() < 0)
 	{
 		log_error("user_list_rd_unlock() error\n");
 		ret = -1;
@@ -1228,7 +1402,7 @@ int query_user_online_info(int32_t id, USER_ONLINE_INFO *p_user)
 	}
 
 	// acquire lock of user list
-	if (user_list_rd_lock(p_user_list_pool->semid) < 0)
+	if (user_list_rd_lock() < 0)
 	{
 		log_error("user_list_rd_lock() error\n");
 		return -2;
@@ -1241,7 +1415,7 @@ int query_user_online_info(int32_t id, USER_ONLINE_INFO *p_user)
 	}
 
 	// release lock of user list
-	if (user_list_rd_unlock(p_user_list_pool->semid) < 0)
+	if (user_list_rd_unlock() < 0)
 	{
 		log_error("user_list_rd_unlock() error\n");
 		ret = -1;
@@ -1270,7 +1444,7 @@ int query_user_online_info_by_uid(int32_t uid, USER_ONLINE_INFO *p_users, int *p
 	*p_user_cnt = 0;
 
 	// acquire lock of user list
-	if (user_list_rd_lock(p_user_list_pool->semid) < 0)
+	if (user_list_rd_lock() < 0)
 	{
 		log_error("user_list_rd_lock() error\n");
 		return -2;
@@ -1332,7 +1506,7 @@ int query_user_online_info_by_uid(int32_t uid, USER_ONLINE_INFO *p_users, int *p
 	}
 
 	// release lock of user list
-	if (user_list_rd_unlock(p_user_list_pool->semid) < 0)
+	if (user_list_rd_unlock() < 0)
 	{
 		log_error("user_list_rd_unlock() error\n");
 		ret = -1;
@@ -1356,7 +1530,7 @@ int get_user_id_list(int32_t *p_uid_list, int *p_user_cnt, int start_uid)
 	}
 
 	// acquire lock of user list
-	if (user_list_rd_lock(p_user_list_pool->semid) < 0)
+	if (user_list_rd_lock() < 0)
 	{
 		log_error("user_list_rd_lock() error\n");
 		return -2;
@@ -1390,7 +1564,7 @@ int get_user_id_list(int32_t *p_uid_list, int *p_user_cnt, int start_uid)
 	*p_user_cnt = i;
 
 	// release lock of user list
-	if (user_list_rd_unlock(p_user_list_pool->semid) < 0)
+	if (user_list_rd_unlock() < 0)
 	{
 		log_error("user_list_rd_unlock() error\n");
 		ret = -1;

@@ -21,17 +21,17 @@
 #include "user_priv.h"
 #include <ctype.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <sys/ipc.h>
-#include <sys/shm.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
 
 enum _menu_constant_t
 {
 	MENU_SET_RESERVED_LENGTH = sizeof(int16_t) * 4,
-	MENU_SHMGET_RETRY_LIMIT = 10,
 };
 
 static const char MENU_CONF_DELIM_WITH_SPACE[] = " ,\t\r\n";
@@ -42,6 +42,10 @@ MENU_SET top10_menu;
 
 int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 {
+	char filepath[FILE_PATH_LEN];
+	int fd;
+	size_t size;
+	void *p_shm;
 	FILE *fin;
 	int fin_line = 0;
 	char buffer[LINE_BUFFER_LEN];
@@ -56,10 +60,12 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 	MENU_ID menu_id;
 	MENU_ITEM_ID menu_item_id;
 	MENU_SCREEN_ID screen_id;
-	int proj_id;
-	key_t key;
-	size_t size;
-	int retry_cnt;
+
+	if (p_menu_set == NULL || conf_file == NULL)
+	{
+		log_error("NULL pointer error\n");
+		return -1;
+	}
 
 	// Initialize the data structure
 	memset(p_menu_set, 0, sizeof(*p_menu_set));
@@ -69,7 +75,7 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 	if (p_menu_set->p_menu_name_dict == NULL)
 	{
 		log_error("trie_dict_create() error\n");
-		return -3;
+		return -1;
 	}
 
 	// Use trie_dict to search screen_id by menu screen name
@@ -77,7 +83,7 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 	if (p_menu_set->p_menu_screen_dict == NULL)
 	{
 		log_error("trie_dict_create() error\n");
-		return -3;
+		return -1;
 	}
 
 	if ((fin = fopen(conf_file, "r")) == NULL)
@@ -93,39 +99,44 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 		   sizeof(MENU_SCREEN) * MAX_MENUS +
 		   MAX_MENU_SCR_BUF_LENGTH * MAX_MENUS;
 
-	proj_id = (int)(time(NULL) % getpid());
-	retry_cnt = 0;
+	strncpy(filepath, conf_file, sizeof(filepath) - 1);
+	filepath[sizeof(filepath) - 1] = '\0';
+	snprintf(p_menu_set->shm_name, sizeof(p_menu_set->shm_name), "/MENU_SHM_%s", basename(filepath));
 
-	do
+	if (shm_unlink(p_menu_set->shm_name) == -1 && errno != ENOENT)
 	{
-		key = ftok(conf_file, proj_id + retry_cnt);
-		if (key == -1)
-		{
-			log_error("ftok(%s %d) error (%d)\n", conf_file, proj_id + retry_cnt, errno);
-			return -3;
-		}
-
-		p_menu_set->shmid = shmget(key, size, IPC_CREAT | IPC_EXCL | 0600);
-		if (p_menu_set->shmid == -1)
-		{
-			if (errno != EEXIST || retry_cnt + 1 >= MENU_SHMGET_RETRY_LIMIT)
-			{
-				log_error("shmget(conf_file=%s, size=%d) error (%d) %d times\n",
-						  conf_file, size, errno, retry_cnt + 1);
-				return -3;
-			}
-			log_error("shmget(conf_file=%s, proj_id=%d, key=0x%x, size=%d) error (%d), retry ...\n",
-					  conf_file, proj_id + retry_cnt, key, size, errno);
-			retry_cnt++;
-		}
-	} while (p_menu_set->shmid == -1);
-
-	p_menu_set->p_reserved = shmat(p_menu_set->shmid, NULL, 0);
-	if (p_menu_set->p_reserved == (void *)-1)
-	{
-		log_error("shmat() error (%d)\n", errno);
-		return -3;
+		log_error("shm_unlink(%s) error (%d)\n", p_menu_set->shm_name, errno);
+		return -2;
 	}
+
+	if ((fd = shm_open(p_menu_set->shm_name, O_CREAT | O_EXCL | O_RDWR, 0600)) == -1)
+	{
+		log_error("shm_open(%s) error (%d)\n", p_menu_set->shm_name, errno);
+		return -2;
+	}
+	if (ftruncate(fd, (off_t)size) == -1)
+	{
+		log_error("ftruncate(size=%d) error (%d)\n", size, errno);
+		close(fd);
+		return -2;
+	}
+
+	p_shm = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0L);
+	if (p_shm == MAP_FAILED)
+	{
+		log_error("mmap() error (%d)\n", errno);
+		close(fd);
+		return -2;
+	}
+
+	if (close(fd) < 0)
+	{
+		log_error("close(fd) error (%d)\n", errno);
+		return -1;
+	}
+
+	p_menu_set->shm_size = size;
+	p_menu_set->p_reserved = p_shm;
 
 	p_menu_set->p_menu_pool = (char *)(p_menu_set->p_reserved) + MENU_SET_RESERVED_LENGTH;
 	p_menu_set->p_menu_item_pool = (char *)(p_menu_set->p_menu_pool) + sizeof(MENU) * MAX_MENUS;
@@ -1366,10 +1377,9 @@ int menu_control(MENU_SET *p_menu_set, int key)
 
 int unload_menu(MENU_SET *p_menu_set)
 {
-	int shmid;
-
 	if (p_menu_set == NULL)
 	{
+		log_error("NULL pointer error\n");
 		return -1;
 	}
 
@@ -1385,14 +1395,12 @@ int unload_menu(MENU_SET *p_menu_set)
 		p_menu_set->p_menu_screen_dict = NULL;
 	}
 
-	shmid = p_menu_set->shmid;
-
 	detach_menu_shm(p_menu_set);
 
-	if (shmid != 0 && shmctl(shmid, IPC_RMID, NULL) == -1)
+	if (shm_unlink(p_menu_set->shm_name) == -1 && errno != ENOENT)
 	{
-		log_error("shmctl(shmid=%d, IPC_RMID) error (%d)\n", shmid, errno);
-		return -1;
+		log_error("shm_unlink(%s) error (%d)\n", p_menu_set->shm_name, errno);
+		return -2;
 	}
 
 	return 0;
@@ -1400,16 +1408,49 @@ int unload_menu(MENU_SET *p_menu_set)
 
 int get_menu_shm_readonly(MENU_SET *p_menu_set)
 {
+	int fd;
 	void *p_shm;
+	struct stat sb;
+	size_t size;
 
-	p_shm = shmat(p_menu_set->shmid, NULL, SHM_RDONLY);
-	if (p_shm == (void *)-1)
+	if (p_menu_set == NULL)
 	{
-		log_error("shmat(menu_shm shmid = %d) error (%d)\n", p_menu_set->shmid, errno);
+		log_error("NULL pointer error\n");
 		return -1;
 	}
 
+	if ((fd = shm_open(p_menu_set->shm_name, O_RDONLY, 0600)) == -1)
+	{
+		log_error("shm_open(%s) error (%d)\n", p_menu_set->shm_name, errno);
+		return -2;
+	}
+
+	if (fstat(fd, &sb) < 0)
+	{
+		log_error("fstat(fd) error (%d)\n", errno);
+		close(fd);
+		return -2;
+	}
+
+	size = (size_t)sb.st_size;
+
+	p_shm = mmap(NULL, size, PROT_READ, MAP_SHARED, fd, 0L);
+	if (p_shm == MAP_FAILED)
+	{
+		log_error("mmap() error (%d)\n", errno);
+		close(fd);
+		return -2;
+	}
+
+	if (close(fd) < 0)
+	{
+		log_error("close(fd) error (%d)\n", errno);
+		return -1;
+	}
+
+	p_menu_set->shm_size = size;
 	p_menu_set->p_reserved = p_shm;
+
 	p_menu_set->p_menu_pool = (char *)(p_menu_set->p_reserved) + MENU_SET_RESERVED_LENGTH;
 	p_menu_set->p_menu_item_pool = (char *)(p_menu_set->p_menu_pool) + sizeof(MENU) * MAX_MENUS;
 	p_menu_set->p_menu_screen_pool = (char *)(p_menu_set->p_menu_item_pool) + sizeof(MENU_ITEM) * MAX_MENUITEMS;
@@ -1425,25 +1466,29 @@ int get_menu_shm_readonly(MENU_SET *p_menu_set)
 
 int set_menu_shm_readonly(MENU_SET *p_menu_set)
 {
-#ifndef __CYGWIN__
-	void *p_shm;
-
-	// Remap shared memory in read-only mode
-	p_shm = shmat(p_menu_set->shmid, p_menu_set->p_reserved, SHM_RDONLY | SHM_REMAP);
-	if (p_shm == (void *)-1)
+	if (p_menu_set == NULL)
 	{
-		log_error("shmat(menu_shm shmid = %d) error (%d)\n", p_menu_set->shmid, errno);
+		log_error("NULL pointer error\n");
 		return -1;
 	}
 
-	p_menu_set->p_reserved = p_shm;
-#endif
+	if (p_menu_set->p_reserved != NULL && mprotect(p_menu_set->p_reserved, p_menu_set->shm_size, PROT_READ) < 0)
+	{
+		log_error("mprotect() error (%d)\n", errno);
+		return -2;
+	}
 
 	return 0;
 }
 
 int detach_menu_shm(MENU_SET *p_menu_set)
 {
+	if (p_menu_set == NULL)
+	{
+		log_error("NULL pointer error\n");
+		return -1;
+	}
+
 	p_menu_set->menu_count = 0;
 	p_menu_set->menu_item_count = 0;
 	p_menu_set->menu_screen_count = 0;
@@ -1458,10 +1503,10 @@ int detach_menu_shm(MENU_SET *p_menu_set)
 	p_menu_set->p_menu_name_dict = NULL;
 	p_menu_set->p_menu_screen_dict = NULL;
 
-	if (p_menu_set->p_reserved != NULL && shmdt(p_menu_set->p_reserved) == -1)
+	if (p_menu_set->p_reserved != NULL && munmap(p_menu_set->p_reserved, p_menu_set->shm_size) < 0)
 	{
-		log_error("shmdt() error (%d)\n", errno);
-		return -1;
+		log_error("munmap() error (%d)\n", errno);
+		return -2;
 	}
 
 	p_menu_set->p_reserved = NULL;

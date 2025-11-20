@@ -32,7 +32,7 @@ struct shm_header_t
 int load_file(const char *filename)
 {
 	char filepath[FILE_PATH_LEN];
-	char shm_name[FILE_PATH_LEN];
+	char shm_name[FILE_NAME_LEN];
 	int fd;
 	struct stat sb;
 	void *p_data;
@@ -82,14 +82,15 @@ int load_file(const char *filename)
 	// Allocate shared memory
 	size = sizeof(struct shm_header_t) + data_len + 1 + sizeof(long) * (size_t)(line_total + 1);
 
-	if (unload_file(filename) < 0)
-	{
-		return -2;
-	}
-
 	strncpy(filepath, filename, sizeof(filepath) - 1);
 	filepath[sizeof(filepath) - 1] = '\0';
-	snprintf(shm_name, sizeof(shm_name), "/%s", basename(filepath));
+	snprintf(shm_name, sizeof(shm_name), "/FILE_SHM_%s", basename(filepath));
+
+	if (shm_unlink(shm_name) == -1 && errno != ENOENT)
+	{
+		log_error("shm_unlink(%s) error (%d)\n", shm_name, errno);
+		return -2;
+	}
 
 	if ((fd = shm_open(shm_name, O_CREAT | O_EXCL | O_RDWR, 0600)) == -1)
 	{
@@ -145,7 +146,7 @@ int load_file(const char *filename)
 int unload_file(const char *filename)
 {
 	char filepath[FILE_PATH_LEN];
-	char shm_name[FILE_PATH_LEN];
+	char shm_name[FILE_NAME_LEN];
 
 	if (filename == NULL)
 	{
@@ -155,7 +156,7 @@ int unload_file(const char *filename)
 
 	strncpy(filepath, filename, sizeof(filepath) - 1);
 	filepath[sizeof(filepath) - 1] = '\0';
-	snprintf(shm_name, sizeof(shm_name), "/%s", basename(filepath));
+	snprintf(shm_name, sizeof(shm_name), "/FILE_SHM_%s", basename(filepath));
 
 	if (shm_unlink(shm_name) == -1 && errno != ENOENT)
 	{
@@ -169,7 +170,7 @@ int unload_file(const char *filename)
 void *get_file_shm_readonly(const char *filename, size_t *p_data_len, long *p_line_total, const void **pp_data, const long **pp_line_offsets)
 {
 	char filepath[FILE_PATH_LEN];
-	char shm_name[FILE_PATH_LEN];
+	char shm_name[FILE_NAME_LEN];
 	int fd;
 	void *p_shm = NULL;
 	struct stat sb;
@@ -183,7 +184,7 @@ void *get_file_shm_readonly(const char *filename, size_t *p_data_len, long *p_li
 
 	strncpy(filepath, filename, sizeof(filepath) - 1);
 	filepath[sizeof(filepath) - 1] = '\0';
-	snprintf(shm_name, sizeof(shm_name), "/%s", basename(filepath));
+	snprintf(shm_name, sizeof(shm_name), "/FILE_SHM_%s", basename(filepath));
 
 	if ((fd = shm_open(shm_name, O_RDONLY, 0600)) == -1)
 	{
