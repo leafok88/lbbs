@@ -32,7 +32,7 @@ struct trie_node_pool_t
 };
 typedef struct trie_node_pool_t TRIE_NODE_POOL;
 
-static char trie_node_shm_name[FILE_PATH_LEN];
+static char trie_node_shm_name[FILE_NAME_LEN];
 static TRIE_NODE_POOL *p_trie_node_pool;
 
 int trie_dict_init(const char *filename, int node_count_limit)
@@ -117,11 +117,11 @@ int trie_dict_init(const char *filename, int node_count_limit)
 	return 0;
 }
 
-int trie_dict_cleanup(void)
+void trie_dict_cleanup(void)
 {
 	if (p_trie_node_pool == NULL)
 	{
-		return -1;
+		return;
 	}
 
 	detach_trie_dict_shm();
@@ -132,8 +132,6 @@ int trie_dict_cleanup(void)
 	}
 
 	trie_node_shm_name[0] = '\0';
-
-	return 0;
 }
 
 int get_trie_dict_shm_readonly(void)

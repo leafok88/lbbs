@@ -81,7 +81,7 @@ struct user_online_list_t
 typedef struct user_online_list_t USER_ONLINE_LIST;
 
 extern int user_list_pool_init(const char *filename);
-extern int user_list_pool_cleanup(void);
+extern void user_list_pool_cleanup(void);
 extern int set_user_list_pool_shm_readonly(void);
 extern int detach_user_list_pool_shm(void);
 

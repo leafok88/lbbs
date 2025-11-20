@@ -58,7 +58,7 @@ struct user_list_pool_t
 };
 typedef struct user_list_pool_t USER_LIST_POOL;
 
-static char user_list_shm_name[FILE_PATH_LEN];
+static char user_list_shm_name[FILE_NAME_LEN];
 static USER_LIST_POOL *p_user_list_pool = NULL;
 static TRIE_NODE *p_trie_action_dict = NULL;
 
@@ -507,11 +507,11 @@ int user_list_pool_init(const char *filename)
 	return 0;
 }
 
-int user_list_pool_cleanup(void)
+void user_list_pool_cleanup(void)
 {
 	if (p_user_list_pool == NULL)
 	{
-		return -1;
+		return;
 	}
 
 	if (semctl(p_user_list_pool->semid, 0, IPC_RMID) == -1)
@@ -534,8 +534,6 @@ int user_list_pool_cleanup(void)
 
 		p_trie_action_dict = NULL;
 	}
-
-	return 0;
 }
 
 int set_user_list_pool_shm_readonly(void)

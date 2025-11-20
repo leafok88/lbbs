@@ -32,7 +32,7 @@ struct shm_header_t
 int load_file(const char *filename)
 {
 	char filepath[FILE_PATH_LEN];
-	char shm_name[FILE_PATH_LEN];
+	char shm_name[FILE_NAME_LEN];
 	int fd;
 	struct stat sb;
 	void *p_data;
@@ -146,7 +146,7 @@ int load_file(const char *filename)
 int unload_file(const char *filename)
 {
 	char filepath[FILE_PATH_LEN];
-	char shm_name[FILE_PATH_LEN];
+	char shm_name[FILE_NAME_LEN];
 
 	if (filename == NULL)
 	{
@@ -170,7 +170,7 @@ int unload_file(const char *filename)
 void *get_file_shm_readonly(const char *filename, size_t *p_data_len, long *p_line_total, const void **pp_data, const long **pp_line_offsets)
 {
 	char filepath[FILE_PATH_LEN];
-	char shm_name[FILE_PATH_LEN];
+	char shm_name[FILE_NAME_LEN];
 	int fd;
 	void *p_shm = NULL;
 	struct stat sb;

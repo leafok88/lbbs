@@ -81,7 +81,7 @@ typedef struct menu_t MENU;
 
 struct menu_set_t
 {
-	char shm_name[FILE_PATH_LEN];
+	char shm_name[FILE_NAME_LEN];
 	size_t shm_size;
 	void *p_reserved;
 	void *p_menu_pool;

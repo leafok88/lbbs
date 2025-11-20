@@ -17,6 +17,7 @@ enum common_constant_t
 {
     LINE_BUFFER_LEN = 1024,
     FILE_PATH_LEN = 4096,
+    FILE_NAME_LEN = 256,
 
     // Screen
     SCREEN_ROWS = 24,
