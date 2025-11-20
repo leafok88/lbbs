@@ -21,8 +21,10 @@ To install LBBS on Linux (e.g. Debian 13, CentOS Stream 10), please perform the 
 
 4) Compile source files  
    export LBBS_HOME_DIR=/usr/local/lbbs  
-   ./configure --prefix=$LBBS_HOME_DIR  
-   make
+   Choose different implementation based on System V or Posix  
+   ./configure --prefix=$LBBS_HOME_DIR --with-sysv  
+   ./configure --prefix=$LBBS_HOME_DIR --without-sysv  
+   make  
 
 5) Create user and group  
    sudo useradd bbs
@@ -64,14 +66,12 @@ To install LBBS on Linux (e.g. Debian 13, CentOS Stream 10), please perform the 
    sudo -u bbs ipcrm -a
 
 
-For Cygwin User
+For MSYS2 / MinGW User
 ==================
-Installation of LBBS on Cygwin is similar to the above steps for Linux, except that:
+Installation of LBBS on MSYS2 is similar to the above steps for Linux, except that:
 
-1) Use additional config switches to keep compatible with the Cygwin environment.  
-   ./configure --prefix=$LBBS_HOME_DIR --with-mariadb --without-epoll  
+1) Use additional config switches to keep compatible with the MSYS2 / MinGW environment.  
+   ./configure --prefix=$LBBS_HOME_DIR --with-mariadb --without-epoll --without-sysv  
 
-2) Enable Cygserver with optimized parameters (as large as possible) of XSI semaphore and shared memory in /etc/cygserver.conf  
-
-3) Skip those steps not supported by Cygwin (e.g. systemd and logrotate).  
+2) Skip those steps not supported by Cygwin (e.g. systemd and logrotate).  
 

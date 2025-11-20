@@ -21,7 +21,9 @@
 
 3) 编译源代码  
    export LBBS_HOME_DIR=/usr/local/lbbs  
-   ./configure --prefix=$LBBS_HOME_DIR  
+   选择基于System V或Posix的实现
+   ./configure --prefix=$LBBS_HOME_DIR --with-sysv  
+   ./configure --prefix=$LBBS_HOME_DIR --without-sysv  
    make
 
 4) 建立用户和组  
