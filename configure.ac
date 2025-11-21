@@ -34,7 +34,8 @@ AC_ARG_WITH([iconv],
             [with_iconv="no"])
 AC_ARG_WITH([mariadb],
             [AS_HELP_STRING([--with-mariadb], [Use MariaDB library instead of MySQL client library])],
-            [],
+            [AS_IF([test "x$with_mariadb" = xyes],
+                   [AC_DEFINE([HAVE_MARIADB_CLIENT], [1], [Define if MariaDB client is used])])],
             [with_mariadb="no"])
 AC_ARG_ENABLE([systemd],
               [AS_HELP_STRING([--enable-systemd], [Enable systemd daemon])],

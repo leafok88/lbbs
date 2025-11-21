@@ -28,7 +28,11 @@ char DB_timezone[DB_timezone_max_len + 1];
 MYSQL *db_open()
 {
 	MYSQL *db = NULL;
+#ifdef HAVE_MARIADB_CLIENT
+	my_bool disabled = 0;
+#else
 	unsigned int ssl_mode = SSL_MODE_VERIFY_CA;
+#endif
 	char sql[SQL_BUFFER_LEN];
 
 	db = mysql_init(NULL);
@@ -44,11 +48,19 @@ MYSQL *db_open()
 		return NULL;
 	}
 
+#ifdef HAVE_MARIADB_CLIENT
+	if (mysql_optionsv(db, MYSQL_OPT_SSL_VERIFY_SERVER_CERT, &disabled) != 0)
+	{
+		log_error("mysql_optionsv() error\n");
+		return NULL;
+	}
+#else
 	if (mysql_options(db, MYSQL_OPT_SSL_MODE, &ssl_mode) != 0)
 	{
 		log_error("mysql_options() error\n");
 		return NULL;
 	}
+#endif
 
 	if (mysql_real_connect(db, DB_host, DB_username, DB_password, DB_database,
 						   0, NULL, 0) == NULL)
