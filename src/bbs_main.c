@@ -445,7 +445,7 @@ cleanup:
 	detach_trie_dict_shm();
 
 	// Cleanup BWF
-	bwf_unload();
+	bwf_cleanup();
 
 	return 0;
 }

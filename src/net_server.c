@@ -446,14 +446,12 @@ static int fork_server(void)
 
 	SYS_child_process_count = 0;
 
-#ifdef __MSYS__
-	// Load BWF config
-	if (bwf_load(CONF_BWF) < 0)
+	// BWF compile
+	if (bwf_compile() < 0)
 	{
-		log_error("bwf_load() error\n");
+		log_error("bwf_compile() error\n");
 		goto cleanup;
 	}
-#endif
 
 	bbs_main();
 
@@ -491,10 +489,8 @@ cleanup:
 	ssh_free(SSH_session);
 	ssh_finalize();
 
-#ifdef __MSYS__
-	// Cleanup BWF
-	bwf_unload();
-#endif
+	// BWF cleanup
+	bwf_cleanup();
 
 	// Close Input and Output for client
 	io_cleanup();
@@ -765,13 +761,11 @@ int net_server(const char *hostaddr, in_port_t port[])
 				log_error("Reload conf failed\n");
 			}
 
-#ifndef __MSYS__
 			// Reload BWF config
 			if (bwf_load(CONF_BWF) < 0)
 			{
 				log_error("Reload BWF conf failed\n");
 			}
-#endif
 
 			if (detach_menu_shm(&bbs_menu) < 0)
 			{

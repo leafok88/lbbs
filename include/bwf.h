@@ -10,7 +10,8 @@
 #define _BWF_H_
 
 extern int bwf_load(const char *filename);
-extern void bwf_unload(void);
+extern int bwf_compile(void);
+extern void bwf_cleanup(void);
 
 extern int check_badwords(char *str, char c_replace);
 

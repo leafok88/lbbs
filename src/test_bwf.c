@@ -55,6 +55,11 @@ int main(int argc, char *argv[])
 		return -2;
 	}
 
+	if (bwf_compile() < 0)
+	{
+		return -2;
+	}
+
 	for (i = 0; i < str_cnt; i++)
 	{
 		strncpy(str, str_in[i], sizeof(str) - 1);
@@ -77,7 +82,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	bwf_unload();
+	bwf_cleanup();
 
 	log_end();
 

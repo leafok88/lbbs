@@ -173,13 +173,11 @@ int main(int argc, char *argv[])
 		return -2;
 	}
 
-#ifndef __MSYS__
 	// Load BWF config
 	if (bwf_load(CONF_BWF) < 0)
 	{
 		return -2;
 	}
-#endif
 
 	// Check article cache dir
 	ret = mkdir(VAR_ARTICLE_CACHE_DIR, 0750);
@@ -398,11 +396,6 @@ cleanup:
 	article_block_cleanup();
 	trie_dict_cleanup();
 	user_list_pool_cleanup();
-
-#ifndef __MSYS__
-	// Cleanup BWF
-	bwf_unload();
-#endif
 
 	if (unlink(VAR_ARTICLE_BLOCK_SHM) < 0)
 	{
