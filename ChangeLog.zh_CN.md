@@ -1,6 +1,11 @@
 # Changelog of LBBS - Classical terminal server of LeafOK BBS
 
 
+2025-11-21  v1.6
+=================
+支持运行在MSYS2 / MinGW64环境上  
+
+
 2025-11-07  v1.5
 =================
 新增功能

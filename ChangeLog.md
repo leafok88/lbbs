@@ -3,6 +3,11 @@
 中文版本的ChangeLog.md位于[ChangeLog.zh_CN.md](ChangeLog.zh_CN.md)
 
 
+2025-11-21  v1.6
+=================
+Support running on MSYS2 / MinGW64  
+
+
 2025-11-07  v1.5
 =================
 Add major features
