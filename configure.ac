@@ -21,14 +21,13 @@ AC_PROG_MAKE_SET
 
 AC_ARG_WITH([sysv],
             [AS_HELP_STRING([--with-sysv], [Use System V specific APIs])],
-            [AS_IF([test "x$with_sysv" = xyes],
+            [AS_IF([test "x$with_sysv" != xno],
                    [AC_DEFINE([HAVE_SYSTEM_V], [1], [Define if System V is available [default=yes]])])],
-            [with_sysv="yes"])
+            [AC_DEFINE([HAVE_SYSTEM_V], [1], [Define if System V is available])])
 AC_ARG_ENABLE([debug],
-              [AS_HELP_STRING([--enable-debug], [Enable debug log])],
+              [AS_HELP_STRING([--enable-debug], [Enable debug log [default=no]])],
               [AS_IF([test "x$enable_debug" = xyes],
-                     [AC_DEFINE([_DEBUG], [1], [Define if debug log is enabled [default=no]])])])
-
+                     [AC_DEFINE([_DEBUG], [1], [Define if debug log is enabled])])])
 AC_ARG_WITH([iconv],
             [AS_HELP_STRING([--with-iconv], [Use iconv library package config [default=no]])],
             [],
@@ -62,9 +61,9 @@ AS_IF([test "x$with_mariadb" = xyes],
 AS_IF([test "x$enable_systemd" = xyes],
       [PKG_CHECK_MODULES([SYSTEMD], [libsystemd], [], [AC_MSG_ERROR([libsystemd is required.])])])
 
-AM_CONDITIONAL([USE_SO], [test "x$with-sysv" = xyes])
-AS_IF([test "x$with-sysv" = xyes],
-      [AC_DEFINE([_LOAD_SO], [1], [Define if shared object is usable])])
+AS_IF([test "x$enable_shared" = xyes],
+      [AC_DEFINE([_ENABLE_SHARED], [1], [Define if shared library is enabled])])
+AM_CONDITIONAL([USE_SO], [test "x$enable_shared" = xyes])
 
 CPPFLAGS="$CPPFLAGS $LIBSSH_CFLAGS $MYSQLCLIENT_CFLAGS $SYSTEMD_CFLAGS $LIBPCRE2_CFLAGS $ICONV_CFLAGS"
 

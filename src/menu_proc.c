@@ -70,7 +70,7 @@ int exec_mbem(void *param)
 			c++;
 		}
 
-#ifdef _LOAD_SO
+#ifdef _ENABLE_SHARED
 		hdll = dlopen(s + 5, RTLD_LAZY);
 
 		if (hdll)
