@@ -28,7 +28,7 @@ char DB_timezone[DB_timezone_max_len + 1];
 MYSQL *db_open()
 {
 	MYSQL *db = NULL;
-	int8_t disabled = 0;
+	unsigned int ssl_mode = SSL_MODE_VERIFY_CA;
 	char sql[SQL_BUFFER_LEN];
 
 	db = mysql_init(NULL);
@@ -38,8 +38,17 @@ MYSQL *db_open()
 		return NULL;
 	}
 
-	mysql_ssl_set(db, NULL, NULL, DB_ca_cert, NULL, NULL);
-	mysql_optionsv(db, MYSQL_OPT_SSL_VERIFY_SERVER_CERT, &disabled);
+	if (mysql_ssl_set(db, NULL, NULL, DB_ca_cert, NULL, NULL) != 0)
+	{
+		log_error("mysql_ssl_set() error\n");
+		return NULL;
+	}
+
+	if (mysql_options(db, MYSQL_OPT_SSL_MODE, &ssl_mode) != 0)
+	{
+		log_error("mysql_options() error\n");
+		return NULL;
+	}
 
 	if (mysql_real_connect(db, DB_host, DB_username, DB_password, DB_database,
 						   0, NULL, 0) == NULL)
