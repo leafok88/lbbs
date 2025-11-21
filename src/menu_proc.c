@@ -104,10 +104,10 @@ int exec_mbem(void *param)
 		{
 			bbs_net();
 		}
-		// else if (strcasecmp(c, "chicken_main") == 0)
-		// {
-		// 	chicken_main();
-		// }
+		else if (strcasecmp(c, "chicken_main") == 0)
+		{
+			chicken_main();
+		}
 		else
 		{
 			clearscr();

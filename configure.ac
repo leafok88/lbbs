@@ -62,8 +62,8 @@ AS_IF([test "x$with_mariadb" = xyes],
 AS_IF([test "x$enable_systemd" = xyes],
       [PKG_CHECK_MODULES([SYSTEMD], [libsystemd], [], [AC_MSG_ERROR([libsystemd is required.])])])
 
-AM_CONDITIONAL([LINK_USE_SO], [test "x$with_sysv" = xyes])
-AS_IF([test "x$with_sysv" = xyes],
+AM_CONDITIONAL([LINK_USE_SO], [test "x$enable_shared" = xyes])
+AS_IF([test "x$enable_shared" = xyes],
       [AC_DEFINE([LOAD_SO], [1], [Define if shared object is usable])])
 
 CPPFLAGS="$CPPFLAGS $LIBSSH_CFLAGS $MYSQLCLIENT_CFLAGS $SYSTEMD_CFLAGS $LIBPCRE2_CFLAGS $ICONV_CFLAGS"
