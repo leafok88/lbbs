@@ -4,11 +4,21 @@ test_PROGRAMS = test_trie_dict test_file_loader test_section_list test_lml test_
 
 testdir = ${prefix}/test
 
-bbsd_SOURCES = ${srcdir}/../include/*.h article_cache.c article_del.c article_favor.c article_favor_display.c article_op.c \
+lib_LTLIBRARIES = libbbs.la
+libbbs_la_SOURCES = bbs_net.c
+
+bbsd_src_files = ${srcdir}/../include/*.h article_cache.c article_del.c article_favor.c article_favor_display.c article_op.c \
 			   article_post.c article_view_log.c bbs.c bbs_cmd.c bbs_main.c bwf.c common.c data_file_mgr.c database.c \
 			   editor.c file_loader.c hash_dict.c init.c io.c ip_mask.c lml.c log.c login.c memory_pool.c menu.c main.c \
 			   menu_proc.c net_server.c screen.c section_list.c section_list_display.c section_list_loader.c str_process.c \
 			   trie_dict.c user_list.c user_info_display.c user_info_update.c user_list_display.c user_priv.c user_stat.c
+
+if LINK_USE_SO
+bbsd_SOURCES = ${bbsd_src_files}
+else
+bbsd_SOURCES = ${bbsd_src_files}
+bbsd_LDADD = libbbs.la ${srcdir}/../utils/game/libgame.la
+endif
 
 bbsd_LDFLAGS=-export-dynamic
 
@@ -25,11 +35,7 @@ test_bbs_SOURCES = bbs.c log.c test_bbs.c user_priv.c
 test_bwf_SOURCES = bwf.c log.c test_bwf.c
 test_hash_dict_SOURCES = hash_dict.c log.c memory_pool.c test_hash_dict.c
 
-lib_LTLIBRARIES = libbbs.la
-
-libbbs_la_SOURCES = bbs_net.c
-
-AM_CFLAGS = -I${srcdir}/../include ${LIBSSH_CFLAGS} ${MYSQLCLIENT_CFLAGS} ${SYSTEMD_CFLAGS} ${LIBPCRE2_CFLAGS} ${ICONV_CFLAGS} \
+AM_CFLAGS = -I${srcdir}/../include -I${srcdir}/../utils/game ${LIBSSH_CFLAGS} ${MYSQLCLIENT_CFLAGS} ${SYSTEMD_CFLAGS} ${LIBPCRE2_CFLAGS} ${ICONV_CFLAGS} \
 			-std=c17 -Wall -Werror -Wno-unused-parameter -Wformat -Wpedantic -Wformat-security -Wconversion \
 			-Wdeprecated -finline-functions
 LIBS = ${LIBSSH_LIBS} ${MYSQLCLIENT_LIBS} ${SYSTEMD_LIBS} ${LIBPCRE2_LIBS} ${ICONV_LIBS} -ldl

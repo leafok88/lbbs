@@ -21,9 +21,7 @@ To install LBBS on Linux (e.g. Debian 13, CentOS Stream 10), please perform the 
 
 4) Compile source files  
    export LBBS_HOME_DIR=/usr/local/lbbs  
-   Choose different implementation based on System V or Posix  
-   ./configure --prefix=$LBBS_HOME_DIR --with-sysv  
-   ./configure --prefix=$LBBS_HOME_DIR --without-sysv  
+   ./configure --prefix=$LBBS_HOME_DIR  
    make  
 
 5) Create user and group  

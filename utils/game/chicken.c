@@ -8,6 +8,7 @@
 
 #include "bbs.h"
 #include "bwf.h"
+#include "chicken.h"
 #include "common.h"
 #include "io.h"
 #include "log.h"

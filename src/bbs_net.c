@@ -11,6 +11,7 @@
 #endif
 
 #include "bbs.h"
+#include "bbs_net.h"
 #include "common.h"
 #include "io.h"
 #include "log.h"
@@ -929,7 +930,7 @@ static int bbsnet_selchange()
 	return 0;
 }
 
-extern int bbs_net()
+int bbs_net()
 {
 	int ch, i;
 

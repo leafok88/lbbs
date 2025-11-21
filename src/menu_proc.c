@@ -15,6 +15,8 @@
 #include "article_view_log.h"
 #include "bbs.h"
 #include "bbs_cmd.h"
+#include "bbs_net.h"
+#include "chicken.h"
 #include "common.h"
 #include "io.h"
 #include "log.h"
@@ -68,6 +70,7 @@ int exec_mbem(void *param)
 			c++;
 		}
 
+#ifdef LOAD_SO
 		hdll = dlopen(s + 5, RTLD_LAZY);
 
 		if (hdll)
@@ -93,6 +96,25 @@ int exec_mbem(void *param)
 			prints("失败原因:%s\r\n", dlerror());
 			press_any_key();
 		}
+#else
+		(void)hdll;
+		(void)func;
+
+		if (strcasecmp(c, "bbs_net") == 0)
+		{
+			bbs_net();
+		}
+		// else if (strcasecmp(c, "chicken_main") == 0)
+		// {
+		// 	chicken_main();
+		// }
+		else
+		{
+			clearscr();
+			prints("未知入口 [%s] !!\r\n", c);
+			press_any_key();
+		}
+#endif
 	}
 
 	return REDRAW;
