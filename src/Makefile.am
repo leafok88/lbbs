@@ -17,7 +17,7 @@ if USE_SO
 bbsd_SOURCES = ${bbsd_src_files}
 else
 bbsd_SOURCES = ${bbsd_src_files}
-bbsd_LDADD = libbbs.la ${srcdir}/../utils/game/libgame.la
+bbsd_LDADD = libbbs.la ../utils/game/libgame.la
 endif
 
 bbsd_LDFLAGS=-export-dynamic
