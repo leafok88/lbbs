@@ -71,7 +71,7 @@ For MSYS2 User
 Installation of LBBS on MSYS2 is similar to the above steps for Linux, except that:
 
 1) Use additional config switches to keep compatible with the MSYS2 environment.  
-   ./configure --prefix=$LBBS_HOME_DIR --with-mariadb --with-iconv --without-epoll --without-sysv  
+   ./configure --prefix=$LBBS_HOME_DIR --with-mariadb --with-iconv --without-epoll --without-sysv --disable-shared  
 
 2) Skip those steps not supported (e.g. systemd and logrotate).  
 
