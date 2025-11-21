@@ -9,6 +9,7 @@
 #ifndef _DATABASE_H_
 #define _DATABASE_H_
 
+#include "common.h"
 #include <mysql.h>
 
 enum database_constant_t
@@ -22,6 +23,7 @@ enum database_constant_t
 };
 
 // Database
+extern char DB_ca_cert[FILE_PATH_LEN];
 extern char DB_host[DB_host_max_len + 1];
 extern char DB_username[DB_username_max_len + 1];
 extern char DB_password[DB_password_max_len + 1];

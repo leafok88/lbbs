@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.69])
-AC_INIT([lbbs],[1.5.6])
+AC_INIT([lbbs],[1.6.0])
 AC_CONFIG_SRCDIR([src/])
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_MACRO_DIRS([m4])
@@ -21,27 +21,28 @@ AC_PROG_MAKE_SET
 
 AC_ARG_WITH([sysv],
             [AS_HELP_STRING([--with-sysv], [Use System V specific APIs])],
-            [AS_IF([test "x$with_sysv" = xyes],
-                   [AC_DEFINE([HAVE_SYSTEM_V], [1], [Define if System V is available])])])
+            [AS_IF([test "x$with_sysv" != xno],
+                   [AC_DEFINE([HAVE_SYSTEM_V], [1], [Define if System V is available [default=yes]])])],
+            [AC_DEFINE([HAVE_SYSTEM_V], [1], [Define if System V is available])])
 AC_ARG_ENABLE([debug],
-              [AS_HELP_STRING([--enable-debug], [Enable debug log])],
+              [AS_HELP_STRING([--enable-debug], [Enable debug log [default=no]])],
               [AS_IF([test "x$enable_debug" = xyes],
                      [AC_DEFINE([_DEBUG], [1], [Define if debug log is enabled])])])
-
 AC_ARG_WITH([iconv],
-            [AS_HELP_STRING([--with-iconv], [Use iconv library package config])],
+            [AS_HELP_STRING([--with-iconv], [Use iconv library package config [default=no]])],
             [],
             [with_iconv="no"])
 AC_ARG_WITH([mariadb],
-            [AS_HELP_STRING([--with-mariadb], [Use MariaDB library instead of MySQL client library])],
-            [],
+            [AS_HELP_STRING([--with-mariadb], [Use MariaDB library instead of MySQL client library [default=no]])],
+            [AS_IF([test "x$with_mariadb" = xyes],
+                   [AC_DEFINE([HAVE_MARIADB_CLIENT], [1], [Define if MariaDB client is used])])],
             [with_mariadb="no"])
 AC_ARG_ENABLE([systemd],
-              [AS_HELP_STRING([--enable-systemd], [Enable systemd daemon])],
+              [AS_HELP_STRING([--enable-systemd], [Enable systemd daemon [default=no]])],
               [],
               [enable_systemd="no"])
 AC_ARG_WITH([epoll],
-            [AS_HELP_STRING([--with-epoll], [Use epoll instead of poll])],
+            [AS_HELP_STRING([--with-epoll], [Use epoll instead of poll [default=yes]])],
             [],
             [with_epoll="yes"])
 
@@ -59,6 +60,10 @@ AS_IF([test "x$with_mariadb" = xyes],
 
 AS_IF([test "x$enable_systemd" = xyes],
       [PKG_CHECK_MODULES([SYSTEMD], [libsystemd], [], [AC_MSG_ERROR([libsystemd is required.])])])
+
+AS_IF([test "x$enable_shared" = xyes],
+      [AC_DEFINE([_ENABLE_SHARED], [1], [Define if shared library is enabled])])
+AM_CONDITIONAL([USE_SO], [test "x$enable_shared" = xyes])
 
 CPPFLAGS="$CPPFLAGS $LIBSSH_CFLAGS $MYSQLCLIENT_CFLAGS $SYSTEMD_CFLAGS $LIBPCRE2_CFLAGS $ICONV_CFLAGS"
 

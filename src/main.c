@@ -33,7 +33,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
-static void app_help(void)
+static inline void app_help(void)
 {
 	fprintf(stderr, "Usage: bbsd [-fhv] [...]\n\n"
 					"-f\t--foreground\t\tForce program run in foreground\n"
@@ -41,13 +41,57 @@ static void app_help(void)
 					"-v\t--version\t\tDisplay version information\n"
 					"\t--display-log\t\tDisplay standard log information\n"
 					"\t--display-error-log\tDisplay error log information\n"
+					"-C\t--compile-config\tDisplay compile configuration\n"
 					"\n    If meet any bug, please report to <leaflet@leafok.com>\n\n");
 }
 
-static void arg_error(void)
+static inline void arg_error(void)
 {
 	fprintf(stderr, "Invalid arguments\n");
 	app_help();
+}
+
+static inline void app_compile_info(void)
+{
+	printf("%s\n"
+		   "--enable-shared\t\t[%s]\n"
+		   "--enable-systemd\t[%s]\n"
+		   "--with-debug\t\t[%s]\n"
+		   "--with-epoll\t\t[%s]\n"
+		   "--with-mariadb\t\t[%s]\n"
+		   "--with-sysv\t\t[%s]\n",
+		   APP_INFO,
+#ifdef _ENABLE_SHARED
+		   "yes",
+#else
+		   "no",
+#endif
+#ifdef HAVE_SYSTEMD_SD_DAEMON_H
+		   "yes",
+#else
+		   "no",
+#endif
+#ifdef _DEBUG
+		   "yes",
+#else
+		   "no",
+#endif
+#ifdef HAVE_SYS_EPOLL_H
+		   "yes",
+#else
+		   "no",
+#endif
+#ifdef HAVE_MARIADB_CLIENT
+		   "yes",
+#else
+		   "no",
+#endif
+#ifdef HAVE_SYSTEM_V
+		   "yes"
+#else
+		   "no"
+#endif
+	);
 }
 
 int main(int argc, char *argv[])
@@ -85,6 +129,9 @@ int main(int argc, char *argv[])
 						printf("%s\n", APP_INFO);
 						printf("%s\n", COPYRIGHT_INFO);
 						return 0;
+					case 'C':
+						app_compile_info();
+						return 0;
 					default:
 						arg_error();
 						return 1;
@@ -116,6 +163,11 @@ int main(int argc, char *argv[])
 				if (strcmp(argv[i] + 2, "display-error-log") == 0)
 				{
 					error_log_redir = 1;
+				}
+				if (strcmp(argv[i] + 2, "compile-config") == 0)
+				{
+					app_compile_info();
+					return 0;
 				}
 			}
 			break;
@@ -353,13 +405,13 @@ cleanup:
 	if (SYS_child_process_count > 0)
 	{
 		SYS_child_exit = 0;
-		
+
 		if (kill(section_list_loader_pid, SIGTERM) < 0)
 		{
 			log_error("Send SIGTERM signal failed (%d)\n", errno);
 		}
 
-		for(i = 0; SYS_child_exit == 0 && i < 5; i++)
+		for (i = 0; SYS_child_exit == 0 && i < 5; i++)
 		{
 			sleep(1); // second
 		}
@@ -396,9 +448,6 @@ cleanup:
 	article_block_cleanup();
 	trie_dict_cleanup();
 	user_list_pool_cleanup();
-
-	// Cleanup BWF
-	bwf_unload();
 
 	if (unlink(VAR_ARTICLE_BLOCK_SHM) < 0)
 	{

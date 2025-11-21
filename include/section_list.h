@@ -23,11 +23,7 @@
 enum section_list_constant_t
 {
 	BBS_article_title_max_len = 160,
-#ifdef __CYGWIN__
-	BBS_article_limit_per_section = 10000,
-#else
 	BBS_article_limit_per_section = 50000,
-#endif
 	BBS_article_limit_per_page = 20,
 
 	BBS_ontop_article_limit_per_section = 10,

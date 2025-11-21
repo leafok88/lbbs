@@ -1,6 +1,6 @@
 lib_LTLIBRARIES = libgame.la
 
-libgame_la_SOURCES = money.h chicken.c money.c
+libgame_la_SOURCES = money.h chicken.h chicken.c money.c
 
 AM_CFLAGS = -I${srcdir}/../../include ${MYSQLCLIENT_CFLAGS} ${ICONV_CFLAGS} \
             -std=c17 -Wall -Werror -Wno-unused-parameter -Wformat -Wpedantic -Wformat-security -Wconversion \

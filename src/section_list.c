@@ -41,6 +41,7 @@ enum _section_list_constant_t
 {
 	SECTION_TRY_LOCK_WAIT_TIME = 1, // second
 	SECTION_TRY_LOCK_TIMES = 10,
+	SECTION_DEAD_LOCK_TIMEOUT = 15, // second
 
 	ARTICLE_BLOCK_PER_SHM = 1000,		// sizeof(ARTICLE_BLOCK) * ARTICLE_BLOCK_PER_SHM is the size of each shm segment to allocate
 	ARTICLE_BLOCK_SHM_COUNT_LIMIT = 80, // limited by length (8-bit) of proj_id in ftok(path, proj_id)
@@ -79,6 +80,10 @@ static ARTICLE_BLOCK_POOL *p_article_block_pool = NULL;
 
 static char section_list_shm_name[FILE_NAME_LEN];
 SECTION_LIST_POOL *p_section_list_pool = NULL;
+
+#ifndef HAVE_SYSTEM_V
+static int section_list_reset_lock(SECTION_LIST *p_section);
+#endif
 
 int article_block_init(const char *filename, int block_count)
 {
@@ -1987,6 +1992,7 @@ int section_list_rd_lock(SECTION_LIST *p_section)
 	int timer = 0;
 	int sid = (p_section == NULL ? 0 : p_section->sid);
 	int ret = -1;
+	time_t tm_first_failure = 0;
 
 	while (!SYS_server_exit)
 	{
@@ -1997,10 +2003,25 @@ int section_list_rd_lock(SECTION_LIST *p_section)
 		}
 		else if (errno == EAGAIN || errno == EINTR) // retry
 		{
+			// Dead lock detection
+			if (tm_first_failure == 0)
+			{
+				time(&tm_first_failure);
+			}
+
 			timer++;
 			if (timer % SECTION_TRY_LOCK_TIMES == 0)
 			{
 				log_error("section_list_try_rd_lock() tried %d times on section %d\n", timer, sid);
+				if (time(NULL) - tm_first_failure >= SECTION_DEAD_LOCK_TIMEOUT)
+				{
+					log_error("Unable to acquire rd_lock for %d seconds\n", time(NULL) - tm_first_failure);
+#ifndef HAVE_SYSTEM_V
+					section_list_reset_lock(p_section);
+					log_error("Reset POSIX semaphore to resolve dead lock\n");
+#endif
+					break;
+				}
 			}
 			usleep(100 * 1000); // 0.1 second
 		}
@@ -2019,6 +2040,7 @@ int section_list_rw_lock(SECTION_LIST *p_section)
 	int timer = 0;
 	int sid = (p_section == NULL ? 0 : p_section->sid);
 	int ret = -1;
+	time_t tm_first_failure = 0;
 
 	while (!SYS_server_exit)
 	{
@@ -2029,10 +2051,25 @@ int section_list_rw_lock(SECTION_LIST *p_section)
 		}
 		else if (errno == EAGAIN || errno == EINTR) // retry
 		{
+			// Dead lock detection
+			if (tm_first_failure == 0)
+			{
+				time(&tm_first_failure);
+			}
+
 			timer++;
 			if (timer % SECTION_TRY_LOCK_TIMES == 0)
 			{
 				log_error("section_list_try_rw_lock() tried %d times on section %d\n", timer, sid);
+				if (time(NULL) - tm_first_failure >= SECTION_DEAD_LOCK_TIMEOUT)
+				{
+					log_error("Unable to acquire rw_lock for %d seconds\n", time(NULL) - tm_first_failure);
+#ifndef HAVE_SYSTEM_V
+					section_list_reset_lock(p_section);
+					log_error("Reset POSIX semaphore to resolve dead lock\n");
+#endif
+					break;
+				}
 			}
 			usleep(100 * 1000); // 0.1 second
 		}
@@ -2045,3 +2082,53 @@ int section_list_rw_lock(SECTION_LIST *p_section)
 
 	return ret;
 }
+
+#ifndef HAVE_SYSTEM_V
+int section_list_reset_lock(SECTION_LIST *p_section)
+{
+	int index;
+
+	if (p_section == NULL)
+	{
+		log_error("NULL pointer error\n");
+		return -1;
+	}
+
+	index = get_section_index(p_section);
+	if (index < 0)
+	{
+		return -2;
+	}
+
+	if (sem_destroy(&(p_section_list_pool->sem[index])) == -1)
+	{
+		log_error("sem_destroy(sem[%d]) error (%d)\n", index, errno);
+	}
+
+	p_section_list_pool->read_lock_count[index] = 0;
+	p_section_list_pool->write_lock_count[index] = 0;
+
+	if (sem_init(&(p_section_list_pool->sem[index]), 1, 1) == -1)
+	{
+		log_error("sem_init(sem[%d]) error (%d)\n", index, errno);
+	}
+
+	if (index != BBS_max_section)
+	{
+		if (sem_destroy(&(p_section_list_pool->sem[BBS_max_section])) == -1)
+		{
+			log_error("sem_destroy(sem[%d]) error (%d)\n", BBS_max_section, errno);
+		}
+
+		p_section_list_pool->read_lock_count[BBS_max_section] = 0;
+		p_section_list_pool->write_lock_count[BBS_max_section] = 0;
+
+		if (sem_init(&(p_section_list_pool->sem[BBS_max_section]), 1, 1) == -1)
+		{
+			log_error("sem_init(sem[%d]) error (%d)\n", BBS_max_section, errno);
+		}
+	}
+
+	return 0;
+}
+#endif

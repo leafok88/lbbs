@@ -21,7 +21,7 @@
 
 3) 编译源代码  
    export LBBS_HOME_DIR=/usr/local/lbbs  
-   ./configure --prefix=$LBBS_HOME_DIR  
+   ./configure --prefix=$LBBS_HOME_DIR --with-sysv  
    make
 
 4) 建立用户和组  
@@ -41,25 +41,37 @@
    sudo -u bbs php $LBBS_HOME_DIR/utils/bin/gen_section_menu.php  
    sudo -u bbs php $LBBS_HOME_DIR/utils/bin/gen_ex_list.php  
 
-8) 创建SSH2 RSA证书  
+8) 将MySQL服务器的CA证书文件，复制到$LBBS_HOME_DIR/conf/ca_cert.pem  
+
+9) 创建SSH2 RSA证书  
    ssh-keygen -t rsa -C "Your Server Name" -f $LBBS_HOME_DIR/conf/ssh_host_rsa_key
 
-9) 启动服务程序  
+10) 启动服务程序  
    sudo -u bbs $LBBS_HOME_DIR/bin/bbsd
 
-10) (可选) 配置systemd  
+11) (可选) 配置systemd  
    配置时启用systemd相关功能，运行:  
      ./configure --prefix=$LBBS_HOME_DIR --enable-systemd
    基于conf/lbbs.service创建/usr/lib/systemd/system/lbbs.service，并进行必要的修改。  
    刷新配置并启动服务。  
 
-11) (可选) 配置logrotate  
+12) (可选) 配置logrotate  
    基于conf/lbbs.logrotate创建/etc/logrotate.d/bbsd，并进行必要的修改。  
    重启logrotate服务。  
 
-12) 服务异常终止时的清理  
+13) 服务异常终止时的清理  
    由于未预期的错误或者不当操作导致lbbs进程异常终止时，在重启服务之前可能需要进行共享内存/信号量的清理。先运行以下命令检测:  
    sudo -u bbs ipcs  
    正常情况下不存在所有者是bbs的项。否则，请运行以下命令清理:  
    sudo -u bbs ipcrm -a
+
+
+针对MSYS2用户
+==================
+在MSYS2环境中安装LBBS的步骤，和在Linux环境中相似，除了:  
+
+1) 编译设置环节，需要添加额外的兼容MSYS2环境的开关项:  
+   ./configure --prefix=$LBBS_HOME_DIR --with-mariadb --with-iconv --without-epoll --without-sysv --disable-shared  
+
+2) 跳过不被支持的步骤 (例如: systemd和logrotate)  
 

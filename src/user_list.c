@@ -47,6 +47,7 @@ enum _user_list_constant_t
 {
 	USER_LIST_TRY_LOCK_WAIT_TIME = 1, // second
 	USER_LIST_TRY_LOCK_TIMES = 10,
+	USER_LIST_DEAD_LOCK_TIMEOUT = 15, // second
 };
 
 struct user_list_pool_t
@@ -104,6 +105,9 @@ static int user_list_rd_unlock(void);
 static int user_list_rw_unlock(void);
 static int user_list_rd_lock(void);
 static int user_list_rw_lock(void);
+#ifndef HAVE_SYSTEM_V
+static int user_list_reset_lock(void);
+#endif
 
 static int user_list_load(MYSQL *db, USER_LIST *p_list);
 static int user_online_list_load(MYSQL *db, USER_ONLINE_LIST *p_online_list);
@@ -909,6 +913,7 @@ int user_list_rd_lock(void)
 {
 	int timer = 0;
 	int ret = -1;
+	time_t tm_first_failure = 0;
 
 	if (p_user_list_pool == NULL)
 	{
@@ -929,6 +934,16 @@ int user_list_rd_lock(void)
 			if (timer % USER_LIST_TRY_LOCK_TIMES == 0)
 			{
 				log_error("user_list_try_rd_lock() tried %d times\n", timer);
+
+				if (time(NULL) - tm_first_failure >= USER_LIST_DEAD_LOCK_TIMEOUT)
+				{
+					log_error("Unable to acquire rw_lock for %d seconds\n", time(NULL) - tm_first_failure);
+#ifndef HAVE_SYSTEM_V
+					user_list_reset_lock();
+					log_error("Reset POSIX semaphore to resolve dead lock\n");
+#endif
+					break;
+				}
 			}
 			usleep(100 * 1000); // 0.1 second
 		}
@@ -946,6 +961,7 @@ int user_list_rw_lock(void)
 {
 	int timer = 0;
 	int ret = -1;
+	time_t tm_first_failure = 0;
 
 	if (p_user_list_pool == NULL)
 	{
@@ -966,6 +982,16 @@ int user_list_rw_lock(void)
 			if (timer % USER_LIST_TRY_LOCK_TIMES == 0)
 			{
 				log_error("user_list_try_rw_lock() tried %d times\n", timer);
+
+				if (time(NULL) - tm_first_failure >= USER_LIST_DEAD_LOCK_TIMEOUT)
+				{
+					log_error("Unable to acquire rw_lock for %d seconds\n", time(NULL) - tm_first_failure);
+#ifndef HAVE_SYSTEM_V
+					user_list_reset_lock();
+					log_error("Reset POSIX semaphore to resolve dead lock\n");
+#endif
+					break;
+				}
 			}
 			usleep(100 * 1000); // 0.1 second
 		}
@@ -978,6 +1004,32 @@ int user_list_rw_lock(void)
 
 	return ret;
 }
+
+#ifndef HAVE_SYSTEM_V
+int user_list_reset_lock(void)
+{
+	if (p_user_list_pool == NULL)
+	{
+		log_error("p_user_list_pool not initialized\n");
+		return -1;
+	}
+
+	if (sem_destroy(&(p_user_list_pool->sem)) == -1)
+	{
+		log_error("sem_destroy() error (%d)\n", errno);
+	}
+
+	p_user_list_pool->read_lock_count = 0;
+	p_user_list_pool->write_lock_count = 0;
+
+	if (sem_init(&(p_user_list_pool->sem), 1, 1) == -1)
+	{
+		log_error("sem_init() error (%d)\n", errno);
+	}
+
+	return 0;
+}
+#endif
 
 int query_user_list(int page_id, USER_INFO *p_users, int *p_user_count, int *p_page_count)
 {

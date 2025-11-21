@@ -35,8 +35,6 @@ int bwf_load(const char *filename)
 	size_t len_line;
 	char *p = bwf_pattern_str;
 	int line_id = 0;
-	int errorcode;
-	PCRE2_SIZE erroroffset;
 
 	if (filename == NULL)
 	{
@@ -97,19 +95,27 @@ int bwf_load(const char *filename)
 	log_error("Debug: bwf_pattern_str: %s\n", bwf_pattern_str);
 #endif
 
-	bwf_unload();
+	return 0;
+}
+
+int bwf_compile(void)
+{
+	int errorcode;
+	PCRE2_SIZE erroroffset;
+
+	bwf_cleanup();
 
 	bwf_code = pcre2_compile((PCRE2_SPTR)bwf_pattern_str, PCRE2_ZERO_TERMINATED, PCRE2_CASELESS, &errorcode, &erroroffset, NULL);
 	if (bwf_code == NULL)
 	{
 		log_error("pcre2_compile() error: %d", errorcode);
-		return -4;
+		return -1;
 	}
 
 	return 0;
 }
 
-void bwf_unload(void)
+void bwf_cleanup(void)
 {
 	if (bwf_code != NULL)
 	{

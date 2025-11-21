@@ -446,6 +446,13 @@ static int fork_server(void)
 
 	SYS_child_process_count = 0;
 
+	// BWF compile
+	if (bwf_compile() < 0)
+	{
+		log_error("bwf_compile() error\n");
+		goto cleanup;
+	}
+
 	bbs_main();
 
 cleanup:
@@ -481,6 +488,9 @@ cleanup:
 
 	ssh_free(SSH_session);
 	ssh_finalize();
+
+	// BWF cleanup
+	bwf_cleanup();
 
 	// Close Input and Output for client
 	io_cleanup();
