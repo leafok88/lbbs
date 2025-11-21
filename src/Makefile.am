@@ -13,7 +13,7 @@ bbsd_src_files = ${srcdir}/../include/*.h article_cache.c article_del.c article_
 			   menu_proc.c net_server.c screen.c section_list.c section_list_display.c section_list_loader.c str_process.c \
 			   trie_dict.c user_list.c user_info_display.c user_info_update.c user_list_display.c user_priv.c user_stat.c
 
-if LINK_USE_SO
+if USE_SO
 bbsd_SOURCES = ${bbsd_src_files}
 else
 bbsd_SOURCES = ${bbsd_src_files}

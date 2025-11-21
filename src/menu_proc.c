@@ -70,7 +70,7 @@ int exec_mbem(void *param)
 			c++;
 		}
 
-#ifdef LOAD_SO
+#ifdef _LOAD_SO
 		hdll = dlopen(s + 5, RTLD_LAZY);
 
 		if (hdll)
