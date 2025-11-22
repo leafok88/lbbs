@@ -192,11 +192,6 @@ inline static void lml_init(void)
 		*((out_buf) + (out_buf_offset) + (size_t)(tag_out_len)) = '\0';                                                             \
 		(line_width) += str_length((out_buf) + (out_buf_offset), 1);                                                                \
 		(out_buf_offset) += (tag_out_len);                                                                                          \
-		if ((tag_out)[(tag_out_len) - 1] == '\0')                                                                                   \
-		{                                                                                                                           \
-			(out_buf_offset)--;                                                                                                     \
-			return (out_buf_offset);                                                                                                \
-		}                                                                                                                           \
 	}
 
 int lml_render(const char *str_in, char *str_out, int buf_len, int width, int quote_mode)
@@ -274,6 +269,8 @@ int lml_render(const char *str_in, char *str_out, int buf_len, int width, int qu
 			CHECK_AND_APPEND_OUTPUT(str_out, buf_len, j, tag_output_buf, tag_output_len, line_width);
 
 			new_line = 0;
+			i--; // redo at current i
+			continue;
 		}
 
 		if (lml_tag_disabled && new_line)
@@ -449,6 +446,16 @@ int lml_render(const char *str_in, char *str_out, int buf_len, int width, int qu
 									lml_tag_def[k].tag_name, tag_param_buf, tag_output_buf, LML_TAG_OUTPUT_BUF_LEN, 1);
 							}
 						}
+
+						if (line_width + tag_output_len > width)
+						{
+							CHECK_AND_APPEND_OUTPUT(str_out, buf_len, j, "\n", 1, line_width);
+							new_line = 1;
+							line_width = 0;
+							i--; // redo at current i
+							continue;
+						}
+
 						CHECK_AND_APPEND_OUTPUT(str_out, buf_len, j, tag_output_buf, tag_output_len, line_width);
 						break;
 					default: // tag_name not match
