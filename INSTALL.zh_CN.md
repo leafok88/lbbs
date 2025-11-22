@@ -71,7 +71,7 @@
 在MSYS2环境中安装LBBS的步骤，和在Linux环境中相似，除了:  
 
 1) 编译设置环节，需要添加额外的兼容MSYS2环境的开关项:  
-   ./configure --prefix=$LBBS_HOME_DIR --with-mariadb --with-iconv --without-epoll --without-sysv --disable-shared  
+   ./configure --prefix=$LBBS_HOME_DIR --disable-shared  
 
 2) 跳过不被支持的步骤 (例如: systemd和logrotate)  
 
