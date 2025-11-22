@@ -1,8 +1,6 @@
 EXTRA_DIST = bin conf lib
 SUBDIRS=game
 
-AM_CFLAGS = -std=c17 -Wall -Werror -Wno-unused-parameter -Wformat -Wconversion -Wdeprecated -finline-functions
-
 install-exec-local:
 	install -d $(prefix)/$(subdir)/bin $(prefix)/$(subdir)/lib
 	cd $(srcdir)/bin; find . -maxdepth 1 -type f -exec install -t $(prefix)/$(subdir)/bin {} \;
