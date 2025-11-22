@@ -36,9 +36,9 @@ AC_ARG_WITH([mariadb],
             [],
             [with_mariadb="yes"])
 AC_ARG_ENABLE([systemd],
-              [AS_HELP_STRING([--enable-systemd], [Enable systemd daemon [default=no]])],
+              [AS_HELP_STRING([--enable-systemd], [Enable systemd daemon [default=yes]])],
               [],
-              [enable_systemd="no"])
+              [enable_systemd="yes"])
 AC_ARG_WITH([epoll],
             [AS_HELP_STRING([--with-epoll], [Use epoll instead of poll])],
             [],
@@ -67,7 +67,13 @@ AS_IF([test "x$with_mariadb" = xno],
                          [AC_MSG_ERROR([mysqlclient is required.])])])
 
 AS_IF([test "x$enable_systemd" = xyes],
-      [PKG_CHECK_MODULES([SYSTEMD], [libsystemd], [], [AC_MSG_ERROR([libsystemd is required.])])])
+      [PKG_CHECK_MODULES([SYSTEMD], [libsystemd], 
+                         [AC_CHECK_HEADERS([systemd/sd-daemon.h], [], [AC_MSG_ERROR([systemd/sd-daemon.h not found.])])], 
+                         [AC_MSG_NOTICE([libsystemd not found.])])])
+
+AS_IF([test "x$with_epoll" = xyes],
+      [AC_CHECK_HEADERS([sys/epoll.h], [], [AC_MSG_ERROR([sys/epoll.h not found.])])],
+      [AC_CHECK_HEADERS([poll.h], [], [AC_MSG_ERROR([poll.h not found.])])])
 
 AS_IF([test "x$enable_shared" = xyes],
       [AC_DEFINE([_ENABLE_SHARED], [1], [Define if shared library is enabled])])
@@ -87,13 +93,6 @@ AC_CHECK_HEADERS([arpa/inet.h fcntl.h iconv.h libssh/libssh.h mysql.h netdb.h ne
                   [],
                   [AC_MSG_ERROR([Missing required header file])],
                   [#define PCRE2_CODE_UNIT_WIDTH 8])
-
-AS_IF([test "x$enable_systemd" = xyes],
-      [AC_CHECK_HEADERS([systemd/sd-daemon.h], [], [AC_MSG_ERROR([systemd/sd-daemon.h not found.])])])
-
-AS_IF([test "x$with_epoll" = xyes],
-      [AC_CHECK_HEADERS([sys/epoll.h], [], [AC_MSG_ERROR([sys/epoll.h not found.])])],
-      [AC_CHECK_HEADERS([poll.h], [], [AC_MSG_ERROR([poll.h not found.])])])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST

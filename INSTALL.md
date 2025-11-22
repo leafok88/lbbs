@@ -21,7 +21,10 @@ To install LBBS on Linux (e.g. Debian 13, CentOS Stream 10), please perform the 
 
 4) Compile source files  
    export LBBS_HOME_DIR=/usr/local/lbbs  
+   (For Linux)  
    ./configure --prefix=$LBBS_HOME_DIR  
+   (For MSYS2 with MinGW-w64 toolchain)  
+   ./configure --prefix=$LBBS_HOME_DIR --disable-shared PKG_CONFIG_PATH=/mingw64/lib/pkgconfig/  
    make  
 
 5) Create user and group  
@@ -50,8 +53,6 @@ To install LBBS on Linux (e.g. Debian 13, CentOS Stream 10), please perform the 
    sudo -u bbs $LBBS_HOME_DIR/bin/bbsd
 
 12) (Optional) Set up systemd  
-   Enable systemd related feature during config, by running:  
-     ./configure --prefix=$LBBS_HOME_DIR --enable-systemd
    Create your own /usr/lib/systemd/system/lbbs.service from the sample at conf/lbbs.service, and make any change if necessary.  
    Reload daemon config and start the service.  
 
@@ -64,14 +65,4 @@ To install LBBS on Linux (e.g. Debian 13, CentOS Stream 10), please perform the 
    sudo -u bbs ipcs  
    There should be no item owned by bbs. Otherwise, run the following command to cleanup:  
    sudo -u bbs ipcrm -a
-
-
-For MSYS2 User
-==================
-Installation of LBBS on MSYS2 is similar to the above steps for Linux, except that:
-
-1) Use additional config switches to keep compatible with the MSYS2 environment.  
-   ./configure --prefix=$LBBS_HOME_DIR --disable-shared  
-
-2) Skip those steps not supported (e.g. systemd and logrotate).  
 
