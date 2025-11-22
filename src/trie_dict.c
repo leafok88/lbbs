@@ -134,54 +134,6 @@ void trie_dict_cleanup(void)
 	trie_node_shm_name[0] = '\0';
 }
 
-int get_trie_dict_shm_readonly(void)
-{
-	int fd;
-	struct stat sb;
-	size_t size;
-	void *p_shm;
-
-	if ((fd = shm_open(trie_node_shm_name, O_RDONLY, 0600)) == -1)
-	{
-		log_error("shm_open(%s) error (%d)\n", trie_node_shm_name, errno);
-		return -2;
-	}
-
-	if (fstat(fd, &sb) < 0)
-	{
-		log_error("fstat(fd) error (%d)\n", errno);
-		close(fd);
-		return -2;
-	}
-
-	size = (size_t)sb.st_size;
-
-	p_shm = mmap(NULL, size, PROT_READ, MAP_SHARED, fd, 0L);
-	if (p_shm == MAP_FAILED)
-	{
-		log_error("mmap() error (%d)\n", errno);
-		close(fd);
-		return -2;
-	}
-
-	if (close(fd) < 0)
-	{
-		log_error("close(fd) error (%d)\n", errno);
-		return -1;
-	}
-
-	if (p_trie_node_pool->shm_size != size)
-	{
-		log_error("Shared memory size mismatch (%ld != %ld)\n", p_trie_node_pool->shm_size, size);
-		munmap(p_shm, size);
-		return -3;
-	}
-
-	p_trie_node_pool = p_shm;
-
-	return 0;
-}
-
 int set_trie_dict_shm_readonly(void)
 {
 	if (p_trie_node_pool != NULL && mprotect(p_trie_node_pool, p_trie_node_pool->shm_size, PROT_READ) < 0)
