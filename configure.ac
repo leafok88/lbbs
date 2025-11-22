@@ -20,46 +20,60 @@ AC_PROG_LN_S
 AC_PROG_MAKE_SET
 
 AC_ARG_WITH([sysv],
-            [AS_HELP_STRING([--with-sysv], [Use System V specific APIs])],
-            [AS_IF([test "x$with_sysv" != xno],
-                   [AC_DEFINE([HAVE_SYSTEM_V], [1], [Define if System V is available [default=yes]])])],
-            [AC_DEFINE([HAVE_SYSTEM_V], [1], [Define if System V is available])])
+            [AS_HELP_STRING([--with-sysv], [Use System V specific APIs [default=yes]])],
+            [],
+            [with_sysv="yes"])
 AC_ARG_ENABLE([debug],
               [AS_HELP_STRING([--enable-debug], [Enable debug log [default=no]])],
               [AS_IF([test "x$enable_debug" = xyes],
                      [AC_DEFINE([_DEBUG], [1], [Define if debug log is enabled])])])
 AC_ARG_WITH([iconv],
-            [AS_HELP_STRING([--with-iconv], [Use iconv library package config [default=no]])],
+            [AS_HELP_STRING([--with-iconv], [Use iconv library package config [default=yes]])],
             [],
-            [with_iconv="no"])
+            [with_iconv="yes"])
 AC_ARG_WITH([mariadb],
-            [AS_HELP_STRING([--with-mariadb], [Use MariaDB library instead of MySQL client library [default=no]])],
-            [AS_IF([test "x$with_mariadb" = xyes],
-                   [AC_DEFINE([HAVE_MARIADB_CLIENT], [1], [Define if MariaDB client is used])])],
-            [with_mariadb="no"])
-AC_ARG_ENABLE([systemd],
-              [AS_HELP_STRING([--enable-systemd], [Enable systemd daemon [default=no]])],
-              [],
-              [enable_systemd="no"])
-AC_ARG_WITH([epoll],
-            [AS_HELP_STRING([--with-epoll], [Use epoll instead of poll [default=yes]])],
+            [AS_HELP_STRING([--with-mariadb], [Use MariaDB library instead of MySQL client library [default=yes]])],
             [],
-            [with_epoll="yes"])
+            [with_mariadb="yes"])
+AC_ARG_ENABLE([systemd],
+              [AS_HELP_STRING([--enable-systemd], [Enable systemd daemon [default=yes]])],
+              [],
+              [enable_systemd="yes"])
+AC_ARG_WITH([epoll],
+            [AS_HELP_STRING([--with-epoll], [Use epoll instead of poll])],
+            [],
+            [AC_CHECK_HEADERS([sys/epoll.h], [with_epoll="yes"], [with_epoll="no"])])
 
 AC_SUBST([PKG_CONFIG_PATH])
 PKG_PROG_PKG_CONFIG
 PKG_CHECK_MODULES([LIBSSH], [libssh], [], [AC_MSG_ERROR([libssh is required.])])
 PKG_CHECK_MODULES([LIBPCRE2], [libpcre2-8], [], [AC_MSG_ERROR([libpcre2-8 is required.])])
 
-AS_IF([test "x$with_iconv" = xyes],
-      [PKG_CHECK_MODULES([ICONV], [iconv], [], [AC_MSG_ERROR([iconv is required.])])])
+AS_IF([test "x$with_sysv" = xyes],
+      [AC_CHECK_FUNC([semtimedop],
+      [AC_DEFINE([HAVE_SYSTEM_V], [1], [Define if System V is available])],
+      [with_sysv="no"])])
+
+AS_IF([test "x$with_iconv" != xno],
+      [PKG_CHECK_MODULES([ICONV], [iconv], [], [AC_CHECK_HEADERS([iconv.h], [], [AC_MSG_ERROR([iconv is required.])])])])
 
 AS_IF([test "x$with_mariadb" = xyes],
-      [PKG_CHECK_MODULES([MYSQLCLIENT], [libmariadb], [], [AC_MSG_ERROR([libmariadb is required.])])],
-      [PKG_CHECK_MODULES([MYSQLCLIENT], [mysqlclient], [], [AC_MSG_ERROR([mysqlclient is required.])])])
+      [PKG_CHECK_MODULES([MYSQLCLIENT], [libmariadb],
+                         [AC_DEFINE([HAVE_MARIADB_CLIENT], [1], [Define if MariaDB client is used])],
+                         [with_mariadb="no"])])
+AS_IF([test "x$with_mariadb" = xno],
+      [PKG_CHECK_MODULES([MYSQLCLIENT], [mysqlclient],
+                         [],
+                         [AC_MSG_ERROR([mysqlclient is required.])])])
 
 AS_IF([test "x$enable_systemd" = xyes],
-      [PKG_CHECK_MODULES([SYSTEMD], [libsystemd], [], [AC_MSG_ERROR([libsystemd is required.])])])
+      [PKG_CHECK_MODULES([SYSTEMD], [libsystemd], 
+                         [AC_CHECK_HEADERS([systemd/sd-daemon.h], [], [AC_MSG_ERROR([systemd/sd-daemon.h not found.])])], 
+                         [AC_MSG_NOTICE([libsystemd not found.])])])
+
+AS_IF([test "x$with_epoll" = xyes],
+      [AC_CHECK_HEADERS([sys/epoll.h], [], [AC_MSG_ERROR([sys/epoll.h not found.])])],
+      [AC_CHECK_HEADERS([poll.h], [], [AC_MSG_ERROR([poll.h not found.])])])
 
 AS_IF([test "x$enable_shared" = xyes],
       [AC_DEFINE([_ENABLE_SHARED], [1], [Define if shared library is enabled])])
@@ -79,13 +93,6 @@ AC_CHECK_HEADERS([arpa/inet.h fcntl.h iconv.h libssh/libssh.h mysql.h netdb.h ne
                   [],
                   [AC_MSG_ERROR([Missing required header file])],
                   [#define PCRE2_CODE_UNIT_WIDTH 8])
-
-AS_IF([test "x$enable_systemd" = xyes],
-      [AC_CHECK_HEADERS([systemd/sd-daemon.h], [], [AC_MSG_ERROR([systemd/sd-daemon.h not found.])])])
-
-AS_IF([test "x$with_epoll" = xyes],
-      [AC_CHECK_HEADERS([sys/epoll.h], [], [AC_MSG_ERROR([sys/epoll.h not found.])])],
-      [AC_CHECK_HEADERS([poll.h], [], [AC_MSG_ERROR([poll.h not found.])])])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
