@@ -13,6 +13,7 @@
 #include "lml.h"
 #include "log.h"
 #include <errno.h>
+#include <locale.h>
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
@@ -20,7 +21,7 @@
 
 enum _test_lml_constant_t
 {
-	STR_OUT_BUF_SIZE = 256,
+	STR_OUT_BUF_SIZE = 4096,
 };
 
 const char *str_in[] = {
@@ -47,6 +48,23 @@ const char *str_in[] = {
 	"\033[0m\033[I             \033[1;32m;,                                           ;,\033[m",
 	"\n01234567890123456789012345678901234567890123456789012345678901234567890123456789\n2\n01234567890123456789012345678901234567890123456789012345678901234567890123456789\n4\n5\n",
 	"A[012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789]B",
+	"[nolml]发信人：feilan.bbs@bbs.sjtu.edu.cn (蓝，本是路人)，信区：cn.bbs.sci.medicine\n"
+	"标  题：Re: 阑尾有益寿延年功能 尾骨是有用的“小尾巴”\n"
+	"发信站：饮水思源\n"
+	"转信站：LeafOK!news.ccie.net.cn!SJTU\n"
+	"\n"
+	"昏\n"
+	"当然是阑尾\n"
+	"【 在 lang (浪子~继续减肥&戒酒) 的大作中提到: 】\n"
+	": 阑尾?\n"
+	": 扁桃体?\n"
+	": 还是尾椎?\n"
+	": 【 在 feilan (蓝，本是路人) 的大作中提到: 】\n"
+	": : -________________-!!!\n"
+	": : 完了\n"
+	": : 我已经割掉了\n"
+	": : 555555555555\n"
+	": : ",
 };
 
 const int str_cnt = sizeof(str_in) / sizeof(const char *);
@@ -61,6 +79,13 @@ int main(int argc, char *argv[])
 	char str_out_buf[STR_OUT_BUF_SIZE];
 	int i;
 	int j;
+
+	// Apply the specified locale
+	if (setlocale(LC_ALL, "en_US.UTF-8") == NULL)
+	{
+		fprintf(stderr, "setlocale(LC_ALL, en_US.UTF-8) error\n");
+		return -1;
+	}
 
 	if (log_begin("../log/bbsd.log", "../log/error.log") < 0)
 	{
@@ -78,7 +103,13 @@ int main(int argc, char *argv[])
 	{
 		j = lml_render(str_in[i], str_out_buf, sizeof(str_out_buf), 80, 0);
 
-		printf("Input(len=%ld): %s\nOutput(len=%d): %s\n", strlen(str_in[i]), str_in[i], j, str_out_buf);
+		printf("Input(len=%ld): %s\nOutput(len=%d): %s\n",
+			   strlen(str_in[i]), str_in[i], j, str_out_buf);
+		if (j != strlen(str_out_buf))
+		{
+			printf("Output len(%ld) != ret(%d)\n", strlen(str_out_buf), j);
+			return -1;
+		}
 	}
 	printf("Test #1: Done\n\n");
 
@@ -87,7 +118,13 @@ int main(int argc, char *argv[])
 	{
 		j = lml_render(str_in[i], str_out_buf, sizeof(str_out_buf), 80, 1);
 
-		printf("Input(len=%ld): %s\nOutput(len=%d): %s\n", strlen(str_in[i]), str_in[i], j, str_out_buf);
+		printf("Input(len=%ld): %s\nOutput(len=%d): %s\n",
+			   strlen(str_in[i]), str_in[i], j, str_out_buf);
+		if (j != strlen(str_out_buf))
+		{
+			printf("Output len(%ld) != ret(%d)\n", strlen(str_out_buf), j);
+			return -1;
+		}
 	}
 	printf("Test #2: Done\n\n");
 

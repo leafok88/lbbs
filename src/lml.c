@@ -180,6 +180,7 @@ inline static void lml_init(void)
 }
 
 #define CHECK_AND_APPEND_OUTPUT(out_buf, out_buf_len, out_buf_offset, tag_out, tag_out_len, line_width)                             \
+	if ((tag_out_len) > 0)                                                                                                          \
 	{                                                                                                                               \
 		if ((out_buf_offset) + (tag_out_len) >= (out_buf_len))                                                                      \
 		{                                                                                                                           \
@@ -191,6 +192,11 @@ inline static void lml_init(void)
 		*((out_buf) + (out_buf_offset) + (size_t)(tag_out_len)) = '\0';                                                             \
 		(line_width) += str_length((out_buf) + (out_buf_offset), 1);                                                                \
 		(out_buf_offset) += (tag_out_len);                                                                                          \
+		if ((tag_out)[(tag_out_len) - 1] == '\0')                                                                                   \
+		{                                                                                                                           \
+			(out_buf_offset)--;                                                                                                     \
+			return (out_buf_offset);                                                                                                \
+		}                                                                                                                           \
 	}
 
 int lml_render(const char *str_in, char *str_out, int buf_len, int width, int quote_mode)
@@ -216,6 +222,10 @@ int lml_render(const char *str_in, char *str_out, int buf_len, int width, int qu
 	char tab_spaces[TAB_SIZE + 1];
 	int tab_width = 0;
 
+#ifdef _DEBUG
+	size_t str_in_len = strlen(str_in);
+#endif
+
 	clock_begin = clock();
 
 	lml_init();
@@ -230,6 +240,14 @@ int lml_render(const char *str_in, char *str_out, int buf_len, int width, int qu
 
 	for (i = 0; str_in[i] != '\0'; i++)
 	{
+#ifdef _DEBUG
+		if (i >= str_in_len)
+		{
+			log_error("Bug: i(%d) >= str_in_len(%d)\n", i, str_in_len);
+			break;
+		}
+#endif
+
 		if (!lml_tag_disabled && new_line)
 		{
 			while (str_in[i] == ':' && str_in[i + 1] == ' ') // FB2000 quote leading str
