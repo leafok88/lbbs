@@ -20,51 +20,43 @@ AC_PROG_LN_S
 AC_PROG_MAKE_SET
 
 AC_ARG_WITH([sysv],
-            [AS_HELP_STRING([--with-sysv], [Use System V specific APIs [default=yes]])],
-            [],
-            [with_sysv="yes"])
+            [AS_HELP_STRING([--with-sysv], [Use System V specific APIs])],
+            [AS_IF([test "x$with_sysv" != xno],
+                   [AC_DEFINE([HAVE_SYSTEM_V], [1], [Define if System V is available [default=yes]])])],
+            [AC_DEFINE([HAVE_SYSTEM_V], [1], [Define if System V is available])])
 AC_ARG_ENABLE([debug],
               [AS_HELP_STRING([--enable-debug], [Enable debug log [default=no]])],
               [AS_IF([test "x$enable_debug" = xyes],
                      [AC_DEFINE([_DEBUG], [1], [Define if debug log is enabled])])])
 AC_ARG_WITH([iconv],
-            [AS_HELP_STRING([--with-iconv], [Use iconv library package config [default=yes]])],
+            [AS_HELP_STRING([--with-iconv], [Use iconv library package config [default=no]])],
             [],
-            [with_iconv="yes"])
+            [with_iconv="no"])
 AC_ARG_WITH([mariadb],
-            [AS_HELP_STRING([--with-mariadb], [Use MariaDB library instead of MySQL client library [default=yes]])],
-            [],
-            [with_mariadb="yes"])
+            [AS_HELP_STRING([--with-mariadb], [Use MariaDB library instead of MySQL client library [default=no]])],
+            [AS_IF([test "x$with_mariadb" = xyes],
+                   [AC_DEFINE([HAVE_MARIADB_CLIENT], [1], [Define if MariaDB client is used])])],
+            [with_mariadb="no"])
 AC_ARG_ENABLE([systemd],
               [AS_HELP_STRING([--enable-systemd], [Enable systemd daemon [default=no]])],
               [],
               [enable_systemd="no"])
 AC_ARG_WITH([epoll],
-            [AS_HELP_STRING([--with-epoll], [Use epoll instead of poll])],
+            [AS_HELP_STRING([--with-epoll], [Use epoll instead of poll [default=yes]])],
             [],
-            [AC_CHECK_HEADERS([sys/epoll.h], [with_epoll="yes"], [with_epoll="no"])])
+            [with_epoll="yes"])
 
 AC_SUBST([PKG_CONFIG_PATH])
 PKG_PROG_PKG_CONFIG
 PKG_CHECK_MODULES([LIBSSH], [libssh], [], [AC_MSG_ERROR([libssh is required.])])
 PKG_CHECK_MODULES([LIBPCRE2], [libpcre2-8], [], [AC_MSG_ERROR([libpcre2-8 is required.])])
 
-AS_IF([test "x$with_sysv" = xyes],
-      [AC_CHECK_FUNC([semtimedop],
-      [AC_DEFINE([HAVE_SYSTEM_V], [1], [Define if System V is available])],
-      [with_sysv="no"])])
-
-AS_IF([test "x$with_iconv" != xno],
-      [PKG_CHECK_MODULES([ICONV], [iconv], [], [AC_CHECK_HEADERS([iconv.h], [], [AC_MSG_ERROR([iconv is required.])])])])
+AS_IF([test "x$with_iconv" = xyes],
+      [PKG_CHECK_MODULES([ICONV], [iconv], [], [AC_MSG_ERROR([iconv is required.])])])
 
 AS_IF([test "x$with_mariadb" = xyes],
-      [PKG_CHECK_MODULES([MYSQLCLIENT], [libmariadb],
-                         [AC_DEFINE([HAVE_MARIADB_CLIENT], [1], [Define if MariaDB client is used])],
-                         [with_mariadb="no"])])
-AS_IF([test "x$with_mariadb" = xno],
-      [PKG_CHECK_MODULES([MYSQLCLIENT], [mysqlclient],
-                         [],
-                         [AC_MSG_ERROR([mysqlclient is required.])])])
+      [PKG_CHECK_MODULES([MYSQLCLIENT], [libmariadb], [], [AC_MSG_ERROR([libmariadb is required.])])],
+      [PKG_CHECK_MODULES([MYSQLCLIENT], [mysqlclient], [], [AC_MSG_ERROR([mysqlclient is required.])])])
 
 AS_IF([test "x$enable_systemd" = xyes],
       [PKG_CHECK_MODULES([SYSTEMD], [libsystemd], [], [AC_MSG_ERROR([libsystemd is required.])])])
