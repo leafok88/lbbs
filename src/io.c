@@ -1136,11 +1136,11 @@ int io_buf_conv(iconv_t cd, char *p_buf, int *p_buf_len, int *p_buf_offset, char
 			else // something strange
 			{
 #ifdef _DEBUG
-				log_error("*p_buf_offset += %d, *p_conv_len = %d, in_bytes=%d, out_bytes=%d, in_buf[0]=%d\n",
-						  (int)(in_buf - p_buf), (int)(conv_size - out_bytes), in_bytes, out_bytes, in_buf[0]);
+				log_error("iconv(in_bytes=%d, out_bytes=%d) error: %d, in_buf[0]=%d\n",
+						  in_bytes, out_bytes, errno, in_buf[0]);
 #endif
 
-				*p_buf_offset += (int)(in_buf - p_buf);
+				*p_buf_offset = (int)(in_buf - p_buf);
 				*p_conv_len = (int)(conv_size - out_bytes);
 				skip_current = 1;
 
