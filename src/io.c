@@ -1034,6 +1034,7 @@ int io_buf_conv(iconv_t cd, char *p_buf, int *p_buf_len, int *p_buf_offset, char
 	int ret;
 	int in_control = 0;
 	size_t i = 0;
+	int skip_current = 0;
 
 	if (cd == NULL || p_buf == NULL || p_buf_len == NULL || p_buf_offset == NULL || p_conv == NULL || p_conv_len == NULL)
 	{
@@ -1057,8 +1058,10 @@ int io_buf_conv(iconv_t cd, char *p_buf, int *p_buf_len, int *p_buf_offset, char
 			}
 		}
 
-		if (in_control)
+		if (in_control || skip_current)
 		{
+			skip_current = 0;
+
 			if (out_bytes <= 0)
 			{
 				log_error("No enough free space in p_conv, conv_len=%d, conv_size=%d\n", *p_conv_len, conv_size);
@@ -1072,7 +1075,7 @@ int io_buf_conv(iconv_t cd, char *p_buf, int *p_buf_len, int *p_buf_offset, char
 			out_bytes--;
 
 			(*p_buf_offset)++;
-			*p_conv_len = (int)(conv_size - out_bytes);
+			(*p_conv_len)++;
 
 			i++;
 			if (i >= 2)
@@ -1092,7 +1095,7 @@ int io_buf_conv(iconv_t cd, char *p_buf, int *p_buf_len, int *p_buf_offset, char
 #endif
 				if (p_buf != in_buf)
 				{
-					*p_buf_len = (int)(p_buf + *p_buf_len - in_buf);
+					*p_buf_len -= (int)(in_buf - p_buf);
 					*p_buf_offset = 0;
 					*p_conv_len = (int)(conv_size - out_bytes);
 					memmove(p_buf, in_buf, (size_t)(*p_buf_len));
@@ -1125,6 +1128,22 @@ int io_buf_conv(iconv_t cd, char *p_buf, int *p_buf_len, int *p_buf_offset, char
 				in_bytes--;
 				out_bytes--;
 
+				(*p_buf_offset)++;
+				(*p_conv_len)++;
+
+				continue;
+			}
+			else // something strange
+			{
+#ifdef _DEBUG
+				log_error("iconv(in_bytes=%d, out_bytes=%d) error: %d, in_buf[0]=%d\n",
+						  in_bytes, out_bytes, errno, in_buf[0]);
+#endif
+
+				*p_buf_offset = (int)(in_buf - p_buf);
+				*p_conv_len = (int)(conv_size - out_bytes);
+				skip_current = 1;
+
 				continue;
 			}
 		}
@@ -1136,6 +1155,12 @@ int io_buf_conv(iconv_t cd, char *p_buf, int *p_buf_len, int *p_buf_offset, char
 
 			break;
 		}
+	}
+
+	if (*p_buf_offset >= *p_buf_len)
+	{
+		*p_buf_len = 0;
+		*p_buf_offset = 0;
 	}
 
 	return 0;

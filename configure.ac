@@ -77,7 +77,7 @@ AS_IF([test "x$with_epoll" = xyes],
 
 AS_IF([test "x$enable_shared" = xyes],
       [AC_DEFINE([_ENABLE_SHARED], [1], [Define if shared library is enabled])])
-AM_CONDITIONAL([USE_SO], [test "x$enable_shared" = xyes])
+AM_CONDITIONAL([STATIC_LINK], [test "x$enable_shared" != xyes])
 
 CPPFLAGS="$CPPFLAGS $LIBSSH_CFLAGS $MYSQLCLIENT_CFLAGS $SYSTEMD_CFLAGS $LIBPCRE2_CFLAGS $ICONV_CFLAGS"
 
