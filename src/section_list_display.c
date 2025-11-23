@@ -1376,6 +1376,7 @@ int section_list_ex_dir_display(SECTION_LIST *p_section)
 {
 	MENU_SET ex_menu_set;
 	int ch = 0;
+	int loop;
 
 	if (p_section == NULL)
 	{
@@ -1408,7 +1409,7 @@ int section_list_ex_dir_display(SECTION_LIST *p_section)
 
 	if (display_menu(&ex_menu_set) == 0)
 	{
-		while (!SYS_server_exit)
+		for (loop = 1; !SYS_server_exit && loop;)
 		{
 			iflush();
 			ch = igetch(100);
@@ -1422,12 +1423,14 @@ int section_list_ex_dir_display(SECTION_LIST *p_section)
 			{
 			case KEY_NULL: // broken pipe
 				log_error("KEY_NULL\n");
-				return 0;
+				loop = 0;
+				break;
 			case KEY_TIMEOUT:
 				if (time(NULL) - BBS_last_access_tm >= BBS_max_user_idle_time)
 				{
 					log_error("User input timeout\n");
-					return 0;
+					loop = 0;
+					break;
 				}
 				continue;
 			case CR:
@@ -1435,7 +1438,7 @@ int section_list_ex_dir_display(SECTION_LIST *p_section)
 				switch (menu_control(&ex_menu_set, ch))
 				{
 				case EXITMENU:
-					ch = EXITMENU;
+					loop = 0;
 					break;
 				case REDRAW:
 					clearscr();
@@ -1447,11 +1450,6 @@ int section_list_ex_dir_display(SECTION_LIST *p_section)
 				default:
 					break;
 				}
-			}
-
-			if (ch == EXITMENU)
-			{
-				break;
 			}
 		}
 	}

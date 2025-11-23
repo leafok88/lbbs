@@ -135,6 +135,7 @@ int bbs_logout(void)
 int bbs_center()
 {
 	int ch;
+	int loop;
 	time_t t_last_action;
 
 	BBS_last_access_tm = t_last_action = time(NULL);
@@ -147,7 +148,7 @@ int bbs_center()
 	display_menu(&bbs_menu);
 	iflush();
 
-	while (!SYS_server_exit)
+	for (loop = 1; !SYS_server_exit && loop;)
 	{
 		ch = igetch(100);
 
@@ -178,12 +179,14 @@ int bbs_center()
 		{
 		case KEY_NULL: // broken pipe
 			log_error("KEY_NULL\n");
-			return 0;
+			loop = 0;
+			break;
 		case KEY_TIMEOUT:
 			if (time(NULL) - BBS_last_access_tm >= BBS_max_user_idle_time)
 			{
 				log_error("User input timeout\n");
-				return 0;
+				loop = 0;
+				break;
 			}
 			continue;
 		case CR:
@@ -192,7 +195,8 @@ int bbs_center()
 			{
 			case EXITBBS:
 			case EXITMENU:
-				return 0;
+				loop = 0;
+				break;
 			case REDRAW:
 				t_last_action = time(NULL);
 				clearscr();
