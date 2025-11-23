@@ -275,6 +275,7 @@ int show_top10_menu(void *param)
 {
 	static int show_top10 = 0;
 	int ch = 0;
+	int loop;
 
 	if (show_top10)
 	{
@@ -288,7 +289,7 @@ int show_top10_menu(void *param)
 
 	if (display_menu(&top10_menu) == 0)
 	{
-		while (!SYS_server_exit)
+		for (loop = 1; !SYS_server_exit && loop;)
 		{
 			iflush();
 			ch = igetch(100);
@@ -302,14 +303,14 @@ int show_top10_menu(void *param)
 			{
 			case KEY_NULL: // broken pipe
 				log_error("KEY_NULL\n");
-				show_top10 = 0;
-				return 0;
+				loop = 0;
+				break;
 			case KEY_TIMEOUT:
 				if (time(NULL) - BBS_last_access_tm >= BBS_max_user_idle_time)
 				{
 					log_error("User input timeout\n");
-					show_top10 = 0;
-					return 0;
+					loop = 0;
+					break;
 				}
 				continue;
 			case CR:
@@ -317,7 +318,7 @@ int show_top10_menu(void *param)
 				switch (menu_control(&top10_menu, ch))
 				{
 				case EXITMENU:
-					ch = EXITMENU;
+					loop = 0;
 					break;
 				case REDRAW:
 					clearscr();
@@ -329,11 +330,6 @@ int show_top10_menu(void *param)
 				default:
 					break;
 				}
-			}
-
-			if (ch == EXITMENU)
-			{
-				break;
 			}
 		}
 	}
