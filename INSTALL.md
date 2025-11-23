@@ -7,6 +7,7 @@ To install LBBS on Linux (e.g. Debian 13, CentOS Stream 10), please perform the 
    It is highly recommended to finish the configuration steps of web version first and make sure those features could work properly.
 
 1) Common requirements  
+   (For Linux)  
    gcc >= 14.2  
    autoconf >= 2.68  
    automake >= 1.16  
@@ -14,6 +15,8 @@ To install LBBS on Linux (e.g. Debian 13, CentOS Stream 10), please perform the 
    pcre2 >= 10.38  
    php >= 8.2  
    mysql >= 8.4  
+   (For MSYS2 with MinGW-w64 toolchain)  
+   pacman -S --needed base-devel msys2-runtime-devel mingw-w64-ucrt-x86_64-toolchain mingw-w64-x86_64-libssh mingw-w64-x86_64-pcre2 mingw-w64-x86_64-libiconv mingw-w64-x86_64-libmariadbclient  
 
 3) Extract the source files from a tarball or export from GitHub  
    Run the following command to set up the autoconf/automake environment,  

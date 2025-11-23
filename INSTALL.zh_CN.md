@@ -7,6 +7,7 @@
    强烈建议先按照Web版本的说明完成基础功能的配置和验证，再开始Telnet版本的安装。
 
 1) 通用工具/基础库依赖  
+   (Linux 用户)  
    gcc >= 14.2  
    autoconf >= 2.68  
    automake >= 1.16  
@@ -14,6 +15,8 @@
    pcre2 >= 10.38  
    php >= 8.2  
    mysql >= 8.4  
+   (MSYS2 with MinGW-w64 toolchain 用户)  
+   pacman -S --needed base-devel msys2-runtime-devel mingw-w64-ucrt-x86_64-toolchain mingw-w64-x86_64-libssh mingw-w64-x86_64-pcre2 mingw-w64-x86_64-libiconv mingw-w64-x86_64-libmariadbclient  
 
 2) 从Github导出或下载源代码文件  
    运行以下命令来初始化autoconf/automake环境:  
