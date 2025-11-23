@@ -1120,18 +1120,16 @@ int io_buf_conv(iconv_t cd, char *p_buf, int *p_buf_len, int *p_buf_offset, char
 				if (in_bytes == 0)
 				{
 					in_bytes = (size_t)(*p_buf_len - *p_buf_offset);
+#ifdef _DEBUG
+					log_error("Reset in_bytes from 0 to %d\n", in_bytes);
+#endif
 				}
 
-				*out_buf = *in_buf;
-				in_buf++;
-				out_buf++;
-				in_bytes--;
-				out_bytes--;
-
-				(*p_buf_offset)++;
-				(*p_conv_len)++;
-
-				continue;
+#ifdef _DEBUG
+				log_error("iconv(in_bytes=%d, out_bytes=%d) error: EILSEQ, in_buf[0]=%d\n",
+						  in_bytes, out_bytes, in_buf[0]);
+#endif
+				skip_current = 1;
 			}
 			else // something strange
 			{
@@ -1139,21 +1137,15 @@ int io_buf_conv(iconv_t cd, char *p_buf, int *p_buf_len, int *p_buf_offset, char
 				log_error("iconv(in_bytes=%d, out_bytes=%d) error: %d, in_buf[0]=%d\n",
 						  in_bytes, out_bytes, errno, in_buf[0]);
 #endif
-
 				*p_buf_offset = (int)(in_buf - p_buf);
 				*p_conv_len = (int)(conv_size - out_bytes);
 				skip_current = 1;
-
-				continue;
 			}
 		}
 		else
 		{
-			*p_buf_len = 0;
-			*p_buf_offset = 0;
+			*p_buf_offset = (int)(in_buf - p_buf);
 			*p_conv_len = (int)(conv_size - out_bytes);
-
-			break;
 		}
 	}
 
