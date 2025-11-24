@@ -17,7 +17,7 @@
    (For CentOS / RHEL 用户)  
    sudo dnf install -y libssh-devel systemd-devel  
    (MSYS2 with MinGW-w64 toolchain 用户)  
-   pacman -S --needed msys2-runtime-devel mingw-w64-x86_64-libssh mingw-w64-x86_64-pcre2 mingw-w64-x86_64-libiconv mingw-w64-x86_64-libmariadbclient  
+   pacman -S --needed msys2-runtime-devel libssh pcre2-devel mingw-w64-x86_64-libiconv mingw-w64-x86_64-libmariadbclient  
 
 2) 从Github导出或下载源代码文件  
    运行以下命令来初始化autoconf/automake环境:  
