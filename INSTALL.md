@@ -17,7 +17,7 @@ To install LBBS on Linux (e.g. Debian 13, CentOS Stream 10), please perform the 
    (For CentOS / RHEL)  
    sudo dnf install -y libssh-devel systemd-devel  
    (For MSYS2 with MinGW-w64 toolchain)  
-   pacman -S --needed msys2-runtime-devel libssh pcre2-devel mingw-w64-x86_64-libiconv mingw-w64-x86_64-libmariadbclient  
+   pacman -S --needed msys2-runtime-devel libssh libssh-devel pcre2-devel mingw-w64-x86_64-libiconv mingw-w64-x86_64-libmariadbclient  
 
 3) Extract the source files from a tarball or export from GitHub  
    Run the following command to set up the autoconf/automake environment,  
