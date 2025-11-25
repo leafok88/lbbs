@@ -10,10 +10,14 @@
    gcc >= 14.2  
    autoconf >= 2.68  
    automake >= 1.16  
-   libssh >= 0.11  
-   pcre2 >= 10.38  
    php >= 8.2  
    mysql >= 8.4  
+   (Debian / Ubuntu 用户)  
+   sudo apt-get install -y libssh-dev libsystemd-dev  
+   (For CentOS / RHEL 用户)  
+   sudo dnf install -y libssh-devel systemd-devel  
+   (MSYS2 with MinGW-w64 toolchain 用户)  
+   pacman -S --needed msys2-runtime-devel libssh libssh-devel pcre2-devel mingw-w64-x86_64-libiconv mingw-w64-x86_64-libmariadbclient  
 
 2) 从Github导出或下载源代码文件  
    运行以下命令来初始化autoconf/automake环境:  
