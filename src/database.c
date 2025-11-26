@@ -13,9 +13,12 @@
 #include "common.h"
 #include "database.h"
 #include "log.h"
+#include <errno.h>
+#include <fcntl.h>
 #include <mysql.h>
 #include <stdio.h>
 #include <string.h>
+#include <sys/stat.h>
 
 // Global declaration for database
 char DB_ca_cert[FILE_PATH_LEN] = "conf/ca_cert.pem";
@@ -31,15 +34,31 @@ MYSQL *db_open()
 #ifdef HAVE_MARIADB_CLIENT
 	my_bool disabled = 0;
 #else
-	unsigned int ssl_mode = SSL_MODE_VERIFY_CA;
+	unsigned int ssl_mode;
 #endif
 	char sql[SQL_BUFFER_LEN];
+	int fd;
 
 	db = mysql_init(NULL);
 	if (db == NULL)
 	{
 		log_error("mysql_init() failed\n");
 		return NULL;
+	}
+
+	fd = open(DB_ca_cert, O_RDONLY);
+	if (fd == -1)
+	{
+		if (errno != ENOENT)
+		{
+			log_error("open(%s) error: %d\n", DB_ca_cert, errno);
+		}
+		ssl_mode = SSL_MODE_PREFERRED;
+	}
+	else
+	{
+		close(fd);
+		ssl_mode = SSL_MODE_VERIFY_CA;
 	}
 
 	if (mysql_ssl_set(db, NULL, NULL, DB_ca_cert, NULL, NULL) != 0)
