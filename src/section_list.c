@@ -251,7 +251,7 @@ void article_block_cleanup(void)
 
 int set_article_block_shm_readonly(void)
 {
-	int i;
+	// int i;
 
 	if (p_article_block_pool == NULL)
 	{
@@ -259,15 +259,15 @@ int set_article_block_shm_readonly(void)
 		return -1;
 	}
 
-	for (i = 0; i < p_article_block_pool->shm_count; i++)
-	{
-		if ((p_article_block_pool->shm_pool + i)->p_shm != NULL &&
-			mprotect((p_article_block_pool->shm_pool + i)->p_shm, (p_article_block_pool->shm_pool + i)->shm_size, PROT_READ) < 0)
-		{
-			log_error("mprotect() error (%d)\n", errno);
-			return -2;
-		}
-	}
+	// for (i = 0; i < p_article_block_pool->shm_count; i++)
+	// {
+	// 	if ((p_article_block_pool->shm_pool + i)->p_shm != NULL &&
+	// 		mprotect((p_article_block_pool->shm_pool + i)->p_shm, (p_article_block_pool->shm_pool + i)->shm_size, PROT_READ) < 0)
+	// 	{
+	// 		log_error("mprotect() error (%d)\n", errno);
+	// 		return -2;
+	// 	}
+	// }
 
 	if (p_article_block_pool != NULL &&
 		mprotect(p_article_block_pool, p_article_block_pool->shm_size, PROT_READ) < 0)
@@ -1029,6 +1029,38 @@ int section_list_set_article_visible(SECTION_LIST *p_section, int32_t aid, int8_
 	affected_count++;
 
 	return affected_count;
+}
+
+int section_list_set_article_excerption(SECTION_LIST *p_section, int32_t aid, int8_t excerption)
+{
+	ARTICLE *p_article;
+
+	if (p_section == NULL)
+	{
+		log_error("NULL pointer error\n");
+		return -1;
+	}
+
+	p_article = article_block_find_by_aid(aid);
+	if (p_article == NULL)
+	{
+		return -1; // Not found
+	}
+
+	if (p_section->sid != p_article->sid)
+	{
+		log_error("Inconsistent section sid %d != article sid %d\n", p_section->sid, p_article->sid);
+		return -2;
+	}
+
+	if (p_article->excerption == excerption)
+	{
+		return 0; // Already set
+	}
+
+	p_article->excerption = excerption;
+
+	return 1;
 }
 
 int section_list_update_article_ontop(SECTION_LIST *p_section, ARTICLE *p_article)
