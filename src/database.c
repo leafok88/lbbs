@@ -38,6 +38,7 @@ MYSQL *db_open()
 #endif
 	char sql[SQL_BUFFER_LEN];
 	int fd;
+	int have_ca_cert = 0;
 
 	db = mysql_init(NULL);
 	if (db == NULL)
@@ -57,12 +58,13 @@ MYSQL *db_open()
 	else
 	{
 		close(fd);
+		have_ca_cert = 1;
 #ifndef HAVE_MARIADB_CLIENT
 		ssl_mode = SSL_MODE_VERIFY_CA;
 #endif
 	}
 
-	if (mysql_ssl_set(db, NULL, NULL, DB_ca_cert, NULL, NULL) != 0)
+	if (mysql_ssl_set(db, NULL, NULL, (have_ca_cert ? DB_ca_cert : NULL), NULL, NULL) != 0)
 	{
 		log_error("mysql_ssl_set() error\n");
 		return NULL;
