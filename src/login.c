@@ -342,6 +342,13 @@ int check_user(const char *username, const char *password)
 		goto cleanup;
 	}
 
+	if (!SSH_v2 && checklevel2(&BBS_priv, P_MAN_S))
+	{
+		prints("\033[1;31m非普通账户必须使用SSH方式登录\033[m\r\n");
+		ret = 1;
+		goto cleanup;
+	}
+
 	snprintf(sql, sizeof(sql),
 			 "UPDATE user_pubinfo SET visit_count = visit_count + 1, "
 			 "last_login_dt = NOW() WHERE UID = %d",
