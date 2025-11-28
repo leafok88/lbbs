@@ -26,7 +26,8 @@ const char CONF_MENU[] = "var/menu_merged.conf";
 const char CONF_BBSNET[] = "conf/bbsnet.conf";
 const char CONF_BWF[] = "conf/badwords.conf";
 const char CONF_TOP10_MENU[] = "var/bbs_top_menu.conf";
-const char SSH_HOST_KEYFILE[] = "conf/ssh_host_rsa_key";
+const char SSH_HOST_RSA_KEY_FILE[] = "conf/ssh_host_rsa_key";
+const char SSH_HOST_ED25519_KEY_FILE[] = "conf/ssh_host_ed25519_key";
 
 const char LOG_FILE_INFO[] = "log/bbsd.log";
 const char LOG_FILE_ERROR[] = "log/error.log";

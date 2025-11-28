@@ -42,7 +42,8 @@ extern const char CONF_MENU[];
 extern const char CONF_BBSNET[];
 extern const char CONF_BWF[];
 extern const char CONF_TOP10_MENU[];
-extern const char SSH_HOST_KEYFILE[];
+extern const char SSH_HOST_RSA_KEY_FILE[];
+extern const char SSH_HOST_ED25519_KEY_FILE[];
 
 extern const char LOG_FILE_INFO[];
 extern const char LOG_FILE_ERROR[];

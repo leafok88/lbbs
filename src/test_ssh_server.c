@@ -23,7 +23,8 @@ enum test_ssh_server_constant_t
 	BUF_SIZE = 2048,
 };
 
-static const char SSH_HOST_RSA_KEYFILE[] = "../conf/ssh_host_rsa_key";
+static const char SSH_HOST_RSA_KEY_FILE[] = "../conf/ssh_host_rsa_key";
+static const char SSH_HOST_ED25519_KEY_FILE[] = "../conf/ssh_host_ed25519_key";
 
 static const char USER[] = "test";
 static const char PASSWORD[] = "123456";
@@ -117,22 +118,40 @@ int ssh_server(const char *hostaddr, unsigned int port)
 	char host[128] = "";
 	int i, r;
 
+	int ssh_key_valid = 0;
 	int ssh_log_level = SSH_LOG_PROTOCOL;
 
 	ssh_init();
 
 	sshbind = ssh_bind_new();
 
+	if (ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_HOSTKEY, SSH_HOST_RSA_KEY_FILE) < 0)
+	{
+		log_error("Error setting SSH RSA key: %s\n", SSH_HOST_RSA_KEY_FILE);
+	}
+	else
+	{
+		ssh_key_valid = 1;
+	}
+	if (ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_HOSTKEY, SSH_HOST_ED25519_KEY_FILE) < 0)
+	{
+		log_error("Error setting SSH ED25519 key: %s\n", SSH_HOST_ED25519_KEY_FILE);
+	}
+	else
+	{
+		ssh_key_valid = 1;
+	}
+
+	if (!ssh_key_valid)
+	{
+		log_error("Error: no valid SSH host key\n");
+		ssh_bind_free(sshbind);
+		return -1;
+	}
+
 	if (ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_BINDADDR, hostaddr) < 0 ||
 		ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_BINDPORT, &port) < 0 ||
-		ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_HOSTKEY, SSH_HOST_RSA_KEYFILE) < 0 ||
-		ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_HOSTKEY_ALGORITHMS, "ssh-rsa,rsa-sha2-512,rsa-sha2-256,ecdsa-sha2-nistp256") < 0 ||
-		ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_PUBKEY_ACCEPTED_KEY_TYPES, "ssh-rsa,rsa-sha2-512,rsa-sha2-256,ecdsa-sha2-nistp256") < 0 ||
-		ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_KEY_EXCHANGE, "curve25519-sha256@libssh.org,ecdh-sha2-nistp256,ecdh-sha2-nistp384,ecdh-sha2-nistp521,diffie-hellman-group-exchange-sha256,diffie-hellman-group16-sha512,diffie-hellman-group18-sha512,diffie-hellman-group14-sha256,diffie-hellman-group14-sha1") < 0 ||
-		ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_HMAC_C_S, "umac-64-etm@openssh.com,umac-128-etm@openssh.com,hmac-sha2-256-etm@openssh.com,hmac-sha2-512-etm@openssh.com,hmac-sha1-etm@openssh.com,umac-64@openssh.com,umac-128@openssh.com,hmac-sha2-256,hmac-sha2-512,hmac-sha1") < 0 ||
-		ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_HMAC_S_C, "umac-64-etm@openssh.com,umac-128-etm@openssh.com,hmac-sha2-256-etm@openssh.com,hmac-sha2-512-etm@openssh.com,hmac-sha1-etm@openssh.com,umac-64@openssh.com,umac-128@openssh.com,hmac-sha2-256,hmac-sha2-512,hmac-sha1") < 0 ||
-		ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_CIPHERS_C_S, "chacha20-poly1305@openssh.com,aes128-ctr,aes192-ctr,aes256-ctr,aes128-gcm@openssh.com,aes256-gcm@openssh.com") < 0 ||
-		ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_CIPHERS_S_C, "chacha20-poly1305@openssh.com,aes128-ctr,aes192-ctr,aes256-ctr,aes128-gcm@openssh.com,aes256-gcm@openssh.com") < 0 ||
+		ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_HOSTKEY_ALGORITHMS, "ssh-rsa,rsa-sha2-512,rsa-sha2-256,ssh-ed25519") < 0 ||
 		ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_LOG_VERBOSITY, &ssh_log_level) < 0)
 	{
 		log_error("Error setting SSH bind options: %s\n", ssh_get_error(sshbind));

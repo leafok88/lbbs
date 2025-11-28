@@ -404,9 +404,6 @@ int bbs_main()
 	// Main
 	bbs_center();
 
-	// Logout
-	bbs_logout();
-
 	// Save section aid locations
 	if (section_aid_locations_save(BBS_priv.uid) < 0)
 	{
@@ -426,6 +423,9 @@ int bbs_main()
 	}
 
 cleanup:
+	// Logout
+	bbs_logout();
+
 	// Cleanup iconv
 	io_conv_cleanup();
 
