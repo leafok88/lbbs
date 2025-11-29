@@ -90,9 +90,6 @@ int bbs_login(void)
 		return -1;
 	}
 
-	log_common("User \"%s\"(%ld) login from %s:%d\n",
-			   BBS_username, BBS_priv.uid, hostaddr_client, port_client);
-
 	return 0;
 }
 
