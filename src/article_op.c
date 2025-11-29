@@ -21,7 +21,7 @@ int display_article_meta(int32_t aid)
 	moveto(3, 1);
 	prints("Web版 文章链接: ");
 	moveto(4, 1);
-	prints("http://%s/bbs/view_article.php?id=%d#%d", BBS_server, aid, aid);
+	prints("https://%s/bbs/view_article.php?id=%d#%d", BBS_server, aid, aid);
 	press_any_key();
 
 	return 0;
