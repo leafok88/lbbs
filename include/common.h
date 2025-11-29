@@ -27,7 +27,7 @@ enum common_constant_t
 
     // Network
     MAX_CLIENT_LIMIT = 2000,
-    MAX_CLIENT_PER_IP_LIMIT = 100,
+    MAX_CLIENT_PER_IP_LIMIT = 1000,
     IP_ADDR_LEN = 50,
     MAX_EVENTS = 10,
 };
@@ -42,7 +42,8 @@ extern const char CONF_MENU[];
 extern const char CONF_BBSNET[];
 extern const char CONF_BWF[];
 extern const char CONF_TOP10_MENU[];
-extern const char SSH_HOST_KEYFILE[];
+extern const char SSH_HOST_RSA_KEY_FILE[];
+extern const char SSH_HOST_ED25519_KEY_FILE[];
 
 extern const char LOG_FILE_INFO[];
 extern const char LOG_FILE_ERROR[];

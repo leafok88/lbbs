@@ -127,7 +127,8 @@ int bbs_logout(void)
 
 	display_file(DATA_GOODBYE, 1);
 
-	log_common("User [%s] logout, idle for %ld seconds since last input\n", BBS_username, time(NULL) - BBS_last_access_tm);
+	log_common("User [%s] (uid=%d) logout, idle for %ld seconds since last input\n",
+			   BBS_username, BBS_priv.uid, time(NULL) - BBS_last_access_tm);
 
 	return 0;
 }
@@ -366,7 +367,8 @@ int bbs_main()
 	{
 		goto cleanup;
 	}
-	log_common("User [%s] login\n", BBS_username);
+	log_common("User [%s] (uid=%d) login from %s:%d\n",
+			   BBS_username, BBS_priv.uid, hostaddr_client, port_client);
 
 	// Load section aid locations
 	if (section_aid_locations_load(BBS_priv.uid) < 0)
@@ -404,9 +406,6 @@ int bbs_main()
 	// Main
 	bbs_center();
 
-	// Logout
-	bbs_logout();
-
 	// Save section aid locations
 	if (section_aid_locations_save(BBS_priv.uid) < 0)
 	{
@@ -426,6 +425,9 @@ int bbs_main()
 	}
 
 cleanup:
+	// Logout
+	bbs_logout();
+
 	// Cleanup iconv
 	io_conv_cleanup();
 

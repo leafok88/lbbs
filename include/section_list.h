@@ -138,6 +138,7 @@ extern int get_section_info(SECTION_LIST *p_section, char *sname, char *stitle, 
 
 extern int section_list_append_article(SECTION_LIST *p_section, const ARTICLE *p_article_src);
 extern int section_list_set_article_visible(SECTION_LIST *p_section, int32_t aid, int8_t visible);
+extern int section_list_set_article_excerption(SECTION_LIST *p_section, int32_t aid, int8_t excerption);
 
 extern int section_list_update_article_ontop(SECTION_LIST *p_section, ARTICLE *p_article);
 extern int section_list_page_count_with_ontop(SECTION_LIST *p_section);
