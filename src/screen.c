@@ -703,6 +703,12 @@ int display_data(const void *p_data, long display_line_total, const long *p_line
 				if (ch != KEY_NULL && ch != KEY_TIMEOUT)
 				{
 					BBS_last_access_tm = time(NULL);
+
+					// Refresh current action
+					if (user_online_update(NULL) < 0)
+					{
+						log_error("user_online_update(NULL) error\n");
+					}
 				}
 
 				// extended key handler

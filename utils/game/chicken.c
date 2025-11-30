@@ -412,6 +412,15 @@ static int select_menu()
 		{
 			return 0; // input timeout
 		}
+
+		BBS_last_access_tm = time(NULL);
+
+		// Refresh current action
+		if (user_online_update(NULL) < 0)
+		{
+			log_error("user_online_update(NULL) error\n");
+		}
+
 		if (tiredstrong > 20)
 		{
 			clearscr();
