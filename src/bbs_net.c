@@ -522,6 +522,7 @@ static int bbsnet_connect(int n)
 
 		if (ssh_options_set(session, SSH_OPTIONS_FD, &sock) < 0 ||
 			ssh_options_set(session, SSH_OPTIONS_PROCESS_CONFIG, &ssh_process_config) < 0 ||
+			ssh_options_set(session, SSH_OPTIONS_KNOWNHOSTS, SSH_KNOWN_HOSTS_FILE) < 0 ||
 			ssh_options_set(session, SSH_OPTIONS_HOST, bbsnet_conf[n].ip) < 0 ||
 			ssh_options_set(session, SSH_OPTIONS_USER, remote_user) < 0 ||
 			ssh_options_set(session, SSH_OPTIONS_HOSTKEYS, "+ssh-rsa") < 0 ||
@@ -530,6 +531,8 @@ static int bbsnet_connect(int n)
 			log_error("Error setting SSH options: %s\n", ssh_get_error(session));
 			goto cleanup;
 		}
+
+		ssh_set_blocking(session, 0);
 
 		while (!SYS_server_exit)
 		{
@@ -545,7 +548,28 @@ static int bbsnet_connect(int n)
 			}
 		}
 
-		ssh_set_blocking(session, 0);
+		ret = ssh_session_is_known_server(session);
+		switch (ret)
+		{
+		case SSH_KNOWN_HOSTS_NOT_FOUND:
+		case SSH_KNOWN_HOSTS_UNKNOWN:
+			if (ssh_session_update_known_hosts(session) != SSH_OK)
+			{
+				log_error("ssh_session_update_known_hosts(%s) error\n", bbsnet_conf[n].ip);
+				prints("\033[1;31m无法添加服务器证书\033[m");
+				press_any_key();
+				goto cleanup;
+			}
+			log_common("SSH key of (%s) is added into %s\n", bbsnet_conf[n].ip, SSH_KNOWN_HOSTS_FILE);
+		case SSH_KNOWN_HOSTS_OK:
+			break;
+		case SSH_KNOWN_HOSTS_CHANGED:
+		case SSH_KNOWN_HOSTS_OTHER:
+			log_error("ssh_session_is_known_server(%s) error: %d\n", bbsnet_conf[n].ip, ret);
+			prints("\033[1;31m服务器证书已变更\033[m");
+			press_any_key();
+			goto cleanup;
+		}
 
 		for (int i = 0; !SYS_server_exit;)
 		{
