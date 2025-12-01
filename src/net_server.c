@@ -422,6 +422,8 @@ static int fork_server(void)
 			log_error("Error setting SSH options: %s\n", ssh_get_error(SSH_session));
 			goto cleanup;
 		}
+
+		ssh_set_blocking(SSH_session, 0);
 	}
 
 	// Redirect Input
@@ -637,6 +639,8 @@ int net_server(const char *hostaddr, in_port_t port[])
 		flags_server[i] = fcntl(socket_server[i], F_GETFL, 0);
 		fcntl(socket_server[i], F_SETFL, flags_server[i] | O_NONBLOCK);
 	}
+
+	ssh_bind_set_blocking(sshbind, 0);
 
 	hash_dict_pid_sockaddr = hash_dict_create(MAX_CLIENT_LIMIT);
 	if (hash_dict_pid_sockaddr == NULL)
