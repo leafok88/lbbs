@@ -52,6 +52,7 @@ extern const char LOG_FILE_ERROR[];
 extern const char DATA_WELCOME[];
 extern const char DATA_REGISTER[];
 extern const char DATA_GOODBYE[];
+extern const char DATA_EULA[];
 extern const char DATA_LICENSE[];
 extern const char DATA_COPYRIGHT[];
 extern const char DATA_VERSION[];

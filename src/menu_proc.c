@@ -125,6 +125,13 @@ int exit_bbs(void *param)
 	return EXITBBS;
 }
 
+int eula(void *param)
+{
+	display_file(DATA_EULA, 0);
+
+	return REDRAW;
+}
+
 int license(void *param)
 {
 	display_file(DATA_LICENSE, 0);

@@ -36,6 +36,7 @@ const char LOG_FILE_ERROR[] = "log/error.log";
 const char DATA_WELCOME[] = "data/welcome.txt";
 const char DATA_REGISTER[] = "data/register.txt";
 const char DATA_GOODBYE[] = "data/goodbye.txt";
+const char DATA_EULA[] = "data/eula.txt";
 const char DATA_LICENSE[] = "data/license.txt";
 const char DATA_COPYRIGHT[] = "data/copyright.txt";
 const char DATA_VERSION[] = "data/version.txt";
@@ -60,6 +61,7 @@ const char *data_files_load_startup[] = {
 	DATA_WELCOME,
 	DATA_REGISTER,
 	DATA_GOODBYE,
+	DATA_EULA,
 	DATA_LICENSE,
 	DATA_COPYRIGHT,
 	DATA_VERSION,
