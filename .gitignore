@@ -1,4 +1,5 @@
 /conf/bbsd.conf
+/conf/bbsnet.conf
 /conf/badwords.conf
 /conf/ssh_host_rsa_key*
 /conf/ssh_host_ed25519_key*
