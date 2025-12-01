@@ -41,6 +41,7 @@
 6) 修改以下配置文件  
    默认配置文件被命名为*.default，请先将其改名。  
    $LBBS_HOME_DIR/conf/bbsd.conf  
+   $LBBS_HOME_DIR/conf/bbsnet.conf  
    $LBBS_HOME_DIR/conf/badwords.conf  
    $LBBS_HOME_DIR/utils/conf/db_conn.conf.php  
 

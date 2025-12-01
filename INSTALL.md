@@ -41,6 +41,7 @@ To install LBBS on Linux (e.g. Debian 13, CentOS Stream 10), please perform the 
 7) Modify following configuration files  
    Default configuration files is saved as *.default, you should rename them first.  
    $LBBS_HOME_DIR/conf/bbsd.conf  
+   $LBBS_HOME_DIR/conf/bbsnet.conf  
    $LBBS_HOME_DIR/conf/badwords.conf  
    $LBBS_HOME_DIR/utils/conf/db_conn.conf.php  
 
