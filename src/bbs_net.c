@@ -1172,14 +1172,16 @@ static int bbsnet_selchange()
 
 	moveto(20, 1);
 	clrtoeol();
-	prints("|\033[1m单位: \033[1;33m%s\033[m%*s  站名: \033[1;33m%s\033[m",
-		   bbsnet_conf[i].org_name, 20 - str_length(bbsnet_conf[i].org_name, 1), "", bbsnet_conf[i].site_name);
+	prints("|\033[1m单位: \033[1;33m%s\033[m%*s  站名: \033[1;33m%s\033[m%*s  类型: \033[1;33m%s\033[m",
+		   bbsnet_conf[i].org_name, 20 - str_length(bbsnet_conf[i].org_name, 1), "",
+		   bbsnet_conf[i].site_name, 20 - str_length(bbsnet_conf[i].site_name, 1), "",
+		   (bbsnet_conf[i].use_ssh ? "SSH" : "Telnet"));
 	moveto(20, 80);
 	prints("|");
 	moveto(21, 1);
 	clrtoeol();
-	prints("|\033[1m连往: \033[1;33m%-20s\033[m  端口: \033[1;33m%-5d\033[m            类型: \033[1;33m%s\033[m",
-		   bbsnet_conf[i].host_name, bbsnet_conf[i].port, (bbsnet_conf[i].use_ssh ? "SSH" : "Telnet"));
+	prints("|\033[1m连往: \033[1;33m%-20s\033[m  端口: \033[1;33m%-5d\033[m                 编码: \033[1;33m%s\033[m",
+		   bbsnet_conf[i].host_name, bbsnet_conf[i].port, bbsnet_conf[i].charset);
 	moveto(21, 80);
 	prints("|");
 	iflush();
