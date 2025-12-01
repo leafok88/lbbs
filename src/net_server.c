@@ -538,7 +538,7 @@ int net_server(const char *hostaddr, in_port_t port[])
 
 	if (ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_HOSTKEY, SSH_HOST_RSA_KEY_FILE) < 0)
 	{
-		log_error("Error setting SSH RSA key: %s\n", SSH_HOST_RSA_KEY_FILE);
+		log_error("Error loading SSH RSA key: %s\n", SSH_HOST_RSA_KEY_FILE);
 	}
 	else
 	{
@@ -546,7 +546,15 @@ int net_server(const char *hostaddr, in_port_t port[])
 	}
 	if (ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_HOSTKEY, SSH_HOST_ED25519_KEY_FILE) < 0)
 	{
-		log_error("Error setting SSH ED25519 key: %s\n", SSH_HOST_ED25519_KEY_FILE);
+		log_error("Error loading SSH ED25519 key: %s\n", SSH_HOST_ED25519_KEY_FILE);
+	}
+	else
+	{
+		ssh_key_valid = 1;
+	}
+	if (ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_HOSTKEY, SSH_HOST_ECDSA_KEY_FILE) < 0)
+	{
+		log_error("Error loading SSH ECDSA key: %s\n", SSH_HOST_ECDSA_KEY_FILE);
 	}
 	else
 	{
@@ -562,7 +570,7 @@ int net_server(const char *hostaddr, in_port_t port[])
 
 	if (ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_BINDADDR, hostaddr) < 0 ||
 		ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_BINDPORT, &port) < 0 ||
-		ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_HOSTKEY_ALGORITHMS, "ssh-rsa,rsa-sha2-512,rsa-sha2-256,ssh-ed25519") < 0 ||
+		ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_HOSTKEY_ALGORITHMS, "+ssh-rsa") < 0 ||
 		ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_LOG_VERBOSITY, &ssh_log_level) < 0)
 	{
 		log_error("Error setting SSH bind options: %s\n", ssh_get_error(sshbind));

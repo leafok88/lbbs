@@ -54,6 +54,7 @@
 9) 创建SSH2 RSA / ED25519 证书  
    ssh-keygen -t rsa -C "Your Server Name" -f $LBBS_HOME_DIR/conf/ssh_host_rsa_key  
    ssh-keygen -t ed25519 -C "Your Server Name" -f $LBBS_HOME_DIR/conf/ssh_host_ed25519_key  
+   ssh-keygen -t ecdsa -C "Your Server Name" -f $LBBS_HOME_DIR/conf/ssh_host_ecdsa_key  
 
 10) 启动服务程序  
    sudo -u bbs $LBBS_HOME_DIR/bin/bbsd
