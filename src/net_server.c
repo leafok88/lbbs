@@ -839,6 +839,7 @@ int net_server(const char *hostaddr, in_port_t port[])
 				log_error("load_menu(top10_menu) error\n");
 				unload_menu(&top10_menu);
 			}
+			top10_menu.allow_exit = 1;
 
 			for (int i = 0; i < data_files_load_startup_count; i++)
 			{
