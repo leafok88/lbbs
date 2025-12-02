@@ -43,6 +43,7 @@ int bbs_login(void)
 	char password[BBS_password_max_len + 1];
 	int i = 0;
 	int ok = 0;
+	int ret;
 
 	for (; !SYS_server_exit && !ok && i < BBS_login_retry_times; i++)
 	{
@@ -79,7 +80,14 @@ int bbs_login(void)
 				continue;
 			}
 
-			ok = (check_user(username, password) == 0);
+			ret = check_user(username, password);
+			if (ret == 2) // Enforce update user agreement
+			{
+				BBS_update_eula = 1;
+				ret = 0;
+			}
+
+			ok = (ret == 0);
 			iflush();
 		}
 	}
@@ -316,6 +324,13 @@ int check_user(const char *username, const char *password)
 		goto cleanup;
 	}
 
+	if (!SSH_v2 && checklevel2(&BBS_priv, P_MAN_S))
+	{
+		prints("\033[1;31m非普通账户必须使用SSH方式登录\033[m\r\n");
+		ret = 1;
+		goto cleanup;
+	}
+
 	ret = load_user_info(db, BBS_uid);
 
 	switch (ret)
@@ -326,9 +341,8 @@ int check_user(const char *username, const char *password)
 		prints("\033[1;31m读取用户数据错误...\033[m\r\n");
 		ret = -1;
 		goto cleanup;
-	case -2: // Unused
-		prints("\033[1;31m请通过Web登录更新用户许可协议...\033[m\r\n");
-		ret = 1;
+	case -2: // Enforce update user agreement
+		ret = 2;
 		goto cleanup;
 	case -3: // Dead
 		prints("\033[1;31m很遗憾，您已经永远离开了我们的世界！\033[m\r\n");
@@ -336,13 +350,6 @@ int check_user(const char *username, const char *password)
 		goto cleanup;
 	default:
 		ret = -2;
-		goto cleanup;
-	}
-
-	if (!SSH_v2 && checklevel2(&BBS_priv, P_MAN_S))
-	{
-		prints("\033[1;31m非普通账户必须使用SSH方式登录\033[m\r\n");
-		ret = 1;
 		goto cleanup;
 	}
 
@@ -443,7 +450,13 @@ int load_user_info(MYSQL *db, int BBS_uid)
 
 	if (load_priv(db, &BBS_priv, BBS_uid) != 0)
 	{
-		ret = -1;
+		ret = -1; // Data not found
+		goto cleanup;
+	}
+
+	if (last_login_dt < BBS_eula_tm)
+	{
+		ret = -2; // require update agreement first
 		goto cleanup;
 	}
 
@@ -600,4 +613,81 @@ int user_online_update(const char *action)
 	mysql_close(db);
 
 	return 1;
+}
+
+int user_update_agreement(void)
+{
+	MYSQL *db = NULL;
+	char sql[SQL_BUFFER_LEN];
+	int ch;
+	int ret = 0;
+
+	clearscr();
+	moveto(2, 1);
+	prints("尊敬的用户：");
+	moveto(3, 1);
+	prints("    本站的《用户许可协议》已更新，您必须在仔细阅读并接受后，才能继续使用本站提供的服务。");
+	press_any_key();
+
+	clearscr();
+	display_file(DATA_EULA, 1);
+
+	while (!SYS_server_exit)
+	{
+		clearscr();
+		moveto(2, 1);
+
+		ch = press_any_key_ex("您是否接受本站的《用户许可协议》? (A)接受, (D)拒绝, (R)再看看协议 [D]", 60);
+		switch (toupper(ch))
+		{
+		case KEY_NULL:
+			return -1;
+		case KEY_TIMEOUT:
+		case CR:
+		case 'D':
+			moveto(3, 1);
+			prints("您已拒绝《用户许可协议》，再见！");
+			press_any_key();
+			return 0;
+		case 'R':
+			clearscr();
+			display_file(DATA_EULA, 1);
+			continue;
+		case 'A':
+			db = db_open();
+			if (db == NULL)
+			{
+				ret = -1;
+				goto cleanup;
+			}
+
+			snprintf(sql, sizeof(sql),
+					 "UPDATE user_pubinfo SET visit_count = visit_count + 1, "
+					 "last_login_dt = NOW() WHERE UID = %d",
+					 BBS_priv.uid);
+			if (mysql_query(db, sql) != 0)
+			{
+				log_error("Update user_pubinfo error: %s\n", mysql_error(db));
+				ret = -1;
+				goto cleanup;
+			}
+
+			mysql_close(db);
+			db = NULL;
+
+			moveto(3, 1);
+			prints("您已接受《用户许可协议》，请重新登陆。");
+			press_any_key();
+			return 1;
+		default:
+			continue;
+		}
+
+		break;
+	}
+
+cleanup:
+	mysql_close(db);
+
+	return ret;
 }

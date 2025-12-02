@@ -1,4 +1,4 @@
 [1;37m
     该功能尚未完成，请使用WWW方式注册新帐号。
-    https://www.fenglin.info/bbs/user_reg.php
+    https://fenglin.info/bbs/user_reg.php
 [m

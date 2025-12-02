@@ -1,7 +1,9 @@
 /conf/bbsd.conf
+/conf/bbsnet.conf
 /conf/badwords.conf
 /conf/ssh_host_rsa_key*
 /conf/ssh_host_ed25519_key*
+/conf/ssh_host_ecdsa_key*
 /utils/conf/db_conn.conf.php
 /aclocal.m4
 /autom4te.cache

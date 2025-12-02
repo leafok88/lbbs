@@ -385,6 +385,13 @@ int bbs_main()
 	log_common("User [%s] (uid=%d) login from %s:%d\n",
 			   BBS_username, BBS_priv.uid, hostaddr_client, port_client);
 
+	// Check EULA update status
+	if (BBS_update_eula)
+	{
+		user_update_agreement();
+		goto cleanup;
+	}
+
 	// Load section aid locations
 	if (section_aid_locations_load(BBS_priv.uid) < 0)
 	{

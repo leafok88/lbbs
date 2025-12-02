@@ -44,6 +44,8 @@ extern const char CONF_BWF[];
 extern const char CONF_TOP10_MENU[];
 extern const char SSH_HOST_RSA_KEY_FILE[];
 extern const char SSH_HOST_ED25519_KEY_FILE[];
+extern const char SSH_HOST_ECDSA_KEY_FILE[];
+extern const char SSH_KNOWN_HOSTS_FILE[];
 
 extern const char LOG_FILE_INFO[];
 extern const char LOG_FILE_ERROR[];
@@ -51,6 +53,7 @@ extern const char LOG_FILE_ERROR[];
 extern const char DATA_WELCOME[];
 extern const char DATA_REGISTER[];
 extern const char DATA_GOODBYE[];
+extern const char DATA_EULA[];
 extern const char DATA_LICENSE[];
 extern const char DATA_COPYRIGHT[];
 extern const char DATA_VERSION[];

@@ -88,7 +88,7 @@ void clrtobot(int line_begin)
 void clearscr()
 {
 	prints("\033[2J");
-	moveto(0, 0);
+	moveto(1, 1);
 }
 
 inline int press_any_key()
