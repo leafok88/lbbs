@@ -447,6 +447,12 @@ int load_user_info(MYSQL *db, int BBS_uid)
 		goto cleanup;
 	}
 
+	if (last_login_dt < BBS_eula_tm)
+	{
+		ret = -2; // require update agreement first
+		goto cleanup;
+	}
+
 cleanup:
 	mysql_free_result(rs);
 

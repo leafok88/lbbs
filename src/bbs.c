@@ -47,6 +47,7 @@ char BBS_nickname[BBS_nickname_max_len + 1];
 char BBS_user_tz[BBS_user_tz_max_len + 1];
 int BBS_user_exp;
 
+time_t BBS_eula_tm;
 time_t BBS_login_tm;
 time_t BBS_last_access_tm;
 

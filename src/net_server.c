@@ -40,6 +40,7 @@
 #include <netinet/in.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
+#include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 
@@ -509,6 +510,7 @@ cleanup:
 
 int net_server(const char *hostaddr, in_port_t port[])
 {
+	struct stat file_stat;
 	unsigned int addrlen;
 	int ret;
 	int flags_server[2];
@@ -801,6 +803,16 @@ int net_server(const char *hostaddr, in_port_t port[])
 			if (bwf_load(CONF_BWF) < 0)
 			{
 				log_error("Reload BWF conf failed\n");
+			}
+
+			// Get EULA modification tm
+			if (stat(DATA_EULA, &file_stat) == -1)
+			{
+				log_error("stat(%s) error\n", DATA_EULA, errno);
+			}
+			else
+			{
+				BBS_eula_tm = file_stat.st_mtim.tv_sec;
 			}
 
 			if (detach_menu_shm(&bbs_menu) < 0)
