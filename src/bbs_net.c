@@ -257,7 +257,7 @@ static int bbsnet_connect(int n)
 	ssh_session session = NULL;
 	ssh_channel channel = NULL;
 	int ssh_process_config = 0;
-	int ssh_log_level = SSH_LOG_PROTOCOL;
+	int ssh_log_level = SSH_LOG_NOLOG;
 
 	if (user_online_update("BBS_NET") < 0)
 	{
