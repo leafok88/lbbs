@@ -115,6 +115,11 @@ static int auth_password(ssh_session session, const char *user,
 	else
 	{
 		ret = check_user(user, password);
+		if (ret == 2) // Enforce update user agreement
+		{
+			BBS_update_eula = 1;
+			ret = 0;
+		}
 	}
 
 	if (ret == 0)
