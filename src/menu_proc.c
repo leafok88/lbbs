@@ -306,6 +306,11 @@ int show_top10_menu(void *param)
 				BBS_last_access_tm = time(NULL);
 			}
 
+			if (user_online_update("TOP10_MENU") < 0)
+			{
+				log_error("user_online_update(TOP10_MENU) error\n");
+			}
+
 			switch (ch)
 			{
 			case KEY_NULL: // broken pipe

@@ -270,6 +270,12 @@ static enum select_cmd_t section_list_select(int total_page, int item_count, int
 		if (ch != KEY_NULL && ch != KEY_TIMEOUT)
 		{
 			BBS_last_access_tm = time(NULL);
+
+			// Refresh current action
+			if (user_online_update(NULL) < 0)
+			{
+				log_error("user_online_update(NULL) error\n");
+			}
 		}
 
 		switch (ch)
@@ -1398,6 +1404,12 @@ int section_list_ex_dir_display(SECTION_LIST *p_section)
 			if (ch != KEY_NULL && ch != KEY_TIMEOUT)
 			{
 				BBS_last_access_tm = time(NULL);
+
+				// Refresh current action
+				if (user_online_update(NULL) < 0)
+				{
+					log_error("user_online_update(NULL) error\n");
+				}
 			}
 
 			switch (ch)
