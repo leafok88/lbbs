@@ -866,7 +866,7 @@ int section_list_loader_launch(void)
 	return 0;
 }
 
-int query_section_articles(SECTION_LIST *p_section, int page_id, ARTICLE *p_articles[],
+int query_section_articles(SECTION_LIST *p_section, int page_id, const ARTICLE *p_articles[],
 						   int *p_article_count, int *p_page_count, int *p_ontop_start_offset)
 {
 	ARTICLE *p_article;

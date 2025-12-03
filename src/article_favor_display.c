@@ -56,7 +56,7 @@ static int article_favor_draw_screen(int display_sname)
 	return 0;
 }
 
-static int article_favor_draw_items(int page_id, ARTICLE *p_articles[], char p_snames[][BBS_section_name_max_len + 1],
+static int article_favor_draw_items(int page_id, const ARTICLE *p_articles[], char p_snames[][BBS_section_name_max_len + 1],
 									int article_count, int display_sname)
 {
 	char str_time[LINE_BUFFER_LEN];
@@ -299,7 +299,7 @@ int article_favor_display(ARTICLE_FAVOR *p_favor)
 
 	char page_info_str[LINE_BUFFER_LEN];
 	char snames[BBS_article_limit_per_page][BBS_section_name_max_len + 1];
-	ARTICLE *p_articles[BBS_article_limit_per_page];
+	const ARTICLE *p_articles[BBS_article_limit_per_page];
 	int article_count;
 	int page_count;
 	int page_id = 0;
