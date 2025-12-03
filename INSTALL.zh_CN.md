@@ -41,6 +41,7 @@
 6) 修改以下配置文件  
    默认配置文件被命名为*.default，请先将其改名。  
    $LBBS_HOME_DIR/conf/bbsd.conf  
+   $LBBS_HOME_DIR/conf/bbsnet.conf  
    $LBBS_HOME_DIR/conf/badwords.conf  
    $LBBS_HOME_DIR/utils/conf/db_conn.conf.php  
 
@@ -53,6 +54,7 @@
 9) 创建SSH2 RSA / ED25519 证书  
    ssh-keygen -t rsa -C "Your Server Name" -f $LBBS_HOME_DIR/conf/ssh_host_rsa_key  
    ssh-keygen -t ed25519 -C "Your Server Name" -f $LBBS_HOME_DIR/conf/ssh_host_ed25519_key  
+   ssh-keygen -t ecdsa -C "Your Server Name" -f $LBBS_HOME_DIR/conf/ssh_host_ecdsa_key  
 
 10) 启动服务程序  
    sudo -u bbs $LBBS_HOME_DIR/bin/bbsd

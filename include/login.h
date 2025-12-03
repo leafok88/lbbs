@@ -29,4 +29,6 @@ extern int user_online_exp(MYSQL *db);
 
 extern int user_online_update(const char *action);
 
+extern int user_update_agreement(void);
+
 #endif //_LOGIN_H_

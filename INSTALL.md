@@ -41,6 +41,7 @@ To install LBBS on Linux (e.g. Debian 13, CentOS Stream 10), please perform the 
 7) Modify following configuration files  
    Default configuration files is saved as *.default, you should rename them first.  
    $LBBS_HOME_DIR/conf/bbsd.conf  
+   $LBBS_HOME_DIR/conf/bbsnet.conf  
    $LBBS_HOME_DIR/conf/badwords.conf  
    $LBBS_HOME_DIR/utils/conf/db_conn.conf.php  
 
@@ -53,6 +54,7 @@ To install LBBS on Linux (e.g. Debian 13, CentOS Stream 10), please perform the 
 10) Create SSH2 RSA / ED25519 certificate  
    ssh-keygen -t rsa -C "Your Server Name" -f $LBBS_HOME_DIR/conf/ssh_host_rsa_key  
    ssh-keygen -t ed25519 -C "Your Server Name" -f $LBBS_HOME_DIR/conf/ssh_host_ed25519_key  
+   ssh-keygen -t ecdsa -C "Your Server Name" -f $LBBS_HOME_DIR/conf/ssh_host_ecdsa_key  
 
 11) Startup  
    sudo -u bbs $LBBS_HOME_DIR/bin/bbsd

@@ -63,6 +63,9 @@ extern char BBS_nickname[BBS_nickname_max_len + 1];
 extern char BBS_user_tz[BBS_user_tz_max_len + 1];
 extern int BBS_user_exp;
 
+extern time_t BBS_eula_tm;
+extern int BBS_update_eula;
+
 extern time_t BBS_login_tm;
 extern time_t BBS_last_access_tm;
 

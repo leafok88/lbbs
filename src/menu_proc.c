@@ -125,6 +125,13 @@ int exit_bbs(void *param)
 	return EXITBBS;
 }
 
+int eula(void *param)
+{
+	display_file(DATA_EULA, 0);
+
+	return REDRAW;
+}
+
 int license(void *param)
 {
 	display_file(DATA_LICENSE, 0);
@@ -297,6 +304,11 @@ int show_top10_menu(void *param)
 			if (ch != KEY_NULL && ch != KEY_TIMEOUT)
 			{
 				BBS_last_access_tm = time(NULL);
+			}
+
+			if (user_online_update("TOP10_MENU") < 0)
+			{
+				log_error("user_online_update(TOP10_MENU) error\n");
 			}
 
 			switch (ch)

@@ -20,6 +20,7 @@ static const BBS_CMD bbs_cmd_list[] = {
 	{"LIST_SECTION", list_section},
 	{"RunMBEM", exec_mbem},
 	{"EXITBBS", exit_bbs},
+	{"EULA", eula},
 	{"LICENSE", license},
 	{"COPYRIGHT", copyright},
 	{"VERSION", version},

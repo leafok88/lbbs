@@ -28,6 +28,8 @@ const char CONF_BWF[] = "conf/badwords.conf";
 const char CONF_TOP10_MENU[] = "var/bbs_top_menu.conf";
 const char SSH_HOST_RSA_KEY_FILE[] = "conf/ssh_host_rsa_key";
 const char SSH_HOST_ED25519_KEY_FILE[] = "conf/ssh_host_ed25519_key";
+const char SSH_HOST_ECDSA_KEY_FILE[] = "conf/ssh_host_ecdsa_key";
+const char SSH_KNOWN_HOSTS_FILE[] = "var/known_hosts";
 
 const char LOG_FILE_INFO[] = "log/bbsd.log";
 const char LOG_FILE_ERROR[] = "log/error.log";
@@ -35,6 +37,7 @@ const char LOG_FILE_ERROR[] = "log/error.log";
 const char DATA_WELCOME[] = "data/welcome.txt";
 const char DATA_REGISTER[] = "data/register.txt";
 const char DATA_GOODBYE[] = "data/goodbye.txt";
+const char DATA_EULA[] = "data/eula.txt";
 const char DATA_LICENSE[] = "data/license.txt";
 const char DATA_COPYRIGHT[] = "data/copyright.txt";
 const char DATA_VERSION[] = "data/version.txt";
@@ -59,6 +62,7 @@ const char *data_files_load_startup[] = {
 	DATA_WELCOME,
 	DATA_REGISTER,
 	DATA_GOODBYE,
+	DATA_EULA,
 	DATA_LICENSE,
 	DATA_COPYRIGHT,
 	DATA_VERSION,

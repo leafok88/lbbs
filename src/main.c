@@ -106,6 +106,7 @@ int main(int argc, char *argv[])
 	struct sigaction act = {0};
 	int i;
 	int j;
+	struct stat file_stat;
 
 	// Parse args
 	for (i = 1; i < argc; i++)
@@ -230,6 +231,14 @@ int main(int argc, char *argv[])
 	{
 		return -2;
 	}
+
+	// Get EULA modification tm
+	if (stat(DATA_EULA, &file_stat) == -1)
+	{
+		log_error("stat(%s) error\n", DATA_EULA, errno);
+		goto cleanup;
+	}
+	BBS_eula_tm = file_stat.st_mtim.tv_sec;
 
 	// Check article cache dir
 	ret = mkdir(VAR_ARTICLE_CACHE_DIR, 0750);

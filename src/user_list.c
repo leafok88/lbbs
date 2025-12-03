@@ -91,6 +91,7 @@ const USER_ACTION_MAP user_action_map[] =
 		{"MENU", "菜单选择"},
 		{"POST_ARTICLE", "撰写文章"},
 		{"REPLY_ARTICLE", "回复文章"},
+		{"TOP10_MENU", "十大热门"},
 		{"USER_LIST", "查花名册"},
 		{"USER_ONLINE", "环顾四周"},
 		{"VIEW_ARTICLE", "阅读文章"},

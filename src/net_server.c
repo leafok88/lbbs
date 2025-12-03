@@ -40,6 +40,7 @@
 #include <netinet/in.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
+#include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 
@@ -114,6 +115,11 @@ static int auth_password(ssh_session session, const char *user,
 	else
 	{
 		ret = check_user(user, password);
+		if (ret == 2) // Enforce update user agreement
+		{
+			BBS_update_eula = 1;
+			ret = 0;
+		}
 	}
 
 	if (ret == 0)
@@ -422,6 +428,8 @@ static int fork_server(void)
 			log_error("Error setting SSH options: %s\n", ssh_get_error(SSH_session));
 			goto cleanup;
 		}
+
+		ssh_set_blocking(SSH_session, 0);
 	}
 
 	// Redirect Input
@@ -507,6 +515,7 @@ cleanup:
 
 int net_server(const char *hostaddr, in_port_t port[])
 {
+	struct stat file_stat;
 	unsigned int addrlen;
 	int ret;
 	int flags_server[2];
@@ -536,7 +545,7 @@ int net_server(const char *hostaddr, in_port_t port[])
 
 	if (ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_HOSTKEY, SSH_HOST_RSA_KEY_FILE) < 0)
 	{
-		log_error("Error setting SSH RSA key: %s\n", SSH_HOST_RSA_KEY_FILE);
+		log_error("Error loading SSH RSA key: %s\n", SSH_HOST_RSA_KEY_FILE);
 	}
 	else
 	{
@@ -544,7 +553,15 @@ int net_server(const char *hostaddr, in_port_t port[])
 	}
 	if (ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_HOSTKEY, SSH_HOST_ED25519_KEY_FILE) < 0)
 	{
-		log_error("Error setting SSH ED25519 key: %s\n", SSH_HOST_ED25519_KEY_FILE);
+		log_error("Error loading SSH ED25519 key: %s\n", SSH_HOST_ED25519_KEY_FILE);
+	}
+	else
+	{
+		ssh_key_valid = 1;
+	}
+	if (ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_HOSTKEY, SSH_HOST_ECDSA_KEY_FILE) < 0)
+	{
+		log_error("Error loading SSH ECDSA key: %s\n", SSH_HOST_ECDSA_KEY_FILE);
 	}
 	else
 	{
@@ -560,7 +577,7 @@ int net_server(const char *hostaddr, in_port_t port[])
 
 	if (ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_BINDADDR, hostaddr) < 0 ||
 		ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_BINDPORT, &port) < 0 ||
-		ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_HOSTKEY_ALGORITHMS, "ssh-rsa,rsa-sha2-512,rsa-sha2-256,ssh-ed25519") < 0 ||
+		ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_HOSTKEY_ALGORITHMS, "+ssh-rsa") < 0 ||
 		ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_LOG_VERBOSITY, &ssh_log_level) < 0)
 	{
 		log_error("Error setting SSH bind options: %s\n", ssh_get_error(sshbind));
@@ -637,6 +654,8 @@ int net_server(const char *hostaddr, in_port_t port[])
 		flags_server[i] = fcntl(socket_server[i], F_GETFL, 0);
 		fcntl(socket_server[i], F_SETFL, flags_server[i] | O_NONBLOCK);
 	}
+
+	ssh_bind_set_blocking(sshbind, 0);
 
 	hash_dict_pid_sockaddr = hash_dict_create(MAX_CLIENT_LIMIT);
 	if (hash_dict_pid_sockaddr == NULL)
@@ -791,6 +810,16 @@ int net_server(const char *hostaddr, in_port_t port[])
 				log_error("Reload BWF conf failed\n");
 			}
 
+			// Get EULA modification tm
+			if (stat(DATA_EULA, &file_stat) == -1)
+			{
+				log_error("stat(%s) error\n", DATA_EULA, errno);
+			}
+			else
+			{
+				BBS_eula_tm = file_stat.st_mtim.tv_sec;
+			}
+
 			if (detach_menu_shm(&bbs_menu) < 0)
 			{
 				log_error("detach_menu_shm(bbs_menu) error\n");
@@ -810,6 +839,7 @@ int net_server(const char *hostaddr, in_port_t port[])
 				log_error("load_menu(top10_menu) error\n");
 				unload_menu(&top10_menu);
 			}
+			top10_menu.allow_exit = 1;
 
 			for (int i = 0; i < data_files_load_startup_count; i++)
 			{
