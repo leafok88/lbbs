@@ -218,6 +218,12 @@ static enum select_cmd_t user_list_select(int total_page, int item_count, int *p
 		if (ch != KEY_NULL && ch != KEY_TIMEOUT)
 		{
 			BBS_last_access_tm = time(NULL);
+
+			// Refresh current action
+			if (user_online_update(NULL) < 0)
+			{
+				log_error("user_online_update(NULL) error\n");
+			}
 		}
 
 		switch (ch)
