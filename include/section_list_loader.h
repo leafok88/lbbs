@@ -42,7 +42,7 @@ extern int section_list_loader_launch(void);
 
 // Return on success : real page_id (>= 0)
 //           failure : error number (< 0)
-extern int query_section_articles(SECTION_LIST *p_section, int page_id, ARTICLE *p_articles[],
+extern int query_section_articles(SECTION_LIST *p_section, int page_id, const ARTICLE *p_articles[],
 								  int *p_article_count, int *p_page_count, int *p_ontop_start_offset);
 
 // Input direction =  0 : locate p_article_cur

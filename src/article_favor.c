@@ -445,7 +445,7 @@ int article_favor_set(int32_t aid, ARTICLE_FAVOR *p_favor, int state)
 	return 1; // Set complete
 }
 
-int query_favor_articles(ARTICLE_FAVOR *p_favor, int page_id, ARTICLE **p_articles,
+int query_favor_articles(ARTICLE_FAVOR *p_favor, int page_id, const ARTICLE **p_articles,
 						 char p_snames[][BBS_section_name_max_len + 1], int *p_article_count, int *p_page_count)
 {
 	SECTION_LIST *p_section;
