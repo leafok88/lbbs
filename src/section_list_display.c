@@ -1099,7 +1099,7 @@ int section_list_display(const char *sname, int32_t aid)
 			{
 				break;
 			}
-			ret = article_exc_set(p_articles[selected_index]->aid, p_articles[selected_index]->excerption);
+			ret = article_exc_set(p_section, p_articles[selected_index]->aid, p_articles[selected_index]->excerption);
 			if (ret < 0)
 			{
 				log_error("article_exc_set(aid=%d, excerption=%d) error\n",

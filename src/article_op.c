@@ -38,7 +38,7 @@ int display_article_meta(int32_t aid)
 	return 0;
 }
 
-int article_exc_set(int32_t aid, int8_t is_exc)
+int article_exc_set(SECTION_LIST *p_section, int32_t aid, int8_t is_exc)
 {
 	MYSQL *db = NULL;
 	MYSQL_RES *rs = NULL;
@@ -202,9 +202,17 @@ int article_exc_set(int32_t aid, int8_t is_exc)
 		goto cleanup;
 	}
 
+	section_list_rw_lock(p_section);
+	section_list_set_article_excerption(p_section,aid,set_exc);
+	section_list_rw_unlock(p_section);
+
 	// Commit transaction
 	if (mysql_query(db, "COMMIT") != 0)
 	{
+		section_list_rw_lock(p_section);
+		section_list_set_article_excerption(p_section,aid,!set_exc);
+		section_list_rw_unlock(p_section);
+
 		log_error("Commit transaction error: %s\n", mysql_error(db));
 		ret = -1;
 		goto cleanup;
@@ -219,6 +227,6 @@ int article_exc_set(int32_t aid, int8_t is_exc)
 cleanup:
 	mysql_free_result(rs);
 	mysql_close(db);
-	press_any_key_ex(ret_msg, 3);
+	//press_any_key_ex(ret_msg, 3);
 	return ret;
 }
