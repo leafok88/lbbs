@@ -52,6 +52,16 @@ int article_exc_set(SECTION_LIST *p_section, int32_t aid, int8_t is_exc)
 	int8_t excerption = 0;
 	int8_t set_exc = !is_exc;
 	char ret_msg[ret_msg_len] = "";
+	int section_set_exc_ret = 0;
+
+	if (p_section == NULL)
+	{
+		log_error("NULL pointer error\n");
+		ret = -1;
+		goto cleanup;
+	}
+
+	sid = p_section->sid;
 
 	db = db_open();
 	if (db == NULL)
@@ -91,24 +101,21 @@ int article_exc_set(SECTION_LIST *p_section, int32_t aid, int8_t is_exc)
 	}
 	if ((row = mysql_fetch_row(rs)))
 	{
+		if (sid != atoi(row[2]))
+		{
+			log_error("sid error: sid = %d, row[2]= %s, aid = %d\n", sid, row[2], aid);
+			ret = -2;
+			goto cleanup;
+		}
 		uid = atoi(row[0]);
 		tid = atoi(row[1]);
-		sid = atoi(row[2]);
 		transship = (int8_t)atoi(row[3]);
 		excerption = (int8_t)atoi(row[4]);
 	}
 	else
 	{
-		if (mysql_errno(db))
-		{
-			log_error("mysql_fetch_row() error: %s\n", mysql_error(db));
-			ret = -2;
-		}
-		else
-		{
-			strncpy(ret_msg, "文章不存在", ret_msg_len);
-			ret = -1;
-		}
+		log_error("mysql_fetch_row() error: %s\n", mysql_error(db));
+		ret = -2;
 		goto cleanup;
 	}
 	mysql_free_result(rs);
@@ -116,7 +123,7 @@ int article_exc_set(SECTION_LIST *p_section, int32_t aid, int8_t is_exc)
 
 	// Check if already set
 	if (set_exc == excerption)
-	{
+	{		
 		snprintf(ret_msg, sizeof(ret_msg), "已%s文摘区", set_exc ? "收录" : "移出");
 		ret = 1;
 		goto cleanup;
@@ -202,16 +209,58 @@ int article_exc_set(SECTION_LIST *p_section, int32_t aid, int8_t is_exc)
 		goto cleanup;
 	}
 
-	section_list_rw_lock(p_section);
-	section_list_set_article_excerption(p_section,aid,set_exc);
-	section_list_rw_unlock(p_section);
+	if (section_list_rw_lock(p_section) != 0)
+	{
+		log_error("section_list_rw_lock error on section %d\n", sid);
+		ret = -1;
+		goto cleanup;
+	}
+	section_set_exc_ret = section_list_set_article_excerption(p_section, aid, set_exc);
+	if (section_set_exc_ret == 0)
+	{
+		ret = 1;
+		goto cleanup;
+	}
+	else if (section_set_exc_ret < 0)
+	{
+		log_error("section_list_set_article_excerption error sid = %d, aid= %d, set_exc= %d\n", sid, aid, set_exc);
+		ret = -1;
+		goto cleanup;
+	}
+	if (section_list_rw_unlock(p_section) != 0)
+	{
+		log_error("section_list_rw_unlock error on section %d\n", sid);
+		ret = -1;
+		goto cleanup;
+	}
 
 	// Commit transaction
 	if (mysql_query(db, "COMMIT") != 0)
 	{
-		section_list_rw_lock(p_section);
-		section_list_set_article_excerption(p_section,aid,!set_exc);
-		section_list_rw_unlock(p_section);
+		if (section_list_rw_lock(p_section) != 0)
+		{
+			log_error("section_list_rw_lock error on section %d\n", sid);
+			ret = -1;
+			goto cleanup;
+		}
+		section_set_exc_ret = section_list_set_article_excerption(p_section, aid, !set_exc);
+		if (section_set_exc_ret == 0)
+		{
+			ret = -1;
+			goto cleanup;
+		}
+		else if (section_set_exc_ret < 0)
+		{
+			log_error("section_list_set_article_excerption error sid = %d, aid= %d, set_exc= %d\n", sid, aid, !set_exc);
+			ret = -1;
+			goto cleanup;
+		}
+		if (section_list_rw_unlock(p_section) != 0)
+		{
+			log_error("section_list_rw_unlock error on section %d\n", sid);
+			ret = -1;
+			goto cleanup;
+		}
 
 		log_error("Commit transaction error: %s\n", mysql_error(db));
 		ret = -1;
@@ -227,6 +276,6 @@ int article_exc_set(SECTION_LIST *p_section, int32_t aid, int8_t is_exc)
 cleanup:
 	mysql_free_result(rs);
 	mysql_close(db);
-	//press_any_key_ex(ret_msg, 3);
+	// press_any_key_ex(ret_msg, 3);
 	return ret;
 }
