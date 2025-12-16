@@ -240,9 +240,9 @@ static int bbsnet_connect(int n)
 	int loop;
 	int error;
 	int sock_connected = 0;
-	int flags_sock;
-	int flags_stdin;
-	int flags_stdout;
+	int flags_sock = -1;
+	int flags_stdin = -1;
+	int flags_stdout = -1;
 	struct sockaddr_in sin;
 	char input_buf[LINE_BUFFER_LEN];
 	char output_buf[LINE_BUFFER_LEN];
@@ -347,7 +347,7 @@ static int bbsnet_connect(int n)
 	{
 		prints("\033[1;31m查找主机名失败！\033[m\r\n");
 		press_any_key();
-		return -1;
+		goto cleanup;
 	}
 
 	sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
@@ -356,7 +356,7 @@ static int bbsnet_connect(int n)
 	{
 		prints("\033[1;31m无法创建socket！\033[m\r\n");
 		press_any_key();
-		return -1;
+		goto cleanup;
 	}
 
 	sin.sin_family = AF_INET;
@@ -367,8 +367,7 @@ static int bbsnet_connect(int n)
 	{
 		log_error("Bind address %s:%u failed (%d)\n",
 				  inet_ntoa(sin.sin_addr), ntohs(sin.sin_port), errno);
-		close(sock);
-		return -2;
+		goto cleanup;
 	}
 
 	memset(&sin, 0, sizeof(sin));
@@ -384,14 +383,38 @@ static int bbsnet_connect(int n)
 	process_bar(0, MAX_PROCESS_BAR_LEN);
 
 	// Set socket as non-blocking
-	flags_sock = fcntl(sock, F_GETFL, 0);
-	fcntl(sock, F_SETFL, flags_sock | O_NONBLOCK);
+	if ((flags_sock = fcntl(sock, F_GETFL, 0)) == -1)
+	{
+		log_error("fcntl(F_GETFL) error (%d)\n", errno);
+		goto cleanup;
+	}
+	if ((fcntl(sock, F_SETFL, flags_sock | O_NONBLOCK)) == -1)
+	{
+		log_error("fcntl(F_SETFL) error (%d)\n", errno);
+		goto cleanup;
+	}
 
 	// Set STDIN/STDOUT as non-blocking
-	flags_stdin = fcntl(STDIN_FILENO, F_GETFL, 0);
-	flags_stdout = fcntl(STDOUT_FILENO, F_GETFL, 0);
-	fcntl(STDIN_FILENO, F_SETFL, flags_stdin | O_NONBLOCK);
-	fcntl(STDOUT_FILENO, F_SETFL, flags_stdout | O_NONBLOCK);
+	if ((flags_stdin = fcntl(STDIN_FILENO, F_GETFL, 0)) == -1)
+	{
+		log_error("fcntl(F_GETFL) error (%d)\n", errno);
+		goto cleanup;
+	}
+	if ((flags_stdout = fcntl(STDOUT_FILENO, F_GETFL, 0)) == -1)
+	{
+		log_error("fcntl(F_GETFL) error (%d)\n", errno);
+		goto cleanup;
+	}
+	if ((fcntl(STDIN_FILENO, F_SETFL, flags_stdin | O_NONBLOCK)) == -1)
+	{
+		log_error("fcntl(F_SETFL) error (%d)\n", errno);
+		goto cleanup;
+	}
+	if ((fcntl(STDOUT_FILENO, F_SETFL, flags_stdout | O_NONBLOCK)) == -1)
+	{
+		log_error("fcntl(F_SETFL) error (%d)\n", errno);
+		goto cleanup;
+	}
 
 #ifdef HAVE_SYS_EPOLL_H
 	epollfd = epoll_create1(0);
@@ -1178,8 +1201,14 @@ cleanup:
 	}
 
 	// Restore STDIN/STDOUT flags
-	fcntl(STDIN_FILENO, F_SETFL, flags_stdin);
-	fcntl(STDOUT_FILENO, F_SETFL, flags_stdout);
+	if (flags_stdin != -1 &&fcntl(STDIN_FILENO, F_SETFL, flags_stdin) == -1)
+	{
+		log_error("fcntl(F_SETFL) error (%d)\n", errno);
+	}
+	if (flags_stdout != -1 && fcntl(STDOUT_FILENO, F_SETFL, flags_stdout) == -1)
+	{
+		log_error("fcntl(F_SETFL) error (%d)\n", errno);
+	}
 
 	if (sock != -1 && close(sock) == -1)
 	{
