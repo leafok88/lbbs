@@ -937,8 +937,6 @@ int net_server(const char *hostaddr, in_port_t port[])
 
 					port_client = ntohs(sin.sin_port);
 
-					log_common("Accept %s connection from %s:%d\n", (SSH_v2 ? "SSH" : "telnet"), hostaddr_client, port_client);
-
 					if (SYS_child_process_count - 1 < BBS_max_client)
 					{
 						j = 0;
@@ -950,6 +948,9 @@ int net_server(const char *hostaddr, in_port_t port[])
 
 						if (j < BBS_max_client_per_ip)
 						{
+							log_common("Accept %s connection from %s:%d, already have %d connections\n",
+									   (SSH_v2 ? "SSH" : "telnet"), hostaddr_client, port_client, j);
+
 							if ((pid = fork_server()) < 0)
 							{
 								log_error("fork_server() error\n");
@@ -971,12 +972,14 @@ int net_server(const char *hostaddr, in_port_t port[])
 						}
 						else
 						{
-							log_error("Rejected client connection from %s over limit per IP (%d)\n", hostaddr_client, BBS_max_client_per_ip);
+							log_error("Rejected %s connection from %s:%d over limit per IP (%d)\n",
+									  (SSH_v2 ? "SSH" : "telnet"), hostaddr_client, port_client, BBS_max_client_per_ip);
 						}
 					}
 					else
 					{
-						log_error("Rejected client connection over limit (%d)\n", SYS_child_process_count - 1);
+						log_error("Rejected %s connection from %s:%d over limit (%d)\n",
+								  (SSH_v2 ? "SSH" : "telnet"), hostaddr_client, port_client, SYS_child_process_count - 1);
 					}
 
 					if (close(socket_client) == -1)
