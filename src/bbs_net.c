@@ -68,6 +68,8 @@ struct _bbsnet_conf
 
 static MENU_SET bbsnet_menu;
 
+static void unload_bbsnet_conf(void);
+
 static int load_bbsnet_conf(const char *file_config)
 {
 	FILE *fp;
@@ -75,18 +77,15 @@ static int load_bbsnet_conf(const char *file_config)
 	MENU_ITEM *p_menu_item;
 	MENU_ITEM_ID menu_item_id;
 	char line[LINE_BUFFER_LEN], *t1, *t2, *t3, *t4, *t5, *t6, *saveptr;
+	int port;
 
-	fp = fopen(file_config, "r");
-	if (fp == NULL)
-	{
-		return -1;
-	}
+	unload_bbsnet_conf();
 
 	bbsnet_menu.p_menu_pool = calloc(1, sizeof(MENU));
 	if (bbsnet_menu.p_menu_pool == NULL)
 	{
 		log_error("calloc(p_menu_pool) error\n");
-		return -3;
+		return -1;
 	}
 	bbsnet_menu.menu_count = 1;
 
@@ -94,7 +93,8 @@ static int load_bbsnet_conf(const char *file_config)
 	if (bbsnet_menu.p_menu_item_pool == NULL)
 	{
 		log_error("calloc(p_menu_item_pool) error\n");
-		return -3;
+		unload_bbsnet_conf();
+		return -1;
 	}
 	bbsnet_menu.menu_item_count = MAXSTATION;
 
@@ -104,6 +104,13 @@ static int load_bbsnet_conf(const char *file_config)
 	p_menu->name[sizeof(p_menu->name) - 1] = '\0';
 	p_menu->title.show = 0;
 	p_menu->screen_show = 0;
+
+	fp = fopen(file_config, "r");
+	if (fp == NULL)
+	{
+		unload_bbsnet_conf();
+		return -2;
+	}
 
 	menu_item_id = 0;
 	while (fgets(line, sizeof(line), fp) && menu_item_id < MAXSTATION)
@@ -127,7 +134,15 @@ static int load_bbsnet_conf(const char *file_config)
 		bbsnet_conf[menu_item_id].org_name[sizeof(bbsnet_conf[menu_item_id].org_name) - 1] = '\0';
 		strncpy(bbsnet_conf[menu_item_id].host_name, t3, sizeof(bbsnet_conf[menu_item_id].host_name) - 1);
 		bbsnet_conf[menu_item_id].host_name[sizeof(bbsnet_conf[menu_item_id].host_name) - 1] = '\0';
-		bbsnet_conf[menu_item_id].port = (in_port_t)(t4 ? atoi(t4) : 23);
+		port = atoi(t4);
+		if (port <= 0 || port > 65535)
+		{
+			log_error("Invalid port value %d of menu item %d\n", port, menu_item_id);
+			fclose(fp);
+			unload_bbsnet_conf();
+			return -3;
+		}
+		bbsnet_conf[menu_item_id].port = (in_port_t)port;
 		bbsnet_conf[menu_item_id].use_ssh = (toupper(t5[0]) == 'Y');
 		strncpy(bbsnet_conf[menu_item_id].charset, t6, sizeof(bbsnet_conf[menu_item_id].charset) - 1);
 		bbsnet_conf[menu_item_id].charset[sizeof(bbsnet_conf[menu_item_id].charset) - 1] = '\0';
@@ -136,7 +151,9 @@ static int load_bbsnet_conf(const char *file_config)
 		if (p_menu_item == NULL)
 		{
 			log_error("get_menu_item_by_id(%d) return NULL pointer\n", menu_item_id);
-			return -1;
+			fclose(fp);
+			unload_bbsnet_conf();
+			return -3;
 		}
 
 		p_menu_item->row = (int16_t)(2 + menu_item_id / STATION_PER_LINE);
@@ -148,7 +165,7 @@ static int load_bbsnet_conf(const char *file_config)
 		p_menu_item->name[0] =
 			(char)(menu_item_id < MAXSTATION / 2 ? 'A' + menu_item_id : 'a' + menu_item_id);
 		p_menu_item->name[1] = '\0';
-		snprintf(p_menu_item->text, sizeof(p_menu_item->text), "[1;36m%c.[m %s",
+		snprintf(p_menu_item->text, sizeof(p_menu_item->text), "\033[1;36m%c.\033[m %s",
 				 p_menu_item->name[0], bbsnet_conf[menu_item_id].site_name);
 
 		p_menu->items[p_menu->item_count] = menu_item_id;
@@ -171,10 +188,17 @@ static void unload_bbsnet_conf(void)
 	bbsnet_menu.menu_count = 0;
 	bbsnet_menu.menu_item_count = 0;
 
-	free(bbsnet_menu.p_menu_pool);
-	bbsnet_menu.p_menu_pool = NULL;
-	free(bbsnet_menu.p_menu_item_pool);
-	bbsnet_menu.p_menu_item_pool = NULL;
+	if (bbsnet_menu.p_menu_pool)
+	{
+		free(bbsnet_menu.p_menu_pool);
+		bbsnet_menu.p_menu_pool = NULL;
+	}
+
+	if (bbsnet_menu.p_menu_item_pool)
+	{
+		free(bbsnet_menu.p_menu_item_pool);
+		bbsnet_menu.p_menu_item_pool = NULL;
+	}
 }
 
 static void process_bar(int n, int len)
@@ -182,7 +206,11 @@ static void process_bar(int n, int len)
 	char buf[LINE_BUFFER_LEN];
 	char buf2[LINE_BUFFER_LEN];
 
-	if (len > LINE_BUFFER_LEN)
+	if (len <= 0)
+	{
+		len = 1;
+	}
+	else if (len > LINE_BUFFER_LEN)
 	{
 		len = LINE_BUFFER_LEN - 1;
 	}
@@ -207,12 +235,14 @@ static void process_bar(int n, int len)
 
 static int bbsnet_connect(int n)
 {
-	int sock, ret, loop, error;
+	int sock = -1;
+	int ret;
+	int loop;
+	int error;
 	int sock_connected = 0;
 	int flags_sock;
 	int flags_stdin;
 	int flags_stdout;
-	int len;
 	struct sockaddr_in sin;
 	char input_buf[LINE_BUFFER_LEN];
 	char output_buf[LINE_BUFFER_LEN];
@@ -226,13 +256,13 @@ static int bbsnet_connect(int n)
 	int output_conv_len = 0;
 	int input_conv_offset = 0;
 	int output_conv_offset = 0;
-	iconv_t input_cd = NULL;
-	iconv_t output_cd = NULL;
-	char tocode[32];
+	iconv_t input_cd = (iconv_t)(-1);
+	iconv_t output_cd = (iconv_t)(-1);
+	char tocode[CHARSET_MAX_LEN + 20];
 
 #ifdef HAVE_SYS_EPOLL_H
 	struct epoll_event ev, events[MAX_EVENTS];
-	int epollfd;
+	int epollfd = -1;
 #else
 	struct pollfd pfds[3];
 #endif
@@ -258,6 +288,7 @@ static int bbsnet_connect(int n)
 	ssh_channel channel = NULL;
 	int ssh_process_config = 0;
 	int ssh_log_level = SSH_LOG_NOLOG;
+	long ssh_timeout = 0;
 
 	if (user_online_update("BBS_NET") < 0)
 	{
@@ -336,6 +367,7 @@ static int bbsnet_connect(int n)
 	{
 		log_error("Bind address %s:%u failed (%d)\n",
 				  inet_ntoa(sin.sin_addr), ntohs(sin.sin_port), errno);
+		close(sock);
 		return -2;
 	}
 
@@ -366,7 +398,7 @@ static int bbsnet_connect(int n)
 	if (epollfd < 0)
 	{
 		log_error("epoll_create1() error (%d)\n", errno);
-		return -1;
+		goto cleanup;
 	}
 
 	ev.events = EPOLLOUT | EPOLLET;
@@ -453,8 +485,8 @@ static int bbsnet_connect(int n)
 				if (pfds[i].fd == sock && (pfds[i].revents & POLLOUT))
 #endif
 				{
-					len = sizeof(error);
-					if (getsockopt(sock, SOL_SOCKET, SO_ERROR, &error, (socklen_t *)&len) < 0)
+					socklen_t len = sizeof(error);
+					if (getsockopt(sock, SOL_SOCKET, SO_ERROR, &error, &len) < 0)
 					{
 						log_error("getsockopt() error (%d) !\n", error);
 						goto cleanup;
@@ -532,7 +564,12 @@ static int bbsnet_connect(int n)
 			goto cleanup;
 		}
 
-		ssh_set_blocking(session, 0);
+		ssh_timeout = 5; // second
+		if (ssh_options_set(session, SSH_OPTIONS_TIMEOUT, &ssh_timeout) < 0)
+		{
+			log_error("Error setting SSH options: %s\n", ssh_get_error(session));
+			goto cleanup;
+		}
 
 		while (!SYS_server_exit)
 		{
@@ -661,6 +698,15 @@ static int bbsnet_connect(int n)
 				goto cleanup;
 			}
 		}
+
+		ssh_timeout = 0; // second
+		if (ssh_options_set(session, SSH_OPTIONS_TIMEOUT, &ssh_timeout) < 0)
+		{
+			log_error("Error setting SSH options: %s\n", ssh_get_error(session));
+			goto cleanup;
+		}
+
+		ssh_set_blocking(session, 0);
 	}
 
 	prints("\033[1;31m连接成功！\033[m\r\n");
@@ -683,7 +729,6 @@ static int bbsnet_connect(int n)
 	if (output_cd == (iconv_t)(-1))
 	{
 		log_error("iconv_open(%s->%s) error: %d\n", bbsnet_conf[n].charset, tocode, errno);
-		iconv_close(input_cd);
 		goto cleanup;
 	}
 
@@ -1102,12 +1147,18 @@ static int bbsnet_connect(int n)
 		}
 	}
 
-	iconv_close(input_cd);
-	iconv_close(output_cd);
-
 cleanup:
+	if (input_cd != (iconv_t)(-1))
+	{
+		iconv_close(input_cd);
+	}
+	if (output_cd != (iconv_t)(-1))
+	{
+		iconv_close(output_cd);
+	}
+
 #ifdef HAVE_SYS_EPOLL_H
-	if (close(epollfd) < 0)
+	if (epollfd != -1 && close(epollfd) < 0)
 	{
 		log_error("close(epoll) error (%d)\n");
 	}
@@ -1115,16 +1166,22 @@ cleanup:
 
 	if (bbsnet_conf[n].use_ssh)
 	{
-		ssh_channel_free(channel);
-		ssh_disconnect(session);
-		ssh_free(session);
+		if (channel != NULL)
+		{
+			ssh_channel_free(channel);
+		}
+		if (session != NULL)
+		{
+			ssh_disconnect(session);
+			ssh_free(session);
+		}
 	}
 
 	// Restore STDIN/STDOUT flags
 	fcntl(STDIN_FILENO, F_SETFL, flags_stdin);
 	fcntl(STDOUT_FILENO, F_SETFL, flags_stdout);
 
-	if (close(sock) == -1)
+	if (sock != -1 && close(sock) == -1)
 	{
 		log_error("Close socket failed\n");
 	}
@@ -1193,7 +1250,14 @@ int bbs_net()
 {
 	int ch, i;
 
-	load_bbsnet_conf(CONF_BBSNET);
+	if (load_bbsnet_conf(CONF_BBSNET) < 0)
+	{
+		clearscr();
+		moveto(1, 1);
+		prints("加载穿梭配置失败！");
+		press_any_key();
+		return -1;
+	}
 
 	bbsnet_refresh();
 	display_menu(&bbsnet_menu);
