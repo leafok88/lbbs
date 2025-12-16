@@ -972,14 +972,14 @@ int net_server(const char *hostaddr, in_port_t port[])
 						}
 						else
 						{
-							log_error("Rejected %s connection from %s:%d over limit per IP (%d)\n",
-									  (SSH_v2 ? "SSH" : "telnet"), hostaddr_client, port_client, BBS_max_client_per_ip);
+							log_error("Rejected %s connection from %s:%d over limit per IP (%d >= %d)\n",
+									  (SSH_v2 ? "SSH" : "telnet"), hostaddr_client, port_client, j, BBS_max_client_per_ip);
 						}
 					}
 					else
 					{
-						log_error("Rejected %s connection from %s:%d over limit (%d)\n",
-								  (SSH_v2 ? "SSH" : "telnet"), hostaddr_client, port_client, SYS_child_process_count - 1);
+						log_error("Rejected %s connection from %s:%d over limit (%d >= %d)\n",
+								  (SSH_v2 ? "SSH" : "telnet"), hostaddr_client, port_client, SYS_child_process_count - 1, BBS_max_client);
 					}
 
 					if (close(socket_client) == -1)
