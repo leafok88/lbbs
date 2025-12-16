@@ -54,6 +54,7 @@ enum _bbs_net_constant_t
 	STATION_PER_LINE = 4,
 	USERNAME_MAX_LEN = 20,
 	PASSWORD_MAX_LEN = 20,
+	SSH_CONNECT_TIMEOUT = 5, // seconds
 };
 
 struct _bbsnet_conf
@@ -279,6 +280,7 @@ static int bbsnet_connect(int n)
 	char local_addr[IP_ADDR_LEN];
 	int local_port;
 	socklen_t sock_len;
+	time_t t_begin;
 	time_t t_used = time(NULL);
 	struct tm *tm_used;
 	int ch;
@@ -288,7 +290,6 @@ static int bbsnet_connect(int n)
 	ssh_channel channel = NULL;
 	int ssh_process_config = 0;
 	int ssh_log_level = SSH_LOG_NOLOG;
-	long ssh_timeout = 0;
 
 	if (user_online_update("BBS_NET") < 0)
 	{
@@ -587,25 +588,32 @@ static int bbsnet_connect(int n)
 			goto cleanup;
 		}
 
-		ssh_timeout = 5; // second
-		if (ssh_options_set(session, SSH_OPTIONS_TIMEOUT, &ssh_timeout) < 0)
-		{
-			log_error("Error setting SSH options: %s\n", ssh_get_error(session));
-			goto cleanup;
-		}
+		ssh_set_blocking(session, 0);
 
-		while (!SYS_server_exit)
+		t_begin = time(NULL);
+		ret = SSH_ERROR;
+		while (!SYS_server_exit && time(NULL) - t_begin < SSH_CONNECT_TIMEOUT)
 		{
 			ret = ssh_connect(session);
 			if (ret == SSH_OK)
 			{
 				break;
 			}
-			else if (ret == SSH_ERROR)
+			else if (ret == SSH_AGAIN)
 			{
-				log_error("ssh_connect() error\n");
+				// log_error("ssh_connect() error: SSH_AGAIN\n");
+			}
+			else // if (ret == SSH_ERROR)
+			{
+				log_error("ssh_connect() error: SSH_ERROR\n");
 				goto cleanup;
 			}
+		}
+		if (ret != SSH_OK)
+		{
+			prints("\033[1;31m连接超时！\033[m\r\n");
+			press_any_key();
+			goto cleanup;
 		}
 
 		ret = ssh_session_is_known_server(session);
@@ -616,7 +624,7 @@ static int bbsnet_connect(int n)
 			if (ssh_session_update_known_hosts(session) != SSH_OK)
 			{
 				log_error("ssh_session_update_known_hosts(%s) error\n", bbsnet_conf[n].host_name);
-				prints("\033[1;31m无法添加服务器证书\033[m");
+				prints("\033[1;31m无法添加服务器证书\033[m\r\n");
 				press_any_key();
 				goto cleanup;
 			}
@@ -626,12 +634,13 @@ static int bbsnet_connect(int n)
 		case SSH_KNOWN_HOSTS_CHANGED:
 		case SSH_KNOWN_HOSTS_OTHER:
 			log_error("ssh_session_is_known_server(%s) error: %d\n", bbsnet_conf[n].host_name, ret);
-			prints("\033[1;31m服务器证书已变更\033[m");
+			prints("\033[1;31m服务器证书已变更\033[m\r\n");
 			press_any_key();
 			goto cleanup;
 		}
 
-		for (int i = 0; !SYS_server_exit;)
+		ret = SSH_AUTH_ERROR;
+		while (!SYS_server_exit && time(NULL) - t_begin < SSH_CONNECT_TIMEOUT)
 		{
 			ret = ssh_userauth_password(session, NULL, remote_pass);
 			if (ret == SSH_AUTH_SUCCESS)
@@ -640,37 +649,26 @@ static int bbsnet_connect(int n)
 			}
 			else if (ret == SSH_AUTH_AGAIN)
 			{
-#ifdef _DEBUG
-				log_error("ssh_userauth_password() error: SSH_AUTH_AGAIN\n");
-#endif
+				// log_error("ssh_userauth_password() error: SSH_AUTH_AGAIN\n");
 			}
 			else if (ret == SSH_AUTH_ERROR)
 			{
-				log_error("ssh_userauth_password() error: %d\n", ret);
+				log_error("ssh_userauth_password() error: SSH_AUTH_ERROR\n");
 				goto cleanup;
 			}
 			else // if (ret == SSH_AUTH_DENIED)
 			{
+				log_error("ssh_userauth_password() error: SSH_AUTH_DENIED\n");
 				prints("\033[1;31m身份验证失败！\033[m\r\n");
-				i++;
-				if (i < BBS_login_retry_times)
-				{
-					prints("请输入密码: ");
-					iflush();
-					if (str_input(remote_pass, sizeof(remote_pass), NOECHO) < 0)
-					{
-						goto cleanup;
-					}
-					if (remote_pass[0] == '\0')
-					{
-						goto cleanup;
-					}
-				}
-				else
-				{
-					goto cleanup;
-				}
+				press_any_key();
+				goto cleanup;
 			}
+		}
+		if (ret != SSH_AUTH_SUCCESS)
+		{
+			prints("\033[1;31m连接超时！\033[m\r\n");
+			press_any_key();
+			goto cleanup;
 		}
 
 		channel = ssh_channel_new(session);
@@ -680,56 +678,80 @@ static int bbsnet_connect(int n)
 			goto cleanup;
 		}
 
-		while (!SYS_server_exit)
+		ret = SSH_ERROR;
+		while (!SYS_server_exit && time(NULL) - t_begin < SSH_CONNECT_TIMEOUT)
 		{
 			ret = ssh_channel_open_session(channel);
 			if (ret == SSH_OK)
 			{
 				break;
 			}
-			else if (ret == SSH_ERROR)
+			else if (ret == SSH_AGAIN)
 			{
-				log_error("ssh_channel_open_session() error\n");
+				// log_error("ssh_channel_open_session() error: SSH_AGAIN\n");
+			}
+			else // if (ret == SSH_ERROR)
+			{
+				log_error("ssh_channel_open_session() error: SSH_ERROR\n");
 				goto cleanup;
 			}
 		}
+		if (ret != SSH_OK)
+		{
+			prints("\033[1;31m连接超时！\033[m\r\n");
+			press_any_key();
+			goto cleanup;
+		}
 
-		while (!SYS_server_exit)
+		ret = SSH_ERROR;
+		while (!SYS_server_exit && time(NULL) - t_begin < SSH_CONNECT_TIMEOUT)
 		{
 			ret = ssh_channel_request_pty(channel);
 			if (ret == SSH_OK)
 			{
 				break;
 			}
-			else if (ret == SSH_ERROR)
+			else if (ret == SSH_AGAIN)
 			{
-				log_error("ssh_channel_request_pty() error\n");
+				// log_error("ssh_channel_request_pty() error: SSH_AGAIN\n");
+			}
+			else // if (ret == SSH_ERROR)
+			{
+				log_error("ssh_channel_request_pty() error: SSH_ERROR\n");
 				goto cleanup;
 			}
 		}
+		if (ret != SSH_OK)
+		{
+			prints("\033[1;31m连接超时！\033[m\r\n");
+			press_any_key();
+			goto cleanup;
+		}
 
-		while (!SYS_server_exit)
+		ret = SSH_ERROR;
+		while (!SYS_server_exit && time(NULL) - t_begin < SSH_CONNECT_TIMEOUT)
 		{
 			ret = ssh_channel_request_shell(channel);
 			if (ret == SSH_OK)
 			{
 				break;
 			}
-			else if (ret == SSH_ERROR)
+			else if (ret == SSH_AGAIN)
 			{
-				log_error("ssh_channel_request_shell() error\n");
+				// log_error("ssh_channel_request_shell() error: SSH_AGAIN\n");
+			}
+			else // if (ret == SSH_ERROR)
+			{
+				log_error("ssh_channel_request_shell() error: SSH_ERROR\n");
 				goto cleanup;
 			}
 		}
-
-		ssh_timeout = 0; // second
-		if (ssh_options_set(session, SSH_OPTIONS_TIMEOUT, &ssh_timeout) < 0)
+		if (ret != SSH_OK)
 		{
-			log_error("Error setting SSH options: %s\n", ssh_get_error(session));
+			prints("\033[1;31m连接超时！\033[m\r\n");
+			press_any_key();
 			goto cleanup;
 		}
-
-		ssh_set_blocking(session, 0);
 	}
 
 	prints("\033[1;31m连接成功！\033[m\r\n");
@@ -1201,7 +1223,7 @@ cleanup:
 	}
 
 	// Restore STDIN/STDOUT flags
-	if (flags_stdin != -1 &&fcntl(STDIN_FILENO, F_SETFL, flags_stdin) == -1)
+	if (flags_stdin != -1 && fcntl(STDIN_FILENO, F_SETFL, flags_stdin) == -1)
 	{
 		log_error("fcntl(F_SETFL) error (%d)\n", errno);
 	}
@@ -1219,8 +1241,7 @@ cleanup:
 	tm_used = gmtime(&t_used);
 
 	log_common("BBSNET disconnect, %d days %d hours %d minutes %d seconds used\n",
-			   tm_used->tm_mday - 1, tm_used->tm_hour, tm_used->tm_min,
-			   tm_used->tm_sec);
+			   tm_used->tm_yday, tm_used->tm_hour, tm_used->tm_min, tm_used->tm_sec);
 
 	BBS_last_access_tm = time(NULL);
 
