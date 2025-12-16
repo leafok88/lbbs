@@ -64,8 +64,8 @@ static int stdout_conv_len = 0;
 static int stdin_conv_offset = 0;
 static int stdout_conv_offset = 0;
 
-static iconv_t stdin_cd = NULL;
-static iconv_t stdout_cd = NULL;
+static iconv_t stdin_cd = (iconv_t)(-1);
+static iconv_t stdout_cd = (iconv_t)(-1);
 
 int io_init(void)
 {
@@ -1189,6 +1189,7 @@ int io_conv_init(const char *charset)
 	{
 		log_error("iconv_open(%s->%s) error: %d\n", BBS_default_charset, tocode, errno);
 		iconv_close(stdin_cd);
+		stdin_cd = (iconv_t)(-1);
 		return -2;
 	}
 
@@ -1197,15 +1198,15 @@ int io_conv_init(const char *charset)
 
 int io_conv_cleanup(void)
 {
-	if (stdin_cd != NULL)
+	if (stdin_cd != (iconv_t)(-1))
 	{
 		iconv_close(stdin_cd);
-		stdin_cd = NULL;
+		stdin_cd = (iconv_t)(-1);
 	}
-	if (stdout_cd != NULL)
+	if (stdout_cd != (iconv_t)(-1))
 	{
 		iconv_close(stdout_cd);
-		stdout_cd = NULL;
+		stdout_cd = (iconv_t)(-1);
 	}
 
 	return 0;
