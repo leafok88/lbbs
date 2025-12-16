@@ -488,7 +488,7 @@ static int bbsnet_connect(int n)
 					socklen_t len = sizeof(error);
 					if (getsockopt(sock, SOL_SOCKET, SO_ERROR, &error, &len) < 0)
 					{
-						log_error("getsockopt() error (%d) !\n", error);
+						log_error("getsockopt() error (%d) !\n", errno);
 						goto cleanup;
 					}
 					if (error == 0)
