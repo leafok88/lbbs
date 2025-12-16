@@ -966,7 +966,7 @@ int net_server(const char *hostaddr, in_port_t port[])
 								ret = hash_dict_inc(hash_dict_sockaddr_count, (uint64_t)sin.sin_addr.s_addr, 1);
 								if (ret < 0)
 								{
-									log_error("hash_dict_inc(hash_dict_sockaddr_count, %s, %d) error\n", hostaddr_client, 1);
+									log_error("hash_dict_inc(hash_dict_sockaddr_count, %s, 1) error\n", hostaddr_client);
 								}
 							}
 						}
