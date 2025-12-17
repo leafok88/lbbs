@@ -147,7 +147,7 @@ int hash_dict_set(HASH_DICT *p_dict, uint64_t key, int64_t value)
 		if (p_item->key == key)
 		{
 			p_item->value = value;
-			return 0;
+			return 1;
 		}
 		p_item = p_item->p_next;
 	}
@@ -190,24 +190,10 @@ int hash_dict_inc(HASH_DICT *p_dict, uint64_t key, int64_t value_inc)
 		if (p_item->key == key)
 		{
 			p_item->value += value_inc;
-			return 0;
+			return 1;
 		}
 		p_item = p_item->p_next;
 	}
-
-	p_item = (HASH_ITEM *)memory_pool_alloc(p_dict->p_item_pool);
-	if (p_item == NULL)
-	{
-		log_error("memory_pool_alloc(HASH_ITEM) error\n");
-		return -1;
-	}
-
-	p_item->key = key;
-	p_item->value = value_inc;
-	p_item->p_next = p_dict->buckets[bucket_index][item_index_in_bucket];
-	p_dict->buckets[bucket_index][item_index_in_bucket] = p_item;
-
-	(p_dict->item_count)++;
 
 	return 0;
 }

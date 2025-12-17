@@ -39,9 +39,16 @@ typedef struct hash_dict_t HASH_DICT;
 extern HASH_DICT *hash_dict_create(int item_count_limit);
 extern void hash_dict_destroy(HASH_DICT *p_dict);
 
+// Return 1 if existing key updated, 0 if new key added, -1 on error
 extern int hash_dict_set(HASH_DICT *p_dict, uint64_t key, int64_t value);
+
+// Return 1 if existing key updated, 0 if key not exist, -1 on error
 extern int hash_dict_inc(HASH_DICT *p_dict, uint64_t key, int64_t value_inc);
+
+// Return 1 if key found, 0 if key not exist, -1 on error
 extern int hash_dict_get(HASH_DICT *p_dict, uint64_t key, int64_t *p_value);
+
+// Return 1 if key deleted, 0 if key not exist, -1 on error
 extern int hash_dict_del(HASH_DICT *p_dict, uint64_t key);
 
 inline unsigned int hash_dict_item_count(HASH_DICT *p_dict)
