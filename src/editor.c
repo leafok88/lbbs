@@ -974,7 +974,9 @@ int editor_display(EDITOR_DATA *p_editor_data)
 				switch (ch)
 				{
 				case KEY_NULL:
+#ifdef _DEBUG
 					log_error("KEY_NULL\n");
+#endif
 					goto cleanup;
 				case KEY_TIMEOUT:
 					log_error("User input timeout\n");

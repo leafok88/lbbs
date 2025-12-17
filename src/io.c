@@ -64,8 +64,8 @@ static int stdout_conv_len = 0;
 static int stdin_conv_offset = 0;
 static int stdout_conv_offset = 0;
 
-static iconv_t stdin_cd = NULL;
-static iconv_t stdout_cd = NULL;
+static iconv_t stdin_cd = (iconv_t)(-1);
+static iconv_t stdout_cd = (iconv_t)(-1);
 
 int io_init(void)
 {
@@ -308,7 +308,9 @@ int iflush(void)
 						ret = ssh_channel_write(SSH_channel, stdout_conv + stdout_conv_offset, (uint32_t)(stdout_conv_len - stdout_conv_offset));
 						if (ret == SSH_ERROR)
 						{
+#ifdef _DEBUG
 							log_error("ssh_channel_write() error: %s\n", ssh_get_error(SSH_session));
+#endif
 							retry = 0;
 							break;
 						}
@@ -392,7 +394,9 @@ int igetch(int timeout)
 		{
 			if (SSH_v2 && ssh_channel_is_closed(SSH_channel))
 			{
+#ifdef _DEBUG
 				log_error("SSH channel is closed\n");
+#endif
 				loop = 0;
 				break;
 			}
@@ -450,7 +454,9 @@ int igetch(int timeout)
 						ret = ssh_channel_read_nonblocking(SSH_channel, stdin_buf + stdin_buf_len, sizeof(stdin_buf) - (uint32_t)stdin_buf_len, 0);
 						if (ret == SSH_ERROR)
 						{
+#ifdef _DEBUG
 							log_error("ssh_channel_read_nonblocking() error: %s\n", ssh_get_error(SSH_session));
+#endif
 							loop = 0;
 							break;
 						}
@@ -1189,6 +1195,7 @@ int io_conv_init(const char *charset)
 	{
 		log_error("iconv_open(%s->%s) error: %d\n", BBS_default_charset, tocode, errno);
 		iconv_close(stdin_cd);
+		stdin_cd = (iconv_t)(-1);
 		return -2;
 	}
 
@@ -1197,15 +1204,15 @@ int io_conv_init(const char *charset)
 
 int io_conv_cleanup(void)
 {
-	if (stdin_cd != NULL)
+	if (stdin_cd != (iconv_t)(-1))
 	{
 		iconv_close(stdin_cd);
-		stdin_cd = NULL;
+		stdin_cd = (iconv_t)(-1);
 	}
-	if (stdout_cd != NULL)
+	if (stdout_cd != (iconv_t)(-1))
 	{
 		iconv_close(stdout_cd);
-		stdout_cd = NULL;
+		stdout_cd = (iconv_t)(-1);
 	}
 
 	return 0;

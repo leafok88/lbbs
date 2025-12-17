@@ -720,7 +720,9 @@ int display_data(const void *p_data, long display_line_total, const long *p_line
 				switch (ch)
 				{
 				case KEY_NULL:
+#ifdef _DEBUG
 					log_error("KEY_NULL\n");
+#endif
 					goto cleanup;
 				case KEY_TIMEOUT:
 					log_error("User input timeout\n");
