@@ -722,9 +722,9 @@ int net_server(const char *hostaddr, in_port_t port[])
 					else
 					{
 						ret = hash_dict_inc(hash_dict_sockaddr_count, (uint64_t)j, -1);
-						if (ret < 0)
+						if (ret <= 0)
 						{
-							log_error("hash_dict_inc(hash_dict_sockaddr_count, %d, -1) error\n", j);
+							log_error("hash_dict_inc(hash_dict_sockaddr_count, %d, -1) error: %d\n", j, ret);
 						}
 
 						ret = hash_dict_del(hash_dict_pid_sockaddr, (uint64_t)pid);
@@ -948,9 +948,6 @@ int net_server(const char *hostaddr, in_port_t port[])
 
 						if (j < BBS_max_client_per_ip)
 						{
-							log_common("Accept %s connection from %s:%d, already have %d connections\n",
-									   (SSH_v2 ? "SSH" : "telnet"), hostaddr_client, port_client, j);
-
 							if ((pid = fork_server()) < 0)
 							{
 								log_error("fork_server() error\n");
@@ -963,10 +960,29 @@ int net_server(const char *hostaddr, in_port_t port[])
 									log_error("hash_dict_set(hash_dict_pid_sockaddr, %d, %s) error\n", pid, hostaddr_client);
 								}
 
-								ret = hash_dict_inc(hash_dict_sockaddr_count, (uint64_t)sin.sin_addr.s_addr, 1);
-								if (ret < 0)
+								if (j == 0)
 								{
-									log_error("hash_dict_inc(hash_dict_sockaddr_count, %s, 1) error\n", hostaddr_client);
+									// First connection from this IP
+									log_common("Accept %s connection from %s:%d\n",
+											   (SSH_v2 ? "SSH" : "telnet"), hostaddr_client, port_client);
+
+									ret = hash_dict_set(hash_dict_sockaddr_count, (uint64_t)sin.sin_addr.s_addr, 1);
+									if (ret < 0)
+									{
+										log_error("hash_dict_set(hash_dict_sockaddr_count, %s, 1) error\n", hostaddr_client);
+									}
+								}
+								else
+								{
+									// Increase connection count from this IP
+									log_common("Accept %s connection from %s:%d, already have %d connections\n",
+											   (SSH_v2 ? "SSH" : "telnet"), hostaddr_client, port_client, j);
+
+									ret = hash_dict_inc(hash_dict_sockaddr_count, (uint64_t)sin.sin_addr.s_addr, 1);
+									if (ret <= 0)
+									{
+										log_error("hash_dict_inc(hash_dict_sockaddr_count, %s, 1) error: %d\n", hostaddr_client, ret);
+									}
 								}
 							}
 						}
