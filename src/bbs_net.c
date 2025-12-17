@@ -802,14 +802,18 @@ static int bbsnet_connect(int n)
 	{
 		if (SSH_v2 && ssh_channel_is_closed(SSH_channel))
 		{
+#ifdef _DEBUG
 			log_error("SSH channel is closed\n");
+#endif
 			loop = 0;
 			break;
 		}
 
 		if (bbsnet_conf[n].use_ssh && ssh_channel_is_closed(channel))
 		{
+#ifdef _DEBUG
 			log_error("Remote SSH channel is closed\n");
+#endif
 			loop = 0;
 			break;
 		}
@@ -904,7 +908,9 @@ static int bbsnet_connect(int n)
 					ret = ssh_channel_read_nonblocking(SSH_channel, input_buf + input_buf_len, sizeof(input_buf) - (uint32_t)input_buf_len, 0);
 					if (ret == SSH_ERROR)
 					{
+#ifdef _DEBUG
 						log_error("ssh_channel_read_nonblocking() error: %s\n", ssh_get_error(SSH_session));
+#endif
 						loop = 0;
 						break;
 					}
@@ -1007,7 +1013,9 @@ static int bbsnet_connect(int n)
 					ret = ssh_channel_write(channel, input_conv + input_conv_offset, (uint32_t)(input_conv_len - input_conv_offset));
 					if (ret == SSH_ERROR)
 					{
+#ifdef _DEBUG
 						log_error("ssh_channel_write() error: %s\n", ssh_get_error(session));
+#endif
 						loop = 0;
 						break;
 					}
@@ -1029,7 +1037,9 @@ static int bbsnet_connect(int n)
 					}
 					else
 					{
+#ifdef _DEBUG
 						log_error("write(socket) error (%d)\n", errno);
+#endif
 						loop = 0;
 						break;
 					}
@@ -1067,7 +1077,9 @@ static int bbsnet_connect(int n)
 													   (uint32_t)(sizeof(output_buf) - (size_t)output_buf_len), 0);
 					if (ret == SSH_ERROR)
 					{
+#ifdef _DEBUG
 						log_error("ssh_channel_read_nonblocking() error: %s\n", ssh_get_error(session));
+#endif
 						loop = 0;
 						break;
 					}
@@ -1100,7 +1112,9 @@ static int bbsnet_connect(int n)
 					}
 					else
 					{
+#ifdef _DEBUG
 						log_error("read(socket) error (%d)\n", errno);
+#endif
 						loop = 0;
 						break;
 					}
@@ -1141,7 +1155,9 @@ static int bbsnet_connect(int n)
 					ret = ssh_channel_write(SSH_channel, output_conv + output_conv_offset, (uint32_t)(output_conv_len - output_conv_offset));
 					if (ret == SSH_ERROR)
 					{
+#ifdef _DEBUG
 						log_error("ssh_channel_write() error: %s\n", ssh_get_error(SSH_session));
+#endif
 						loop = 0;
 						break;
 					}
@@ -1163,7 +1179,9 @@ static int bbsnet_connect(int n)
 					}
 					else
 					{
+#ifdef _DEBUG
 						log_error("write(STDOUT) error (%d)\n", errno);
+#endif
 						loop = 0;
 						break;
 					}

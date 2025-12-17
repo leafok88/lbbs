@@ -308,7 +308,9 @@ int iflush(void)
 						ret = ssh_channel_write(SSH_channel, stdout_conv + stdout_conv_offset, (uint32_t)(stdout_conv_len - stdout_conv_offset));
 						if (ret == SSH_ERROR)
 						{
+#ifdef _DEBUG
 							log_error("ssh_channel_write() error: %s\n", ssh_get_error(SSH_session));
+#endif
 							retry = 0;
 							break;
 						}
@@ -392,7 +394,9 @@ int igetch(int timeout)
 		{
 			if (SSH_v2 && ssh_channel_is_closed(SSH_channel))
 			{
+#ifdef _DEBUG
 				log_error("SSH channel is closed\n");
+#endif
 				loop = 0;
 				break;
 			}
@@ -450,7 +454,9 @@ int igetch(int timeout)
 						ret = ssh_channel_read_nonblocking(SSH_channel, stdin_buf + stdin_buf_len, sizeof(stdin_buf) - (uint32_t)stdin_buf_len, 0);
 						if (ret == SSH_ERROR)
 						{
+#ifdef _DEBUG
 							log_error("ssh_channel_read_nonblocking() error: %s\n", ssh_get_error(SSH_session));
+#endif
 							loop = 0;
 							break;
 						}
