@@ -314,7 +314,9 @@ int show_top10_menu(void *param)
 			switch (ch)
 			{
 			case KEY_NULL: // broken pipe
+#ifdef _DEBUG
 				log_error("KEY_NULL\n");
+#endif
 				loop = 0;
 				break;
 			case KEY_TIMEOUT:

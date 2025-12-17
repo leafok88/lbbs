@@ -281,7 +281,9 @@ static enum select_cmd_t section_list_select(int total_page, int item_count, int
 		switch (ch)
 		{
 		case KEY_NULL: // broken pipe
+#ifdef _DEBUG
 			log_error("KEY_NULL\n");
+#endif
 			return EXIT_SECTION;
 		case KEY_TIMEOUT:
 			if (time(NULL) - BBS_last_access_tm >= BBS_max_user_idle_time)
@@ -1415,7 +1417,9 @@ int section_list_ex_dir_display(SECTION_LIST *p_section)
 			switch (ch)
 			{
 			case KEY_NULL: // broken pipe
+#ifdef _DEBUG
 				log_error("KEY_NULL\n");
+#endif
 				loop = 0;
 				break;
 			case KEY_TIMEOUT:

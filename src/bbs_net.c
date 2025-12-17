@@ -1325,7 +1325,9 @@ int bbs_net()
 		switch (ch)
 		{
 		case KEY_NULL: // broken pipe
+#ifdef _DEBUG
 			log_error("KEY_NULL\n");
+#endif
 			goto cleanup;
 		case KEY_TIMEOUT:
 			if (time(NULL) - BBS_last_access_tm >= BBS_max_user_idle_time)

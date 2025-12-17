@@ -229,7 +229,9 @@ static enum select_cmd_t user_list_select(int total_page, int item_count, int *p
 		switch (ch)
 		{
 		case KEY_NULL: // broken pipe
+#ifdef _DEBUG
 			log_error("KEY_NULL\n");
+#endif
 		case KEY_ESC:
 		case KEY_LEFT:
 			return EXIT_LIST; // exit list
