@@ -721,10 +721,10 @@ int net_server(const char *hostaddr, in_port_t port[])
 					}
 					else
 					{
-						ret = hash_dict_inc(hash_dict_sockaddr_count, (uint64_t)j, -1);
+						ret = hash_dict_inc(hash_dict_sockaddr_count, (in_addr_t)j, -1);
 						if (ret <= 0)
 						{
-							log_error("hash_dict_inc(hash_dict_sockaddr_count, %d, -1) error: %d\n", j, ret);
+							log_error("hash_dict_inc(hash_dict_sockaddr_count, %d, -1) error: %d\n", (in_addr_t)j, ret);
 						}
 
 						ret = hash_dict_del(hash_dict_pid_sockaddr, (uint64_t)pid);
