@@ -140,7 +140,7 @@ static int load_bbsnet_conf(const char *file_config)
 		port = strtol(t4, &endptr, 10);
 		if (*endptr != '\0' || port <= 0 || port > 65535)
 		{
-			log_error("Invalid port value %d of menu item %d\n", port, menu_item_id);
+			log_error("Invalid port value %ld of menu item %d\n", port, menu_item_id);
 			fclose(fp);
 			unload_bbsnet_conf();
 			return -3;
@@ -212,13 +212,13 @@ static void progress_bar(int percent, int len)
 	char buf2[LINE_BUFFER_LEN];
 	int pos;
 
-	if (len <= 0)
+	if (len < 4)
 	{
-		len = 1;
+		len = 4;
 	}
-	else if (len > LINE_BUFFER_LEN)
+	else if (len + 2 > LINE_BUFFER_LEN)
 	{
-		len = LINE_BUFFER_LEN - 1;
+		len = LINE_BUFFER_LEN - 3;
 	}
 	if (percent < 0)
 	{
@@ -1313,7 +1313,7 @@ static int bbsnet_connect(int n)
 	ret = 1; // Normal disconnect
 	BBS_last_access_tm = time(NULL);
 	t_used = BBS_last_access_tm - t_begin;
-	log_common("BBSNET disconnect, %d days %d hours %d minutes %d seconds used\n",
+	log_common("BBSNET disconnect, %jd days %jd hours %jd minutes %jd seconds used\n",
 			   t_used / 86400, t_used % 86400 / 3600, t_used % 3600 / 60, t_used % 60);
 
 cleanup:
@@ -1425,7 +1425,7 @@ static int bbsnet_selchange()
 
 int bbs_net()
 {
-	int ch, i;
+	int ch;
 
 	if (load_bbsnet_conf(CONF_BBSNET) < 0)
 	{
@@ -1465,7 +1465,10 @@ int bbs_net()
 		case Ctrl('C'): // user cancel
 			goto cleanup;
 		case CR:
-			bbsnet_connect(bbsnet_menu.menu_item_pos[0]);
+			if (bbsnet_connect(bbsnet_menu.menu_item_pos[0]) < 0)
+			{
+				log_debug("bbsnet_connect() error\n");
+			}
 			// Force cleanup anything remaining in the output buffer
 			clearscr();
 			iflush();
@@ -1475,14 +1478,14 @@ int bbs_net()
 			bbsnet_selchange();
 			break;
 		case KEY_UP:
-			for (i = 0; i < STATION_PER_LINE; i++)
+			for (int i = 0; i < STATION_PER_LINE; i++)
 			{
 				menu_control(&bbsnet_menu, KEY_UP);
 			}
 			bbsnet_selchange();
 			break;
 		case KEY_DOWN:
-			for (i = 0; i < STATION_PER_LINE; i++)
+			for (int i = 0; i < STATION_PER_LINE; i++)
 			{
 				menu_control(&bbsnet_menu, KEY_DOWN);
 			}
