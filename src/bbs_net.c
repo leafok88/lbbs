@@ -62,7 +62,7 @@ struct _bbsnet_conf
 	char org_name[40];
 	char site_name[40];
 	char host_name[IP_ADDR_LEN];
-	in_port_t port;
+	char port[6];
 	int8_t use_ssh;
 	char charset[CHARSET_MAX_LEN + 1];
 } bbsnet_conf[MAXSTATION];
@@ -143,7 +143,8 @@ static int load_bbsnet_conf(const char *file_config)
 			unload_bbsnet_conf();
 			return -3;
 		}
-		bbsnet_conf[menu_item_id].port = (in_port_t)port;
+		strncpy(bbsnet_conf[menu_item_id].port, t4, sizeof(bbsnet_conf[menu_item_id].port) - 1);
+		bbsnet_conf[menu_item_id].port[sizeof(bbsnet_conf[menu_item_id].port) - 1] = '\0';
 		bbsnet_conf[menu_item_id].use_ssh = (toupper(t5[0]) == 'Y');
 		strncpy(bbsnet_conf[menu_item_id].charset, t6, sizeof(bbsnet_conf[menu_item_id].charset) - 1);
 		bbsnet_conf[menu_item_id].charset[sizeof(bbsnet_conf[menu_item_id].charset) - 1] = '\0';
@@ -273,11 +274,11 @@ static int bbsnet_connect(int n)
 	int stdout_write_wait = 0;
 	int sock_read_wait = 0;
 	int sock_write_wait = 0;
-	struct hostent *p_host = NULL;
+	struct addrinfo hints, *res = NULL;
 	int tos;
-	char remote_addr[IP_ADDR_LEN];
+	char remote_addr[INET_ADDRSTRLEN];
 	int remote_port;
-	char local_addr[IP_ADDR_LEN];
+	char local_addr[INET_ADDRSTRLEN];
 	int local_port;
 	socklen_t sock_len;
 	time_t t_begin;
@@ -342,43 +343,60 @@ static int bbsnet_connect(int n)
 		   bbsnet_conf[n].site_name, bbsnet_conf[n].host_name);
 	iflush();
 
-	p_host = gethostbyname(bbsnet_conf[n].host_name);
+	memset(&hints, 0, sizeof(hints));
+	hints.ai_family = AF_INET;
+	hints.ai_socktype = SOCK_STREAM;
+	hints.ai_protocol = IPPROTO_TCP;
 
-	if (p_host == NULL)
+	if ((ret = getaddrinfo(BBS_address, NULL, &hints, &res)) != 0)
 	{
+		log_error("getaddrinfo() error (%d)\n", ret);
+		goto cleanup;
+	}
+
+	if (inet_ntop(AF_INET, &(((struct sockaddr_in *)res->ai_addr)->sin_addr.s_addr), local_addr, sizeof(local_addr)) == NULL)
+	{
+		log_error("inet_ntop() error (%d)\n", errno);
+		goto cleanup;
+	}
+	local_port = ntohs(((struct sockaddr_in *)res->ai_addr)->sin_port);
+
+	sock = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
+	if (sock < 0)
+	{
+		log_error("socket() error (%d)\n", errno);
+		goto cleanup;
+	}
+
+	if (bind(sock, res->ai_addr, res->ai_addrlen) < 0)
+	{
+		log_error("bind(%s:%u) error (%d)\n", local_addr, local_port, errno);
+		goto cleanup;
+	}
+
+	freeaddrinfo(res);
+	res = NULL;
+
+	memset(&hints, 0, sizeof(hints));
+	hints.ai_family = AF_INET;
+	hints.ai_flags = AI_NUMERICSERV;
+	hints.ai_socktype = SOCK_STREAM;
+	hints.ai_protocol = IPPROTO_TCP;
+
+	if ((ret = getaddrinfo(bbsnet_conf[n].host_name, bbsnet_conf[n].port, &hints, &res)) != 0)
+	{
+		log_error("getaddrinfo() error (%d)\n", ret);
 		prints("\033[1;31m查找主机名失败！\033[m\r\n");
 		press_any_key();
 		goto cleanup;
 	}
 
-	sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-
-	if (sock < 0)
+	if (inet_ntop(AF_INET, &(((struct sockaddr_in *)res->ai_addr)->sin_addr.s_addr), remote_addr, sizeof(remote_addr)) == NULL)
 	{
-		prints("\033[1;31m无法创建socket！\033[m\r\n");
-		press_any_key();
+		log_error("inet_ntop() error (%d)\n", errno);
 		goto cleanup;
 	}
-
-	sin.sin_family = AF_INET;
-	sin.sin_addr.s_addr = (BBS_address[0] != '\0' ? inet_addr(BBS_address) : INADDR_ANY);
-	sin.sin_port = 0;
-
-	if (bind(sock, (struct sockaddr *)&sin, sizeof(sin)) < 0)
-	{
-		log_error("Bind address %s:%u failed (%d)\n",
-				  inet_ntoa(sin.sin_addr), ntohs(sin.sin_port), errno);
-		goto cleanup;
-	}
-
-	memset(&sin, 0, sizeof(sin));
-	sin.sin_family = AF_INET;
-	sin.sin_addr = *(struct in_addr *)p_host->h_addr_list[0];
-	sin.sin_port = htons(bbsnet_conf[n].port);
-
-	strncpy(remote_addr, inet_ntoa(sin.sin_addr), sizeof(remote_addr) - 1);
-	remote_addr[sizeof(remote_addr) - 1] = '\0';
-	remote_port = ntohs(sin.sin_port);
+	remote_port = ntohs(((struct sockaddr_in *)res->ai_addr)->sin_port);
 
 	prints("\033[1;32m穿梭进度条提示您当前已使用的时间，按\033[1;33mCtrl+C\033[1;32m中断。\033[m\r\n");
 	process_bar(0, MAX_PROCESS_BAR_LEN);
@@ -444,7 +462,7 @@ static int bbsnet_connect(int n)
 
 	while (!SYS_server_exit)
 	{
-		if ((ret = connect(sock, (struct sockaddr *)&sin, sizeof(sin))) < 0)
+		if ((ret = connect(sock, res->ai_addr, res->ai_addrlen)) < 0)
 		{
 			if (errno == EAGAIN || errno == EALREADY || errno == EINPROGRESS)
 			{
@@ -460,10 +478,8 @@ static int bbsnet_connect(int n)
 			else
 			{
 				log_error("connect(socket) error (%d)\n", errno);
-
 				prints("\033[1;31m连接失败！\033[m\r\n");
 				press_any_key();
-
 				goto cleanup;
 			}
 		}
@@ -546,7 +562,6 @@ static int bbsnet_connect(int n)
 	{
 		prints("\033[1;31m连接失败！\033[m\r\n");
 		press_any_key();
-
 		goto cleanup;
 	}
 
@@ -1255,6 +1270,11 @@ cleanup:
 		log_error("Close socket failed\n");
 	}
 
+	if (res)
+	{
+		freeaddrinfo(res);
+	}
+
 	t_used = time(NULL) - t_used;
 	tm_used = gmtime(&t_used);
 
@@ -1305,7 +1325,7 @@ static int bbsnet_selchange()
 	prints("|");
 	moveto(21, 1);
 	clrtoeol();
-	prints("|\033[1m连往: \033[1;33m%-20s\033[m  端口: \033[1;33m%-5d\033[m                 编码: \033[1;33m%s\033[m",
+	prints("|\033[1m连往: \033[1;33m%-20s\033[m  端口: \033[1;33m%-5s\033[m                 编码: \033[1;33m%s\033[m",
 		   bbsnet_conf[i].host_name, bbsnet_conf[i].port, bbsnet_conf[i].charset);
 	moveto(21, 80);
 	prints("|");
