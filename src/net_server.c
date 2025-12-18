@@ -574,7 +574,7 @@ int net_server(const char *hostaddr, in_port_t port[])
 
 	if (ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_BINDADDR, hostaddr) < 0 ||
 		ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_BINDPORT, &port) < 0 ||
-		ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_HOSTKEY_ALGORITHMS, "+ssh-rsa") < 0 ||
+		ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_HOSTKEY_ALGORITHMS, "+ssh-ed25519,ecdsa-sha2-nistp256,ssh-rsa") < 0 ||
 		ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_LOG_VERBOSITY, &ssh_log_level) < 0)
 	{
 		log_error("Error setting SSH bind options: %s\n", ssh_get_error(sshbind));
