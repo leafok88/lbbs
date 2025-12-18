@@ -272,10 +272,8 @@ int editor_data_insert(EDITOR_DATA *p_editor_data, long *p_display_line, long *p
 	{
 		if (p_editor_data->display_line_total >= MAX_EDITOR_DATA_LINES)
 		{
-#ifdef _DEBUG
-			log_error("Split line error, display_line_total(%ld) reach limit(%d)\n",
+			log_debug("Split line error, display_line_total(%ld) reach limit(%d)\n",
 					  p_editor_data->display_line_total, MAX_EDITOR_DATA_LINES);
-#endif
 
 			return -2;
 		}
@@ -369,9 +367,7 @@ int editor_data_insert(EDITOR_DATA *p_editor_data, long *p_display_line, long *p
 			// Insert blank display line after last_display_line
 			if (p_editor_data->display_line_total >= MAX_EDITOR_DATA_LINES)
 			{
-#ifdef _DEBUG
-				log_error("display_line_total over limit %d >= %d\n", p_editor_data->display_line_total, MAX_EDITOR_DATA_LINES);
-#endif
+				log_debug("display_line_total over limit %d >= %d\n", p_editor_data->display_line_total, MAX_EDITOR_DATA_LINES);
 
 				// Terminate prior display line with \n, to avoid error on cleanup
 				if (display_line + i - 1 >= 0 && p_editor_data->display_line_lengths[display_line + i - 1] > 0)
@@ -763,9 +759,7 @@ int editor_display(EDITOR_DATA *p_editor_data)
 						ch = igetch(100);						 // 0.1 second
 						if (ch == KEY_NULL || ch == KEY_TIMEOUT) // Ignore received bytes if no futher input
 						{
-#ifdef _DEBUG
-							log_error("Ignore %d bytes of incomplete UTF8 character\n", str_len);
-#endif
+							log_debug("Ignore %d bytes of incomplete UTF8 character\n", str_len);
 							str_len = 0;
 							break;
 						}
@@ -974,7 +968,7 @@ int editor_display(EDITOR_DATA *p_editor_data)
 				switch (ch)
 				{
 				case KEY_NULL:
-					log_error("KEY_NULL\n");
+					log_debug("KEY_NULL\n");
 					goto cleanup;
 				case KEY_TIMEOUT:
 					log_error("User input timeout\n");

@@ -78,10 +78,8 @@ int user_stat_map_update(USER_STAT_MAP *p_map)
 
 		if (p_article->uid > p_map->last_uid)
 		{
-#ifdef _DEBUG
-			log_error("uid=%d of article(aid=%d) is greater than last_uid=%d\n",
+			log_debug("uid=%d of article(aid=%d) is greater than last_uid=%d\n",
 					  p_article->uid, p_article->aid, p_map->last_uid);
-#endif
 			continue;
 		}
 

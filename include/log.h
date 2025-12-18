@@ -13,8 +13,9 @@
 
 enum log_level_t
 {
-	LOG_LEVEL_COMMON = 1,
-	LOG_LEVEL_ERROR = 2,
+	LOG_LEVEL_COMMON,
+	LOG_LEVEL_ERROR,
+	LOG_LEVEL_DEBUG,
 };
 
 extern int log_begin(const char *common_log_file, const char *error_log_file);
@@ -24,6 +25,12 @@ extern int log_printf(enum log_level_t log_level, const char *app_file, int app_
 
 #define log_common(...) log_printf(LOG_LEVEL_COMMON, __FILE__, __LINE__, __VA_ARGS__)
 #define log_error(...) log_printf(LOG_LEVEL_ERROR, __FILE__, __LINE__, __VA_ARGS__)
+
+#ifdef _DEBUG
+#define log_debug(...) log_printf(LOG_LEVEL_DEBUG, __FILE__, __LINE__, __VA_ARGS__)
+#else
+#define log_debug(...) ((void)0)
+#endif
 
 extern int log_common_redir(int fd);
 extern int log_error_redir(int fd);

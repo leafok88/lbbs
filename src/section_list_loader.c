@@ -173,9 +173,7 @@ int load_section_config_from_db(int update_gen_ex)
 			{
 				p_section->ex_menu_set.allow_exit = 1; // Allow exit menu
 				p_section->ex_menu_tm = atol(row[7]);
-#ifdef _DEBUG
-				log_common("Loaded gen_ex_menu of section %d [%s]\n", p_section->sid, p_section->sname);
-#endif
+				log_debug("Loaded gen_ex_menu of section %d [%s]\n", p_section->sid, p_section->sname);
 			}
 		}
 
@@ -866,7 +864,7 @@ int section_list_loader_launch(void)
 	return 0;
 }
 
-int query_section_articles(SECTION_LIST *p_section, int page_id, ARTICLE *p_articles[],
+int query_section_articles(SECTION_LIST *p_section, int page_id, const ARTICLE *p_articles[],
 						   int *p_article_count, int *p_page_count, int *p_ontop_start_offset)
 {
 	ARTICLE *p_article;
@@ -897,9 +895,7 @@ int query_section_articles(SECTION_LIST *p_section, int page_id, ARTICLE *p_arti
 	}
 	else if (page_id < 0 || page_id >= *p_page_count)
 	{
-#ifdef _DEBUG
-		log_error("Invalid page_id=%d, not in range [0, %d)\n", page_id, *p_page_count);
-#endif
+		log_debug("Invalid page_id=%d, not in range [0, %d)\n", page_id, *p_page_count);
 		ret = -3;
 	}
 	else

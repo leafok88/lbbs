@@ -391,9 +391,7 @@ static int fork_server(void)
 			ret = ssh_event_dopoll(event, 100); // 0.1 second
 			if (ret == SSH_ERROR)
 			{
-#ifdef _DEBUG
-				log_error("ssh_event_dopoll() error: %s\n", ssh_get_error(SSH_session));
-#endif
+				log_debug("ssh_event_dopoll() error: %s\n", ssh_get_error(SSH_session));
 				goto cleanup;
 			}
 		}
@@ -530,7 +528,6 @@ int net_server(const char *hostaddr, in_port_t port[])
 	int nfds;
 	int notify_child_exit = 0;
 	time_t tm_notify_child_exit = time(NULL);
-	int i, j;
 	pid_t pid;
 	int ssh_key_valid = 0;
 	int ssh_log_level = SSH_LOG_NOLOG;
@@ -577,7 +574,7 @@ int net_server(const char *hostaddr, in_port_t port[])
 
 	if (ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_BINDADDR, hostaddr) < 0 ||
 		ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_BINDPORT, &port) < 0 ||
-		ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_HOSTKEY_ALGORITHMS, "+ssh-rsa") < 0 ||
+		ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_HOSTKEY_ALGORITHMS, "+ssh-ed25519,ecdsa-sha2-nistp256,ssh-rsa") < 0 ||
 		ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_LOG_VERBOSITY, &ssh_log_level) < 0)
 	{
 		log_error("Error setting SSH bind options: %s\n", ssh_get_error(sshbind));
@@ -595,7 +592,7 @@ int net_server(const char *hostaddr, in_port_t port[])
 #endif
 
 	// Server socket
-	for (i = 0; i < 2; i++)
+	for (int i = 0; i < 2; i++)
 	{
 		socket_server[i] = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 
@@ -713,24 +710,24 @@ int net_server(const char *hostaddr, in_port_t port[])
 
 				if (pid != section_list_loader_pid)
 				{
-					j = 0;
-					ret = hash_dict_get(hash_dict_pid_sockaddr, (uint64_t)pid, (int64_t *)&j);
+					int64_t j = 0;
+					ret = hash_dict_get(hash_dict_pid_sockaddr, (uint64_t)pid, &j);
 					if (ret < 0)
 					{
 						log_error("hash_dict_get(hash_dict_pid_sockaddr, %d) error\n", pid);
 					}
 					else
 					{
-						ret = hash_dict_inc(hash_dict_sockaddr_count, (uint64_t)j, -1);
-						if (ret < 0)
+						ret = hash_dict_inc(hash_dict_sockaddr_count, (in_addr_t)j, -1);
+						if (ret <= 0)
 						{
-							log_error("hash_dict_inc(hash_dict_sockaddr_count, %d, -1) error\n", j);
+							log_error("hash_dict_inc(hash_dict_sockaddr_count, %lu, -1) error: %d\n", (in_addr_t)j, ret);
 						}
 
 						ret = hash_dict_del(hash_dict_pid_sockaddr, (uint64_t)pid);
 						if (ret < 0)
 						{
-							log_error("hash_dict_del(hash_dict_pid_sockaddr, %d) error\n", pid);
+							log_error("hash_dict_del(hash_dict_pid_sockaddr, %lu) error\n", (uint64_t)pid);
 						}
 					}
 				}
@@ -937,12 +934,10 @@ int net_server(const char *hostaddr, in_port_t port[])
 
 					port_client = ntohs(sin.sin_port);
 
-					log_common("Accept %s connection from %s:%d\n", (SSH_v2 ? "SSH" : "telnet"), hostaddr_client, port_client);
-
 					if (SYS_child_process_count - 1 < BBS_max_client)
 					{
-						j = 0;
-						ret = hash_dict_get(hash_dict_sockaddr_count, (uint64_t)sin.sin_addr.s_addr, (int64_t *)&j);
+						int64_t j = 0;
+						ret = hash_dict_get(hash_dict_sockaddr_count, sin.sin_addr.s_addr, &j);
 						if (ret < 0)
 						{
 							log_error("hash_dict_get(hash_dict_sockaddr_count, %s) error\n", hostaddr_client);
@@ -959,24 +954,45 @@ int net_server(const char *hostaddr, in_port_t port[])
 								ret = hash_dict_set(hash_dict_pid_sockaddr, (uint64_t)pid, sin.sin_addr.s_addr);
 								if (ret < 0)
 								{
-									log_error("hash_dict_set(hash_dict_pid_sockaddr, %d, %s) error\n", pid, hostaddr_client);
+									log_error("hash_dict_set(hash_dict_pid_sockaddr, %lu, %s) error\n", (uint64_t)pid, hostaddr_client);
 								}
 
-								ret = hash_dict_inc(hash_dict_sockaddr_count, (uint64_t)sin.sin_addr.s_addr, 1);
-								if (ret < 0)
+								if (j == 0)
 								{
-									log_error("hash_dict_inc(hash_dict_sockaddr_count, %s, %d) error\n", hostaddr_client, 1);
+									// First connection from this IP
+									log_common("Accept %s connection from %s:%d\n",
+											   (SSH_v2 ? "SSH" : "telnet"), hostaddr_client, port_client);
+
+									ret = hash_dict_set(hash_dict_sockaddr_count, (uint64_t)sin.sin_addr.s_addr, 1);
+									if (ret < 0)
+									{
+										log_error("hash_dict_set(hash_dict_sockaddr_count, %s, 1) error\n", hostaddr_client);
+									}
+								}
+								else
+								{
+									// Increase connection count from this IP
+									log_common("Accept %s connection from %s:%d, already have %d connections\n",
+											   (SSH_v2 ? "SSH" : "telnet"), hostaddr_client, port_client, j);
+
+									ret = hash_dict_inc(hash_dict_sockaddr_count, (uint64_t)sin.sin_addr.s_addr, 1);
+									if (ret <= 0)
+									{
+										log_error("hash_dict_inc(hash_dict_sockaddr_count, %s, 1) error: %d\n", hostaddr_client, ret);
+									}
 								}
 							}
 						}
 						else
 						{
-							log_error("Rejected client connection from %s over limit per IP (%d)\n", hostaddr_client, BBS_max_client_per_ip);
+							log_error("Rejected %s connection from %s:%d over limit per IP (%d >= %d)\n",
+									  (SSH_v2 ? "SSH" : "telnet"), hostaddr_client, port_client, j, BBS_max_client_per_ip);
 						}
 					}
 					else
 					{
-						log_error("Rejected client connection over limit (%d)\n", SYS_child_process_count - 1);
+						log_error("Rejected %s connection from %s:%d over limit (%d >= %d)\n",
+								  (SSH_v2 ? "SSH" : "telnet"), hostaddr_client, port_client, SYS_child_process_count - 1, BBS_max_client);
 					}
 
 					if (close(socket_client) == -1)
@@ -995,7 +1011,7 @@ int net_server(const char *hostaddr, in_port_t port[])
 	}
 #endif
 
-	for (i = 0; i < 2; i++)
+	for (int i = 0; i < 2; i++)
 	{
 		if (close(socket_server[i]) == -1)
 		{

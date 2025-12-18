@@ -393,6 +393,12 @@ int main(int argc, char *argv[])
 		goto cleanup;
 	}
 	act.sa_handler = SIG_IGN;
+	if (sigaction(SIGPIPE, &act, NULL) == -1)
+	{
+		log_error("set signal action of SIGPIPE error: %d\n", errno);
+		goto cleanup;
+	}
+	act.sa_handler = SIG_IGN;
 	if (sigaction(SIGUSR1, &act, NULL) == -1)
 	{
 		log_error("set signal action of SIGUSR1 error: %d\n", errno);

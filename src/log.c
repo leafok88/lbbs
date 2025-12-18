@@ -79,9 +79,13 @@ inline static void log_head(char *buf, size_t len, int log_level, const char *ap
 	{
 		snprintf(buf, len, "[%s] [%d] [INFO] ", s_time, getpid());
 	}
-	else // if (log_level == LOG_LEVEL_ERROR)
+	else if (log_level == LOG_LEVEL_ERROR)
 	{
 		snprintf(buf, len, "[%s] [%d] [ERROR] [%s:%d] ", s_time, getpid(), app_file, app_line);
+	}
+	else // if (log_level == LOG_LEVEL_DEBUG)
+	{
+		snprintf(buf, len, "[%s] [%d] [DEBUG] [%s:%d] ", s_time, getpid(), app_file, app_line);
 	}
 }
 
@@ -92,7 +96,7 @@ int log_printf(enum log_level_t log_level, const char *app_file, int app_line, c
 	char buf[LINE_BUFFER_LEN];
 	FILE *fp_log;
 
-	fp_log = (log_level == LOG_LEVEL_ERROR ? fp_error_log : fp_common_log);
+	fp_log = (log_level == LOG_LEVEL_COMMON ? fp_common_log : fp_error_log);
 
 	log_head(buf, sizeof(buf), log_level, app_file, app_line);
 	strncat(buf, format, sizeof(buf) - strnlen(buf, sizeof(buf)));

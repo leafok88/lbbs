@@ -1,7 +1,7 @@
 @prefix@/log/*.log {
     daily
     missingok
-    compress
+    rotate 90
     delaycompress
     notifempty
     create 640 bbs bbs

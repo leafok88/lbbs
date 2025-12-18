@@ -209,9 +209,7 @@ static int _str_input(char *buffer, int buf_size, int max_display_len, enum io_e
 				ch = igetch(100);						 // 0.1 second
 				if (ch == KEY_NULL || ch == KEY_TIMEOUT) // Ignore received bytes if no futher input
 				{
-#ifdef _DEBUG
-					log_error("Ignore %d bytes of incomplete UTF8 character\n", str_len);
-#endif
+					log_debug("Ignore %d bytes of incomplete UTF8 character\n", str_len);
 					str_len = 0;
 					break;
 				}
@@ -533,9 +531,7 @@ int get_data(int row, int col, char *prompt, char *buffer, int buf_size, int max
 				ch = igetch(100);						 // 0.1 second
 				if (ch == KEY_NULL || ch == KEY_TIMEOUT) // Ignore received bytes if no futher input
 				{
-#ifdef _DEBUG
-					log_error("Ignore %d bytes of incomplete UTF8 character\n", str_len);
-#endif
+					log_debug("Ignore %d bytes of incomplete UTF8 character\n", str_len);
 					str_len = 0;
 					break;
 				}
@@ -720,7 +716,7 @@ int display_data(const void *p_data, long display_line_total, const long *p_line
 				switch (ch)
 				{
 				case KEY_NULL:
-					log_error("KEY_NULL\n");
+					log_debug("KEY_NULL\n");
 					goto cleanup;
 				case KEY_TIMEOUT:
 					log_error("User input timeout\n");

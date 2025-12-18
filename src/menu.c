@@ -1141,9 +1141,7 @@ int menu_control(MENU_SET *p_menu_set, int key)
 
 	if (p_menu->item_count == 0)
 	{
-#ifdef _DEBUG
-		log_error("Empty menu (%s)\n", p_menu->name);
-#endif
+		log_debug("Empty menu (%s)\n", p_menu->name);
 		if (p_menu_set->choose_step > 0)
 		{
 			p_menu_set->choose_step--;

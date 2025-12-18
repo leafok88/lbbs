@@ -240,16 +240,12 @@ int user_list_load(MYSQL *db, USER_LIST *p_list)
 
 		qsort(p_list->index_uid, (size_t)i, sizeof(USER_INFO_INDEX_UID), user_info_index_uid_comp);
 
-#ifdef _DEBUG
-		log_error("Rebuild index of %d users, last_uid=%d\n", i, p_list->users[i - 1].uid);
-#endif
+		log_debug("Rebuild index of %d users, last_uid=%d\n", i, p_list->users[i - 1].uid);
 	}
 
 	p_list->user_count = i;
 
-#ifdef _DEBUG
-	log_error("Loaded %d users\n", p_list->user_count);
-#endif
+	log_debug("Loaded %d users\n", p_list->user_count);
 
 cleanup:
 	mysql_free_result(rs);
@@ -1361,9 +1357,7 @@ int query_user_info_by_username(const char *username_prefix, int max_user_cnt,
 
 	if (strncasecmp(username_prefix, p_user_list_pool->user_list[p_user_list_pool->user_list_index_current].users[left].username, prefix_len) == 0) // Found
 	{
-#ifdef _DEBUG
-		log_error("Debug: match found, pos=%d\n", left);
-#endif
+		log_debug("Debug: match found, pos=%d\n", left);
 
 		left_save = left;
 		right = left;
@@ -1389,9 +1383,7 @@ int query_user_info_by_username(const char *username_prefix, int max_user_cnt,
 			}
 		}
 
-#ifdef _DEBUG
-		log_error("Debug: first match found, pos=%d\n", right);
-#endif
+		log_debug("Debug: first match found, pos=%d\n", right);
 
 		left = left_save;
 		left_save = right;
@@ -1417,9 +1409,7 @@ int query_user_info_by_username(const char *username_prefix, int max_user_cnt,
 			}
 		}
 
-#ifdef _DEBUG
-		log_error("Debug: last match found, pos=%d\n", left);
-#endif
+		log_debug("Debug: last match found, pos=%d\n", left);
 
 		right = left;
 		left = left_save;

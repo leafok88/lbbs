@@ -49,11 +49,13 @@ static const char MENU_CONF_DELIM[] = " \t\r\n";
 
 enum _bbs_net_constant_t
 {
-	MAX_PROCESS_BAR_LEN = 30,
 	MAXSTATION = 26 * 2,
 	STATION_PER_LINE = 4,
 	USERNAME_MAX_LEN = 20,
 	PASSWORD_MAX_LEN = 20,
+	REMOTE_CONNECT_TIMEOUT = 10, // seconds
+	SSH_CONNECT_TIMEOUT = 5,	 // seconds
+	PROGRESS_BAR_LEN = 30,
 };
 
 struct _bbsnet_conf
@@ -61,12 +63,14 @@ struct _bbsnet_conf
 	char org_name[40];
 	char site_name[40];
 	char host_name[IP_ADDR_LEN];
-	in_port_t port;
+	char port[6];
 	int8_t use_ssh;
 	char charset[CHARSET_MAX_LEN + 1];
 } bbsnet_conf[MAXSTATION];
 
 static MENU_SET bbsnet_menu;
+
+static void unload_bbsnet_conf(void);
 
 static int load_bbsnet_conf(const char *file_config)
 {
@@ -75,18 +79,16 @@ static int load_bbsnet_conf(const char *file_config)
 	MENU_ITEM *p_menu_item;
 	MENU_ITEM_ID menu_item_id;
 	char line[LINE_BUFFER_LEN], *t1, *t2, *t3, *t4, *t5, *t6, *saveptr;
+	long port;
+	char *endptr;
 
-	fp = fopen(file_config, "r");
-	if (fp == NULL)
-	{
-		return -1;
-	}
+	unload_bbsnet_conf();
 
 	bbsnet_menu.p_menu_pool = calloc(1, sizeof(MENU));
 	if (bbsnet_menu.p_menu_pool == NULL)
 	{
 		log_error("calloc(p_menu_pool) error\n");
-		return -3;
+		return -1;
 	}
 	bbsnet_menu.menu_count = 1;
 
@@ -94,7 +96,8 @@ static int load_bbsnet_conf(const char *file_config)
 	if (bbsnet_menu.p_menu_item_pool == NULL)
 	{
 		log_error("calloc(p_menu_item_pool) error\n");
-		return -3;
+		unload_bbsnet_conf();
+		return -1;
 	}
 	bbsnet_menu.menu_item_count = MAXSTATION;
 
@@ -104,6 +107,13 @@ static int load_bbsnet_conf(const char *file_config)
 	p_menu->name[sizeof(p_menu->name) - 1] = '\0';
 	p_menu->title.show = 0;
 	p_menu->screen_show = 0;
+
+	fp = fopen(file_config, "r");
+	if (fp == NULL)
+	{
+		unload_bbsnet_conf();
+		return -2;
+	}
 
 	menu_item_id = 0;
 	while (fgets(line, sizeof(line), fp) && menu_item_id < MAXSTATION)
@@ -116,7 +126,7 @@ static int load_bbsnet_conf(const char *file_config)
 		t6 = strtok_r(NULL, MENU_CONF_DELIM, &saveptr);
 
 		if (t1 == NULL || t2 == NULL || t3 == NULL || t4 == NULL ||
-			t5 == NULL || t6 == NULL || line[0] == '#' || line[0] == '*')
+			t5 == NULL || t6 == NULL || t1[0] == '#')
 		{
 			continue;
 		}
@@ -127,7 +137,16 @@ static int load_bbsnet_conf(const char *file_config)
 		bbsnet_conf[menu_item_id].org_name[sizeof(bbsnet_conf[menu_item_id].org_name) - 1] = '\0';
 		strncpy(bbsnet_conf[menu_item_id].host_name, t3, sizeof(bbsnet_conf[menu_item_id].host_name) - 1);
 		bbsnet_conf[menu_item_id].host_name[sizeof(bbsnet_conf[menu_item_id].host_name) - 1] = '\0';
-		bbsnet_conf[menu_item_id].port = (in_port_t)(t4 ? atoi(t4) : 23);
+		port = strtol(t4, &endptr, 10);
+		if (*endptr != '\0' || port <= 0 || port > 65535)
+		{
+			log_error("Invalid port value %ld of menu item %d\n", port, menu_item_id);
+			fclose(fp);
+			unload_bbsnet_conf();
+			return -3;
+		}
+		strncpy(bbsnet_conf[menu_item_id].port, t4, sizeof(bbsnet_conf[menu_item_id].port) - 1);
+		bbsnet_conf[menu_item_id].port[sizeof(bbsnet_conf[menu_item_id].port) - 1] = '\0';
 		bbsnet_conf[menu_item_id].use_ssh = (toupper(t5[0]) == 'Y');
 		strncpy(bbsnet_conf[menu_item_id].charset, t6, sizeof(bbsnet_conf[menu_item_id].charset) - 1);
 		bbsnet_conf[menu_item_id].charset[sizeof(bbsnet_conf[menu_item_id].charset) - 1] = '\0';
@@ -136,7 +155,9 @@ static int load_bbsnet_conf(const char *file_config)
 		if (p_menu_item == NULL)
 		{
 			log_error("get_menu_item_by_id(%d) return NULL pointer\n", menu_item_id);
-			return -1;
+			fclose(fp);
+			unload_bbsnet_conf();
+			return -3;
 		}
 
 		p_menu_item->row = (int16_t)(2 + menu_item_id / STATION_PER_LINE);
@@ -146,9 +167,9 @@ static int load_bbsnet_conf(const char *file_config)
 		p_menu_item->priv = 0;
 		p_menu_item->level = 0;
 		p_menu_item->name[0] =
-			(char)(menu_item_id < MAXSTATION / 2 ? 'A' + menu_item_id : 'a' + menu_item_id);
+			(char)(menu_item_id < MAXSTATION / 2 ? 'A' + menu_item_id : 'a' + menu_item_id - MAXSTATION / 2);
 		p_menu_item->name[1] = '\0';
-		snprintf(p_menu_item->text, sizeof(p_menu_item->text), "[1;36m%c.[m %s",
+		snprintf(p_menu_item->text, sizeof(p_menu_item->text), "\033[1;36m%c.\033[m %s",
 				 p_menu_item->name[0], bbsnet_conf[menu_item_id].site_name);
 
 		p_menu->items[p_menu->item_count] = menu_item_id;
@@ -171,48 +192,75 @@ static void unload_bbsnet_conf(void)
 	bbsnet_menu.menu_count = 0;
 	bbsnet_menu.menu_item_count = 0;
 
-	free(bbsnet_menu.p_menu_pool);
-	bbsnet_menu.p_menu_pool = NULL;
-	free(bbsnet_menu.p_menu_item_pool);
-	bbsnet_menu.p_menu_item_pool = NULL;
+	if (bbsnet_menu.p_menu_pool)
+	{
+		free(bbsnet_menu.p_menu_pool);
+		bbsnet_menu.p_menu_pool = NULL;
+	}
+
+	if (bbsnet_menu.p_menu_item_pool)
+	{
+		free(bbsnet_menu.p_menu_item_pool);
+		bbsnet_menu.p_menu_item_pool = NULL;
+	}
 }
 
-static void process_bar(int n, int len)
+static void progress_bar(int percent, int len)
 {
+	char line[LINE_BUFFER_LEN];
 	char buf[LINE_BUFFER_LEN];
 	char buf2[LINE_BUFFER_LEN];
+	int pos;
 
-	if (len > LINE_BUFFER_LEN)
+	if (len < 4)
 	{
-		len = LINE_BUFFER_LEN - 1;
+		len = 4;
 	}
-	if (n < 0)
+	else if (len + 2 > LINE_BUFFER_LEN)
 	{
-		n = 0;
+		len = LINE_BUFFER_LEN - 3;
 	}
-	else if (n > len)
+	if (percent < 0)
 	{
-		n = len;
+		percent = 0;
 	}
+	else if (percent > 100)
+	{
+		percent = 100;
+	}
+
+	pos = len * percent / 100;
+
+	line[0] = ' ';
+	for (int i = 1; i <= len; i++)
+	{
+		line[i] = '-';
+	}
+	line[len + 1] = ' ';
+	line[len + 2] = '\0';
+
+	snprintf(buf, sizeof(buf), "%*s%3d%%%*s",
+			 (len - 4) / 2, "", percent, (len - 4 + 1) / 2, "");
+	memcpy(buf2, buf, (size_t)pos);
+	buf2[pos] = '\0';
 
 	moveto(4, 1);
-	prints(" ------------------------------ \r\n");
-	snprintf(buf, sizeof(buf), "            %3d%%              ", n * 100 / len);
-	memcpy(buf2, buf, (size_t)n);
-	buf2[n] = '\0';
-	prints("|\033[46m%s\033[44m%s\033[m|\r\n", buf2, buf + n);
-	prints(" ------------------------------ \r\n");
+	prints("%s\r\n", line);
+	prints("|\033[46m%s\033[44m%s\033[m|\r\n", buf2, buf + pos);
+	prints("%s\r\n", line);
 	iflush();
 }
 
 static int bbsnet_connect(int n)
 {
-	int sock, ret, loop, error;
+	int sock = -1;
+	int ret = 0;
+	int loop;
+	int error;
 	int sock_connected = 0;
-	int flags_sock;
-	int flags_stdin;
-	int flags_stdout;
-	int len;
+	int flags_sock = -1;
+	int flags_stdin = -1;
+	int flags_stdout = -1;
 	struct sockaddr_in sin;
 	char input_buf[LINE_BUFFER_LEN];
 	char output_buf[LINE_BUFFER_LEN];
@@ -226,13 +274,13 @@ static int bbsnet_connect(int n)
 	int output_conv_len = 0;
 	int input_conv_offset = 0;
 	int output_conv_offset = 0;
-	iconv_t input_cd = NULL;
-	iconv_t output_cd = NULL;
-	char tocode[32];
+	iconv_t input_cd = (iconv_t)(-1);
+	iconv_t output_cd = (iconv_t)(-1);
+	char tocode[CHARSET_MAX_LEN + 20];
 
 #ifdef HAVE_SYS_EPOLL_H
 	struct epoll_event ev, events[MAX_EVENTS];
-	int epollfd;
+	int epollfd = -1;
 #else
 	struct pollfd pfds[3];
 #endif
@@ -242,20 +290,21 @@ static int bbsnet_connect(int n)
 	int stdout_write_wait = 0;
 	int sock_read_wait = 0;
 	int sock_write_wait = 0;
-	struct hostent *p_host = NULL;
+	struct addrinfo hints, *res = NULL;
 	int tos;
-	char remote_addr[IP_ADDR_LEN];
+	char remote_addr[INET_ADDRSTRLEN];
 	int remote_port;
-	char local_addr[IP_ADDR_LEN];
+	char local_addr[INET_ADDRSTRLEN];
 	int local_port;
 	socklen_t sock_len;
-	time_t t_used = time(NULL);
-	struct tm *tm_used;
+	time_t t_begin, t_used;
+	struct timespec ts_begin, ts_now;
+	int progress, progress_last;
 	int ch;
 	char remote_user[USERNAME_MAX_LEN + 1];
 	char remote_pass[PASSWORD_MAX_LEN + 1];
-	ssh_session session = NULL;
-	ssh_channel channel = NULL;
+	ssh_session outbound_session = NULL;
+	ssh_channel outbound_channel = NULL;
 	int ssh_process_config = 0;
 	int ssh_log_level = SSH_LOG_NOLOG;
 
@@ -310,63 +359,114 @@ static int bbsnet_connect(int n)
 		   bbsnet_conf[n].site_name, bbsnet_conf[n].host_name);
 	iflush();
 
-	p_host = gethostbyname(bbsnet_conf[n].host_name);
+	memset(&hints, 0, sizeof(hints));
+	hints.ai_family = AF_INET;
+	hints.ai_socktype = SOCK_STREAM;
+	hints.ai_protocol = IPPROTO_TCP;
 
-	if (p_host == NULL)
+	if ((ret = getaddrinfo(BBS_address, NULL, &hints, &res)) != 0)
 	{
-		prints("\033[1;31m查找主机名失败！\033[m\r\n");
-		press_any_key();
-		return -1;
+		log_error("getaddrinfo() error (%d): %s\n", ret, gai_strerror(ret));
+		ret = -1;
+		goto cleanup;
 	}
 
-	sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+	if (inet_ntop(AF_INET, &(((struct sockaddr_in *)res->ai_addr)->sin_addr), local_addr, sizeof(local_addr)) == NULL)
+	{
+		log_error("inet_ntop() error (%d)\n", errno);
+		ret = -1;
+		goto cleanup;
+	}
+	local_port = ntohs(((struct sockaddr_in *)res->ai_addr)->sin_port);
 
+	sock = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
 	if (sock < 0)
 	{
-		prints("\033[1;31m无法创建socket！\033[m\r\n");
-		press_any_key();
-		return -1;
+		log_error("socket() error (%d)\n", errno);
+		ret = -1;
+		goto cleanup;
 	}
 
-	sin.sin_family = AF_INET;
-	sin.sin_addr.s_addr = (BBS_address[0] != '\0' ? inet_addr(BBS_address) : INADDR_ANY);
-	sin.sin_port = 0;
-
-	if (bind(sock, (struct sockaddr *)&sin, sizeof(sin)) < 0)
+	if (bind(sock, res->ai_addr, res->ai_addrlen) < 0)
 	{
-		log_error("Bind address %s:%u failed (%d)\n",
-				  inet_ntoa(sin.sin_addr), ntohs(sin.sin_port), errno);
-		return -2;
+		log_error("bind(%s:%u) error (%d)\n", local_addr, local_port, errno);
+		ret = -1;
+		goto cleanup;
 	}
 
-	memset(&sin, 0, sizeof(sin));
-	sin.sin_family = AF_INET;
-	sin.sin_addr = *(struct in_addr *)p_host->h_addr_list[0];
-	sin.sin_port = htons(bbsnet_conf[n].port);
+	freeaddrinfo(res);
+	res = NULL;
 
-	strncpy(remote_addr, inet_ntoa(sin.sin_addr), sizeof(remote_addr) - 1);
-	remote_addr[sizeof(remote_addr) - 1] = '\0';
-	remote_port = ntohs(sin.sin_port);
+	memset(&hints, 0, sizeof(hints));
+	hints.ai_family = AF_INET;
+	hints.ai_flags = AI_NUMERICSERV;
+	hints.ai_socktype = SOCK_STREAM;
+	hints.ai_protocol = IPPROTO_TCP;
 
-	prints("\033[1;32m穿梭进度条提示您当前已使用的时间，按\033[1;33mCtrl+C\033[1;32m中断。\033[m\r\n");
-	process_bar(0, MAX_PROCESS_BAR_LEN);
+	if ((ret = getaddrinfo(bbsnet_conf[n].host_name, bbsnet_conf[n].port, &hints, &res)) != 0)
+	{
+		log_error("getaddrinfo() error (%d): %s\n", ret, gai_strerror(ret));
+		prints("\033[1;31m查找主机名失败！\033[m\r\n");
+		press_any_key();
+		ret = -1;
+		goto cleanup;
+	}
+
+	if (inet_ntop(AF_INET, &(((struct sockaddr_in *)res->ai_addr)->sin_addr), remote_addr, sizeof(remote_addr)) == NULL)
+	{
+		log_error("inet_ntop() error (%d)\n", errno);
+		ret = -1;
+		goto cleanup;
+	}
+	remote_port = ntohs(((struct sockaddr_in *)res->ai_addr)->sin_port);
 
 	// Set socket as non-blocking
-	flags_sock = fcntl(sock, F_GETFL, 0);
-	fcntl(sock, F_SETFL, flags_sock | O_NONBLOCK);
+	if ((flags_sock = fcntl(sock, F_GETFL, 0)) == -1)
+	{
+		log_error("fcntl(F_GETFL) error (%d)\n", errno);
+		ret = -1;
+		goto cleanup;
+	}
+	if ((fcntl(sock, F_SETFL, flags_sock | O_NONBLOCK)) == -1)
+	{
+		log_error("fcntl(F_SETFL) error (%d)\n", errno);
+		ret = -1;
+		goto cleanup;
+	}
 
 	// Set STDIN/STDOUT as non-blocking
-	flags_stdin = fcntl(STDIN_FILENO, F_GETFL, 0);
-	flags_stdout = fcntl(STDOUT_FILENO, F_GETFL, 0);
-	fcntl(STDIN_FILENO, F_SETFL, flags_stdin | O_NONBLOCK);
-	fcntl(STDOUT_FILENO, F_SETFL, flags_stdout | O_NONBLOCK);
+	if ((flags_stdin = fcntl(STDIN_FILENO, F_GETFL, 0)) == -1)
+	{
+		log_error("fcntl(F_GETFL) error (%d)\n", errno);
+		ret = -1;
+		goto cleanup;
+	}
+	if ((flags_stdout = fcntl(STDOUT_FILENO, F_GETFL, 0)) == -1)
+	{
+		log_error("fcntl(F_GETFL) error (%d)\n", errno);
+		ret = -1;
+		goto cleanup;
+	}
+	if ((fcntl(STDIN_FILENO, F_SETFL, flags_stdin | O_NONBLOCK)) == -1)
+	{
+		log_error("fcntl(F_SETFL) error (%d)\n", errno);
+		ret = -1;
+		goto cleanup;
+	}
+	if ((fcntl(STDOUT_FILENO, F_SETFL, flags_stdout | O_NONBLOCK)) == -1)
+	{
+		log_error("fcntl(F_SETFL) error (%d)\n", errno);
+		ret = -1;
+		goto cleanup;
+	}
 
 #ifdef HAVE_SYS_EPOLL_H
 	epollfd = epoll_create1(0);
 	if (epollfd < 0)
 	{
 		log_error("epoll_create1() error (%d)\n", errno);
-		return -1;
+		ret = -1;
+		goto cleanup;
 	}
 
 	ev.events = EPOLLOUT | EPOLLET;
@@ -374,6 +474,7 @@ static int bbsnet_connect(int n)
 	if (epoll_ctl(epollfd, EPOLL_CTL_ADD, sock, &ev) == -1)
 	{
 		log_error("epoll_ctl(socket) error (%d)\n", errno);
+		ret = -1;
 		goto cleanup;
 	}
 
@@ -382,13 +483,19 @@ static int bbsnet_connect(int n)
 	if (epoll_ctl(epollfd, EPOLL_CTL_ADD, STDIN_FILENO, &ev) == -1)
 	{
 		log_error("epoll_ctl(STDIN_FILENO) error (%d)\n", errno);
+		ret = -1;
 		goto cleanup;
 	}
 #endif
 
 	while (!SYS_server_exit)
 	{
-		if ((ret = connect(sock, (struct sockaddr *)&sin, sizeof(sin))) < 0)
+		if ((ret = connect(sock, res->ai_addr, res->ai_addrlen)) == 0)
+		{
+			sock_connected = 1;
+			break;
+		}
+		else if (ret < 0)
 		{
 			if (errno == EAGAIN || errno == EALREADY || errno == EINPROGRESS)
 			{
@@ -404,19 +511,33 @@ static int bbsnet_connect(int n)
 			else
 			{
 				log_error("connect(socket) error (%d)\n", errno);
-
 				prints("\033[1;31m连接失败！\033[m\r\n");
 				press_any_key();
-
+				ret = -1;
 				goto cleanup;
 			}
 		}
 	}
 
-	for (int j = 0; j < MAX_PROCESS_BAR_LEN && !sock_connected && !SYS_server_exit; j++)
+	progress = progress_last = 0;
+	prints("\033[1;32m连接进行中，按\033[1;33mCtrl+C\033[1;32m中断。\033[m\r\n");
+	progress_bar(0, PROGRESS_BAR_LEN);
+
+	if (clock_gettime(CLOCK_REALTIME, &ts_begin) == -1)
+	{
+		log_error("clock_gettime() error (%d)\n", errno);
+		ret = -1;
+		goto cleanup;
+	}
+	ts_now = ts_begin;
+
+	while ((ts_now.tv_sec - ts_begin.tv_sec) * 1000 +
+				   (ts_now.tv_nsec - ts_begin.tv_nsec) / 1000 / 1000 <
+			   REMOTE_CONNECT_TIMEOUT * 1000 &&
+		   !sock_connected && !SYS_server_exit)
 	{
 #ifdef HAVE_SYS_EPOLL_H
-		nfds = epoll_wait(epollfd, events, MAX_EVENTS, 500); // 0.5 second
+		nfds = epoll_wait(epollfd, events, MAX_EVENTS, 100); // 0.1 second
 		ret = nfds;
 #else
 		pfds[0].fd = sock;
@@ -424,7 +545,7 @@ static int bbsnet_connect(int n)
 		pfds[1].fd = STDIN_FILENO;
 		pfds[1].events = POLLIN;
 		nfds = 2;
-		ret = poll(pfds, (nfds_t)nfds, 500); // 0.5 second
+		ret = poll(pfds, (nfds_t)nfds, 100); // 0.1 second
 #endif
 
 		if (ret < 0)
@@ -441,7 +562,31 @@ static int bbsnet_connect(int n)
 		}
 		else if (ret == 0) // timeout
 		{
-			process_bar(j + 1, MAX_PROCESS_BAR_LEN);
+			if (clock_gettime(CLOCK_REALTIME, &ts_now) == -1)
+			{
+				log_error("clock_gettime() error (%d)\n", errno);
+				ret = -1;
+				goto cleanup;
+			}
+
+			progress = (int)((ts_now.tv_sec - ts_begin.tv_sec) * 1000 +
+							 (ts_now.tv_nsec - ts_begin.tv_nsec) / 1000 / 1000) /
+						   REMOTE_CONNECT_TIMEOUT / 10 +
+					   1;
+			if (progress < 0)
+			{
+				progress = 0;
+			}
+			if (progress > 100)
+			{
+				progress = 100;
+			}
+
+			if (progress > progress_last)
+			{
+				progress_last = progress;
+				progress_bar(progress, PROGRESS_BAR_LEN);
+			}
 		}
 		else // ret > 0
 		{
@@ -453,15 +598,17 @@ static int bbsnet_connect(int n)
 				if (pfds[i].fd == sock && (pfds[i].revents & POLLOUT))
 #endif
 				{
-					len = sizeof(error);
-					if (getsockopt(sock, SOL_SOCKET, SO_ERROR, &error, (socklen_t *)&len) < 0)
+					socklen_t len = sizeof(error);
+					if (getsockopt(sock, SOL_SOCKET, SO_ERROR, &error, &len) < 0)
 					{
-						log_error("getsockopt() error (%d) !\n", error);
+						log_error("getsockopt() error (%d) !\n", errno);
+						ret = -1;
 						goto cleanup;
 					}
 					if (error == 0)
 					{
 						sock_connected = 1;
+						break;
 					}
 				}
 #ifdef HAVE_SYS_EPOLL_H
@@ -476,6 +623,7 @@ static int bbsnet_connect(int n)
 					} while (ch == 0);
 					if (ch == Ctrl('C') || ch == KEY_ESC)
 					{
+						ret = 0;
 						goto cleanup;
 					}
 				}
@@ -484,13 +632,15 @@ static int bbsnet_connect(int n)
 	}
 	if (SYS_server_exit)
 	{
+		ret = 0;
 		goto cleanup;
 	}
 	if (!sock_connected)
 	{
+		progress_bar(100, PROGRESS_BAR_LEN);
 		prints("\033[1;31m连接失败！\033[m\r\n");
 		press_any_key();
-
+		ret = -1;
 		goto cleanup;
 	}
 
@@ -504,60 +654,82 @@ static int bbsnet_connect(int n)
 	if (getsockname(sock, (struct sockaddr *)&sin, &sock_len) < 0)
 	{
 		log_error("getsockname() error: %d", errno);
+		ret = -1;
 		goto cleanup;
 	}
 
-	strncpy(local_addr, inet_ntoa(sin.sin_addr), sizeof(local_addr) - 1);
-	local_addr[sizeof(local_addr) - 1] = '\0';
+	if (inet_ntop(AF_INET, &(sin.sin_addr), local_addr, sizeof(local_addr)) == NULL)
+	{
+		log_error("inet_ntop() error (%d)\n", errno);
+		ret = -1;
+		goto cleanup;
+	}
 	local_port = ntohs(sin.sin_port);
 
 	if (bbsnet_conf[n].use_ssh)
 	{
-		session = ssh_new();
-		if (session == NULL)
+		outbound_session = ssh_new();
+		if (outbound_session == NULL)
 		{
 			log_error("ssh_new() error\n");
+			ret = -1;
 			goto cleanup;
 		}
 
-		if (ssh_options_set(session, SSH_OPTIONS_FD, &sock) < 0 ||
-			ssh_options_set(session, SSH_OPTIONS_PROCESS_CONFIG, &ssh_process_config) < 0 ||
-			ssh_options_set(session, SSH_OPTIONS_KNOWNHOSTS, SSH_KNOWN_HOSTS_FILE) < 0 ||
-			ssh_options_set(session, SSH_OPTIONS_HOST, bbsnet_conf[n].host_name) < 0 ||
-			ssh_options_set(session, SSH_OPTIONS_USER, remote_user) < 0 ||
-			ssh_options_set(session, SSH_OPTIONS_HOSTKEYS, "+ssh-rsa") < 0 ||
-			ssh_options_set(session, SSH_OPTIONS_LOG_VERBOSITY, &ssh_log_level) < 0)
+		if (ssh_options_set(outbound_session, SSH_OPTIONS_FD, &sock) < 0 ||
+			ssh_options_set(outbound_session, SSH_OPTIONS_PROCESS_CONFIG, &ssh_process_config) < 0 ||
+			ssh_options_set(outbound_session, SSH_OPTIONS_KNOWNHOSTS, SSH_KNOWN_HOSTS_FILE) < 0 ||
+			ssh_options_set(outbound_session, SSH_OPTIONS_HOST, bbsnet_conf[n].host_name) < 0 ||
+			ssh_options_set(outbound_session, SSH_OPTIONS_USER, remote_user) < 0 ||
+			ssh_options_set(outbound_session, SSH_OPTIONS_HOSTKEYS, "+ssh-ed25519,ecdsa-sha2-nistp256,ssh-rsa") < 0 ||
+			ssh_options_set(outbound_session, SSH_OPTIONS_LOG_VERBOSITY, &ssh_log_level) < 0)
 		{
-			log_error("Error setting SSH options: %s\n", ssh_get_error(session));
+			log_error("Error setting SSH options: %s\n", ssh_get_error(outbound_session));
+			ret = -1;
 			goto cleanup;
 		}
 
-		ssh_set_blocking(session, 0);
+		ssh_set_blocking(outbound_session, 0);
 
-		while (!SYS_server_exit)
+		t_begin = time(NULL);
+		ret = SSH_ERROR;
+		while (!SYS_server_exit && time(NULL) - t_begin < SSH_CONNECT_TIMEOUT)
 		{
-			ret = ssh_connect(session);
+			ret = ssh_connect(outbound_session);
 			if (ret == SSH_OK)
 			{
 				break;
 			}
-			else if (ret == SSH_ERROR)
+			else if (ret == SSH_AGAIN)
 			{
-				log_error("ssh_connect() error\n");
+				// log_debug("ssh_connect() error: SSH_AGAIN\n");
+			}
+			else // if (ret == SSH_ERROR)
+			{
+				log_error("ssh_connect() error: SSH_ERROR\n");
+				ret = -1;
 				goto cleanup;
 			}
 		}
+		if (ret != SSH_OK)
+		{
+			prints("\033[1;31m连接超时！\033[m\r\n");
+			press_any_key();
+			ret = -1;
+			goto cleanup;
+		}
 
-		ret = ssh_session_is_known_server(session);
+		ret = ssh_session_is_known_server(outbound_session);
 		switch (ret)
 		{
 		case SSH_KNOWN_HOSTS_NOT_FOUND:
 		case SSH_KNOWN_HOSTS_UNKNOWN:
-			if (ssh_session_update_known_hosts(session) != SSH_OK)
+			if (ssh_session_update_known_hosts(outbound_session) != SSH_OK)
 			{
 				log_error("ssh_session_update_known_hosts(%s) error\n", bbsnet_conf[n].host_name);
-				prints("\033[1;31m无法添加服务器证书\033[m");
+				prints("\033[1;31m无法添加服务器证书\033[m\r\n");
 				press_any_key();
+				ret = -1;
 				goto cleanup;
 			}
 			log_common("SSH key of (%s) is added into %s\n", bbsnet_conf[n].host_name, SSH_KNOWN_HOSTS_FILE);
@@ -566,100 +738,134 @@ static int bbsnet_connect(int n)
 		case SSH_KNOWN_HOSTS_CHANGED:
 		case SSH_KNOWN_HOSTS_OTHER:
 			log_error("ssh_session_is_known_server(%s) error: %d\n", bbsnet_conf[n].host_name, ret);
-			prints("\033[1;31m服务器证书已变更\033[m");
+			prints("\033[1;31m服务器证书已变更\033[m\r\n");
 			press_any_key();
+			ret = -1;
 			goto cleanup;
 		}
 
-		for (int i = 0; !SYS_server_exit;)
+		ret = SSH_AUTH_ERROR;
+		while (!SYS_server_exit && time(NULL) - t_begin < SSH_CONNECT_TIMEOUT)
 		{
-			ret = ssh_userauth_password(session, NULL, remote_pass);
+			ret = ssh_userauth_password(outbound_session, NULL, remote_pass);
 			if (ret == SSH_AUTH_SUCCESS)
 			{
 				break;
 			}
 			else if (ret == SSH_AUTH_AGAIN)
 			{
-#ifdef _DEBUG
-				log_error("ssh_userauth_password() error: SSH_AUTH_AGAIN\n");
-#endif
+				// log_debug("ssh_userauth_password() error: SSH_AUTH_AGAIN\n");
 			}
 			else if (ret == SSH_AUTH_ERROR)
 			{
-				log_error("ssh_userauth_password() error: %d\n", ret);
+				log_error("ssh_userauth_password() error: SSH_AUTH_ERROR\n");
+				ret = -1;
 				goto cleanup;
 			}
 			else // if (ret == SSH_AUTH_DENIED)
 			{
+				log_error("ssh_userauth_password() error: SSH_AUTH_DENIED\n");
 				prints("\033[1;31m身份验证失败！\033[m\r\n");
-				i++;
-				if (i < BBS_login_retry_times)
-				{
-					prints("请输入密码: ");
-					iflush();
-					if (str_input(remote_pass, sizeof(remote_pass), NOECHO) < 0)
-					{
-						goto cleanup;
-					}
-					if (remote_pass[0] == '\0')
-					{
-						goto cleanup;
-					}
-				}
-				else
-				{
-					goto cleanup;
-				}
+				press_any_key();
+				ret = -1;
+				goto cleanup;
 			}
 		}
-
-		channel = ssh_channel_new(session);
-		if (channel == NULL)
+		if (ret != SSH_AUTH_SUCCESS)
 		{
-			log_error("ssh_channel_new() error\n");
+			prints("\033[1;31m连接超时！\033[m\r\n");
+			press_any_key();
+			ret = -1;
 			goto cleanup;
 		}
 
-		while (!SYS_server_exit)
+		outbound_channel = ssh_channel_new(outbound_session);
+		if (outbound_channel == NULL)
 		{
-			ret = ssh_channel_open_session(channel);
+			log_error("ssh_channel_new() error\n");
+			ret = -1;
+			goto cleanup;
+		}
+
+		ret = SSH_ERROR;
+		while (!SYS_server_exit && time(NULL) - t_begin < SSH_CONNECT_TIMEOUT)
+		{
+			ret = ssh_channel_open_session(outbound_channel);
 			if (ret == SSH_OK)
 			{
 				break;
 			}
-			else if (ret == SSH_ERROR)
+			else if (ret == SSH_AGAIN)
 			{
-				log_error("ssh_channel_open_session() error\n");
+				// log_debug("ssh_channel_open_session() error: SSH_AGAIN\n");
+			}
+			else // if (ret == SSH_ERROR)
+			{
+				log_error("ssh_channel_open_session() error: SSH_ERROR\n");
+				ret = -1;
 				goto cleanup;
 			}
 		}
-
-		while (!SYS_server_exit)
+		if (ret != SSH_OK)
 		{
-			ret = ssh_channel_request_pty(channel);
+			prints("\033[1;31m连接超时！\033[m\r\n");
+			press_any_key();
+			ret = -1;
+			goto cleanup;
+		}
+
+		ret = SSH_ERROR;
+		while (!SYS_server_exit && time(NULL) - t_begin < SSH_CONNECT_TIMEOUT)
+		{
+			ret = ssh_channel_request_pty(outbound_channel);
 			if (ret == SSH_OK)
 			{
 				break;
 			}
-			else if (ret == SSH_ERROR)
+			else if (ret == SSH_AGAIN)
 			{
-				log_error("ssh_channel_request_pty() error\n");
+				// log_debug("ssh_channel_request_pty() error: SSH_AGAIN\n");
+			}
+			else // if (ret == SSH_ERROR)
+			{
+				log_error("ssh_channel_request_pty() error: SSH_ERROR\n");
+				ret = -1;
 				goto cleanup;
 			}
 		}
-
-		while (!SYS_server_exit)
+		if (ret != SSH_OK)
 		{
-			ret = ssh_channel_request_shell(channel);
+			prints("\033[1;31m连接超时！\033[m\r\n");
+			press_any_key();
+			ret = -1;
+			goto cleanup;
+		}
+
+		ret = SSH_ERROR;
+		while (!SYS_server_exit && time(NULL) - t_begin < SSH_CONNECT_TIMEOUT)
+		{
+			ret = ssh_channel_request_shell(outbound_channel);
 			if (ret == SSH_OK)
 			{
 				break;
 			}
-			else if (ret == SSH_ERROR)
+			else if (ret == SSH_AGAIN)
 			{
-				log_error("ssh_channel_request_shell() error\n");
+				// log_debug("ssh_channel_request_shell() error: SSH_AGAIN\n");
+			}
+			else // if (ret == SSH_ERROR)
+			{
+				log_error("ssh_channel_request_shell() error: SSH_ERROR\n");
+				ret = -1;
 				goto cleanup;
 			}
+		}
+		if (ret != SSH_OK)
+		{
+			prints("\033[1;31m连接超时！\033[m\r\n");
+			press_any_key();
+			ret = -1;
+			goto cleanup;
 		}
 	}
 
@@ -674,6 +880,7 @@ static int bbsnet_connect(int n)
 	if (input_cd == (iconv_t)(-1))
 	{
 		log_error("iconv_open(%s->%s) error: %d\n", stdio_charset, tocode, errno);
+		ret = -1;
 		goto cleanup;
 	}
 
@@ -683,7 +890,7 @@ static int bbsnet_connect(int n)
 	if (output_cd == (iconv_t)(-1))
 	{
 		log_error("iconv_open(%s->%s) error: %d\n", bbsnet_conf[n].charset, tocode, errno);
-		iconv_close(input_cd);
+		ret = -1;
 		goto cleanup;
 	}
 
@@ -693,6 +900,7 @@ static int bbsnet_connect(int n)
 	if (epoll_ctl(epollfd, EPOLL_CTL_MOD, sock, &ev) == -1)
 	{
 		log_error("epoll_ctl(socket) error (%d)\n", errno);
+		ret = -1;
 		goto cleanup;
 	}
 
@@ -701,25 +909,26 @@ static int bbsnet_connect(int n)
 	if (epoll_ctl(epollfd, EPOLL_CTL_ADD, STDOUT_FILENO, &ev) == -1)
 	{
 		log_error("epoll_ctl(STDOUT_FILENO) error (%d)\n", errno);
+		ret = -1;
 		goto cleanup;
 	}
 #endif
 
-	BBS_last_access_tm = t_used = time(NULL);
+	BBS_last_access_tm = t_begin = time(NULL);
 	loop = 1;
 
 	while (loop && !SYS_server_exit)
 	{
 		if (SSH_v2 && ssh_channel_is_closed(SSH_channel))
 		{
-			log_error("SSH channel is closed\n");
+			log_debug("SSH channel is closed\n");
 			loop = 0;
 			break;
 		}
 
-		if (bbsnet_conf[n].use_ssh && ssh_channel_is_closed(channel))
+		if (bbsnet_conf[n].use_ssh && ssh_channel_is_closed(outbound_channel))
 		{
-			log_error("Remote SSH channel is closed\n");
+			log_debug("Outbound channel is closed\n");
 			loop = 0;
 			break;
 		}
@@ -762,7 +971,22 @@ static int bbsnet_connect(int n)
 		for (int i = 0; i < nfds; i++)
 		{
 #ifdef HAVE_SYS_EPOLL_H
-			if (events[i].data.fd == STDIN_FILENO)
+			if (events[i].events & (EPOLLHUP | EPOLLERR))
+#else
+			if (pfds[i].revents & (POLLHUP | POLLERR))
+#endif
+			{
+#ifdef HAVE_SYS_EPOLL_H
+				log_debug("FD (%d) error events (%d)\n", events[i].data.fd, events[i].events);
+#else
+				log_debug("FD (%d) error events (%d)\n", pfds[i].fd, pfds[i].revents);
+#endif
+				loop = 0;
+				break;
+			}
+
+#ifdef HAVE_SYS_EPOLL_H
+			if (events[i].data.fd == STDIN_FILENO && (events[i].events & EPOLLIN))
 #else
 			if (pfds[i].fd == STDIN_FILENO && (pfds[i].revents & POLLIN))
 #endif
@@ -796,7 +1020,7 @@ static int bbsnet_connect(int n)
 			}
 
 #ifdef HAVE_SYS_EPOLL_H
-			if (events[i].data.fd == STDOUT_FILENO)
+			if (events[i].data.fd == STDOUT_FILENO && (events[i].events & EPOLLOUT))
 #else
 			if (pfds[i].fd == STDOUT_FILENO && (pfds[i].revents & POLLOUT))
 #endif
@@ -814,7 +1038,7 @@ static int bbsnet_connect(int n)
 					ret = ssh_channel_read_nonblocking(SSH_channel, input_buf + input_buf_len, sizeof(input_buf) - (uint32_t)input_buf_len, 0);
 					if (ret == SSH_ERROR)
 					{
-						log_error("ssh_channel_read_nonblocking() error: %s\n", ssh_get_error(SSH_session));
+						log_debug("ssh_channel_read_nonblocking() error: %s\n", ssh_get_error(SSH_session));
 						loop = 0;
 						break;
 					}
@@ -829,8 +1053,8 @@ static int bbsnet_connect(int n)
 						// Send NO-OP to remote server
 						input_buf[input_buf_len] = '\0';
 						input_buf_len++;
-						BBS_last_access_tm = time(NULL);
 
+						BBS_last_access_tm = time(NULL);
 						stdin_read_wait = 0;
 						break; // Check whether channel is still open
 					}
@@ -859,9 +1083,7 @@ static int bbsnet_connect(int n)
 				}
 				else if (ret == 0) // broken pipe
 				{
-#ifdef _DEBUG
-					log_error("read(STDIN) EOF\n");
-#endif
+					log_debug("read(STDIN) EOF\n");
 					stdin_read_wait = 0;
 					loop = 0;
 					break;
@@ -890,7 +1112,7 @@ static int bbsnet_connect(int n)
 #ifdef _DEBUG
 				for (int j = input_buf_offset; j < input_buf_len; j++)
 				{
-					log_error("Debug input: <--[%u]\n", (input_buf[j] + 256) % 256);
+					log_debug("input: <--[%u]\n", (input_buf[j] + 256) % 256);
 				}
 #endif
 
@@ -905,7 +1127,7 @@ static int bbsnet_connect(int n)
 #ifdef _DEBUG
 				for (int j = input_conv_offset; j < input_conv_len; j++)
 				{
-					log_error("Debug input_conv: <--[%u]\n", (input_conv[j] + 256) % 256);
+					log_debug("input_conv: <--[%u]\n", (input_conv[j] + 256) % 256);
 				}
 #endif
 			}
@@ -914,10 +1136,10 @@ static int bbsnet_connect(int n)
 			{
 				if (bbsnet_conf[n].use_ssh)
 				{
-					ret = ssh_channel_write(channel, input_conv + input_conv_offset, (uint32_t)(input_conv_len - input_conv_offset));
+					ret = ssh_channel_write(outbound_channel, input_conv + input_conv_offset, (uint32_t)(input_conv_len - input_conv_offset));
 					if (ret == SSH_ERROR)
 					{
-						log_error("ssh_channel_write() error: %s\n", ssh_get_error(session));
+						log_debug("ssh_channel_write() error: %s\n", ssh_get_error(outbound_session));
 						loop = 0;
 						break;
 					}
@@ -939,16 +1161,14 @@ static int bbsnet_connect(int n)
 					}
 					else
 					{
-						log_error("write(socket) error (%d)\n", errno);
+						log_debug("write(socket) error (%d)\n", errno);
 						loop = 0;
 						break;
 					}
 				}
 				else if (ret == 0) // broken pipe
 				{
-#ifdef _DEBUG
-					log_error("write(socket) EOF\n");
-#endif
+					log_debug("write(socket) EOF\n");
 					sock_write_wait = 0;
 					loop = 0;
 					break;
@@ -973,11 +1193,11 @@ static int bbsnet_connect(int n)
 			{
 				if (bbsnet_conf[n].use_ssh)
 				{
-					ret = ssh_channel_read_nonblocking(channel, output_buf + output_buf_len,
+					ret = ssh_channel_read_nonblocking(outbound_channel, output_buf + output_buf_len,
 													   (uint32_t)(sizeof(output_buf) - (size_t)output_buf_len), 0);
 					if (ret == SSH_ERROR)
 					{
-						log_error("ssh_channel_read_nonblocking() error: %s\n", ssh_get_error(session));
+						log_debug("ssh_channel_read_nonblocking() error: %s\n", ssh_get_error(outbound_session));
 						loop = 0;
 						break;
 					}
@@ -1010,16 +1230,14 @@ static int bbsnet_connect(int n)
 					}
 					else
 					{
-						log_error("read(socket) error (%d)\n", errno);
+						log_debug("read(socket) error (%d)\n", errno);
 						loop = 0;
 						break;
 					}
 				}
 				else if (ret == 0) // broken pipe
 				{
-#ifdef _DEBUG
-					log_error("read(socket) EOF\n");
-#endif
+					log_debug("read(socket) EOF\n");
 					sock_read_wait = 0;
 					loop = 0;
 					break;
@@ -1051,7 +1269,7 @@ static int bbsnet_connect(int n)
 					ret = ssh_channel_write(SSH_channel, output_conv + output_conv_offset, (uint32_t)(output_conv_len - output_conv_offset));
 					if (ret == SSH_ERROR)
 					{
-						log_error("ssh_channel_write() error: %s\n", ssh_get_error(SSH_session));
+						log_debug("ssh_channel_write() error: %s\n", ssh_get_error(SSH_session));
 						loop = 0;
 						break;
 					}
@@ -1073,16 +1291,14 @@ static int bbsnet_connect(int n)
 					}
 					else
 					{
-						log_error("write(STDOUT) error (%d)\n", errno);
+						log_debug("write(STDOUT) error (%d)\n", errno);
 						loop = 0;
 						break;
 					}
 				}
 				else if (ret == 0) // broken pipe
 				{
-#ifdef _DEBUG
-					log_error("write(STDOUT) EOF\n");
-#endif
+					log_debug("write(STDOUT) EOF\n");
 					stdout_write_wait = 0;
 					loop = 0;
 					break;
@@ -1102,12 +1318,28 @@ static int bbsnet_connect(int n)
 		}
 	}
 
-	iconv_close(input_cd);
-	iconv_close(output_cd);
+	ret = 1; // Normal disconnect
+	BBS_last_access_tm = time(NULL);
+	t_used = BBS_last_access_tm - t_begin;
+	log_common("BBSNET disconnect, %ld days %ld hours %ld minutes %ld seconds used\n",
+			   t_used / 86400, t_used % 86400 / 3600, t_used % 3600 / 60, t_used % 60);
 
 cleanup:
+	// Clear sensitive data
+	memset(remote_pass, 0, sizeof(remote_pass));
+	memset(remote_user, 0, sizeof(remote_user));
+
+	if (input_cd != (iconv_t)(-1))
+	{
+		iconv_close(input_cd);
+	}
+	if (output_cd != (iconv_t)(-1))
+	{
+		iconv_close(output_cd);
+	}
+
 #ifdef HAVE_SYS_EPOLL_H
-	if (close(epollfd) < 0)
+	if (epollfd != -1 && close(epollfd) < 0)
 	{
 		log_error("close(epoll) error (%d)\n");
 	}
@@ -1115,30 +1347,40 @@ cleanup:
 
 	if (bbsnet_conf[n].use_ssh)
 	{
-		ssh_channel_free(channel);
-		ssh_disconnect(session);
-		ssh_free(session);
+		if (outbound_channel != NULL)
+		{
+			ssh_channel_send_eof(outbound_channel);
+			ssh_channel_close(outbound_channel);
+			ssh_channel_free(outbound_channel);
+		}
+		if (outbound_session != NULL)
+		{
+			ssh_disconnect(outbound_session);
+			ssh_free(outbound_session);
+		}
 	}
 
 	// Restore STDIN/STDOUT flags
-	fcntl(STDIN_FILENO, F_SETFL, flags_stdin);
-	fcntl(STDOUT_FILENO, F_SETFL, flags_stdout);
+	if (flags_stdin != -1 && fcntl(STDIN_FILENO, F_SETFL, flags_stdin) == -1)
+	{
+		log_error("fcntl(F_SETFL) error (%d)\n", errno);
+	}
+	if (flags_stdout != -1 && fcntl(STDOUT_FILENO, F_SETFL, flags_stdout) == -1)
+	{
+		log_error("fcntl(F_SETFL) error (%d)\n", errno);
+	}
 
-	if (close(sock) == -1)
+	if (sock != -1 && close(sock) == -1)
 	{
 		log_error("Close socket failed\n");
 	}
 
-	t_used = time(NULL) - t_used;
-	tm_used = gmtime(&t_used);
+	if (res)
+	{
+		freeaddrinfo(res);
+	}
 
-	log_common("BBSNET disconnect, %d days %d hours %d minutes %d seconds used\n",
-			   tm_used->tm_mday - 1, tm_used->tm_hour, tm_used->tm_min,
-			   tm_used->tm_sec);
-
-	BBS_last_access_tm = time(NULL);
-
-	return 0;
+	return ret;
 }
 
 static int bbsnet_refresh()
@@ -1180,7 +1422,7 @@ static int bbsnet_selchange()
 	prints("|");
 	moveto(21, 1);
 	clrtoeol();
-	prints("|\033[1m连往: \033[1;33m%-20s\033[m  端口: \033[1;33m%-5d\033[m                 编码: \033[1;33m%s\033[m",
+	prints("|\033[1m连往: \033[1;33m%-20s\033[m  端口: \033[1;33m%-5s\033[m                 编码: \033[1;33m%s\033[m",
 		   bbsnet_conf[i].host_name, bbsnet_conf[i].port, bbsnet_conf[i].charset);
 	moveto(21, 80);
 	prints("|");
@@ -1191,9 +1433,16 @@ static int bbsnet_selchange()
 
 int bbs_net()
 {
-	int ch, i;
+	int ch;
 
-	load_bbsnet_conf(CONF_BBSNET);
+	if (load_bbsnet_conf(CONF_BBSNET) < 0)
+	{
+		clearscr();
+		moveto(1, 1);
+		prints("加载穿梭配置失败！");
+		press_any_key();
+		return -1;
+	}
 
 	bbsnet_refresh();
 	display_menu(&bbsnet_menu);
@@ -1211,7 +1460,7 @@ int bbs_net()
 		switch (ch)
 		{
 		case KEY_NULL: // broken pipe
-			log_error("KEY_NULL\n");
+			log_debug("KEY_NULL\n");
 			goto cleanup;
 		case KEY_TIMEOUT:
 			if (time(NULL) - BBS_last_access_tm >= BBS_max_user_idle_time)
@@ -1224,7 +1473,10 @@ int bbs_net()
 		case Ctrl('C'): // user cancel
 			goto cleanup;
 		case CR:
-			bbsnet_connect(bbsnet_menu.menu_item_pos[0]);
+			if (bbsnet_connect(bbsnet_menu.menu_item_pos[0]) < 0)
+			{
+				log_debug("bbsnet_connect() error\n");
+			}
 			// Force cleanup anything remaining in the output buffer
 			clearscr();
 			iflush();
@@ -1234,14 +1486,14 @@ int bbs_net()
 			bbsnet_selchange();
 			break;
 		case KEY_UP:
-			for (i = 0; i < STATION_PER_LINE; i++)
+			for (int i = 0; i < STATION_PER_LINE; i++)
 			{
 				menu_control(&bbsnet_menu, KEY_UP);
 			}
 			bbsnet_selchange();
 			break;
 		case KEY_DOWN:
-			for (i = 0; i < STATION_PER_LINE; i++)
+			for (int i = 0; i < STATION_PER_LINE; i++)
 			{
 				menu_control(&bbsnet_menu, KEY_DOWN);
 			}

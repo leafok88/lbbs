@@ -71,7 +71,7 @@ enum select_cmd_t
 	SEARCH_USER,
 };
 
-static int section_list_draw_items(int page_id, ARTICLE *p_articles[], int article_count, int display_nickname, int ontop_start_offset)
+static int section_list_draw_items(int page_id, const ARTICLE *p_articles[], int article_count, int display_nickname, int ontop_start_offset)
 {
 	char str_time[LINE_BUFFER_LEN];
 	struct tm tm_sub;
@@ -281,7 +281,7 @@ static enum select_cmd_t section_list_select(int total_page, int item_count, int
 		switch (ch)
 		{
 		case KEY_NULL: // broken pipe
-			log_error("KEY_NULL\n");
+			log_debug("KEY_NULL\n");
 			return EXIT_SECTION;
 		case KEY_TIMEOUT:
 			if (time(NULL) - BBS_last_access_tm >= BBS_max_user_idle_time)
@@ -590,7 +590,7 @@ int section_list_display(const char *sname, int32_t aid)
 	char stitle[BBS_section_title_max_len + 1];
 	char master_list[(BBS_username_max_len + 1) * 3 + 1];
 	char page_info_str[LINE_BUFFER_LEN];
-	ARTICLE *p_articles[BBS_article_limit_per_page];
+	const ARTICLE *p_articles[BBS_article_limit_per_page];
 	int article_count;
 	int page_count;
 	int ontop_start_offset;
@@ -1415,7 +1415,7 @@ int section_list_ex_dir_display(SECTION_LIST *p_section)
 			switch (ch)
 			{
 			case KEY_NULL: // broken pipe
-				log_error("KEY_NULL\n");
+				log_debug("KEY_NULL\n");
 				loop = 0;
 				break;
 			case KEY_TIMEOUT:
