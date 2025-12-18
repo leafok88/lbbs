@@ -1313,7 +1313,7 @@ static int bbsnet_connect(int n)
 	ret = 1; // Normal disconnect
 	BBS_last_access_tm = time(NULL);
 	t_used = BBS_last_access_tm - t_begin;
-	log_common("BBSNET disconnect, %jd days %jd hours %jd minutes %jd seconds used\n",
+	log_common("BBSNET disconnect, %ld days %ld hours %ld minutes %ld seconds used\n",
 			   t_used / 86400, t_used % 86400 / 3600, t_used % 3600 / 60, t_used % 60);
 
 cleanup:
