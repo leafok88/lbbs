@@ -39,8 +39,6 @@ static const unsigned int hash_dict_prime_list_count = sizeof(hash_dict_prime_li
 HASH_DICT *hash_dict_create(int item_count_limit)
 {
 	HASH_DICT *p_dict = NULL;
-	unsigned int i;
-	unsigned int j;
 
 	if (item_count_limit <= 0)
 	{
@@ -56,7 +54,7 @@ HASH_DICT *hash_dict_create(int item_count_limit)
 	}
 
 	p_dict->prime_index = hash_dict_prime_list_count - 1;
-	for (i = 0; i < hash_dict_prime_list_count; i++)
+	for (unsigned int i = 0; i < hash_dict_prime_list_count; i++)
 	{
 		if (item_count_limit < hash_dict_prime_list[i])
 		{
@@ -75,17 +73,14 @@ HASH_DICT *hash_dict_create(int item_count_limit)
 		return NULL;
 	}
 
-	for (i = 0; i < p_dict->bucket_count; i++)
+	for (unsigned int i = 0; i < p_dict->bucket_count; i++)
 	{
 		p_dict->buckets[i] = calloc(HASH_DICT_BUCKET_SIZE, sizeof(HASH_ITEM *));
 		if (p_dict->buckets[i] == NULL)
 		{
 			log_error("calloc(HASH_DICT_BUCKET_SIZE, HASH_ITEM) error at bucket %d\n", i);
-			for (j = i - 1; j >= 0; j--)
-			{
-				free(p_dict->buckets[j]);
-			}
-			free(p_dict);
+			p_dict->bucket_count = i;
+			hash_dict_destroy(p_dict);
 			return NULL;
 		}
 	}
@@ -99,17 +94,15 @@ void hash_dict_destroy(HASH_DICT *p_dict)
 {
 	HASH_ITEM *p_item;
 	HASH_ITEM *p_next;
-	unsigned int i;
-	unsigned int j;
 
 	if (p_dict == NULL)
 	{
 		return;
 	}
 
-	for (i = 0; i < p_dict->bucket_count; i++)
+	for (unsigned int i = 0; i < p_dict->bucket_count; i++)
 	{
-		for (j = 0; j < HASH_DICT_BUCKET_SIZE; j++)
+		for (unsigned int j = 0; j < HASH_DICT_BUCKET_SIZE; j++)
 		{
 			p_item = p_dict->buckets[i][j];
 			while (p_item != NULL)
