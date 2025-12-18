@@ -34,7 +34,7 @@ static const unsigned int hash_dict_prime_list[] = {
 	50331653,
 };
 
-static const int hash_dict_prime_list_count = sizeof(hash_dict_prime_list) / sizeof(hash_dict_prime_list[0]);
+static const unsigned int hash_dict_prime_list_count = sizeof(hash_dict_prime_list) / sizeof(hash_dict_prime_list[0]);
 
 HASH_DICT *hash_dict_create(int item_count_limit)
 {

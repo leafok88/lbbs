@@ -243,7 +243,7 @@ int prints(const char *format, ...)
 	ret = vsnprintf(buf, sizeof(buf), format, args);
 	va_end(args);
 
-	if (ret > 0)
+	if (ret >= 0)
 	{
 		int written = (ret >= sizeof(buf) ? (int)sizeof(buf) - 1 : ret);
 
@@ -256,13 +256,14 @@ int prints(const char *format, ...)
 		{
 			memcpy(stdout_buf + stdout_buf_len, buf, (size_t)written);
 			stdout_buf_len += written;
+			ret = written;
 		}
 		else
 		{
 			errno = EAGAIN;
-			int need = stdout_buf_len + ret - OUTPUT_BUF_SIZE;
-			log_error("Output buffer is full, additional %d is required\n", need);
-			ret = -1;
+			int need = stdout_buf_len + written - OUTPUT_BUF_SIZE;
+			log_error("Output buffer is full, additional %d bytes are required\n", need);
+			ret = -need;
 		}
 	}
 
