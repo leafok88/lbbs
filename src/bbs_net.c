@@ -867,9 +867,9 @@ static int bbsnet_connect(int n)
 		for (int i = 0; i < nfds; i++)
 		{
 #ifdef HAVE_SYS_EPOLL_H
-			if (events[i].events & (EPOLLRDHUP | EPOLLHUP | EPOLLERR))
+			if (events[i].events & (EPOLLHUP | EPOLLERR))
 #else
-			if (pfds[i].revents & (POLLRDHUP | POLLHUP | POLLERR))
+			if (pfds[i].revents & (POLLHUP | POLLERR))
 #endif
 			{
 #ifdef HAVE_SYS_EPOLL_H

@@ -282,9 +282,9 @@ int iflush(void)
 		for (int i = 0; i < nfds; i++)
 		{
 #ifdef HAVE_SYS_EPOLL_H
-			if (events[i].data.fd == STDOUT_FILENO && (events[i].events & (EPOLLRDHUP | EPOLLHUP | EPOLLERR)))
+			if (events[i].data.fd == STDOUT_FILENO && (events[i].events & (EPOLLHUP | EPOLLERR)))
 #else
-			if (pfds[i].fd == STDOUT_FILENO && (pfds[i].revents & (POLLRDHUP | POLLHUP | POLLERR)))
+			if (pfds[i].fd == STDOUT_FILENO && (pfds[i].revents & (POLLHUP | POLLERR)))
 #endif
 			{
 #ifdef HAVE_SYS_EPOLL_H
@@ -440,9 +440,9 @@ int igetch(int timeout)
 				for (int i = 0; i < nfds; i++)
 				{
 #ifdef HAVE_SYS_EPOLL_H
-					if (events[i].data.fd == STDIN_FILENO && (events[i].events & (EPOLLRDHUP | EPOLLHUP | EPOLLERR)))
+					if (events[i].data.fd == STDIN_FILENO && (events[i].events & (EPOLLHUP | EPOLLERR)))
 #else
-					if (pfds[i].fd == STDIN_FILENO && (pfds[i].revents & (POLLRDHUP | POLLHUP | POLLERR)))
+					if (pfds[i].fd == STDIN_FILENO && (pfds[i].revents & (POLLHUP | POLLERR)))
 #endif
 					{
 #ifdef HAVE_SYS_EPOLL_H
