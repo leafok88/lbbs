@@ -719,7 +719,7 @@ int display_data(const void *p_data, long display_line_total, const long *p_line
 					log_debug("KEY_NULL\n");
 					goto cleanup;
 				case KEY_TIMEOUT:
-					log_error("User input timeout\n");
+					log_debug("User input timeout\n");
 					goto cleanup;
 				case KEY_HOME:
 					if (line_current - output_current_row < 0) // Reach begin

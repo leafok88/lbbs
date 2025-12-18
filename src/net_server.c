@@ -789,6 +789,8 @@ int net_server(const char *hostaddr, in_port_t port[])
 			sd_notify(0, "RELOADING=1");
 #endif
 
+			log_common("Reload configuration\n");
+			
 			// Restart log
 			if (log_restart() < 0)
 			{

@@ -236,7 +236,7 @@ static enum select_cmd_t user_list_select(int total_page, int item_count, int *p
 		case KEY_TIMEOUT:
 			if (time(NULL) - BBS_last_access_tm >= BBS_max_user_idle_time)
 			{
-				log_error("User input timeout\n");
+				log_debug("User input timeout\n");
 				return EXIT_LIST; // exit list
 			}
 			continue;

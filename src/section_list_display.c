@@ -286,7 +286,7 @@ static enum select_cmd_t section_list_select(int total_page, int item_count, int
 		case KEY_TIMEOUT:
 			if (time(NULL) - BBS_last_access_tm >= BBS_max_user_idle_time)
 			{
-				log_error("User input timeout\n");
+				log_debug("User input timeout\n");
 				return EXIT_SECTION;
 			}
 			continue;
@@ -1421,7 +1421,7 @@ int section_list_ex_dir_display(SECTION_LIST *p_section)
 			case KEY_TIMEOUT:
 				if (time(NULL) - BBS_last_access_tm >= BBS_max_user_idle_time)
 				{
-					log_error("User input timeout\n");
+					log_debug("User input timeout\n");
 					loop = 0;
 					break;
 				}

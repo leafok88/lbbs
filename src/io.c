@@ -88,14 +88,32 @@ int io_init(void)
 			log_error("epoll_ctl(STDIN_FILENO) error (%d)\n", errno);
 			if (close(stdin_epollfd) < 0)
 			{
-				log_error("close(stdin_epollfd) error (%d)\n");
+				log_error("close(stdin_epollfd) error (%d)\n", errno);
 			}
 			stdin_epollfd = -1;
 			return -1;
 		}
 
-		stdin_flags = fcntl(STDIN_FILENO, F_GETFL, 0);
-		fcntl(STDIN_FILENO, F_SETFL, stdin_flags | O_NONBLOCK);
+		if ((stdin_flags = fcntl(STDIN_FILENO, F_GETFL, 0)) == -1)
+		{
+			log_error("fcntl(F_GETFL) error (%d)\n", errno);
+			if (close(stdin_epollfd) < 0)
+			{
+				log_error("close(stdin_epollfd) error (%d)\n", errno);
+			}
+			stdin_epollfd = -1;
+			return -1;
+		}
+		if ((fcntl(STDIN_FILENO, F_SETFL, stdin_flags | O_NONBLOCK)) == -1)
+		{
+			log_error("fcntl(F_SETFL) error (%d)\n", errno);
+			if (close(stdin_epollfd) < 0)
+			{
+				log_error("close(stdin_epollfd) error (%d)\n", errno);
+			}
+			stdin_epollfd = -1;
+			return -1;
+		}
 	}
 
 	if (stdout_epollfd == -1)
@@ -114,26 +132,60 @@ int io_init(void)
 			log_error("epoll_ctl(STDOUT_FILENO) error (%d)\n", errno);
 			if (close(stdout_epollfd) < 0)
 			{
-				log_error("close(stdout_epollfd) error (%d)\n");
+				log_error("close(stdout_epollfd) error (%d)\n", errno);
 			}
 			stdout_epollfd = -1;
 			return -1;
 		}
 
-		stdout_flags = fcntl(STDOUT_FILENO, F_GETFL, 0);
-		fcntl(STDOUT_FILENO, F_SETFL, stdout_flags | O_NONBLOCK);
+		if ((stdout_flags = fcntl(STDOUT_FILENO, F_GETFL, 0)) == -1)
+		{
+			log_error("fcntl(F_GETFL) error (%d)\n", errno);
+			if (close(stdout_epollfd) < 0)
+			{
+				log_error("close(stdout_epollfd) error (%d)\n", errno);
+			}
+			stdout_epollfd = -1;
+			return -1;
+		}
+		if ((fcntl(STDOUT_FILENO, F_SETFL, stdout_flags | O_NONBLOCK)) == -1)
+		{
+			log_error("fcntl(F_SETFL) error (%d)\n", errno);
+			if (close(stdout_epollfd) < 0)
+			{
+				log_error("close(stdout_epollfd) error (%d)\n", errno);
+			}
+			stdout_epollfd = -1;
+			return -1;
+		}
 	}
 #else
 	if (stdin_flags == 0)
 	{
-		stdin_flags = fcntl(STDIN_FILENO, F_GETFL, 0);
-		fcntl(STDIN_FILENO, F_SETFL, stdin_flags | O_NONBLOCK);
+		if ((stdin_flags = fcntl(STDIN_FILENO, F_GETFL, 0)) == -1)
+		{
+			log_error("fcntl(F_GETFL) error (%d)\n", errno);
+			return -1;
+		}
+		if ((fcntl(STDIN_FILENO, F_SETFL, stdin_flags | O_NONBLOCK)) == -1)
+		{
+			log_error("fcntl(F_SETFL) error (%d)\n", errno);
+			return -1;
+		}
 	}
 
 	if (stdout_flags == 0)
 	{
-		stdout_flags = fcntl(STDOUT_FILENO, F_GETFL, 0);
-		fcntl(STDOUT_FILENO, F_SETFL, stdout_flags | O_NONBLOCK);
+		if ((stdout_flags = fcntl(STDOUT_FILENO, F_GETFL, 0)) == -1)
+		{
+			log_error("fcntl(F_GETFL) error (%d)\n", errno);
+			return -1;
+		}
+		if ((fcntl(STDOUT_FILENO, F_SETFL, stdout_flags | O_NONBLOCK)) == -1)
+		{
+			log_error("fcntl(F_SETFL) error (%d)\n", errno);
+			return -1;
+		}
 	}
 #endif
 
@@ -150,7 +202,7 @@ void io_cleanup(void)
 
 		if (close(stdin_epollfd) < 0)
 		{
-			log_error("close(stdin_epollfd) error (%d)\n");
+			log_error("close(stdin_epollfd) error (%d)\n", errno);
 		}
 		stdin_epollfd = -1;
 	}
@@ -162,7 +214,7 @@ void io_cleanup(void)
 
 		if (close(stdout_epollfd) < 0)
 		{
-			log_error("close(stdout_epollfd) error (%d)\n");
+			log_error("close(stdout_epollfd) error (%d)\n", errno);
 		}
 		stdout_epollfd = -1;
 	}
@@ -191,23 +243,27 @@ int prints(const char *format, ...)
 	ret = vsnprintf(buf, sizeof(buf), format, args);
 	va_end(args);
 
-	if (ret > 0)
+	if (ret >= 0)
 	{
-		if (stdout_buf_len + ret > OUTPUT_BUF_SIZE)
+		int written = (ret >= sizeof(buf) ? (int)sizeof(buf) - 1 : ret);
+
+		if (stdout_buf_len + written > OUTPUT_BUF_SIZE)
 		{
 			iflush();
 		}
 
-		if (stdout_buf_len + ret <= OUTPUT_BUF_SIZE)
+		if (stdout_buf_len + written <= OUTPUT_BUF_SIZE)
 		{
-			memcpy(stdout_buf + stdout_buf_len, buf, (size_t)ret);
-			stdout_buf_len += ret;
+			memcpy(stdout_buf + stdout_buf_len, buf, (size_t)written);
+			stdout_buf_len += written;
+			ret = written;
 		}
 		else
 		{
 			errno = EAGAIN;
-			ret = (OUTPUT_BUF_SIZE - stdout_buf_len - ret);
-			log_error("Output buffer is full, additional %d is required\n", ret);
+			int need = stdout_buf_len + written - OUTPUT_BUF_SIZE;
+			log_error("Output buffer is full, additional %d bytes are required\n", need);
+			ret = -need;
 		}
 	}
 
@@ -216,7 +272,7 @@ int prints(const char *format, ...)
 
 int outc(char c)
 {
-	int ret;
+	int ret = 0;
 
 	if (stdout_buf_len + 1 > OUTPUT_BUF_SIZE)
 	{
@@ -1058,7 +1114,7 @@ int io_buf_conv(iconv_t cd, char *p_buf, int *p_buf_len, int *p_buf_offset, char
 	size_t i = 0;
 	int skip_current = 0;
 
-	if (cd == NULL || p_buf == NULL || p_buf_len == NULL || p_buf_offset == NULL || p_conv == NULL || p_conv_len == NULL)
+	if (cd == (iconv_t)(-1) || p_buf == NULL || p_buf_len == NULL || p_buf_offset == NULL || p_conv == NULL || p_conv_len == NULL)
 	{
 		log_error("NULL pointer error\n");
 		return -1;
@@ -1112,7 +1168,8 @@ int io_buf_conv(iconv_t cd, char *p_buf, int *p_buf_len, int *p_buf_offset, char
 		{
 			if (errno == EINVAL) // Incomplete
 			{
-				log_debug("iconv(inbytes=%d, outbytes=%d) error: EINVAL, in_buf[0]=%d\n", in_bytes, out_bytes, in_buf[0]);
+				log_debug("iconv(inbytes=%zu, outbytes=%zu) error: EINVAL, in_buf[0]=%d\n",
+						  in_bytes, out_bytes, (unsigned char)in_buf[0]);
 				if (p_buf != in_buf)
 				{
 					*p_buf_len -= (int)(in_buf - p_buf);
@@ -1125,14 +1182,14 @@ int io_buf_conv(iconv_t cd, char *p_buf, int *p_buf_len, int *p_buf_offset, char
 			}
 			else if (errno == E2BIG)
 			{
-				log_error("iconv(inbytes=%d, outbytes=%d) error: E2BIG\n", in_bytes, out_bytes);
+				log_error("iconv(inbytes=%zu, outbytes=%zu) error: E2BIG\n", in_bytes, out_bytes);
 				return -1;
 			}
 			else if (errno == EILSEQ)
 			{
 				if (in_bytes > out_bytes || out_bytes <= 0)
 				{
-					log_error("iconv(inbytes=%d, outbytes=%d) error: EILSEQ and E2BIG\n", in_bytes, out_bytes);
+					log_error("iconv(inbytes=%zu, outbytes=%zu) error: EILSEQ\n", in_bytes, out_bytes);
 					return -2;
 				}
 
@@ -1140,17 +1197,17 @@ int io_buf_conv(iconv_t cd, char *p_buf, int *p_buf_len, int *p_buf_offset, char
 				if (in_bytes == 0)
 				{
 					in_bytes = (size_t)(*p_buf_len - *p_buf_offset);
-					log_debug("Reset in_bytes from 0 to %d\n", in_bytes);
+					log_debug("Reset in_bytes from 0 to %zu\n", in_bytes);
 				}
 
-				log_debug("iconv(in_bytes=%d, out_bytes=%d) error: EILSEQ, in_buf[0]=%d\n",
-						  in_bytes, out_bytes, in_buf[0]);
+				log_debug("iconv(in_bytes=%zu, out_bytes=%zu) error: EILSEQ, in_buf[0]=%d\n",
+						  in_bytes, out_bytes, (unsigned char)in_buf[0]);
 				skip_current = 1;
 			}
 			else // something strange
 			{
-				log_debug("iconv(in_bytes=%d, out_bytes=%d) error: %d, in_buf[0]=%d\n",
-						  in_bytes, out_bytes, errno, in_buf[0]);
+				log_debug("iconv(in_bytes=%zu, out_bytes=%zu) error: %d, in_buf[0]=%d\n",
+						  in_bytes, out_bytes, errno, (unsigned char)in_buf[0]);
 				*p_buf_offset = (int)(in_buf - p_buf);
 				*p_conv_len = (int)(conv_size - out_bytes);
 				skip_current = 1;

@@ -971,7 +971,7 @@ int editor_display(EDITOR_DATA *p_editor_data)
 					log_debug("KEY_NULL\n");
 					goto cleanup;
 				case KEY_TIMEOUT:
-					log_error("User input timeout\n");
+					log_debug("User input timeout\n");
 					goto cleanup;
 				case Ctrl('W'):
 				case Ctrl('X'):
