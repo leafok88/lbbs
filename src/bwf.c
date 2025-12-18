@@ -91,9 +91,7 @@ int bwf_load(const char *filename)
 
 	fclose(fp);
 
-#ifdef _DEBUG
-	log_error("Debug: bwf_pattern_str: %s\n", bwf_pattern_str);
-#endif
+	log_debug("Debug: bwf_pattern_str: %s\n", bwf_pattern_str);
 
 	return 0;
 }
@@ -172,10 +170,8 @@ int check_badwords(char *str, char c_mask)
 			}
 			else
 			{
-#ifdef _DEBUG
-				log_error("Debug: match pattern #%d of %d at offsets [%d, %d]\n",
+				log_debug("Debug: match pattern #%d of %d at offsets [%d, %d]\n",
 						  i, match_count, ovector[i * 2], ovector[i * 2 + 1] - ovector[i * 2]);
-#endif
 				memset(str + ovector[i * 2], c_mask, ovector[i * 2 + 1] - ovector[i * 2]);
 				total_match_count++;
 				startoffset = ovector[i * 2 + 1];

@@ -391,9 +391,7 @@ static int fork_server(void)
 			ret = ssh_event_dopoll(event, 100); // 0.1 second
 			if (ret == SSH_ERROR)
 			{
-#ifdef _DEBUG
-				log_error("ssh_event_dopoll() error: %s\n", ssh_get_error(SSH_session));
-#endif
+				log_debug("ssh_event_dopoll() error: %s\n", ssh_get_error(SSH_session));
 				goto cleanup;
 			}
 		}

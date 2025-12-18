@@ -171,9 +171,7 @@ int bbs_center()
 		if (ch != KEY_NULL && ch != KEY_TIMEOUT)
 		{
 			BBS_last_access_tm = time(NULL);
-#ifdef _DEBUG
-			log_error("Debug: BBS_last_access_tm is updated\n");
-#endif
+			log_debug("Debug: BBS_last_access_tm is updated\n");
 		}
 
 		if (bbs_menu.choose_step == 0 && time(NULL) - t_last_action >= 10)
@@ -194,9 +192,7 @@ int bbs_center()
 		switch (ch)
 		{
 		case KEY_NULL: // broken pipe
-#ifdef _DEBUG
-			log_error("KEY_NULL\n");
-#endif
+			log_debug("KEY_NULL\n");
 			loop = 0;
 			break;
 		case KEY_TIMEOUT:

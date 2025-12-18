@@ -217,11 +217,11 @@ int lml_render(const char *str_in, char *str_out, int buf_len, int width, int qu
 	char tab_spaces[TAB_SIZE + 1];
 	int tab_width = 0;
 
+	clock_begin = clock();
+
 #ifdef _DEBUG
 	size_t str_in_len = strlen(str_in);
 #endif
-
-	clock_begin = clock();
 
 	lml_init();
 

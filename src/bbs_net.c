@@ -817,18 +817,14 @@ static int bbsnet_connect(int n)
 	{
 		if (SSH_v2 && ssh_channel_is_closed(SSH_channel))
 		{
-#ifdef _DEBUG
-			log_error("SSH channel is closed\n");
-#endif
+			log_debug("SSH channel is closed\n");
 			loop = 0;
 			break;
 		}
 
 		if (bbsnet_conf[n].use_ssh && ssh_channel_is_closed(channel))
 		{
-#ifdef _DEBUG
-			log_error("Remote SSH channel is closed\n");
-#endif
+			log_debug("Remote SSH channel is closed\n");
 			loop = 0;
 			break;
 		}
@@ -876,12 +872,10 @@ static int bbsnet_connect(int n)
 			if (pfds[i].revents & (POLLRDHUP | POLLHUP | POLLERR))
 #endif
 			{
-#ifdef _DEBUG
 #ifdef HAVE_SYS_EPOLL_H
-				log_error("FD (%d) error events (%d)\n", events[i].data.fd, events[i].events);
+				log_debug("FD (%d) error events (%d)\n", events[i].data.fd, events[i].events);
 #else
-				log_error("FD (%d) error events (%d)\n", pfds[i].fd, pfds[i].revents);
-#endif
+				log_debug("FD (%d) error events (%d)\n", pfds[i].fd, pfds[i].revents);
 #endif
 				loop = 0;
 				break;
@@ -940,9 +934,7 @@ static int bbsnet_connect(int n)
 					ret = ssh_channel_read_nonblocking(SSH_channel, input_buf + input_buf_len, sizeof(input_buf) - (uint32_t)input_buf_len, 0);
 					if (ret == SSH_ERROR)
 					{
-#ifdef _DEBUG
-						log_error("ssh_channel_read_nonblocking() error: %s\n", ssh_get_error(SSH_session));
-#endif
+						log_debug("ssh_channel_read_nonblocking() error: %s\n", ssh_get_error(SSH_session));
 						loop = 0;
 						break;
 					}
@@ -987,9 +979,7 @@ static int bbsnet_connect(int n)
 				}
 				else if (ret == 0) // broken pipe
 				{
-#ifdef _DEBUG
-					log_error("read(STDIN) EOF\n");
-#endif
+					log_debug("read(STDIN) EOF\n");
 					stdin_read_wait = 0;
 					loop = 0;
 					break;
@@ -1018,7 +1008,7 @@ static int bbsnet_connect(int n)
 #ifdef _DEBUG
 				for (int j = input_buf_offset; j < input_buf_len; j++)
 				{
-					log_error("Debug input: <--[%u]\n", (input_buf[j] + 256) % 256);
+					log_debug("input: <--[%u]\n", (input_buf[j] + 256) % 256);
 				}
 #endif
 
@@ -1033,7 +1023,7 @@ static int bbsnet_connect(int n)
 #ifdef _DEBUG
 				for (int j = input_conv_offset; j < input_conv_len; j++)
 				{
-					log_error("Debug input_conv: <--[%u]\n", (input_conv[j] + 256) % 256);
+					log_debug("input_conv: <--[%u]\n", (input_conv[j] + 256) % 256);
 				}
 #endif
 			}
@@ -1045,9 +1035,7 @@ static int bbsnet_connect(int n)
 					ret = ssh_channel_write(channel, input_conv + input_conv_offset, (uint32_t)(input_conv_len - input_conv_offset));
 					if (ret == SSH_ERROR)
 					{
-#ifdef _DEBUG
-						log_error("ssh_channel_write() error: %s\n", ssh_get_error(session));
-#endif
+						log_debug("ssh_channel_write() error: %s\n", ssh_get_error(session));
 						loop = 0;
 						break;
 					}
@@ -1069,18 +1057,14 @@ static int bbsnet_connect(int n)
 					}
 					else
 					{
-#ifdef _DEBUG
-						log_error("write(socket) error (%d)\n", errno);
-#endif
+						log_debug("write(socket) error (%d)\n", errno);
 						loop = 0;
 						break;
 					}
 				}
 				else if (ret == 0) // broken pipe
 				{
-#ifdef _DEBUG
-					log_error("write(socket) EOF\n");
-#endif
+					log_debug("write(socket) EOF\n");
 					sock_write_wait = 0;
 					loop = 0;
 					break;
@@ -1109,9 +1093,7 @@ static int bbsnet_connect(int n)
 													   (uint32_t)(sizeof(output_buf) - (size_t)output_buf_len), 0);
 					if (ret == SSH_ERROR)
 					{
-#ifdef _DEBUG
-						log_error("ssh_channel_read_nonblocking() error: %s\n", ssh_get_error(session));
-#endif
+						log_debug("ssh_channel_read_nonblocking() error: %s\n", ssh_get_error(session));
 						loop = 0;
 						break;
 					}
@@ -1144,18 +1126,14 @@ static int bbsnet_connect(int n)
 					}
 					else
 					{
-#ifdef _DEBUG
-						log_error("read(socket) error (%d)\n", errno);
-#endif
+						log_debug("read(socket) error (%d)\n", errno);
 						loop = 0;
 						break;
 					}
 				}
 				else if (ret == 0) // broken pipe
 				{
-#ifdef _DEBUG
-					log_error("read(socket) EOF\n");
-#endif
+					log_debug("read(socket) EOF\n");
 					sock_read_wait = 0;
 					loop = 0;
 					break;
@@ -1187,9 +1165,7 @@ static int bbsnet_connect(int n)
 					ret = ssh_channel_write(SSH_channel, output_conv + output_conv_offset, (uint32_t)(output_conv_len - output_conv_offset));
 					if (ret == SSH_ERROR)
 					{
-#ifdef _DEBUG
-						log_error("ssh_channel_write() error: %s\n", ssh_get_error(SSH_session));
-#endif
+						log_debug("ssh_channel_write() error: %s\n", ssh_get_error(SSH_session));
 						loop = 0;
 						break;
 					}
@@ -1211,18 +1187,14 @@ static int bbsnet_connect(int n)
 					}
 					else
 					{
-#ifdef _DEBUG
-						log_error("write(STDOUT) error (%d)\n", errno);
-#endif
+						log_debug("write(STDOUT) error (%d)\n", errno);
 						loop = 0;
 						break;
 					}
 				}
 				else if (ret == 0) // broken pipe
 				{
-#ifdef _DEBUG
-					log_error("write(STDOUT) EOF\n");
-#endif
+					log_debug("write(STDOUT) EOF\n");
 					stdout_write_wait = 0;
 					loop = 0;
 					break;
@@ -1380,9 +1352,7 @@ int bbs_net()
 		switch (ch)
 		{
 		case KEY_NULL: // broken pipe
-#ifdef _DEBUG
-			log_error("KEY_NULL\n");
-#endif
+			log_debug("KEY_NULL\n");
 			goto cleanup;
 		case KEY_TIMEOUT:
 			if (time(NULL) - BBS_last_access_tm >= BBS_max_user_idle_time)
