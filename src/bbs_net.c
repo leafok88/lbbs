@@ -531,9 +531,9 @@ static int bbsnet_connect(int n)
 	}
 	ts_now = ts_begin;
 
-	while ((ts_now.tv_sec - ts_begin.tv_sec) +
-				   (ts_now.tv_nsec - ts_begin.tv_nsec) / 1000 / 1000 / 1000 <
-			   REMOTE_CONNECT_TIMEOUT &&
+	while ((ts_now.tv_sec - ts_begin.tv_sec) * 1000 +
+				   (ts_now.tv_nsec - ts_begin.tv_nsec) / 1000 / 1000 <
+			   REMOTE_CONNECT_TIMEOUT * 1000 &&
 		   !sock_connected && !SYS_server_exit)
 	{
 #ifdef HAVE_SYS_EPOLL_H
