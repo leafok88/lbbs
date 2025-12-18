@@ -573,6 +573,14 @@ static int bbsnet_connect(int n)
 							 (ts_now.tv_nsec - ts_begin.tv_nsec) / 1000 / 1000) /
 						   REMOTE_CONNECT_TIMEOUT / 10 +
 					   1;
+			if (progress < 0)
+			{
+				progress = 0;
+			}
+			if (progress > 100)
+			{
+				progress = 100;
+			}
 
 			if (progress > progress_last)
 			{
