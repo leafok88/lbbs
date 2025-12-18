@@ -132,7 +132,7 @@ int io_init(void)
 			log_error("epoll_ctl(STDOUT_FILENO) error (%d)\n", errno);
 			if (close(stdout_epollfd) < 0)
 			{
-				log_error("close(stdout_epollfd) error (%d)\n");
+				log_error("close(stdout_epollfd) error (%d)\n", errno);
 			}
 			stdout_epollfd = -1;
 			return -1;
@@ -214,7 +214,7 @@ void io_cleanup(void)
 
 		if (close(stdout_epollfd) < 0)
 		{
-			log_error("close(stdout_epollfd) error (%d)\n");
+			log_error("close(stdout_epollfd) error (%d)\n", errno);
 		}
 		stdout_epollfd = -1;
 	}
@@ -262,6 +262,7 @@ int prints(const char *format, ...)
 			errno = EAGAIN;
 			int need = stdout_buf_len + ret - OUTPUT_BUF_SIZE;
 			log_error("Output buffer is full, additional %d is required\n", need);
+			ret = -1;
 		}
 	}
 
@@ -1166,7 +1167,8 @@ int io_buf_conv(iconv_t cd, char *p_buf, int *p_buf_len, int *p_buf_offset, char
 		{
 			if (errno == EINVAL) // Incomplete
 			{
-				log_debug("iconv(inbytes=%ld, outbytes=%ld) error: EINVAL, in_buf[0]=%d\n", in_bytes, out_bytes, in_buf[0]);
+				log_debug("iconv(inbytes=%zu, outbytes=%zu) error: EINVAL, in_buf[0]=%d\n",
+						  in_bytes, out_bytes, (unsigned char)in_buf[0]);
 				if (p_buf != in_buf)
 				{
 					*p_buf_len -= (int)(in_buf - p_buf);
@@ -1179,14 +1181,14 @@ int io_buf_conv(iconv_t cd, char *p_buf, int *p_buf_len, int *p_buf_offset, char
 			}
 			else if (errno == E2BIG)
 			{
-				log_error("iconv(inbytes=%ld, outbytes=%ld) error: E2BIG\n", in_bytes, out_bytes);
+				log_error("iconv(inbytes=%zu, outbytes=%zu) error: E2BIG\n", in_bytes, out_bytes);
 				return -1;
 			}
 			else if (errno == EILSEQ)
 			{
 				if (in_bytes > out_bytes || out_bytes <= 0)
 				{
-					log_error("iconv(inbytes=%ld, outbytes=%ld) error: EILSEQ and E2BIG\n", in_bytes, out_bytes);
+					log_error("iconv(inbytes=%zu, outbytes=%zu) error: EILSEQ\n", in_bytes, out_bytes);
 					return -2;
 				}
 
@@ -1194,17 +1196,17 @@ int io_buf_conv(iconv_t cd, char *p_buf, int *p_buf_len, int *p_buf_offset, char
 				if (in_bytes == 0)
 				{
 					in_bytes = (size_t)(*p_buf_len - *p_buf_offset);
-					log_debug("Reset in_bytes from 0 to %ld\n", in_bytes);
+					log_debug("Reset in_bytes from 0 to %zu\n", in_bytes);
 				}
 
-				log_debug("iconv(in_bytes=%ld, out_bytes=%ld) error: EILSEQ, in_buf[0]=%d\n",
-						  in_bytes, out_bytes, in_buf[0]);
+				log_debug("iconv(in_bytes=%zu, out_bytes=%zu) error: EILSEQ, in_buf[0]=%d\n",
+						  in_bytes, out_bytes, (unsigned char)in_buf[0]);
 				skip_current = 1;
 			}
 			else // something strange
 			{
-				log_debug("iconv(in_bytes=%ld, out_bytes=%ld) error: %d, in_buf[0]=%d\n",
-						  in_bytes, out_bytes, errno, in_buf[0]);
+				log_debug("iconv(in_bytes=%zu, out_bytes=%zu) error: %d, in_buf[0]=%d\n",
+						  in_bytes, out_bytes, errno, (unsigned char)in_buf[0]);
 				*p_buf_offset = (int)(in_buf - p_buf);
 				*p_conv_len = (int)(conv_size - out_bytes);
 				skip_current = 1;
