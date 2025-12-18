@@ -871,7 +871,24 @@ static int bbsnet_connect(int n)
 		for (int i = 0; i < nfds; i++)
 		{
 #ifdef HAVE_SYS_EPOLL_H
-			if (events[i].data.fd == STDIN_FILENO)
+			if (events[i].events & (EPOLLRDHUP | EPOLLHUP | EPOLLERR))
+#else
+			if (pfds[i].revents & (POLLRDHUP | POLLHUP | POLLERR))
+#endif
+			{
+#ifdef _DEBUG
+#ifdef HAVE_SYS_EPOLL_H
+				log_error("FD (%d) error events (%d)\n", events[i].data.fd, events[i].events);
+#else
+				log_error("FD (%d) error events (%d)\n", pfds[i].fd, pfds[i].revents);
+#endif
+#endif
+				loop = 0;
+				break;
+			}
+
+#ifdef HAVE_SYS_EPOLL_H
+			if (events[i].data.fd == STDIN_FILENO && (events[i].events & EPOLLIN))
 #else
 			if (pfds[i].fd == STDIN_FILENO && (pfds[i].revents & POLLIN))
 #endif
@@ -905,7 +922,7 @@ static int bbsnet_connect(int n)
 			}
 
 #ifdef HAVE_SYS_EPOLL_H
-			if (events[i].data.fd == STDOUT_FILENO)
+			if (events[i].data.fd == STDOUT_FILENO && (events[i].events & EPOLLOUT))
 #else
 			if (pfds[i].fd == STDOUT_FILENO && (pfds[i].revents & POLLOUT))
 #endif

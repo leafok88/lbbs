@@ -246,15 +246,11 @@ int iflush(void)
 #endif
 
 	int nfds;
-	int retry;
 	int ret = 0;
 
 	// Retry wait / flush for at most 3 times
-	retry = 3;
-	while (retry > 0 && !SYS_server_exit)
+	for (int retry = 3; retry > 0 && !SYS_server_exit; retry--)
 	{
-		retry--;
-
 #ifdef HAVE_SYS_EPOLL_H
 		nfds = epoll_wait(stdout_epollfd, events, MAX_EVENTS, 100); // 0.1 second
 		ret = nfds;
@@ -286,7 +282,24 @@ int iflush(void)
 		for (int i = 0; i < nfds; i++)
 		{
 #ifdef HAVE_SYS_EPOLL_H
-			if (events[i].data.fd == STDOUT_FILENO)
+			if (events[i].data.fd == STDOUT_FILENO && (events[i].events & (EPOLLRDHUP | EPOLLHUP | EPOLLERR)))
+#else
+			if (pfds[i].fd == STDOUT_FILENO && (pfds[i].revents & (POLLRDHUP | POLLHUP | POLLERR)))
+#endif
+			{
+#ifdef _DEBUG
+#ifdef HAVE_SYS_EPOLL_H
+				log_error("STDOUT error events (%d)\n", events[i].events);
+#else
+				log_error("STDOUT error events (%d)\n", pfds[i].revents);
+#endif
+#endif
+				retry = 0;
+				break;
+			}
+
+#ifdef HAVE_SYS_EPOLL_H
+			if (events[i].data.fd == STDOUT_FILENO && (events[i].events & EPOLLOUT))
 #else
 			if (pfds[i].fd == STDOUT_FILENO && (pfds[i].revents & POLLOUT))
 #endif
@@ -435,7 +448,24 @@ int igetch(int timeout)
 				for (int i = 0; i < nfds; i++)
 				{
 #ifdef HAVE_SYS_EPOLL_H
-					if (events[i].data.fd == STDIN_FILENO)
+					if (events[i].data.fd == STDIN_FILENO && (events[i].events & (EPOLLRDHUP | EPOLLHUP | EPOLLERR)))
+#else
+					if (pfds[i].fd == STDIN_FILENO && (pfds[i].revents & (POLLRDHUP | POLLHUP | POLLERR)))
+#endif
+					{
+#ifdef _DEBUG
+#ifdef HAVE_SYS_EPOLL_H
+						log_error("STDIN error events (%d)\n", events[i].events);
+#else
+						log_error("STDIN error events (%d)\n", pfds[i].revents);
+#endif
+#endif
+						loop = 0;
+						break;
+					}
+
+#ifdef HAVE_SYS_EPOLL_H
+					if (events[i].data.fd == STDIN_FILENO && (events[i].events & EPOLLIN))
 #else
 					if (pfds[i].fd == STDIN_FILENO && (pfds[i].revents & POLLIN))
 #endif
