@@ -1373,7 +1373,7 @@ cleanup:
 
 	if (sock != -1 && close(sock) == -1)
 	{
-		log_error("Close socket failed\n");
+		log_error("close(socket) error (%d)\n", errno);
 	}
 
 	if (res)
