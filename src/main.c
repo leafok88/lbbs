@@ -16,6 +16,7 @@
 #include "file_loader.h"
 #include "init.h"
 #include "io.h"
+#include "lml.h"
 #include "log.h"
 #include "menu.h"
 #include "net_server.h"
@@ -298,9 +299,17 @@ int main(int argc, char *argv[])
 		goto cleanup;
 	}
 
+	// Init LML module
+	if (lml_init() < 0)
+	{
+		log_error("lml_init() error");
+		goto cleanup;
+	}
+
 	// Load BBS cmd
 	if (load_cmd() < 0)
 	{
+		log_error("load_cmd() error");
 		goto cleanup;
 	}
 
@@ -457,6 +466,9 @@ cleanup:
 	// Cleanup menu
 	unload_menu(&bbs_menu);
 	unload_menu(&top10_menu);
+
+	// Cleanup LML module
+	lml_cleanup();
 
 	// Cleanup data pools
 	section_list_cleanup();

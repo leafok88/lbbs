@@ -12,6 +12,7 @@
 
 #include "lml.h"
 #include "log.h"
+#include "trie_dict.h"
 #include <errno.h>
 #include <locale.h>
 #include <stdio.h>
@@ -23,6 +24,8 @@ enum _test_lml_constant_t
 {
 	STR_OUT_BUF_SIZE = 4096,
 };
+
+static const char TRIE_DICT_SHM_FILE[] = "~trie_dict_shm.dat";
 
 const char *str_in[] = {
 	"[left]ABCD[right]EFG",
@@ -65,6 +68,7 @@ const char *str_in[] = {
 	": : 我已经割掉了\n"
 	": : 555555555555\n"
 	": : ",
+	"[image http://us.ent4.yimg.com/movies.yahoo.com/images/hv/photo/movie_pix/images/hv/photo/movie_pix/]\n",
 };
 
 const int str_cnt = sizeof(str_in) / sizeof(const char *);
@@ -77,6 +81,7 @@ int main(int argc, char *argv[])
 	double lml_time_spent;
 
 	char str_out_buf[STR_OUT_BUF_SIZE];
+	FILE *fp;
 	int i;
 	int j;
 
@@ -96,7 +101,27 @@ int main(int argc, char *argv[])
 	log_common_redir(STDOUT_FILENO);
 	log_error_redir(STDERR_FILENO);
 
+	if ((fp = fopen(TRIE_DICT_SHM_FILE, "w")) == NULL)
+	{
+		log_error("fopen(%s) error", TRIE_DICT_SHM_FILE);
+		return -1;
+	}
+	fclose(fp);
+
+	if (trie_dict_init(TRIE_DICT_SHM_FILE, TRIE_NODE_PER_POOL) < 0)
+	{
+		printf("trie_dict_init failed\n");
+		return -1;
+	}
+
 	clock_begin = clock();
+
+	if (lml_init() < 0)
+	{
+		printf("lml_init() error\n");
+		log_end();
+		return -1;
+	}
 
 	printf("Test #1: quote_mode = 0\n");
 	for (i = 0; i < str_cnt; i++)
@@ -133,6 +158,15 @@ int main(int argc, char *argv[])
 	lml_time_spent = (double)lml_total_exec_duration / (CLOCKS_PER_SEC / 1000);
 
 	printf("\npage_exec_duration=%.2f, lml_exec_duration=%.2f\n", prog_time_spent, lml_time_spent);
+
+	lml_cleanup();
+	trie_dict_cleanup();
+
+	if (unlink(TRIE_DICT_SHM_FILE) < 0)
+	{
+		log_error("unlink(%s) error", TRIE_DICT_SHM_FILE);
+		return -1;
+	}
 
 	log_end();
 
