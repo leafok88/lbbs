@@ -187,7 +187,7 @@ int lml_init(void)
 
 	for (i = 0; i < lml_tag_count; i++)
 	{
-		for (j = 0; j < LML_TAG_NAME_BUF_LEN - 1 && lml_tag_def[i].tag_name[j] != '\0'; j++)
+		for (j = 0; j < sizeof(tag_name_buf) - 1 && lml_tag_def[i].tag_name[j] != '\0'; j++)
 		{
 			tag_name_buf[j] = (char)tolower(lml_tag_def[i].tag_name[j]);
 		}
@@ -443,7 +443,7 @@ int lml_render(const char *str_in, char *str_out, int buf_len, int width, int qu
 				tag_name_pos++;
 			}
 
-			for (k = 0; k < LML_TAG_NAME_BUF_LEN - 1 && tag_name_pos + k < tag_end_pos; k++)
+			for (k = 0; k < sizeof(tag_name_buf) - 1 && tag_name_pos + k < tag_end_pos; k++)
 			{
 				if (str_in[tag_name_pos + k] == ' ' || str_in[tag_name_pos + k] == ']')
 				{
