@@ -209,9 +209,7 @@ static int _str_input(char *buffer, int buf_size, int max_display_len, enum io_e
 				ch = igetch(100);						 // 0.1 second
 				if (ch == KEY_NULL || ch == KEY_TIMEOUT) // Ignore received bytes if no futher input
 				{
-#ifdef _DEBUG
-					log_error("Ignore %d bytes of incomplete UTF8 character\n", str_len);
-#endif
+					log_debug("Ignore %d bytes of incomplete UTF8 character", str_len);
 					str_len = 0;
 					break;
 				}
@@ -225,7 +223,7 @@ static int _str_input(char *buffer, int buf_size, int max_display_len, enum io_e
 
 			if (mbstowcs(wcs, input_str, 1) == (size_t)-1)
 			{
-				log_error("mbstowcs() error\n");
+				log_error("mbstowcs() error");
 			}
 			if (offset + str_len > buf_size - 1 || display_len + (UTF8_fixed_width ? 2 : wcwidth(wcs[0])) > max_display_len) // No enough space for Chinese character
 			{
@@ -358,7 +356,7 @@ int get_data(int row, int col, char *prompt, char *buffer, int buf_size, int max
 
 					if (mbstowcs(wcs, buffer + offset, 1) == (size_t)-1)
 					{
-						log_error("mbstowcs() error\n");
+						log_error("mbstowcs() error");
 					}
 					wc_len = (UTF8_fixed_width ? 2 : wcwidth(wcs[0]));
 
@@ -432,7 +430,7 @@ int get_data(int row, int col, char *prompt, char *buffer, int buf_size, int max
 
 					if (mbstowcs(wcs, buffer + offset, 1) == (size_t)-1)
 					{
-						log_error("mbstowcs() error\n");
+						log_error("mbstowcs() error");
 					}
 					wc_len = (UTF8_fixed_width ? 2 : wcwidth(wcs[0]));
 
@@ -464,7 +462,7 @@ int get_data(int row, int col, char *prompt, char *buffer, int buf_size, int max
 
 					if (mbstowcs(wcs, buffer + offset, 1) == (size_t)-1)
 					{
-						log_error("mbstowcs() error\n");
+						log_error("mbstowcs() error");
 					}
 					wc_len = (UTF8_fixed_width ? 2 : wcwidth(wcs[0]));
 
@@ -533,9 +531,7 @@ int get_data(int row, int col, char *prompt, char *buffer, int buf_size, int max
 				ch = igetch(100);						 // 0.1 second
 				if (ch == KEY_NULL || ch == KEY_TIMEOUT) // Ignore received bytes if no futher input
 				{
-#ifdef _DEBUG
-					log_error("Ignore %d bytes of incomplete UTF8 character\n", str_len);
-#endif
+					log_debug("Ignore %d bytes of incomplete UTF8 character", str_len);
 					str_len = 0;
 					break;
 				}
@@ -549,7 +545,7 @@ int get_data(int row, int col, char *prompt, char *buffer, int buf_size, int max
 
 			if (mbstowcs(wcs, input_str, 1) == (size_t)-1)
 			{
-				log_error("mbstowcs() error\n");
+				log_error("mbstowcs() error");
 			}
 			wc_len = (UTF8_fixed_width ? 2 : wcwidth(wcs[0]));
 
@@ -707,7 +703,7 @@ int display_data(const void *p_data, long display_line_total, const long *p_line
 					// Refresh current action
 					if (user_online_update(NULL) < 0)
 					{
-						log_error("user_online_update(NULL) error\n");
+						log_error("user_online_update(NULL) error");
 					}
 				}
 
@@ -720,12 +716,10 @@ int display_data(const void *p_data, long display_line_total, const long *p_line
 				switch (ch)
 				{
 				case KEY_NULL:
-#ifdef _DEBUG
-					log_error("KEY_NULL\n");
-#endif
+					log_debug("KEY_NULL");
 					goto cleanup;
 				case KEY_TIMEOUT:
-					log_error("User input timeout\n");
+					log_debug("User input timeout");
 					goto cleanup;
 				case KEY_HOME:
 					if (line_current - output_current_row < 0) // Reach begin
@@ -835,13 +829,13 @@ int display_data(const void *p_data, long display_line_total, const long *p_line
 		len = p_line_offsets[line_current + 1] - p_line_offsets[line_current];
 		if (len >= sizeof(buffer))
 		{
-			log_error("Buffer overflow: len=%ld(%ld - %ld) line=%ld \n",
+			log_error("Buffer overflow: len=%ld(%ld - %ld) line=%ld ",
 					  len, p_line_offsets[line_current + 1], p_line_offsets[line_current], line_current);
 			len = sizeof(buffer) - 1;
 		}
 		else if (len < 0)
 		{
-			log_error("Incorrect line offsets: len=%ld(%ld - %ld) line=%ld \n",
+			log_error("Incorrect line offsets: len=%ld(%ld - %ld) line=%ld ",
 					  len, p_line_offsets[line_current + 1], p_line_offsets[line_current], line_current);
 			len = 0;
 		}
@@ -886,20 +880,20 @@ int display_file(const char *filename, int eof_exit)
 
 	if ((p_shm = get_file_shm_readonly(filename, &data_len, &line_total, &p_data, &p_line_offsets)) == NULL)
 	{
-		log_error("get_file_shm(%s) error\n", filename);
+		log_error("get_file_shm(%s) error", filename);
 		return KEY_NULL;
 	}
 
 	if (user_online_update("VIEW_FILE") < 0)
 	{
-		log_error("user_online_update(VIEW_FILE) error\n");
+		log_error("user_online_update(VIEW_FILE) error");
 	}
 
 	ret = display_data(p_data, line_total, p_line_offsets, eof_exit, display_file_key_handler, DATA_READ_HELP);
 
 	if (detach_file_shm(p_shm) < 0)
 	{
-		log_error("detach_file_shm(%s) error\n", filename);
+		log_error("detach_file_shm(%s) error", filename);
 	}
 
 	return ret;
@@ -1012,7 +1006,7 @@ int show_active_board()
 	{
 		if ((p_shm = get_file_shm_readonly(DATA_ACTIVE_BOARD, &data_len, &line_total, &p_data, &p_line_offsets)) == NULL)
 		{
-			log_error("get_file_shm(%s) error\n", DATA_ACTIVE_BOARD);
+			log_error("get_file_shm(%s) error", DATA_ACTIVE_BOARD);
 			return KEY_NULL;
 		}
 	}
@@ -1034,7 +1028,7 @@ int show_active_board()
 		len = p_line_offsets[line_current + 1] - p_line_offsets[line_current];
 		if (len >= LINE_BUFFER_LEN)
 		{
-			log_error("buffer overflow: len=%ld(%ld - %ld) line=%ld \n",
+			log_error("buffer overflow: len=%ld(%ld - %ld) line=%ld ",
 					  len, p_line_offsets[line_current + 1], p_line_offsets[line_current], line_current);
 			len = LINE_BUFFER_LEN - 1;
 		}

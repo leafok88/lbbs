@@ -152,7 +152,7 @@ int user_list_load(MYSQL *db, USER_LIST *p_list)
 
 	if (db == NULL || p_list == NULL)
 	{
-		log_error("NULL pointer error\n");
+		log_error("NULL pointer error");
 		return -1;
 	}
 
@@ -175,14 +175,14 @@ int user_list_load(MYSQL *db, USER_LIST *p_list)
 
 	if (mysql_query(db, sql) != 0)
 	{
-		log_error("Query user info error: %s\n", mysql_error(db));
+		log_error("Query user info error: %s", mysql_error(db));
 		ret = -1;
 		goto cleanup;
 	}
 
 	if ((rs = mysql_use_result(db)) == NULL)
 	{
-		log_error("Get user info data failed\n");
+		log_error("Get user info data failed");
 		ret = -1;
 		goto cleanup;
 	}
@@ -210,7 +210,7 @@ int user_list_load(MYSQL *db, USER_LIST *p_list)
 		intro_len = strlen((row[12] == NULL ? "" : row[12]));
 		if (intro_len >= sizeof(p_list->user_intro_buf) - 1 - intro_buf_offset)
 		{
-			log_error("OOM for user introduction: len=%d, i=%d\n", intro_len, i);
+			log_error("OOM for user introduction: len=%d, i=%d", intro_len, i);
 			break;
 		}
 		memcpy(p_list->user_intro_buf + intro_buf_offset,
@@ -222,7 +222,7 @@ int user_list_load(MYSQL *db, USER_LIST *p_list)
 		i++;
 		if (i >= BBS_max_user_count)
 		{
-			log_error("Too many users, exceed limit %d\n", BBS_max_user_count);
+			log_error("Too many users, exceed limit %d", BBS_max_user_count);
 			break;
 		}
 	}
@@ -240,16 +240,12 @@ int user_list_load(MYSQL *db, USER_LIST *p_list)
 
 		qsort(p_list->index_uid, (size_t)i, sizeof(USER_INFO_INDEX_UID), user_info_index_uid_comp);
 
-#ifdef _DEBUG
-		log_error("Rebuild index of %d users, last_uid=%d\n", i, p_list->users[i - 1].uid);
-#endif
+		log_debug("Rebuild index of %d users, last_uid=%d", i, p_list->users[i - 1].uid);
 	}
 
 	p_list->user_count = i;
 
-#ifdef _DEBUG
-	log_error("Loaded %d users\n", p_list->user_count);
-#endif
+	log_debug("Loaded %d users", p_list->user_count);
 
 cleanup:
 	mysql_free_result(rs);
@@ -270,7 +266,7 @@ int user_online_list_load(MYSQL *db, USER_ONLINE_LIST *p_online_list)
 
 	if (db == NULL || p_online_list == NULL)
 	{
-		log_error("NULL pointer error\n");
+		log_error("NULL pointer error");
 		return -1;
 	}
 
@@ -283,14 +279,14 @@ int user_online_list_load(MYSQL *db, USER_ONLINE_LIST *p_online_list)
 
 	if (mysql_query(db, sql) != 0)
 	{
-		log_error("Query user online error: %s\n", mysql_error(db));
+		log_error("Query user online error: %s", mysql_error(db));
 		ret = -1;
 		goto cleanup;
 	}
 
 	if ((rs = mysql_use_result(db)) == NULL)
 	{
-		log_error("Get user online data failed\n");
+		log_error("Get user online data failed");
 		ret = -1;
 		goto cleanup;
 	}
@@ -316,7 +312,7 @@ int user_online_list_load(MYSQL *db, USER_ONLINE_LIST *p_online_list)
 
 		if ((ret = query_user_info_by_uid(atoi(row[1]), &(p_online_list->users[i].user_info), NULL, 0)) <= 0)
 		{
-			log_error("query_user_info_by_uid(%d) error\n", atoi(row[1]));
+			log_error("query_user_info_by_uid(%d) error", atoi(row[1]));
 			continue;
 		}
 
@@ -332,7 +328,7 @@ int user_online_list_load(MYSQL *db, USER_ONLINE_LIST *p_online_list)
 		}
 		else if (trie_dict_get(p_trie_action_dict, p_online_list->users[i].current_action, (int64_t *)(&(p_online_list->users[i].current_action_title))) < 0)
 		{
-			log_error("trie_dict_get(p_trie_action_dict, %s) error on session_id=%s\n",
+			log_error("trie_dict_get(p_trie_action_dict, %s) error on session_id=%s",
 					  p_online_list->users[i].current_action, p_online_list->users[i].session_id);
 			continue;
 		}
@@ -343,7 +339,7 @@ int user_online_list_load(MYSQL *db, USER_ONLINE_LIST *p_online_list)
 		i++;
 		if (i >= BBS_max_user_online_count)
 		{
-			log_error("Too many online users, exceed limit %d\n", BBS_max_user_online_count);
+			log_error("Too many online users, exceed limit %d", BBS_max_user_online_count);
 			break;
 		}
 	}
@@ -379,7 +375,7 @@ int user_login_count_load(MYSQL *db)
 
 	if (db == NULL)
 	{
-		log_error("NULL pointer error\n");
+		log_error("NULL pointer error");
 		return -1;
 	}
 
@@ -387,12 +383,12 @@ int user_login_count_load(MYSQL *db)
 			 "SELECT ID FROM user_login_log ORDER BY ID DESC LIMIT 1");
 	if (mysql_query(db, sql) != 0)
 	{
-		log_error("Query user_login_log error: %s\n", mysql_error(db));
+		log_error("Query user_login_log error: %s", mysql_error(db));
 		return -2;
 	}
 	if ((rs = mysql_store_result(db)) == NULL)
 	{
-		log_error("Get user_login_log data failed\n");
+		log_error("Get user_login_log data failed");
 		return -2;
 	}
 	if ((row = mysql_fetch_row(rs)))
@@ -420,14 +416,14 @@ int user_list_pool_init(const char *filename)
 
 	if (p_user_list_pool != NULL || p_trie_action_dict != NULL)
 	{
-		log_error("p_user_list_pool already initialized\n");
+		log_error("p_user_list_pool already initialized");
 		return -1;
 	}
 
 	p_trie_action_dict = trie_dict_create();
 	if (p_trie_action_dict == NULL)
 	{
-		log_error("trie_dict_create() error\n");
+		log_error("trie_dict_create() error");
 		return -1;
 	}
 
@@ -435,7 +431,7 @@ int user_list_pool_init(const char *filename)
 	{
 		if (trie_dict_set(p_trie_action_dict, user_action_map[i].name, (int64_t)(user_action_map[i].title)) < 0)
 		{
-			log_error("trie_dict_set(p_trie_action_dict, %s) error\n", user_action_map[i].name);
+			log_error("trie_dict_set(p_trie_action_dict, %s) error", user_action_map[i].name);
 		}
 	}
 
@@ -448,18 +444,18 @@ int user_list_pool_init(const char *filename)
 
 	if (shm_unlink(user_list_shm_name) == -1 && errno != ENOENT)
 	{
-		log_error("shm_unlink(%s) error (%d)\n", user_list_shm_name, errno);
+		log_error("shm_unlink(%s) error (%d)", user_list_shm_name, errno);
 		return -2;
 	}
 
 	if ((fd = shm_open(user_list_shm_name, O_CREAT | O_EXCL | O_RDWR, 0600)) == -1)
 	{
-		log_error("shm_open(%s) error (%d)\n", user_list_shm_name, errno);
+		log_error("shm_open(%s) error (%d)", user_list_shm_name, errno);
 		return -2;
 	}
 	if (ftruncate(fd, (off_t)size) == -1)
 	{
-		log_error("ftruncate(size=%d) error (%d)\n", size, errno);
+		log_error("ftruncate(size=%d) error (%d)", size, errno);
 		close(fd);
 		return -2;
 	}
@@ -467,14 +463,14 @@ int user_list_pool_init(const char *filename)
 	p_shm = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0L);
 	if (p_shm == MAP_FAILED)
 	{
-		log_error("mmap() error (%d)\n", errno);
+		log_error("mmap() error (%d)", errno);
 		close(fd);
 		return -2;
 	}
 
 	if (close(fd) < 0)
 	{
-		log_error("close(fd) error (%d)\n", errno);
+		log_error("close(fd) error (%d)", errno);
 		return -1;
 	}
 
@@ -485,7 +481,7 @@ int user_list_pool_init(const char *filename)
 #ifndef HAVE_SYSTEM_V
 	if (sem_init(&(p_user_list_pool->sem), 1, 1) == -1)
 	{
-		log_error("sem_init() error (%d)\n", errno);
+		log_error("sem_init() error (%d)", errno);
 		return -3;
 	}
 
@@ -496,7 +492,7 @@ int user_list_pool_init(const char *filename)
 	key = ftok(filename, proj_id);
 	if (key == -1)
 	{
-		log_error("ftok(%s %d) error (%d)\n", filename, proj_id, errno);
+		log_error("ftok(%s %d) error (%d)", filename, proj_id, errno);
 		return -2;
 	}
 
@@ -504,7 +500,7 @@ int user_list_pool_init(const char *filename)
 	semid = semget(key, (int)size, IPC_CREAT | IPC_EXCL | 0600);
 	if (semid == -1)
 	{
-		log_error("semget(user_list_pool_sem, size = %d) error (%d)\n", size, errno);
+		log_error("semget(user_list_pool_sem, size = %d) error (%d)", size, errno);
 		return -3;
 	}
 
@@ -514,7 +510,7 @@ int user_list_pool_init(const char *filename)
 	{
 		if (semctl(semid, i, SETVAL, arg) == -1)
 		{
-			log_error("semctl(user_list_pool_sem, SETVAL) error (%d)\n", errno);
+			log_error("semctl(user_list_pool_sem, SETVAL) error (%d)", errno);
 			return -3;
 		}
 	}
@@ -547,12 +543,12 @@ void user_list_pool_cleanup(void)
 #ifdef HAVE_SYSTEM_V
 	if (semctl(p_user_list_pool->semid, 0, IPC_RMID) == -1)
 	{
-		log_error("semctl(semid = %d, IPC_RMID) error (%d)\n", p_user_list_pool->semid, errno);
+		log_error("semctl(semid = %d, IPC_RMID) error (%d)", p_user_list_pool->semid, errno);
 	}
 #else
 	if (sem_destroy(&(p_user_list_pool->sem)) == -1)
 	{
-		log_error("sem_destroy() error (%d)\n", errno);
+		log_error("sem_destroy() error (%d)", errno);
 	}
 #endif
 
@@ -560,7 +556,7 @@ void user_list_pool_cleanup(void)
 
 	if (shm_unlink(user_list_shm_name) == -1 && errno != ENOENT)
 	{
-		log_error("shm_unlink(%s) error (%d)\n", user_list_shm_name, errno);
+		log_error("shm_unlink(%s) error (%d)", user_list_shm_name, errno);
 	}
 
 	user_list_shm_name[0] = '\0';
@@ -577,7 +573,7 @@ int set_user_list_pool_shm_readonly(void)
 {
 	if (p_user_list_pool != NULL && mprotect(p_user_list_pool, p_user_list_pool->shm_size, PROT_READ) < 0)
 	{
-		log_error("mprotect() error (%d)\n", errno);
+		log_error("mprotect() error (%d)", errno);
 		return -1;
 	}
 
@@ -588,7 +584,7 @@ int detach_user_list_pool_shm(void)
 {
 	if (p_user_list_pool != NULL && munmap(p_user_list_pool, p_user_list_pool->shm_size) < 0)
 	{
-		log_error("munmap() error (%d)\n", errno);
+		log_error("munmap() error (%d)", errno);
 		return -1;
 	}
 
@@ -605,14 +601,14 @@ int user_list_pool_reload(int online_user)
 
 	if (p_user_list_pool == NULL)
 	{
-		log_error("p_user_list_pool not initialized\n");
+		log_error("p_user_list_pool not initialized");
 		return -1;
 	}
 
 	db = db_open();
 	if (db == NULL)
 	{
-		log_error("db_open() error: %s\n", mysql_error(db));
+		log_error("db_open() error: %s", mysql_error(db));
 		return -1;
 	}
 
@@ -620,14 +616,14 @@ int user_list_pool_reload(int online_user)
 	{
 		if (user_online_list_load(db, &(p_user_list_pool->user_online_list[p_user_list_pool->user_online_list_index_new])) < 0)
 		{
-			log_error("user_online_list_load() error\n");
+			log_error("user_online_list_load() error");
 			ret = -2;
 			goto cleanup;
 		}
 
 		if (user_login_count_load(db) < 0)
 		{
-			log_error("user_login_count_load() error\n");
+			log_error("user_login_count_load() error");
 			ret = -2;
 			goto cleanup;
 		}
@@ -636,7 +632,7 @@ int user_list_pool_reload(int online_user)
 	{
 		if (user_list_load(db, &(p_user_list_pool->user_list[p_user_list_pool->user_list_index_new])) < 0)
 		{
-			log_error("user_list_load() error\n");
+			log_error("user_list_load() error");
 			ret = -2;
 			goto cleanup;
 		}
@@ -647,7 +643,7 @@ int user_list_pool_reload(int online_user)
 
 	if (user_list_rw_lock() < 0)
 	{
-		log_error("user_list_rw_lock() error\n");
+		log_error("user_list_rw_lock() error");
 		ret = -3;
 		goto cleanup;
 	}
@@ -669,7 +665,7 @@ int user_list_pool_reload(int online_user)
 
 	if (user_list_rw_unlock() < 0)
 	{
-		log_error("user_list_rw_unlock() error\n");
+		log_error("user_list_rw_unlock() error");
 		ret = -3;
 		goto cleanup;
 	}
@@ -690,7 +686,7 @@ int user_list_try_rd_lock(int wait_sec)
 
 	if (p_user_list_pool == NULL)
 	{
-		log_error("p_user_list_pool not initialized\n");
+		log_error("p_user_list_pool not initialized");
 		return -1;
 	}
 
@@ -709,14 +705,14 @@ int user_list_try_rd_lock(int wait_sec)
 	ret = semtimedop(p_user_list_pool->semid, sops, 2, &timeout);
 	if (ret == -1 && errno != EAGAIN && errno != EINTR)
 	{
-		log_error("semop(lock read) error %d\n", errno);
+		log_error("semop(lock read) error %d", errno);
 	}
 #else
 	if (sem_timedwait(&(p_user_list_pool->sem), &timeout) == -1)
 	{
 		if (errno != ETIMEDOUT && errno != EAGAIN && errno != EINTR)
 		{
-			log_error("sem_timedwait() error %d\n", errno);
+			log_error("sem_timedwait() error %d", errno);
 		}
 		return -1;
 	}
@@ -733,7 +729,7 @@ int user_list_try_rd_lock(int wait_sec)
 
 	if (sem_post(&(p_user_list_pool->sem)) == -1)
 	{
-		log_error("sem_post() error %d\n", errno);
+		log_error("sem_post() error %d", errno);
 		return -1;
 	}
 #endif
@@ -751,7 +747,7 @@ int user_list_try_rw_lock(int wait_sec)
 
 	if (p_user_list_pool == NULL)
 	{
-		log_error("p_user_list_pool not initialized\n");
+		log_error("p_user_list_pool not initialized");
 		return -1;
 	}
 
@@ -774,14 +770,14 @@ int user_list_try_rw_lock(int wait_sec)
 	ret = semtimedop(p_user_list_pool->semid, sops, 3, &timeout);
 	if (ret == -1 && errno != EAGAIN && errno != EINTR)
 	{
-		log_error("semop(lock write) error %d\n", errno);
+		log_error("semop(lock write) error %d", errno);
 	}
 #else
 	if (sem_timedwait(&(p_user_list_pool->sem), &timeout) == -1)
 	{
 		if (errno != ETIMEDOUT && errno != EAGAIN && errno != EINTR)
 		{
-			log_error("sem_timedwait() error %d\n", errno);
+			log_error("sem_timedwait() error %d", errno);
 		}
 		return -1;
 	}
@@ -798,7 +794,7 @@ int user_list_try_rw_lock(int wait_sec)
 
 	if (sem_post(&(p_user_list_pool->sem)) == -1)
 	{
-		log_error("sem_post() error %d\n", errno);
+		log_error("sem_post() error %d", errno);
 		return -1;
 	}
 #endif
@@ -815,7 +811,7 @@ int user_list_rd_unlock(void)
 
 	if (p_user_list_pool == NULL)
 	{
-		log_error("p_user_list_pool not initialized\n");
+		log_error("p_user_list_pool not initialized");
 		return -1;
 	}
 
@@ -827,14 +823,14 @@ int user_list_rd_unlock(void)
 	ret = semop(p_user_list_pool->semid, sops, 1);
 	if (ret == -1 && errno != EAGAIN && errno != EINTR)
 	{
-		log_error("semop(unlock read) error %d\n", errno);
+		log_error("semop(unlock read) error %d", errno);
 	}
 #else
 	if (sem_wait(&(p_user_list_pool->sem)) == -1)
 	{
 		if (errno != ETIMEDOUT && errno != EAGAIN && errno != EINTR)
 		{
-			log_error("sem_wait() error %d\n", errno);
+			log_error("sem_wait() error %d", errno);
 		}
 		return -1;
 	}
@@ -845,12 +841,12 @@ int user_list_rd_unlock(void)
 	}
 	else
 	{
-		log_error("read_lock_count already 0\n");
+		log_error("read_lock_count already 0");
 	}
 
 	if (sem_post(&(p_user_list_pool->sem)) == -1)
 	{
-		log_error("sem_post() error %d\n", errno);
+		log_error("sem_post() error %d", errno);
 		return -1;
 	}
 #endif
@@ -867,7 +863,7 @@ int user_list_rw_unlock(void)
 
 	if (p_user_list_pool == NULL)
 	{
-		log_error("p_user_list_pool not initialized\n");
+		log_error("p_user_list_pool not initialized");
 		return -1;
 	}
 
@@ -879,14 +875,14 @@ int user_list_rw_unlock(void)
 	ret = semop(p_user_list_pool->semid, sops, 1);
 	if (ret == -1 && errno != EAGAIN && errno != EINTR)
 	{
-		log_error("semop(unlock write) error %d\n", errno);
+		log_error("semop(unlock write) error %d", errno);
 	}
 #else
 	if (sem_wait(&(p_user_list_pool->sem)) == -1)
 	{
 		if (errno != ETIMEDOUT && errno != EAGAIN && errno != EINTR)
 		{
-			log_error("sem_wait() error %d\n", errno);
+			log_error("sem_wait() error %d", errno);
 		}
 		return -1;
 	}
@@ -897,12 +893,12 @@ int user_list_rw_unlock(void)
 	}
 	else
 	{
-		log_error("write_lock_count already 0\n");
+		log_error("write_lock_count already 0");
 	}
 
 	if (sem_post(&(p_user_list_pool->sem)) == -1)
 	{
-		log_error("sem_post() error %d\n", errno);
+		log_error("sem_post() error %d", errno);
 		return -1;
 	}
 #endif
@@ -918,7 +914,7 @@ int user_list_rd_lock(void)
 
 	if (p_user_list_pool == NULL)
 	{
-		log_error("p_user_list_pool not initialized\n");
+		log_error("p_user_list_pool not initialized");
 		return -1;
 	}
 
@@ -934,14 +930,14 @@ int user_list_rd_lock(void)
 			timer++;
 			if (timer % USER_LIST_TRY_LOCK_TIMES == 0)
 			{
-				log_error("user_list_try_rd_lock() tried %d times\n", timer);
+				log_error("user_list_try_rd_lock() tried %d times", timer);
 
 				if (time(NULL) - tm_first_failure >= USER_LIST_DEAD_LOCK_TIMEOUT)
 				{
-					log_error("Unable to acquire rw_lock for %d seconds\n", time(NULL) - tm_first_failure);
+					log_error("Unable to acquire rw_lock for %d seconds", time(NULL) - tm_first_failure);
 #ifndef HAVE_SYSTEM_V
 					user_list_reset_lock();
-					log_error("Reset POSIX semaphore to resolve dead lock\n");
+					log_error("Reset POSIX semaphore to resolve dead lock");
 #endif
 					break;
 				}
@@ -950,7 +946,7 @@ int user_list_rd_lock(void)
 		}
 		else // failed
 		{
-			log_error("user_list_try_rd_lock() failed\n");
+			log_error("user_list_try_rd_lock() failed");
 			break;
 		}
 	}
@@ -966,7 +962,7 @@ int user_list_rw_lock(void)
 
 	if (p_user_list_pool == NULL)
 	{
-		log_error("p_user_list_pool not initialized\n");
+		log_error("p_user_list_pool not initialized");
 		return -1;
 	}
 
@@ -982,14 +978,14 @@ int user_list_rw_lock(void)
 			timer++;
 			if (timer % USER_LIST_TRY_LOCK_TIMES == 0)
 			{
-				log_error("user_list_try_rw_lock() tried %d times\n", timer);
+				log_error("user_list_try_rw_lock() tried %d times", timer);
 
 				if (time(NULL) - tm_first_failure >= USER_LIST_DEAD_LOCK_TIMEOUT)
 				{
-					log_error("Unable to acquire rw_lock for %d seconds\n", time(NULL) - tm_first_failure);
+					log_error("Unable to acquire rw_lock for %d seconds", time(NULL) - tm_first_failure);
 #ifndef HAVE_SYSTEM_V
 					user_list_reset_lock();
-					log_error("Reset POSIX semaphore to resolve dead lock\n");
+					log_error("Reset POSIX semaphore to resolve dead lock");
 #endif
 					break;
 				}
@@ -998,7 +994,7 @@ int user_list_rw_lock(void)
 		}
 		else // failed
 		{
-			log_error("user_list_try_rw_lock() failed\n");
+			log_error("user_list_try_rw_lock() failed");
 			break;
 		}
 	}
@@ -1011,13 +1007,13 @@ int user_list_reset_lock(void)
 {
 	if (p_user_list_pool == NULL)
 	{
-		log_error("p_user_list_pool not initialized\n");
+		log_error("p_user_list_pool not initialized");
 		return -1;
 	}
 
 	if (sem_destroy(&(p_user_list_pool->sem)) == -1)
 	{
-		log_error("sem_destroy() error (%d)\n", errno);
+		log_error("sem_destroy() error (%d)", errno);
 	}
 
 	p_user_list_pool->read_lock_count = 0;
@@ -1025,7 +1021,7 @@ int user_list_reset_lock(void)
 
 	if (sem_init(&(p_user_list_pool->sem), 1, 1) == -1)
 	{
-		log_error("sem_init() error (%d)\n", errno);
+		log_error("sem_init() error (%d)", errno);
 	}
 
 	return 0;
@@ -1038,7 +1034,7 @@ int query_user_list(int page_id, USER_INFO *p_users, int *p_user_count, int *p_p
 
 	if (p_users == NULL || p_user_count == NULL || p_page_count == NULL)
 	{
-		log_error("NULL pointer error\n");
+		log_error("NULL pointer error");
 		return -1;
 	}
 
@@ -1048,7 +1044,7 @@ int query_user_list(int page_id, USER_INFO *p_users, int *p_user_count, int *p_p
 	// acquire lock of user list
 	if (user_list_rd_lock() < 0)
 	{
-		log_error("user_list_rd_lock() error\n");
+		log_error("user_list_rd_lock() error");
 		return -2;
 	}
 
@@ -1064,7 +1060,7 @@ int query_user_list(int page_id, USER_INFO *p_users, int *p_user_count, int *p_p
 
 	if (page_id < 0 || page_id >= *p_page_count)
 	{
-		log_error("Invalid page_id = %d, not in range [0, %d)\n", page_id, *p_page_count);
+		log_error("Invalid page_id = %d, not in range [0, %d)", page_id, *p_page_count);
 		ret = -3;
 		goto cleanup;
 	}
@@ -1081,7 +1077,7 @@ cleanup:
 	// release lock of user list
 	if (user_list_rd_unlock() < 0)
 	{
-		log_error("user_list_rd_unlock() error\n");
+		log_error("user_list_rd_unlock() error");
 		ret = -1;
 	}
 
@@ -1094,7 +1090,7 @@ int query_user_online_list(int page_id, USER_ONLINE_INFO *p_online_users, int *p
 
 	if (p_online_users == NULL || p_user_count == NULL || p_page_count == NULL)
 	{
-		log_error("NULL pointer error\n");
+		log_error("NULL pointer error");
 		return -1;
 	}
 
@@ -1104,7 +1100,7 @@ int query_user_online_list(int page_id, USER_ONLINE_INFO *p_online_users, int *p
 	// acquire lock of user list
 	if (user_list_rd_lock() < 0)
 	{
-		log_error("user_list_rd_lock() error\n");
+		log_error("user_list_rd_lock() error");
 		return -2;
 	}
 
@@ -1119,7 +1115,7 @@ int query_user_online_list(int page_id, USER_ONLINE_INFO *p_online_users, int *p
 
 	if (page_id < 0 || page_id >= *p_page_count)
 	{
-		log_error("Invalid page_id = %d, not in range [0, %d)\n", page_id, *p_page_count);
+		log_error("Invalid page_id = %d, not in range [0, %d)", page_id, *p_page_count);
 		ret = -3;
 		goto cleanup;
 	}
@@ -1136,7 +1132,7 @@ cleanup:
 	// release lock of user list
 	if (user_list_rd_unlock() < 0)
 	{
-		log_error("user_list_rd_unlock() error\n");
+		log_error("user_list_rd_unlock() error");
 		ret = -1;
 	}
 
@@ -1147,14 +1143,14 @@ int get_user_list_count(int *p_user_cnt)
 {
 	if (p_user_cnt == NULL)
 	{
-		log_error("NULL pointer error\n");
+		log_error("NULL pointer error");
 		return -1;
 	}
 
 	// acquire lock of user list
 	if (user_list_rd_lock() < 0)
 	{
-		log_error("user_list_rd_lock() error\n");
+		log_error("user_list_rd_lock() error");
 		return -2;
 	}
 
@@ -1163,7 +1159,7 @@ int get_user_list_count(int *p_user_cnt)
 	// release lock of user list
 	if (user_list_rd_unlock() < 0)
 	{
-		log_error("user_list_rd_unlock() error\n");
+		log_error("user_list_rd_unlock() error");
 		return -2;
 	}
 
@@ -1174,14 +1170,14 @@ int get_user_online_list_count(int *p_user_cnt, int *p_guest_cnt)
 {
 	if (p_user_cnt == NULL || p_guest_cnt == NULL)
 	{
-		log_error("NULL pointer error\n");
+		log_error("NULL pointer error");
 		return -1;
 	}
 
 	// acquire lock of user list
 	if (user_list_rd_lock() < 0)
 	{
-		log_error("user_list_rd_lock() error\n");
+		log_error("user_list_rd_lock() error");
 		return -2;
 	}
 
@@ -1191,7 +1187,7 @@ int get_user_online_list_count(int *p_user_cnt, int *p_guest_cnt)
 	// release lock of user list
 	if (user_list_rd_unlock() < 0)
 	{
-		log_error("user_list_rd_unlock() error\n");
+		log_error("user_list_rd_unlock() error");
 		return -2;
 	}
 
@@ -1202,7 +1198,7 @@ int get_user_login_count(int *p_login_cnt)
 {
 	if (p_login_cnt == NULL)
 	{
-		log_error("NULL pointer error\n");
+		log_error("NULL pointer error");
 		return -1;
 	}
 
@@ -1217,14 +1213,14 @@ int query_user_info(int32_t id, USER_INFO *p_user)
 
 	if (p_user == NULL)
 	{
-		log_error("NULL pointer error\n");
+		log_error("NULL pointer error");
 		return -1;
 	}
 
 	// acquire lock of user list
 	if (user_list_rd_lock() < 0)
 	{
-		log_error("user_list_rd_lock() error\n");
+		log_error("user_list_rd_lock() error");
 		return -2;
 	}
 
@@ -1237,7 +1233,7 @@ int query_user_info(int32_t id, USER_INFO *p_user)
 	// release lock of user list
 	if (user_list_rd_unlock() < 0)
 	{
-		log_error("user_list_rd_unlock() error\n");
+		log_error("user_list_rd_unlock() error");
 		ret = -1;
 	}
 
@@ -1254,14 +1250,14 @@ int query_user_info_by_uid(int32_t uid, USER_INFO *p_user, char *p_intro_buf, si
 
 	if (p_user == NULL)
 	{
-		log_error("NULL pointer error\n");
+		log_error("NULL pointer error");
 		return -1;
 	}
 
 	// acquire lock of user list
 	if (user_list_rd_lock() < 0)
 	{
-		log_error("user_list_rd_lock() error\n");
+		log_error("user_list_rd_lock() error");
 		return -2;
 	}
 
@@ -1303,7 +1299,7 @@ int query_user_info_by_uid(int32_t uid, USER_INFO *p_user, char *p_intro_buf, si
 	// release lock of user list
 	if (user_list_rd_unlock() < 0)
 	{
-		log_error("user_list_rd_unlock() error\n");
+		log_error("user_list_rd_unlock() error");
 		ret = -1;
 	}
 
@@ -1324,7 +1320,7 @@ int query_user_info_by_username(const char *username_prefix, int max_user_cnt,
 
 	if (username_prefix == NULL || uid_list == NULL || username_list == NULL)
 	{
-		log_error("NULL pointer error\n");
+		log_error("NULL pointer error");
 		return -1;
 	}
 
@@ -1333,7 +1329,7 @@ int query_user_info_by_username(const char *username_prefix, int max_user_cnt,
 	// acquire lock of user list
 	if (user_list_rd_lock() < 0)
 	{
-		log_error("user_list_rd_lock() error\n");
+		log_error("user_list_rd_lock() error");
 		return -2;
 	}
 
@@ -1361,9 +1357,7 @@ int query_user_info_by_username(const char *username_prefix, int max_user_cnt,
 
 	if (strncasecmp(username_prefix, p_user_list_pool->user_list[p_user_list_pool->user_list_index_current].users[left].username, prefix_len) == 0) // Found
 	{
-#ifdef _DEBUG
-		log_error("Debug: match found, pos=%d\n", left);
-#endif
+		log_debug("Debug: match found, pos=%d", left);
 
 		left_save = left;
 		right = left;
@@ -1389,9 +1383,7 @@ int query_user_info_by_username(const char *username_prefix, int max_user_cnt,
 			}
 		}
 
-#ifdef _DEBUG
-		log_error("Debug: first match found, pos=%d\n", right);
-#endif
+		log_debug("Debug: first match found, pos=%d", right);
 
 		left = left_save;
 		left_save = right;
@@ -1417,9 +1409,7 @@ int query_user_info_by_username(const char *username_prefix, int max_user_cnt,
 			}
 		}
 
-#ifdef _DEBUG
-		log_error("Debug: last match found, pos=%d\n", left);
-#endif
+		log_debug("Debug: last match found, pos=%d", left);
 
 		right = left;
 		left = left_save;
@@ -1437,7 +1427,7 @@ cleanup:
 	// release lock of user list
 	if (user_list_rd_unlock() < 0)
 	{
-		log_error("user_list_rd_unlock() error\n");
+		log_error("user_list_rd_unlock() error");
 		ret = -1;
 	}
 
@@ -1450,14 +1440,14 @@ int query_user_online_info(int32_t id, USER_ONLINE_INFO *p_user)
 
 	if (p_user == NULL)
 	{
-		log_error("NULL pointer error\n");
+		log_error("NULL pointer error");
 		return -1;
 	}
 
 	// acquire lock of user list
 	if (user_list_rd_lock() < 0)
 	{
-		log_error("user_list_rd_lock() error\n");
+		log_error("user_list_rd_lock() error");
 		return -2;
 	}
 
@@ -1470,7 +1460,7 @@ int query_user_online_info(int32_t id, USER_ONLINE_INFO *p_user)
 	// release lock of user list
 	if (user_list_rd_unlock() < 0)
 	{
-		log_error("user_list_rd_unlock() error\n");
+		log_error("user_list_rd_unlock() error");
 		ret = -1;
 	}
 
@@ -1489,7 +1479,7 @@ int query_user_online_info_by_uid(int32_t uid, USER_ONLINE_INFO *p_users, int *p
 
 	if (p_users == NULL || p_user_cnt == NULL)
 	{
-		log_error("NULL pointer error\n");
+		log_error("NULL pointer error");
 		return -1;
 	}
 
@@ -1499,7 +1489,7 @@ int query_user_online_info_by_uid(int32_t uid, USER_ONLINE_INFO *p_users, int *p
 	// acquire lock of user list
 	if (user_list_rd_lock() < 0)
 	{
-		log_error("user_list_rd_lock() error\n");
+		log_error("user_list_rd_lock() error");
 		return -2;
 	}
 
@@ -1561,7 +1551,7 @@ int query_user_online_info_by_uid(int32_t uid, USER_ONLINE_INFO *p_users, int *p
 	// release lock of user list
 	if (user_list_rd_unlock() < 0)
 	{
-		log_error("user_list_rd_unlock() error\n");
+		log_error("user_list_rd_unlock() error");
 		ret = -1;
 	}
 
@@ -1578,14 +1568,14 @@ int get_user_id_list(int32_t *p_uid_list, int *p_user_cnt, int start_uid)
 
 	if (p_uid_list == NULL || p_user_cnt == NULL)
 	{
-		log_error("NULL pointer error\n");
+		log_error("NULL pointer error");
 		return -1;
 	}
 
 	// acquire lock of user list
 	if (user_list_rd_lock() < 0)
 	{
-		log_error("user_list_rd_lock() error\n");
+		log_error("user_list_rd_lock() error");
 		return -2;
 	}
 
@@ -1619,7 +1609,7 @@ int get_user_id_list(int32_t *p_uid_list, int *p_user_cnt, int start_uid)
 	// release lock of user list
 	if (user_list_rd_unlock() < 0)
 	{
-		log_error("user_list_rd_unlock() error\n");
+		log_error("user_list_rd_unlock() error");
 		ret = -1;
 	}
 
@@ -1644,7 +1634,7 @@ int get_user_article_cnt(int32_t uid)
 	ret = user_stat_get(&(p_user_list_pool->user_stat_map), uid, &p_stat);
 	if (ret < 0)
 	{
-		log_error("user_stat_get(uid=%d) error: %d\n", uid, ret);
+		log_error("user_stat_get(uid=%d) error: %d", uid, ret);
 		return -1;
 	}
 	else if (ret == 0) // user not found

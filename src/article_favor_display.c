@@ -85,7 +85,7 @@ static int article_favor_draw_items(int page_id, const ARTICLE *p_articles[], ch
 			is_viewed = article_view_log_is_viewed(p_articles[i]->aid, &BBS_article_view_log);
 			if (is_viewed < 0)
 			{
-				log_error("article_view_log_is_viewed(aid=%d) error\n", p_articles[i]->aid);
+				log_error("article_view_log_is_viewed(aid=%d) error", p_articles[i]->aid);
 				is_viewed = 0;
 			}
 		}
@@ -165,23 +165,21 @@ static enum select_cmd_t article_favor_select(int total_page, int item_count, in
 			// Refresh current action
 			if (user_online_update(NULL) < 0)
 			{
-				log_error("user_online_update(NULL) error\n");
+				log_error("user_online_update(NULL) error");
 			}
 		}
 
 		switch (ch)
 		{
 		case KEY_NULL: // broken pipe
-#ifdef _DEBUG
-			log_error("KEY_NULL\n");
-#endif
+			log_debug("KEY_NULL");
 		case KEY_ESC:
 		case KEY_LEFT:
 			return EXIT_LIST; // exit list
 		case KEY_TIMEOUT:
 			if (time(NULL) - BBS_last_access_tm >= BBS_max_user_idle_time)
 			{
-				log_error("User input timeout\n");
+				log_debug("User input timeout");
 				return EXIT_LIST; // exit list
 			}
 			continue;
@@ -310,7 +308,7 @@ int article_favor_display(ARTICLE_FAVOR *p_favor)
 
 	if (p_favor == NULL)
 	{
-		log_error("NULL pointer error\n");
+		log_error("NULL pointer error");
 		return -1;
 	}
 
@@ -319,7 +317,7 @@ int article_favor_display(ARTICLE_FAVOR *p_favor)
 	ret = query_favor_articles(p_favor, page_id, p_articles, snames, &article_count, &page_count);
 	if (ret < 0)
 	{
-		log_error("query_favor_articles(page_id=%d) error\n", page_id);
+		log_error("query_favor_articles(page_id=%d) error", page_id);
 		return -2;
 	}
 
@@ -333,7 +331,7 @@ int article_favor_display(ARTICLE_FAVOR *p_favor)
 		ret = article_favor_draw_items(page_id, p_articles, snames, article_count, display_sname);
 		if (ret < 0)
 		{
-			log_error("article_favor_draw_items(page_id=%d) error\n", page_id);
+			log_error("article_favor_draw_items(page_id=%d) error", page_id);
 			return -3;
 		}
 
@@ -346,7 +344,7 @@ int article_favor_display(ARTICLE_FAVOR *p_favor)
 
 		if (user_online_update("ARTICLE_FAVOR") < 0)
 		{
-			log_error("user_online_update(ARTICLE_FAVOR) error\n");
+			log_error("user_online_update(ARTICLE_FAVOR) error");
 		}
 
 		ret = article_favor_select(page_count, article_count, &page_id, &selected_index);
@@ -357,7 +355,7 @@ int article_favor_display(ARTICLE_FAVOR *p_favor)
 		case UNSET_FAVOR:
 			if (article_favor_set(p_articles[selected_index]->aid, &BBS_article_favor, 0) != 1)
 			{
-				log_error("article_favor_set(aid=%d, 0) error\n", p_articles[selected_index]->aid);
+				log_error("article_favor_set(aid=%d, 0) error", p_articles[selected_index]->aid);
 				break;
 			}
 			// continue to refresh list
@@ -365,7 +363,7 @@ int article_favor_display(ARTICLE_FAVOR *p_favor)
 			ret = query_favor_articles(p_favor, page_id, p_articles, snames, &article_count, &page_count);
 			if (ret < 0)
 			{
-				log_error("query_favor_articles(page_id=%d) error\n", page_id);
+				log_error("query_favor_articles(page_id=%d) error", page_id);
 				return -2;
 			}
 
@@ -381,7 +379,7 @@ int article_favor_display(ARTICLE_FAVOR *p_favor)
 		case LOCATE_ARTICLE:
 			if (section_list_display(snames[selected_index], p_articles[selected_index]->aid) < 0)
 			{
-				log_error("section_list_display(sname=%s, aid=%d) error\n",
+				log_error("section_list_display(sname=%s, aid=%d) error",
 						  snames[selected_index], p_articles[selected_index]->aid);
 			}
 			break;
@@ -395,7 +393,7 @@ int article_favor_display(ARTICLE_FAVOR *p_favor)
 			article_favor_draw_screen(display_sname);
 			break;
 		default:
-			log_error("Unknown command %d\n", ret);
+			log_error("Unknown command %d", ret);
 		}
 	}
 

@@ -19,7 +19,7 @@ int user_stat_map_init(USER_STAT_MAP *p_map)
 {
 	if (p_map == NULL)
 	{
-		log_error("NULL pointer error\n");
+		log_error("NULL pointer error");
 		return -1;
 	}
 
@@ -40,14 +40,14 @@ int user_stat_map_update(USER_STAT_MAP *p_map)
 
 	if (p_map == NULL)
 	{
-		log_error("NULL pointer error\n");
+		log_error("NULL pointer error");
 		return -1;
 	}
 
 	// Load uid_list
 	if (get_user_id_list(uid_list, &user_cnt, p_map->last_uid + 1) < 0)
 	{
-		log_error("get_user_id_list(%d, 0) error\n", user_cnt);
+		log_error("get_user_id_list(%d, 0) error", user_cnt);
 		return -2;
 	}
 
@@ -67,7 +67,7 @@ int user_stat_map_update(USER_STAT_MAP *p_map)
 		p_article = article_block_find_by_index(i);
 		if (p_article == NULL)
 		{
-			log_error("article_block_find_by_index(index=%d) error\n", i);
+			log_error("article_block_find_by_index(index=%d) error", i);
 			break;
 		}
 
@@ -78,16 +78,14 @@ int user_stat_map_update(USER_STAT_MAP *p_map)
 
 		if (p_article->uid > p_map->last_uid)
 		{
-#ifdef _DEBUG
-			log_error("uid=%d of article(aid=%d) is greater than last_uid=%d\n",
+			log_debug("uid=%d of article(aid=%d) is greater than last_uid=%d",
 					  p_article->uid, p_article->aid, p_map->last_uid);
-#endif
 			continue;
 		}
 
 		if (user_stat_article_cnt_inc(p_map, p_article->uid, 1) < 0)
 		{
-			log_error("user_stat_article_cnt_inc(uid=%d, 1) error\n", p_article->uid);
+			log_error("user_stat_article_cnt_inc(uid=%d, 1) error", p_article->uid);
 			break;
 		}
 	}
@@ -105,7 +103,7 @@ int user_stat_article_cnt_inc(USER_STAT_MAP *p_map, int32_t uid, int n)
 
 	if (p_map == NULL)
 	{
-		log_error("NULL pointer error\n");
+		log_error("NULL pointer error");
 		return -1;
 	}
 
@@ -147,7 +145,7 @@ int user_stat_get(USER_STAT_MAP *p_map, int32_t uid, const USER_STAT **pp_stat)
 
 	if (p_map == NULL)
 	{
-		log_error("NULL pointer error\n");
+		log_error("NULL pointer error");
 		return -1;
 	}
 

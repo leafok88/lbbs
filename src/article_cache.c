@@ -47,7 +47,7 @@ inline static int article_cache_path(char *file_path, size_t buf_len, const char
 {
 	if (file_path == NULL || cache_dir == NULL || p_article == NULL)
 	{
-		log_error("NULL pointer error\n");
+		log_error("NULL pointer error");
 		return -1;
 	}
 
@@ -76,19 +76,19 @@ int article_cache_generate(const char *cache_dir, const ARTICLE *p_article, cons
 
 	if (cache_dir == NULL || p_article == NULL || content == NULL)
 	{
-		log_error("NULL pointer error\n");
+		log_error("NULL pointer error");
 		return -1;
 	}
 
 	if (content_f == NULL && (content_f = malloc(ARTICLE_CONTENT_MAX_LEN)) == NULL)
 	{
-		log_error("malloc(content_f) error: OOM\n");
+		log_error("malloc(content_f) error: OOM");
 		return -1;
 	}
 
 	if (article_cache_path(data_file, sizeof(data_file), cache_dir, p_article) < 0)
 	{
-		log_error("article_cache_path(dir=%s, cid=%d) error\n", cache_dir, p_article->cid);
+		log_error("article_cache_path(dir=%s, cid=%d) error", cache_dir, p_article->cid);
 		return -1;
 	}
 
@@ -103,7 +103,7 @@ int article_cache_generate(const char *cache_dir, const ARTICLE *p_article, cons
 
 	if ((fd = open(data_file, O_WRONLY | O_CREAT | O_TRUNC, 0640)) == -1)
 	{
-		log_error("open(%s) error (%d)\n", data_file, errno);
+		log_error("open(%s) error (%d)", data_file, errno);
 		return -2;
 	}
 
@@ -129,11 +129,9 @@ int article_cache_generate(const char *cache_dir, const ARTICLE *p_article, cons
 
 	if (header_len != cache.line_offsets[header_line_cnt])
 	{
-#ifdef _DEBUG
-		log_error("Header of article(aid=%d) is truncated from %ld to %ld\n, body_line=%ld, body_line_limit=%ld",
+		log_debug("Header of article(aid=%d) is truncated from %ld to %ld\n, body_line=%ld, body_line_limit=%ld",
 				  p_article->aid, header_len, cache.line_offsets[header_line_cnt],
 				  header_line_cnt, MAX_SPLIT_FILE_LINES);
-#endif
 		header_len = (size_t)cache.line_offsets[header_line_cnt];
 	}
 
@@ -147,11 +145,9 @@ int article_cache_generate(const char *cache_dir, const ARTICLE *p_article, cons
 
 	if (body_len != (size_t)cache.line_offsets[cache.line_total])
 	{
-#ifdef _DEBUG
-		log_error("Body of article(aid=%d) is truncated from %ld to %ld, body_line=%ld, body_line_limit=%ld\n",
+		log_debug("Body of article(aid=%d) is truncated from %ld to %ld, body_line=%ld, body_line_limit=%ld",
 				  p_article->aid, body_len, cache.line_offsets[cache.line_total],
 				  body_line_cnt, MAX_SPLIT_FILE_LINES - header_line_cnt);
-#endif
 		cache.data_len = header_len + (size_t)(cache.line_offsets[cache.line_total]);
 	}
 
@@ -165,11 +161,9 @@ int article_cache_generate(const char *cache_dir, const ARTICLE *p_article, cons
 
 	if (footer_len != cache.line_offsets[cache.line_total + footer_line_cnt])
 	{
-#ifdef _DEBUG
-		log_error("Footer of article(aid=%d) is truncated from %ld to %ld, footer_line=%ld, footer_line_limit=%ld\n",
+		log_debug("Footer of article(aid=%d) is truncated from %ld to %ld, footer_line=%ld, footer_line_limit=%ld",
 				  p_article->aid, footer_len, cache.line_offsets[cache.line_total + footer_line_cnt],
 				  footer_line_cnt, MAX_SPLIT_FILE_LINES - cache.line_total);
-#endif
 		footer_len = (size_t)(cache.line_offsets[cache.line_total + footer_line_cnt]);
 	}
 
@@ -184,32 +178,32 @@ int article_cache_generate(const char *cache_dir, const ARTICLE *p_article, cons
 
 	if (write(fd, &cache, cache.mmap_len - cache.data_len) == -1)
 	{
-		log_error("write(%s, cache) error (%d)\n", data_file, errno);
+		log_error("write(%s, cache) error (%d)", data_file, errno);
 		close(fd);
 		return -3;
 	}
 	if (write(fd, header, header_len) == -1)
 	{
-		log_error("write(%s, header) error (%d)\n", data_file, errno);
+		log_error("write(%s, header) error (%d)", data_file, errno);
 		close(fd);
 		return -3;
 	}
 	if (write(fd, content_f, cache.data_len - header_len - footer_len) == -1)
 	{
-		log_error("write(%s, content) error (%d)\n", data_file, errno);
+		log_error("write(%s, content) error (%d)", data_file, errno);
 		close(fd);
 		return -3;
 	}
 	if (write(fd, footer, footer_len) == -1)
 	{
-		log_error("write(%s, footer) error (%d)\n", data_file, errno);
+		log_error("write(%s, footer) error (%d)", data_file, errno);
 		close(fd);
 		return -3;
 	}
 
 	if (close(fd) == -1)
 	{
-		log_error("close(%s) error (%d)\n", data_file, errno);
+		log_error("close(%s) error (%d)", data_file, errno);
 		return -2;
 	}
 
@@ -235,25 +229,25 @@ int article_cache_load(ARTICLE_CACHE *p_cache, const char *cache_dir, const ARTI
 
 	if (p_cache == NULL || cache_dir == NULL || p_article == NULL)
 	{
-		log_error("NULL pointer error\n");
+		log_error("NULL pointer error");
 		return -1;
 	}
 
 	if (article_cache_path(data_file, sizeof(data_file), cache_dir, p_article) < 0)
 	{
-		log_error("article_cache_path(dir=%s, cid=%d) error\n", cache_dir, p_article->cid);
+		log_error("article_cache_path(dir=%s, cid=%d) error", cache_dir, p_article->cid);
 		return -1;
 	}
 
 	if ((fd = open(data_file, O_RDONLY)) == -1)
 	{
-		log_error("open(%s) error (%d)\n", data_file, errno);
+		log_error("open(%s) error (%d)", data_file, errno);
 		return -2;
 	}
 
 	if (fstat(fd, &sb) < 0)
 	{
-		log_error("fstat(fd) error (%d)\n", errno);
+		log_error("fstat(fd) error (%d)", errno);
 		return -2;
 	}
 
@@ -262,19 +256,19 @@ int article_cache_load(ARTICLE_CACHE *p_cache, const char *cache_dir, const ARTI
 	p_mmap = mmap(NULL, mmap_len, PROT_READ, MAP_SHARED, fd, 0L);
 	if (p_mmap == MAP_FAILED)
 	{
-		log_error("mmap(%s) error (%d)\n", data_file, errno);
+		log_error("mmap(%s) error (%d)", data_file, errno);
 		return -2;
 	}
 
 	if (close(fd) == -1)
 	{
-		log_error("close(%s) error (%d)\n", data_file, errno);
+		log_error("close(%s) error (%d)", data_file, errno);
 		return -2;
 	}
 
 	if (((ARTICLE_CACHE *)p_mmap)->mmap_len != mmap_len)
 	{
-		log_error("Inconsistent mmap len of article (cid=%d), %ld != %ld\n", p_article->cid, p_cache->mmap_len, mmap_len);
+		log_error("Inconsistent mmap len of article (cid=%d), %ld != %ld", p_article->cid, p_cache->mmap_len, mmap_len);
 		return -3;
 	}
 
@@ -291,13 +285,13 @@ int article_cache_unload(ARTICLE_CACHE *p_cache)
 {
 	if (p_cache == NULL || p_cache->p_mmap == NULL)
 	{
-		log_error("NULL pointer error\n");
+		log_error("NULL pointer error");
 		return -1;
 	}
 
 	if (munmap(p_cache->p_mmap, p_cache->mmap_len) < 0)
 	{
-		log_error("munmap() error (%d)\n", errno);
+		log_error("munmap() error (%d)", errno);
 		return -2;
 	}
 

@@ -90,13 +90,13 @@ int data_file_mgr(void *param)
 	if ((fd = open(path, O_RDONLY)) < 0 &&
 		(fd = open(data_file_list[i].path, O_RDONLY)) < 0)
 	{
-		log_error("open(%s) error (%d)\n", data_file_list[i].path, errno);
+		log_error("open(%s) error (%d)", data_file_list[i].path, errno);
 		return REDRAW;
 	}
 
 	if (fstat(fd, &sb) < 0)
 	{
-		log_error("fstat(fd) error (%d)\n", errno);
+		log_error("fstat(fd) error (%d)", errno);
 		goto cleanup;
 	}
 
@@ -104,13 +104,13 @@ int data_file_mgr(void *param)
 	p_data = mmap(NULL, len_data, PROT_READ, MAP_SHARED, fd, 0L);
 	if (p_data == MAP_FAILED)
 	{
-		log_error("mmap() error (%d)\n", errno);
+		log_error("mmap() error (%d)", errno);
 		goto cleanup;
 	}
 
 	if (close(fd) < 0)
 	{
-		log_error("close(fd) error (%d)\n", errno);
+		log_error("close(fd) error (%d)", errno);
 		fd = -1;
 		goto cleanup;
 	}
@@ -119,13 +119,13 @@ int data_file_mgr(void *param)
 	p_editor_data = editor_data_load(p_data);
 	if (p_editor_data == NULL)
 	{
-		log_error("editor_data_load(data) error\n");
+		log_error("editor_data_load(data) error");
 		goto cleanup;
 	}
 
 	if (munmap(p_data, len_data) < 0)
 	{
-		log_error("munmap() error (%d)\n", errno);
+		log_error("munmap() error (%d)", errno);
 		p_data = NULL;
 		goto cleanup;
 	}
@@ -134,7 +134,7 @@ int data_file_mgr(void *param)
 	p_data_new = malloc(DATA_FILE_MAX_LEN);
 	if (p_data_new == NULL)
 	{
-		log_error("malloc(content) error: OOM\n");
+		log_error("malloc(content) error: OOM");
 		goto cleanup;
 	}
 
@@ -169,7 +169,7 @@ int data_file_mgr(void *param)
 			len_data_new = editor_data_save(p_editor_data, p_data_new, DATA_FILE_MAX_LEN);
 			if (len_data_new < 0)
 			{
-				log_error("editor_data_save() error\n");
+				log_error("editor_data_save() error");
 				goto cleanup;
 			}
 			line_total = split_data_lines(p_data_new, SCREEN_COLS, line_offsets, MAX_SPLIT_FILE_LINES, 1, NULL);
@@ -205,19 +205,19 @@ int data_file_mgr(void *param)
 
 	if ((fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, 0640)) < 0)
 	{
-		log_error("open(%s) error (%d)\n", path, errno);
+		log_error("open(%s) error (%d)", path, errno);
 		goto cleanup;
 	}
 
 	if (write(fd, p_data_new, (size_t)len_data_new) < 0)
 	{
-		log_error("write(len=%ld) error (%d)\n", len_data_new, errno);
+		log_error("write(len=%ld) error (%d)", len_data_new, errno);
 		goto cleanup;
 	}
 
 	if (close(fd) < 0)
 	{
-		log_error("close(fd) error (%d)\n", errno);
+		log_error("close(fd) error (%d)", errno);
 		fd = -1;
 		goto cleanup;
 	}
@@ -225,19 +225,19 @@ int data_file_mgr(void *param)
 	// Make another copy of the data file so that the user editored copy will be kept after upgrade / reinstall
 	if ((fd = open(data_file_list[i].path, O_WRONLY | O_CREAT | O_TRUNC, 0640)) < 0)
 	{
-		log_error("open(%s) error (%d)\n", data_file_list[i].path, errno);
+		log_error("open(%s) error (%d)", data_file_list[i].path, errno);
 		goto cleanup;
 	}
 
 	if (write(fd, p_data_new, (size_t)len_data_new) < 0)
 	{
-		log_error("write(len=%ld) error (%d)\n", len_data_new, errno);
+		log_error("write(len=%ld) error (%d)", len_data_new, errno);
 		goto cleanup;
 	}
 
 	if (close(fd) < 0)
 	{
-		log_error("close(fd) error (%d)\n", errno);
+		log_error("close(fd) error (%d)", errno);
 		fd = -1;
 		goto cleanup;
 	}
@@ -261,12 +261,12 @@ cleanup:
 
 	if (p_data != NULL && munmap(p_data, len_data) < 0)
 	{
-		log_error("munmap() error (%d)\n", errno);
+		log_error("munmap() error (%d)", errno);
 	}
 
 	if (fd >= 0 && close(fd) < 0)
 	{
-		log_error("close(fd) error (%d)\n", errno);
+		log_error("close(fd) error (%d)", errno);
 	}
 
 	return REDRAW;

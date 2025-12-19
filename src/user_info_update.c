@@ -53,7 +53,7 @@ int user_intro_edit(int uid)
 	db = db_open();
 	if (db == NULL)
 	{
-		log_error("db_open() error: %s\n", mysql_error(db));
+		log_error("db_open() error: %s", mysql_error(db));
 		ret = -1;
 		goto cleanup;
 	}
@@ -61,13 +61,13 @@ int user_intro_edit(int uid)
 	snprintf(sql_intro, sizeof(sql_intro), "SELECT introduction FROM user_pubinfo WHERE UID=%d", uid);
 	if (mysql_query(db, sql_intro) != 0)
 	{
-		log_error("Query user_pubinfo error: %s\n", mysql_error(db));
+		log_error("Query user_pubinfo error: %s", mysql_error(db));
 		ret = -2;
 		goto cleanup;
 	}
 	if ((rs = mysql_store_result(db)) == NULL)
 	{
-		log_error("Get user_intro data failed\n");
+		log_error("Get user_intro data failed");
 		ret = -2;
 		goto cleanup;
 	}
@@ -77,7 +77,7 @@ int user_intro_edit(int uid)
 	}
 	else
 	{
-		log_error("mysql_fetch_row() failed\n");
+		log_error("mysql_fetch_row() failed");
 		ret = -2;
 		goto cleanup;
 	}
@@ -109,14 +109,14 @@ int user_intro_edit(int uid)
 			len_intro = editor_data_save(p_editor_data, intro, BBS_user_intro_max_len);
 			if (len_intro < 0)
 			{
-				log_error("editor_data_save() error\n");
+				log_error("editor_data_save() error");
 				ret = -3;
 				goto cleanup;
 			}
 
 			if (check_badwords(intro, '*') < 0)
 			{
-				log_error("check_badwords(introduction) error\n");
+				log_error("check_badwords(introduction) error");
 				ret = -3;
 				goto cleanup;
 			}
@@ -154,7 +154,7 @@ int user_intro_edit(int uid)
 	db = db_open();
 	if (db == NULL)
 	{
-		log_error("db_open() error: %s\n", mysql_error(db));
+		log_error("db_open() error: %s", mysql_error(db));
 		ret = -1;
 		goto cleanup;
 	}
@@ -169,7 +169,7 @@ int user_intro_edit(int uid)
 
 	if (mysql_query(db, sql_intro) != 0)
 	{
-		log_error("Update user_pubinfo error: %s\n", mysql_error(db));
+		log_error("Update user_pubinfo error: %s", mysql_error(db));
 		ret = -2;
 		goto cleanup;
 	}
@@ -222,7 +222,7 @@ int user_sign_edit(int uid)
 	db = db_open();
 	if (db == NULL)
 	{
-		log_error("db_open() error: %s\n", mysql_error(db));
+		log_error("db_open() error: %s", mysql_error(db));
 		ret = -1;
 		goto cleanup;
 	}
@@ -230,13 +230,13 @@ int user_sign_edit(int uid)
 	snprintf(sql_sign, sizeof(sql_sign), "SELECT sign_%d FROM user_pubinfo WHERE UID=%d", sign_id, uid);
 	if (mysql_query(db, sql_sign) != 0)
 	{
-		log_error("Query user_pubinfo error: %s\n", mysql_error(db));
+		log_error("Query user_pubinfo error: %s", mysql_error(db));
 		ret = -2;
 		goto cleanup;
 	}
 	if ((rs = mysql_store_result(db)) == NULL)
 	{
-		log_error("Get user_sign data failed\n");
+		log_error("Get user_sign data failed");
 		ret = -2;
 		goto cleanup;
 	}
@@ -246,7 +246,7 @@ int user_sign_edit(int uid)
 	}
 	else
 	{
-		log_error("mysql_fetch_row() failed\n");
+		log_error("mysql_fetch_row() failed");
 		ret = -2;
 		goto cleanup;
 	}
@@ -279,14 +279,14 @@ int user_sign_edit(int uid)
 			len_sign = editor_data_save(p_editor_data, sign, BBS_user_sign_max_len);
 			if (len_sign < 0)
 			{
-				log_error("editor_data_save() error\n");
+				log_error("editor_data_save() error");
 				ret = -3;
 				goto cleanup;
 			}
 
 			if (check_badwords(sign, '*') < 0)
 			{
-				log_error("check_badwords(sign) error\n");
+				log_error("check_badwords(sign) error");
 				ret = -3;
 				goto cleanup;
 			}
@@ -324,7 +324,7 @@ int user_sign_edit(int uid)
 	db = db_open();
 	if (db == NULL)
 	{
-		log_error("db_open() error: %s\n", mysql_error(db));
+		log_error("db_open() error: %s", mysql_error(db));
 		ret = -1;
 		goto cleanup;
 	}
@@ -339,7 +339,7 @@ int user_sign_edit(int uid)
 
 	if (mysql_query(db, sql_sign) != 0)
 	{
-		log_error("Update user_pubinfo error: %s\n", mysql_error(db));
+		log_error("Update user_pubinfo error: %s", mysql_error(db));
 		ret = -2;
 		goto cleanup;
 	}

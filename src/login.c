@@ -155,14 +155,14 @@ int check_user(const char *username, const char *password)
 	// Begin transaction
 	if (mysql_query(db, "SET autocommit=0") != 0)
 	{
-		log_error("SET autocommit=0 error: %s\n", mysql_error(db));
+		log_error("SET autocommit=0 error: %s", mysql_error(db));
 		ret = -1;
 		goto cleanup;
 	}
 
 	if (mysql_query(db, "BEGIN") != 0)
 	{
-		log_error("Begin transaction error: %s\n", mysql_error(db));
+		log_error("Begin transaction error: %s", mysql_error(db));
 		ret = -1;
 		goto cleanup;
 	}
@@ -179,13 +179,13 @@ int check_user(const char *username, const char *password)
 			 ip_mask(client_addr, 1, '%'));
 	if (mysql_query(db, sql) != 0)
 	{
-		log_error("Query user_list error: %s\n", mysql_error(db));
+		log_error("Query user_list error: %s", mysql_error(db));
 		ret = -1;
 		goto cleanup;
 	}
 	if ((rs = mysql_store_result(db)) == NULL)
 	{
-		log_error("Get user_list data failed\n");
+		log_error("Get user_list data failed");
 		ret = -1;
 		goto cleanup;
 	}
@@ -212,13 +212,13 @@ int check_user(const char *username, const char *password)
 			 username);
 	if (mysql_query(db, sql) != 0)
 	{
-		log_error("Query user_list error: %s\n", mysql_error(db));
+		log_error("Query user_list error: %s", mysql_error(db));
 		ret = -1;
 		goto cleanup;
 	}
 	if ((rs = mysql_store_result(db)) == NULL)
 	{
-		log_error("Get user_list data failed\n");
+		log_error("Get user_list data failed");
 		ret = -1;
 		goto cleanup;
 	}
@@ -240,13 +240,13 @@ int check_user(const char *username, const char *password)
 			 username, password);
 	if (mysql_query(db, sql) != 0)
 	{
-		log_error("Query user_list error: %s\n", mysql_error(db));
+		log_error("Query user_list error: %s", mysql_error(db));
 		ret = -1;
 		goto cleanup;
 	}
 	if ((rs = mysql_store_result(db)) == NULL)
 	{
-		log_error("Get user_list data failed\n");
+		log_error("Get user_list data failed");
 		ret = -1;
 		goto cleanup;
 	}
@@ -267,7 +267,7 @@ int check_user(const char *username, const char *password)
 				 BBS_uid, hostaddr_client);
 		if (mysql_query(db, sql) != 0)
 		{
-			log_error("Insert into user_login_log error: %s\n", mysql_error(db));
+			log_error("Insert into user_login_log error: %s", mysql_error(db));
 			ret = -1;
 			goto cleanup;
 		}
@@ -275,7 +275,7 @@ int check_user(const char *username, const char *password)
 		// Commit transaction
 		if (mysql_query(db, "COMMIT") != 0)
 		{
-			log_error("Commit transaction error: %s\n", mysql_error(db));
+			log_error("Commit transaction error: %s", mysql_error(db));
 			ret = -1;
 			goto cleanup;
 		}
@@ -298,7 +298,7 @@ int check_user(const char *username, const char *password)
 				 username, password, hostaddr_client);
 		if (mysql_query(db, sql) != 0)
 		{
-			log_error("Insert into user_err_login_log error: %s\n", mysql_error(db));
+			log_error("Insert into user_err_login_log error: %s", mysql_error(db));
 			ret = -1;
 			goto cleanup;
 		}
@@ -306,7 +306,7 @@ int check_user(const char *username, const char *password)
 		// Commit transaction
 		if (mysql_query(db, "COMMIT") != 0)
 		{
-			log_error("Commit transaction error: %s\n", mysql_error(db));
+			log_error("Commit transaction error: %s", mysql_error(db));
 			ret = -1;
 			goto cleanup;
 		}
@@ -319,7 +319,7 @@ int check_user(const char *username, const char *password)
 	// Set AUTOCOMMIT = 1
 	if (mysql_query(db, "SET autocommit=1") != 0)
 	{
-		log_error("SET autocommit=1 error: %s\n", mysql_error(db));
+		log_error("SET autocommit=1 error: %s", mysql_error(db));
 		ret = -1;
 		goto cleanup;
 	}
@@ -359,7 +359,7 @@ int check_user(const char *username, const char *password)
 			 BBS_uid);
 	if (mysql_query(db, sql) != 0)
 	{
-		log_error("Update user_pubinfo error: %s\n", mysql_error(db));
+		log_error("Update user_pubinfo error: %s", mysql_error(db));
 		ret = -1;
 		goto cleanup;
 	}
@@ -381,7 +381,7 @@ int check_user(const char *username, const char *password)
 
 		if (setenv("TZ", user_tz_env, 1) == -1)
 		{
-			log_error("setenv(TZ = %s) error %d\n", user_tz_env, errno);
+			log_error("setenv(TZ = %s) error %d", user_tz_env, errno);
 			return -3;
 		}
 
@@ -410,13 +410,13 @@ int load_user_info(MYSQL *db, int BBS_uid)
 			 BBS_uid);
 	if (mysql_query(db, sql) != 0)
 	{
-		log_error("Query user_pubinfo error: %s\n", mysql_error(db));
+		log_error("Query user_pubinfo error: %s", mysql_error(db));
 		ret = -1;
 		goto cleanup;
 	}
 	if ((rs = mysql_store_result(db)) == NULL)
 	{
-		log_error("Get user_pubinfo data failed\n");
+		log_error("Get user_pubinfo data failed");
 		ret = -1;
 		goto cleanup;
 	}
@@ -515,7 +515,7 @@ int user_online_add(MYSQL *db)
 			 hostaddr_client);
 	if (mysql_query(db, sql) != 0)
 	{
-		log_error("Add visit log error: %s\n", mysql_error(db));
+		log_error("Add visit log error: %s", mysql_error(db));
 		return -1;
 	}
 
@@ -530,7 +530,7 @@ int user_online_add(MYSQL *db)
 			 getpid(), BBS_priv.uid, hostaddr_client);
 	if (mysql_query(db, sql) != 0)
 	{
-		log_error("Add user_online error: %s\n", mysql_error(db));
+		log_error("Add user_online error: %s", mysql_error(db));
 		return -3;
 	}
 
@@ -546,7 +546,7 @@ int user_online_del(MYSQL *db)
 			 getpid());
 	if (mysql_query(db, sql) != 0)
 	{
-		log_error("Delete user_online error: %s\n", mysql_error(db));
+		log_error("Delete user_online error: %s", mysql_error(db));
 		return -1;
 	}
 
@@ -567,7 +567,7 @@ int user_online_exp(MYSQL *db)
 			 BBS_priv.uid);
 	if (mysql_query(db, sql) != 0)
 	{
-		log_error("Update user_pubinfo error: %s\n", mysql_error(db));
+		log_error("Update user_pubinfo error: %s", mysql_error(db));
 		return -1;
 	}
 
@@ -596,7 +596,7 @@ int user_online_update(const char *action)
 	db = db_open();
 	if (db == NULL)
 	{
-		log_error("db_open() error: %s\n", mysql_error(db));
+		log_error("db_open() error: %s", mysql_error(db));
 		return -1;
 	}
 
@@ -606,7 +606,7 @@ int user_online_update(const char *action)
 			 BBS_current_action, getpid());
 	if (mysql_query(db, sql) != 0)
 	{
-		log_error("Update user_online error: %s\n", mysql_error(db));
+		log_error("Update user_online error: %s", mysql_error(db));
 		return -2;
 	}
 
@@ -667,7 +667,7 @@ int user_update_agreement(void)
 					 BBS_priv.uid);
 			if (mysql_query(db, sql) != 0)
 			{
-				log_error("Update user_pubinfo error: %s\n", mysql_error(db));
+				log_error("Update user_pubinfo error: %s", mysql_error(db));
 				ret = -1;
 				goto cleanup;
 			}

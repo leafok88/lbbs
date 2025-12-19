@@ -153,7 +153,7 @@ static int pty_request(ssh_session session, ssh_channel channel, const char *ter
 	rc = openpty(&cdata->pty_master, &cdata->pty_slave, NULL, NULL, cdata->winsize);
 	if (rc != 0)
 	{
-		log_error("Failed to open pty\n");
+		log_error("Failed to open pty");
 		return SSH_ERROR;
 	}
 
@@ -187,7 +187,7 @@ static int exec_pty(const char *mode, const char *command, struct channel_data_s
 
 	if (command != NULL)
 	{
-		log_error("Forbid exec /bin/sh %s %s)\n", mode, command);
+		log_error("Forbid exec /bin/sh %s %s)", mode, command);
 	}
 
 	return SSH_OK;
@@ -199,7 +199,7 @@ static int exec_nopty(const char *command, struct channel_data_struct *cdata)
 
 	if (command != NULL)
 	{
-		log_error("Forbid exec /bin/sh -c %s)\n", command);
+		log_error("Forbid exec /bin/sh -c %s)", command);
 	}
 
 	return SSH_OK;
@@ -249,7 +249,7 @@ static int subsystem_request(ssh_session session, ssh_channel channel, const cha
 	(void)session;
 	(void)channel;
 
-	log_error("subsystem_request(subsystem=%s)\n", subsystem);
+	log_error("subsystem_request(subsystem=%s)", subsystem);
 
 	/* subsystem requests behave similarly to exec requests. */
 	if (strcmp(subsystem, "sftp") == 0)
@@ -323,12 +323,12 @@ static int fork_server(void)
 	if (pid > 0) // Parent process
 	{
 		SYS_child_process_count++;
-		log_common("Child process (%d) start\n", pid);
+		log_common("Child process (%d) start", pid);
 		return pid;
 	}
 	else if (pid < 0) // Error
 	{
-		log_error("fork() error (%d)\n", errno);
+		log_error("fork() error (%d)", errno);
 		return -1;
 	}
 
@@ -336,7 +336,7 @@ static int fork_server(void)
 #ifdef HAVE_SYS_EPOLL_H
 	if (close(epollfd_server) < 0)
 	{
-		log_error("close(epollfd_server) error (%d)\n");
+		log_error("close(epollfd_server) error (%d)");
 	}
 #endif
 
@@ -344,7 +344,7 @@ static int fork_server(void)
 	{
 		if (close(socket_server[i]) == -1)
 		{
-			log_error("Close server socket failed\n");
+			log_error("Close server socket failed");
 		}
 	}
 
@@ -357,7 +357,7 @@ static int fork_server(void)
 	{
 		if (ssh_bind_accept_fd(sshbind, SSH_session, socket_client) != SSH_OK)
 		{
-			log_error("ssh_bind_accept_fd() error: %s\n", ssh_get_error(SSH_session));
+			log_error("ssh_bind_accept_fd() error: %s", ssh_get_error(SSH_session));
 			goto cleanup;
 		}
 
@@ -366,7 +366,7 @@ static int fork_server(void)
 		ssh_timeout = 60; // second
 		if (ssh_options_set(SSH_session, SSH_OPTIONS_TIMEOUT, &ssh_timeout) < 0)
 		{
-			log_error("Error setting SSH options: %s\n", ssh_get_error(SSH_session));
+			log_error("Error setting SSH options: %s", ssh_get_error(SSH_session));
 			goto cleanup;
 		}
 
@@ -379,7 +379,7 @@ static int fork_server(void)
 
 		if (ssh_handle_key_exchange(SSH_session))
 		{
-			log_error("ssh_handle_key_exchange() error: %s\n", ssh_get_error(SSH_session));
+			log_error("ssh_handle_key_exchange() error: %s", ssh_get_error(SSH_session));
 			goto cleanup;
 		}
 
@@ -391,16 +391,14 @@ static int fork_server(void)
 			ret = ssh_event_dopoll(event, 100); // 0.1 second
 			if (ret == SSH_ERROR)
 			{
-#ifdef _DEBUG
-				log_error("ssh_event_dopoll() error: %s\n", ssh_get_error(SSH_session));
-#endif
+				log_debug("ssh_event_dopoll() error: %s", ssh_get_error(SSH_session));
 				goto cleanup;
 			}
 		}
 
 		if (cb_data.error)
 		{
-			log_error("SSH auth error, tried %d times\n", cb_data.tries);
+			log_error("SSH auth error, tried %d times", cb_data.tries);
 			goto cleanup;
 		}
 
@@ -425,7 +423,7 @@ static int fork_server(void)
 		ssh_timeout = 0;
 		if (ssh_options_set(SSH_session, SSH_OPTIONS_TIMEOUT, &ssh_timeout) < 0)
 		{
-			log_error("Error setting SSH options: %s\n", ssh_get_error(SSH_session));
+			log_error("Error setting SSH options: %s", ssh_get_error(SSH_session));
 			goto cleanup;
 		}
 
@@ -435,20 +433,20 @@ static int fork_server(void)
 	// Redirect Input
 	if (dup2(socket_client, STDIN_FILENO) == -1)
 	{
-		log_error("Redirect stdin to client socket failed\n");
+		log_error("Redirect stdin to client socket failed");
 		goto cleanup;
 	}
 
 	// Redirect Output
 	if (dup2(socket_client, STDOUT_FILENO) == -1)
 	{
-		log_error("Redirect stdout to client socket failed\n");
+		log_error("Redirect stdout to client socket failed");
 		goto cleanup;
 	}
 
 	if (io_init() < 0)
 	{
-		log_error("io_init() error\n");
+		log_error("io_init() error");
 		goto cleanup;
 	}
 
@@ -457,7 +455,7 @@ static int fork_server(void)
 	// BWF compile
 	if (bwf_compile() < 0)
 	{
-		log_error("bwf_compile() error\n");
+		log_error("bwf_compile() error");
 		goto cleanup;
 	}
 
@@ -491,7 +489,7 @@ cleanup:
 	}
 	else if (close(socket_client) == -1)
 	{
-		log_error("Close client socket failed\n");
+		log_error("Close client socket failed");
 	}
 
 	ssh_free(SSH_session);
@@ -505,7 +503,7 @@ cleanup:
 	close(STDIN_FILENO);
 	close(STDOUT_FILENO);
 
-	log_common("Process exit normally\n");
+	log_common("Process exit normally");
 	log_end();
 
 	_exit(0);
@@ -544,7 +542,7 @@ int net_server(const char *hostaddr, in_port_t port[])
 
 	if (ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_HOSTKEY, SSH_HOST_RSA_KEY_FILE) < 0)
 	{
-		log_error("Error loading SSH RSA key: %s\n", SSH_HOST_RSA_KEY_FILE);
+		log_error("Error loading SSH RSA key: %s", SSH_HOST_RSA_KEY_FILE);
 	}
 	else
 	{
@@ -552,7 +550,7 @@ int net_server(const char *hostaddr, in_port_t port[])
 	}
 	if (ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_HOSTKEY, SSH_HOST_ED25519_KEY_FILE) < 0)
 	{
-		log_error("Error loading SSH ED25519 key: %s\n", SSH_HOST_ED25519_KEY_FILE);
+		log_error("Error loading SSH ED25519 key: %s", SSH_HOST_ED25519_KEY_FILE);
 	}
 	else
 	{
@@ -560,7 +558,7 @@ int net_server(const char *hostaddr, in_port_t port[])
 	}
 	if (ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_HOSTKEY, SSH_HOST_ECDSA_KEY_FILE) < 0)
 	{
-		log_error("Error loading SSH ECDSA key: %s\n", SSH_HOST_ECDSA_KEY_FILE);
+		log_error("Error loading SSH ECDSA key: %s", SSH_HOST_ECDSA_KEY_FILE);
 	}
 	else
 	{
@@ -569,17 +567,17 @@ int net_server(const char *hostaddr, in_port_t port[])
 
 	if (!ssh_key_valid)
 	{
-		log_error("Error: no valid SSH host key\n");
+		log_error("Error: no valid SSH host key");
 		ssh_bind_free(sshbind);
 		return -1;
 	}
 
 	if (ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_BINDADDR, hostaddr) < 0 ||
 		ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_BINDPORT, &port) < 0 ||
-		ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_HOSTKEY_ALGORITHMS, "+ssh-rsa") < 0 ||
+		ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_HOSTKEY_ALGORITHMS, "+ssh-ed25519,ecdsa-sha2-nistp256,ssh-rsa") < 0 ||
 		ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_LOG_VERBOSITY, &ssh_log_level) < 0)
 	{
-		log_error("Error setting SSH bind options: %s\n", ssh_get_error(sshbind));
+		log_error("Error setting SSH bind options: %s", ssh_get_error(sshbind));
 		ssh_bind_free(sshbind);
 		return -1;
 	}
@@ -588,7 +586,7 @@ int net_server(const char *hostaddr, in_port_t port[])
 	epollfd_server = epoll_create1(0);
 	if (epollfd_server == -1)
 	{
-		log_error("epoll_create1() error (%d)\n", errno);
+		log_error("epoll_create1() error (%d)", errno);
 		return -1;
 	}
 #endif
@@ -600,7 +598,7 @@ int net_server(const char *hostaddr, in_port_t port[])
 
 		if (socket_server[i] < 0)
 		{
-			log_error("Create socket_server error (%d)\n", errno);
+			log_error("Create socket_server error (%d)", errno);
 			return -1;
 		}
 
@@ -612,39 +610,39 @@ int net_server(const char *hostaddr, in_port_t port[])
 		flags_server[i] = 1;
 		if (setsockopt(socket_server[i], SOL_SOCKET, SO_REUSEADDR, &flags_server[i], sizeof(flags_server[i])) < 0)
 		{
-			log_error("setsockopt SO_REUSEADDR error (%d)\n", errno);
+			log_error("setsockopt SO_REUSEADDR error (%d)", errno);
 		}
 #if defined(SO_REUSEPORT)
 		if (setsockopt(socket_server[i], SOL_SOCKET, SO_REUSEPORT, &flags_server[i], sizeof(flags_server[i])) < 0)
 		{
-			log_error("setsockopt SO_REUSEPORT error (%d)\n", errno);
+			log_error("setsockopt SO_REUSEPORT error (%d)", errno);
 		}
 #endif
 
 		if (bind(socket_server[i], (struct sockaddr *)&sin, sizeof(sin)) < 0)
 		{
-			log_error("Bind address %s:%u error (%d)\n",
+			log_error("Bind address %s:%u error (%d)",
 					  inet_ntoa(sin.sin_addr), ntohs(sin.sin_port), errno);
 			return -1;
 		}
 
 		if (listen(socket_server[i], 10) < 0)
 		{
-			log_error("Telnet socket listen error (%d)\n", errno);
+			log_error("Telnet socket listen error (%d)", errno);
 			return -1;
 		}
 
-		log_common("Listening at %s:%u\n", inet_ntoa(sin.sin_addr), ntohs(sin.sin_port));
+		log_common("Listening at %s:%u", inet_ntoa(sin.sin_addr), ntohs(sin.sin_port));
 
 #ifdef HAVE_SYS_EPOLL_H
 		ev.events = EPOLLIN;
 		ev.data.fd = socket_server[i];
 		if (epoll_ctl(epollfd_server, EPOLL_CTL_ADD, socket_server[i], &ev) == -1)
 		{
-			log_error("epoll_ctl(socket_server[%d]) error (%d)\n", i, errno);
+			log_error("epoll_ctl(socket_server[%d]) error (%d)", i, errno);
 			if (close(epollfd_server) < 0)
 			{
-				log_error("close(epoll) error (%d)\n");
+				log_error("close(epoll) error (%d)");
 			}
 			return -1;
 		}
@@ -659,13 +657,13 @@ int net_server(const char *hostaddr, in_port_t port[])
 	hash_dict_pid_sockaddr = hash_dict_create(MAX_CLIENT_LIMIT);
 	if (hash_dict_pid_sockaddr == NULL)
 	{
-		log_error("hash_dict_create(hash_dict_pid_sockaddr) error\n");
+		log_error("hash_dict_create(hash_dict_pid_sockaddr) error");
 		return -1;
 	}
 	hash_dict_sockaddr_count = hash_dict_create(MAX_CLIENT_LIMIT);
 	if (hash_dict_sockaddr_count == NULL)
 	{
-		log_error("hash_dict_create(hash_dict_sockaddr_count) error\n");
+		log_error("hash_dict_create(hash_dict_sockaddr_count) error");
 		return -1;
 	}
 
@@ -699,15 +697,15 @@ int net_server(const char *hostaddr, in_port_t port[])
 
 				if (WIFEXITED(ret))
 				{
-					log_common("Child process (%d) exited, status=%d\n", pid, WEXITSTATUS(ret));
+					log_common("Child process (%d) exited, status=%d", pid, WEXITSTATUS(ret));
 				}
 				else if (WIFSIGNALED(ret))
 				{
-					log_common("Child process (%d) is killed, status=%d\n", pid, WTERMSIG(ret));
+					log_common("Child process (%d) is killed, status=%d", pid, WTERMSIG(ret));
 				}
 				else
 				{
-					log_common("Child process (%d) exited abnormally, status=%d\n", pid, ret);
+					log_common("Child process (%d) exited abnormally, status=%d", pid, ret);
 				}
 
 				if (pid != section_list_loader_pid)
@@ -716,20 +714,20 @@ int net_server(const char *hostaddr, in_port_t port[])
 					ret = hash_dict_get(hash_dict_pid_sockaddr, (uint64_t)pid, &j);
 					if (ret < 0)
 					{
-						log_error("hash_dict_get(hash_dict_pid_sockaddr, %d) error\n", pid);
+						log_error("hash_dict_get(hash_dict_pid_sockaddr, %d) error", pid);
 					}
 					else
 					{
 						ret = hash_dict_inc(hash_dict_sockaddr_count, (in_addr_t)j, -1);
 						if (ret <= 0)
 						{
-							log_error("hash_dict_inc(hash_dict_sockaddr_count, %lu, -1) error: %d\n", (in_addr_t)j, ret);
+							log_error("hash_dict_inc(hash_dict_sockaddr_count, %lu, -1) error: %d", (in_addr_t)j, ret);
 						}
 
 						ret = hash_dict_del(hash_dict_pid_sockaddr, (uint64_t)pid);
 						if (ret < 0)
 						{
-							log_error("hash_dict_del(hash_dict_pid_sockaddr, %lu) error\n", (uint64_t)pid);
+							log_error("hash_dict_del(hash_dict_pid_sockaddr, %lu) error", (uint64_t)pid);
 						}
 					}
 				}
@@ -740,7 +738,7 @@ int net_server(const char *hostaddr, in_port_t port[])
 			}
 			else if (pid < 0)
 			{
-				log_error("Error in waitpid(): %d\n", errno);
+				log_error("Error in waitpid(): %d", errno);
 				break;
 			}
 		}
@@ -751,12 +749,12 @@ int net_server(const char *hostaddr, in_port_t port[])
 			{
 #ifdef HAVE_SYSTEMD_SD_DAEMON_H
 				sd_notifyf(0, "STATUS=Notify %d child process to exit", SYS_child_process_count);
-				log_common("Notify %d child process to exit\n", SYS_child_process_count);
+				log_common("Notify %d child process to exit", SYS_child_process_count);
 #endif
 
 				if (kill(0, SIGTERM) < 0)
 				{
-					log_error("Send SIGTERM signal failed (%d)\n", errno);
+					log_error("Send SIGTERM signal failed (%d)", errno);
 				}
 
 				notify_child_exit = 1;
@@ -770,7 +768,7 @@ int net_server(const char *hostaddr, in_port_t port[])
 
 				if (kill(0, SIGKILL) < 0)
 				{
-					log_error("Send SIGKILL signal failed (%d)\n", errno);
+					log_error("Send SIGKILL signal failed (%d)", errno);
 				}
 
 				notify_child_exit = 2;
@@ -778,7 +776,7 @@ int net_server(const char *hostaddr, in_port_t port[])
 			}
 			else if (notify_child_exit == 2 && time(NULL) - tm_notify_child_exit >= WAIT_CHILD_PROCESS_KILL_TIMEOUT)
 			{
-				log_error("Main process prepare to exit without waiting for %d child process any longer\n", SYS_child_process_count);
+				log_error("Main process prepare to exit without waiting for %d child process any longer", SYS_child_process_count);
 				SYS_child_process_count = 0;
 			}
 		}
@@ -791,28 +789,30 @@ int net_server(const char *hostaddr, in_port_t port[])
 			sd_notify(0, "RELOADING=1");
 #endif
 
+			log_common("Reload configuration");
+			
 			// Restart log
 			if (log_restart() < 0)
 			{
-				log_error("Restart logging failed\n");
+				log_error("Restart logging failed");
 			}
 
 			// Reload configuration
 			if (load_conf(CONF_BBSD) < 0)
 			{
-				log_error("Reload conf failed\n");
+				log_error("Reload conf failed");
 			}
 
 			// Reload BWF config
 			if (bwf_load(CONF_BWF) < 0)
 			{
-				log_error("Reload BWF conf failed\n");
+				log_error("Reload BWF conf failed");
 			}
 
 			// Get EULA modification tm
 			if (stat(DATA_EULA, &file_stat) == -1)
 			{
-				log_error("stat(%s) error\n", DATA_EULA, errno);
+				log_error("stat(%s) error", DATA_EULA, errno);
 			}
 			else
 			{
@@ -821,21 +821,21 @@ int net_server(const char *hostaddr, in_port_t port[])
 
 			if (detach_menu_shm(&bbs_menu) < 0)
 			{
-				log_error("detach_menu_shm(bbs_menu) error\n");
+				log_error("detach_menu_shm(bbs_menu) error");
 			}
 			if (load_menu(&bbs_menu, CONF_MENU) < 0)
 			{
-				log_error("load_menu(bbs_menu) error\n");
+				log_error("load_menu(bbs_menu) error");
 				unload_menu(&bbs_menu);
 			}
 
 			if (detach_menu_shm(&top10_menu) < 0)
 			{
-				log_error("detach_menu_shm(top10_menu) error\n");
+				log_error("detach_menu_shm(top10_menu) error");
 			}
 			if (load_menu(&top10_menu, CONF_TOP10_MENU) < 0)
 			{
-				log_error("load_menu(top10_menu) error\n");
+				log_error("load_menu(top10_menu) error");
 				unload_menu(&top10_menu);
 			}
 			top10_menu.allow_exit = 1;
@@ -844,20 +844,20 @@ int net_server(const char *hostaddr, in_port_t port[])
 			{
 				if (load_file(data_files_load_startup[i]) < 0)
 				{
-					log_error("load_file(%s) error\n", data_files_load_startup[i]);
+					log_error("load_file(%s) error", data_files_load_startup[i]);
 				}
 			}
 
 			// Load section config and gen_ex
 			if (load_section_config_from_db(1) < 0)
 			{
-				log_error("load_section_config_from_db(1) error\n");
+				log_error("load_section_config_from_db(1) error");
 			}
 
 			// Notify child processes to reload configuration
 			if (kill(0, SIGUSR1) < 0)
 			{
-				log_error("Send SIGUSR1 signal failed (%d)\n", errno);
+				log_error("Send SIGUSR1 signal failed (%d)", errno);
 			}
 
 #ifdef HAVE_SYSTEMD_SD_DAEMON_H
@@ -881,9 +881,9 @@ int net_server(const char *hostaddr, in_port_t port[])
 			if (errno != EINTR)
 			{
 #ifdef HAVE_SYS_EPOLL_H
-				log_error("epoll_wait() error (%d)\n", errno);
+				log_error("epoll_wait() error (%d)", errno);
 #else
-				log_error("poll() error (%d)\n", errno);
+				log_error("poll() error (%d)", errno);
 #endif
 				break;
 			}
@@ -926,7 +926,7 @@ int net_server(const char *hostaddr, in_port_t port[])
 						}
 						else
 						{
-							log_error("accept(socket_server) error (%d)\n", errno);
+							log_error("accept(socket_server) error (%d)", errno);
 							break;
 						}
 					}
@@ -942,64 +942,64 @@ int net_server(const char *hostaddr, in_port_t port[])
 						ret = hash_dict_get(hash_dict_sockaddr_count, sin.sin_addr.s_addr, &j);
 						if (ret < 0)
 						{
-							log_error("hash_dict_get(hash_dict_sockaddr_count, %s) error\n", hostaddr_client);
+							log_error("hash_dict_get(hash_dict_sockaddr_count, %s) error", hostaddr_client);
 						}
 
 						if (j < BBS_max_client_per_ip)
 						{
 							if ((pid = fork_server()) < 0)
 							{
-								log_error("fork_server() error\n");
+								log_error("fork_server() error");
 							}
 							else if (pid > 0)
 							{
 								ret = hash_dict_set(hash_dict_pid_sockaddr, (uint64_t)pid, sin.sin_addr.s_addr);
 								if (ret < 0)
 								{
-									log_error("hash_dict_set(hash_dict_pid_sockaddr, %lu, %s) error\n", (uint64_t)pid, hostaddr_client);
+									log_error("hash_dict_set(hash_dict_pid_sockaddr, %lu, %s) error", (uint64_t)pid, hostaddr_client);
 								}
 
 								if (j == 0)
 								{
 									// First connection from this IP
-									log_common("Accept %s connection from %s:%d\n",
+									log_common("Accept %s connection from %s:%d",
 											   (SSH_v2 ? "SSH" : "telnet"), hostaddr_client, port_client);
 
 									ret = hash_dict_set(hash_dict_sockaddr_count, (uint64_t)sin.sin_addr.s_addr, 1);
 									if (ret < 0)
 									{
-										log_error("hash_dict_set(hash_dict_sockaddr_count, %s, 1) error\n", hostaddr_client);
+										log_error("hash_dict_set(hash_dict_sockaddr_count, %s, 1) error", hostaddr_client);
 									}
 								}
 								else
 								{
 									// Increase connection count from this IP
-									log_common("Accept %s connection from %s:%d, already have %d connections\n",
+									log_common("Accept %s connection from %s:%d, already have %d connections",
 											   (SSH_v2 ? "SSH" : "telnet"), hostaddr_client, port_client, j);
 
 									ret = hash_dict_inc(hash_dict_sockaddr_count, (uint64_t)sin.sin_addr.s_addr, 1);
 									if (ret <= 0)
 									{
-										log_error("hash_dict_inc(hash_dict_sockaddr_count, %s, 1) error: %d\n", hostaddr_client, ret);
+										log_error("hash_dict_inc(hash_dict_sockaddr_count, %s, 1) error: %d", hostaddr_client, ret);
 									}
 								}
 							}
 						}
 						else
 						{
-							log_error("Rejected %s connection from %s:%d over limit per IP (%d >= %d)\n",
+							log_error("Rejected %s connection from %s:%d over limit per IP (%d >= %d)",
 									  (SSH_v2 ? "SSH" : "telnet"), hostaddr_client, port_client, j, BBS_max_client_per_ip);
 						}
 					}
 					else
 					{
-						log_error("Rejected %s connection from %s:%d over limit (%d >= %d)\n",
+						log_error("Rejected %s connection from %s:%d over limit (%d >= %d)",
 								  (SSH_v2 ? "SSH" : "telnet"), hostaddr_client, port_client, SYS_child_process_count - 1, BBS_max_client);
 					}
 
 					if (close(socket_client) == -1)
 					{
-						log_error("close(socket_lient) error (%d)\n", errno);
+						log_error("close(socket_lient) error (%d)", errno);
 					}
 				}
 			}
@@ -1009,7 +1009,7 @@ int net_server(const char *hostaddr, in_port_t port[])
 #ifdef HAVE_SYS_EPOLL_H
 	if (close(epollfd_server) < 0)
 	{
-		log_error("close(epollfd_server) error (%d)\n");
+		log_error("close(epollfd_server) error (%d)");
 	}
 #endif
 
@@ -1017,7 +1017,7 @@ int net_server(const char *hostaddr, in_port_t port[])
 	{
 		if (close(socket_server[i]) == -1)
 		{
-			log_error("Close server socket failed\n");
+			log_error("Close server socket failed");
 		}
 	}
 

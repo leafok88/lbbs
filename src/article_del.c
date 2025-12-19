@@ -33,7 +33,7 @@ int article_del(const SECTION_LIST *p_section, const ARTICLE *p_article)
 
 	if (p_section == NULL || p_article == NULL)
 	{
-		log_error("NULL pointer error\n");
+		log_error("NULL pointer error");
 	}
 
 	if (p_article->excerption) // Delete is not allowed
@@ -79,7 +79,7 @@ int article_del(const SECTION_LIST *p_section, const ARTICLE *p_article)
 	db = db_open();
 	if (db == NULL)
 	{
-		log_error("db_open() error: %s\n", mysql_error(db));
+		log_error("db_open() error: %s", mysql_error(db));
 		ret = -1;
 		goto cleanup;
 	}
@@ -87,14 +87,14 @@ int article_del(const SECTION_LIST *p_section, const ARTICLE *p_article)
 	// Begin transaction
 	if (mysql_query(db, "SET autocommit=0") != 0)
 	{
-		log_error("SET autocommit=0 error: %s\n", mysql_error(db));
+		log_error("SET autocommit=0 error: %s", mysql_error(db));
 		ret = -1;
 		goto cleanup;
 	}
 
 	if (mysql_query(db, "BEGIN") != 0)
 	{
-		log_error("Begin transaction error: %s\n", mysql_error(db));
+		log_error("Begin transaction error: %s", mysql_error(db));
 		ret = -1;
 		goto cleanup;
 	}
@@ -105,13 +105,13 @@ int article_del(const SECTION_LIST *p_section, const ARTICLE *p_article)
 
 	if (mysql_query(db, sql) != 0)
 	{
-		log_error("Query article status error: %s\n", mysql_error(db));
+		log_error("Query article status error: %s", mysql_error(db));
 		ret = -1;
 		goto cleanup;
 	}
 	if ((rs = mysql_use_result(db)) == NULL)
 	{
-		log_error("Get article status data failed\n");
+		log_error("Get article status data failed");
 		ret = -1;
 		goto cleanup;
 	}
@@ -156,7 +156,7 @@ int article_del(const SECTION_LIST *p_section, const ARTICLE *p_article)
 
 	if (mysql_query(db, sql) != 0)
 	{
-		log_error("Update article status error: %s\n", mysql_error(db));
+		log_error("Update article status error: %s", mysql_error(db));
 		ret = -1;
 		goto cleanup;
 	}
@@ -177,7 +177,7 @@ int article_del(const SECTION_LIST *p_section, const ARTICLE *p_article)
 
 	if (mysql_query(db, sql) != 0)
 	{
-		log_error("Update exp error: %s\n", mysql_error(db));
+		log_error("Update exp error: %s", mysql_error(db));
 		ret = -1;
 		goto cleanup;
 	}
@@ -192,7 +192,7 @@ int article_del(const SECTION_LIST *p_section, const ARTICLE *p_article)
 
 	if (mysql_query(db, sql) != 0)
 	{
-		log_error("Add log error: %s\n", mysql_error(db));
+		log_error("Add log error: %s", mysql_error(db));
 		ret = -1;
 		goto cleanup;
 	}
@@ -206,7 +206,7 @@ int article_del(const SECTION_LIST *p_section, const ARTICLE *p_article)
 
 		if (mysql_query(db, sql) != 0)
 		{
-			log_error("Update article error: %s\n", mysql_error(db));
+			log_error("Update article error: %s", mysql_error(db));
 			ret = -1;
 			goto cleanup;
 		}
@@ -215,7 +215,7 @@ int article_del(const SECTION_LIST *p_section, const ARTICLE *p_article)
 	// Commit transaction
 	if (mysql_query(db, "COMMIT") != 0)
 	{
-		log_error("Commit transaction error: %s\n", mysql_error(db));
+		log_error("Commit transaction error: %s", mysql_error(db));
 		ret = -1;
 		goto cleanup;
 	}

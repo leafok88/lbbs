@@ -57,7 +57,7 @@ int article_post(const SECTION_LIST *p_section, ARTICLE *p_article_new)
 
 	if (p_section == NULL || p_article_new == NULL)
 	{
-		log_error("NULL pointer error\n");
+		log_error("NULL pointer error");
 	}
 
 	if (!checkpriv(&BBS_priv, p_section->sid, S_POST))
@@ -77,7 +77,7 @@ int article_post(const SECTION_LIST *p_section, ARTICLE *p_article_new)
 	p_editor_data = editor_data_load("");
 	if (p_editor_data == NULL)
 	{
-		log_error("editor_data_load() error\n");
+		log_error("editor_data_load() error");
 		ret = -1;
 		goto cleanup;
 	}
@@ -129,7 +129,7 @@ int article_post(const SECTION_LIST *p_section, ARTICLE *p_article_new)
 				{
 					if ((ret = check_badwords(p, '*')) < 0)
 					{
-						log_error("check_badwords(title) error\n");
+						log_error("check_badwords(title) error");
 					}
 					else if (ret > 0)
 					{
@@ -223,7 +223,7 @@ int article_post(const SECTION_LIST *p_section, ARTICLE *p_article_new)
 	content = malloc(ARTICLE_CONTENT_MAX_LEN);
 	if (content == NULL)
 	{
-		log_error("malloc(content) error: OOM\n");
+		log_error("malloc(content) error: OOM");
 		ret = -1;
 		goto cleanup;
 	}
@@ -231,14 +231,14 @@ int article_post(const SECTION_LIST *p_section, ARTICLE *p_article_new)
 	len_content = editor_data_save(p_editor_data, content, ARTICLE_CONTENT_MAX_LEN);
 	if (len_content < 0)
 	{
-		log_error("editor_data_save() error\n");
+		log_error("editor_data_save() error");
 		ret = -1;
 		goto cleanup;
 	}
 
 	if (check_badwords(content, '*') < 0)
 	{
-		log_error("check_badwords(content) error\n");
+		log_error("check_badwords(content) error");
 		ret = -1;
 		goto cleanup;
 	}
@@ -246,7 +246,7 @@ int article_post(const SECTION_LIST *p_section, ARTICLE *p_article_new)
 	db = db_open();
 	if (db == NULL)
 	{
-		log_error("db_open() error: %s\n", mysql_error(db));
+		log_error("db_open() error: %s", mysql_error(db));
 		ret = -1;
 		goto cleanup;
 	}
@@ -259,13 +259,13 @@ int article_post(const SECTION_LIST *p_section, ARTICLE *p_article_new)
 
 		if (mysql_query(db, sql) != 0)
 		{
-			log_error("Query sign error: %s\n", mysql_error(db));
+			log_error("Query sign error: %s", mysql_error(db));
 			ret = -1;
 			goto cleanup;
 		}
 		if ((rs = mysql_use_result(db)) == NULL)
 		{
-			log_error("Get sign data failed\n");
+			log_error("Get sign data failed");
 			ret = -1;
 			goto cleanup;
 		}
@@ -286,14 +286,14 @@ int article_post(const SECTION_LIST *p_section, ARTICLE *p_article_new)
 	// Begin transaction
 	if (mysql_query(db, "SET autocommit=0") != 0)
 	{
-		log_error("SET autocommit=0 error: %s\n", mysql_error(db));
+		log_error("SET autocommit=0 error: %s", mysql_error(db));
 		ret = -1;
 		goto cleanup;
 	}
 
 	if (mysql_query(db, "BEGIN") != 0)
 	{
-		log_error("Begin transaction error: %s\n", mysql_error(db));
+		log_error("Begin transaction error: %s", mysql_error(db));
 		ret = -1;
 		goto cleanup;
 	}
@@ -302,7 +302,7 @@ int article_post(const SECTION_LIST *p_section, ARTICLE *p_article_new)
 	content_f = malloc((size_t)len_content * 2 + 1);
 	if (content_f == NULL)
 	{
-		log_error("malloc(content_f) error: OOM\n");
+		log_error("malloc(content_f) error: OOM");
 		ret = -1;
 		goto cleanup;
 	}
@@ -318,7 +318,7 @@ int article_post(const SECTION_LIST *p_section, ARTICLE *p_article_new)
 	sql_content = malloc(SQL_BUFFER_LEN + (size_t)len_content * 2 + 1);
 	if (sql_content == NULL)
 	{
-		log_error("malloc(sql_content) error: OOM\n");
+		log_error("malloc(sql_content) error: OOM");
 		ret = -1;
 		goto cleanup;
 	}
@@ -332,7 +332,7 @@ int article_post(const SECTION_LIST *p_section, ARTICLE *p_article_new)
 
 	if (mysql_query(db, sql_content) != 0)
 	{
-		log_error("Add article content error: %s\n", mysql_error(db));
+		log_error("Add article content error: %s", mysql_error(db));
 		ret = -1;
 		goto cleanup;
 	}
@@ -353,7 +353,7 @@ int article_post(const SECTION_LIST *p_section, ARTICLE *p_article_new)
 
 	if (mysql_query(db, sql) != 0)
 	{
-		log_error("Add article error: %s\n", mysql_error(db));
+		log_error("Add article error: %s", mysql_error(db));
 		ret = -1;
 		goto cleanup;
 	}
@@ -367,7 +367,7 @@ int article_post(const SECTION_LIST *p_section, ARTICLE *p_article_new)
 
 	if (mysql_query(db, sql) != 0)
 	{
-		log_error("Update content error: %s\n", mysql_error(db));
+		log_error("Update content error: %s", mysql_error(db));
 		ret = -1;
 		goto cleanup;
 	}
@@ -381,7 +381,7 @@ int article_post(const SECTION_LIST *p_section, ARTICLE *p_article_new)
 
 		if (mysql_query(db, sql) != 0)
 		{
-			log_error("Update exp error: %s\n", mysql_error(db));
+			log_error("Update exp error: %s", mysql_error(db));
 			ret = -1;
 			goto cleanup;
 		}
@@ -395,7 +395,7 @@ int article_post(const SECTION_LIST *p_section, ARTICLE *p_article_new)
 
 	if (mysql_query(db, sql) != 0)
 	{
-		log_error("Add log error: %s\n", mysql_error(db));
+		log_error("Add log error: %s", mysql_error(db));
 		ret = -1;
 		goto cleanup;
 	}
@@ -403,7 +403,7 @@ int article_post(const SECTION_LIST *p_section, ARTICLE *p_article_new)
 	// Commit transaction
 	if (mysql_query(db, "COMMIT") != 0)
 	{
-		log_error("Commit transaction error: %s\n", mysql_error(db));
+		log_error("Commit transaction error: %s", mysql_error(db));
 		ret = -1;
 		goto cleanup;
 	}
@@ -452,7 +452,7 @@ int article_modify(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTI
 
 	if (p_section == NULL || p_article == NULL)
 	{
-		log_error("NULL pointer error\n");
+		log_error("NULL pointer error");
 	}
 
 	if (p_article->excerption) // Modify is not allowed
@@ -468,7 +468,7 @@ int article_modify(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTI
 	db = db_open();
 	if (db == NULL)
 	{
-		log_error("db_open() error: %s\n", mysql_error(db));
+		log_error("db_open() error: %s", mysql_error(db));
 		ret = -1;
 		goto cleanup;
 	}
@@ -481,13 +481,13 @@ int article_modify(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTI
 
 	if (mysql_query(db, sql) != 0)
 	{
-		log_error("Query article content error: %s\n", mysql_error(db));
+		log_error("Query article content error: %s", mysql_error(db));
 		ret = -1;
 		goto cleanup;
 	}
 	if ((rs = mysql_use_result(db)) == NULL)
 	{
-		log_error("Get article content data failed\n");
+		log_error("Get article content data failed");
 		ret = -1;
 		goto cleanup;
 	}
@@ -497,7 +497,7 @@ int article_modify(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTI
 		content = malloc(ARTICLE_CONTENT_MAX_LEN);
 		if (content == NULL)
 		{
-			log_error("malloc(content) error: OOM\n");
+			log_error("malloc(content) error: OOM");
 			ret = -1;
 			goto cleanup;
 		}
@@ -511,7 +511,7 @@ int article_modify(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTI
 		p_editor_data = editor_data_load(content);
 		if (p_editor_data == NULL)
 		{
-			log_error("editor_data_load(aid=%d, cid=%d) error\n", p_article->aid, atoi(row[0]));
+			log_error("editor_data_load(aid=%d, cid=%d) error", p_article->aid, atoi(row[0]));
 			ret = -1;
 			goto cleanup;
 		}
@@ -576,7 +576,7 @@ int article_modify(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTI
 	content = malloc(ARTICLE_CONTENT_MAX_LEN);
 	if (content == NULL)
 	{
-		log_error("malloc(content) error: OOM\n");
+		log_error("malloc(content) error: OOM");
 		ret = -1;
 		goto cleanup;
 	}
@@ -584,14 +584,14 @@ int article_modify(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTI
 	len_content = editor_data_save(p_editor_data, content, ARTICLE_CONTENT_MAX_LEN - LINE_BUFFER_LEN);
 	if (len_content < 0)
 	{
-		log_error("editor_data_save() error\n");
+		log_error("editor_data_save() error");
 		ret = -1;
 		goto cleanup;
 	}
 
 	if (check_badwords(content, '*') < 0)
 	{
-		log_error("check_badwords(content) error\n");
+		log_error("check_badwords(content) error");
 		ret = -1;
 		goto cleanup;
 	}
@@ -610,7 +610,7 @@ int article_modify(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTI
 	db = db_open();
 	if (db == NULL)
 	{
-		log_error("db_open() error: %s\n", mysql_error(db));
+		log_error("db_open() error: %s", mysql_error(db));
 		ret = -1;
 		goto cleanup;
 	}
@@ -618,14 +618,14 @@ int article_modify(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTI
 	// Begin transaction
 	if (mysql_query(db, "SET autocommit=0") != 0)
 	{
-		log_error("SET autocommit=0 error: %s\n", mysql_error(db));
+		log_error("SET autocommit=0 error: %s", mysql_error(db));
 		ret = -1;
 		goto cleanup;
 	}
 
 	if (mysql_query(db, "BEGIN") != 0)
 	{
-		log_error("Begin transaction error: %s\n", mysql_error(db));
+		log_error("Begin transaction error: %s", mysql_error(db));
 		ret = -1;
 		goto cleanup;
 	}
@@ -634,7 +634,7 @@ int article_modify(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTI
 	content_f = malloc((size_t)len_content * 2 + 1);
 	if (content_f == NULL)
 	{
-		log_error("malloc(content_f) error: OOM\n");
+		log_error("malloc(content_f) error: OOM");
 		ret = -1;
 		goto cleanup;
 	}
@@ -648,7 +648,7 @@ int article_modify(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTI
 	sql_content = malloc(SQL_BUFFER_LEN + (size_t)len_content * 2 + 1);
 	if (sql_content == NULL)
 	{
-		log_error("malloc(sql_content) error: OOM\n");
+		log_error("malloc(sql_content) error: OOM");
 		ret = -1;
 		goto cleanup;
 	}
@@ -662,7 +662,7 @@ int article_modify(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTI
 
 	if (mysql_query(db, sql_content) != 0)
 	{
-		log_error("Add article content error: %s\n", mysql_error(db));
+		log_error("Add article content error: %s", mysql_error(db));
 		ret = -1;
 		goto cleanup;
 	}
@@ -679,14 +679,14 @@ int article_modify(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTI
 
 	if (mysql_query(db, sql) != 0)
 	{
-		log_error("Add article error: %s\n", mysql_error(db));
+		log_error("Add article error: %s", mysql_error(db));
 		ret = -1;
 		goto cleanup;
 	}
 
 	if (mysql_query(db, sql) != 0)
 	{
-		log_error("Update content error: %s\n", mysql_error(db));
+		log_error("Update content error: %s", mysql_error(db));
 		ret = -1;
 		goto cleanup;
 	}
@@ -699,7 +699,7 @@ int article_modify(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTI
 
 	if (mysql_query(db, sql) != 0)
 	{
-		log_error("Add log error: %s\n", mysql_error(db));
+		log_error("Add log error: %s", mysql_error(db));
 		ret = -1;
 		goto cleanup;
 	}
@@ -707,7 +707,7 @@ int article_modify(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTI
 	// Commit transaction
 	if (mysql_query(db, "COMMIT") != 0)
 	{
-		log_error("Commit transaction error: %s\n", mysql_error(db));
+		log_error("Commit transaction error: %s", mysql_error(db));
 		ret = -1;
 		goto cleanup;
 	}
@@ -769,7 +769,7 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 
 	if (p_section == NULL || p_article == NULL)
 	{
-		log_error("NULL pointer error\n");
+		log_error("NULL pointer error");
 	}
 
 	if (!checkpriv(&BBS_priv, p_section->sid, S_POST))
@@ -790,7 +790,7 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 	db = db_open();
 	if (db == NULL)
 	{
-		log_error("db_open() error: %s\n", mysql_error(db));
+		log_error("db_open() error: %s", mysql_error(db));
 		ret = -1;
 		goto cleanup;
 	}
@@ -801,13 +801,13 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 
 	if (mysql_query(db, sql) != 0)
 	{
-		log_error("Query article status error: %s\n", mysql_error(db));
+		log_error("Query article status error: %s", mysql_error(db));
 		ret = -1;
 		goto cleanup;
 	}
 	if ((rs = mysql_store_result(db)) == NULL)
 	{
-		log_error("Get article status data failed\n");
+		log_error("Get article status data failed");
 		ret = -1;
 		goto cleanup;
 	}
@@ -843,13 +843,13 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 
 	if (mysql_query(db, sql) != 0)
 	{
-		log_error("Query article content error: %s\n", mysql_error(db));
+		log_error("Query article content error: %s", mysql_error(db));
 		ret = -1;
 		goto cleanup;
 	}
 	if ((rs = mysql_use_result(db)) == NULL)
 	{
-		log_error("Get article content data failed\n");
+		log_error("Get article content data failed");
 		ret = -1;
 		goto cleanup;
 	}
@@ -859,7 +859,7 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 		content = malloc(ARTICLE_CONTENT_MAX_LEN);
 		if (content == NULL)
 		{
-			log_error("malloc(content) error: OOM\n");
+			log_error("malloc(content) error: OOM");
 			ret = -1;
 			goto cleanup;
 		}
@@ -867,7 +867,7 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 		content_f = malloc(ARTICLE_CONTENT_MAX_LEN);
 		if (content_f == NULL)
 		{
-			log_error("malloc(content_f) error: OOM\n");
+			log_error("malloc(content_f) error: OOM");
 			ret = -1;
 			goto cleanup;
 		}
@@ -931,7 +931,7 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 				{
 					if ((ret = check_badwords(p, '*')) < 0)
 					{
-						log_error("check_badwords(title) error\n");
+						log_error("check_badwords(title) error");
 					}
 					else if (ret > 0)
 					{
@@ -1007,7 +1007,7 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 		p_editor_data = editor_data_load(content);
 		if (p_editor_data == NULL)
 		{
-			log_error("editor_data_load(aid=%d, cid=%d) error\n", p_article->aid, atoi(row[0]));
+			log_error("editor_data_load(aid=%d, cid=%d) error", p_article->aid, atoi(row[0]));
 			ret = -1;
 			goto cleanup;
 		}
@@ -1066,7 +1066,7 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 	content = malloc(ARTICLE_CONTENT_MAX_LEN);
 	if (content == NULL)
 	{
-		log_error("malloc(content) error: OOM\n");
+		log_error("malloc(content) error: OOM");
 		ret = -1;
 		goto cleanup;
 	}
@@ -1074,14 +1074,14 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 	len_content = editor_data_save(p_editor_data, content, ARTICLE_CONTENT_MAX_LEN);
 	if (len_content < 0)
 	{
-		log_error("editor_data_save() error\n");
+		log_error("editor_data_save() error");
 		ret = -1;
 		goto cleanup;
 	}
 
 	if (check_badwords(content, '*') < 0)
 	{
-		log_error("check_badwords(content) error\n");
+		log_error("check_badwords(content) error");
 		ret = -1;
 		goto cleanup;
 	}
@@ -1089,7 +1089,7 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 	db = db_open();
 	if (db == NULL)
 	{
-		log_error("db_open() error: %s\n", mysql_error(db));
+		log_error("db_open() error: %s", mysql_error(db));
 		ret = -1;
 		goto cleanup;
 	}
@@ -1102,13 +1102,13 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 
 		if (mysql_query(db, sql) != 0)
 		{
-			log_error("Query sign error: %s\n", mysql_error(db));
+			log_error("Query sign error: %s", mysql_error(db));
 			ret = -1;
 			goto cleanup;
 		}
 		if ((rs = mysql_use_result(db)) == NULL)
 		{
-			log_error("Get sign data failed\n");
+			log_error("Get sign data failed");
 			ret = -1;
 			goto cleanup;
 		}
@@ -1129,14 +1129,14 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 	// Begin transaction
 	if (mysql_query(db, "SET autocommit=0") != 0)
 	{
-		log_error("SET autocommit=0 error: %s\n", mysql_error(db));
+		log_error("SET autocommit=0 error: %s", mysql_error(db));
 		ret = -1;
 		goto cleanup;
 	}
 
 	if (mysql_query(db, "BEGIN") != 0)
 	{
-		log_error("Begin transaction error: %s\n", mysql_error(db));
+		log_error("Begin transaction error: %s", mysql_error(db));
 		ret = -1;
 		goto cleanup;
 	}
@@ -1145,7 +1145,7 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 	content_f = malloc((size_t)len_content * 2 + 1);
 	if (content_f == NULL)
 	{
-		log_error("malloc(content_f) error: OOM\n");
+		log_error("malloc(content_f) error: OOM");
 		ret = -1;
 		goto cleanup;
 	}
@@ -1161,7 +1161,7 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 	sql_content = malloc(SQL_BUFFER_LEN + (size_t)len_content * 2 + 1);
 	if (sql_content == NULL)
 	{
-		log_error("malloc(sql_content) error: OOM\n");
+		log_error("malloc(sql_content) error: OOM");
 		ret = -1;
 		goto cleanup;
 	}
@@ -1175,7 +1175,7 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 
 	if (mysql_query(db, sql_content) != 0)
 	{
-		log_error("Add article content error: %s\n", mysql_error(db));
+		log_error("Add article content error: %s", mysql_error(db));
 		ret = -1;
 		goto cleanup;
 	}
@@ -1197,7 +1197,7 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 
 	if (mysql_query(db, sql) != 0)
 	{
-		log_error("Add article error: %s\n", mysql_error(db));
+		log_error("Add article error: %s", mysql_error(db));
 		ret = -1;
 		goto cleanup;
 	}
@@ -1214,7 +1214,7 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 
 	if (mysql_query(db, sql) != 0)
 	{
-		log_error("Update topic article error: %s\n", mysql_error(db));
+		log_error("Update topic article error: %s", mysql_error(db));
 		ret = -1;
 		goto cleanup;
 	}
@@ -1226,7 +1226,7 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 
 	if (mysql_query(db, sql) != 0)
 	{
-		log_error("Update content error: %s\n", mysql_error(db));
+		log_error("Update content error: %s", mysql_error(db));
 		ret = -1;
 		goto cleanup;
 	}
@@ -1239,13 +1239,13 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 
 	if (mysql_query(db, sql) != 0)
 	{
-		log_error("Read reply info error: %s\n", mysql_error(db));
+		log_error("Read reply info error: %s", mysql_error(db));
 		ret = -1;
 		goto cleanup;
 	}
 	if ((rs = mysql_store_result(db)) == NULL)
 	{
-		log_error("Get reply info failed\n");
+		log_error("Get reply info failed");
 		ret = -1;
 		goto cleanup;
 	}
@@ -1267,7 +1267,7 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 
 		if (mysql_query(db, sql) != 0)
 		{
-			log_error("Insert msg error: %s\n", mysql_error(db));
+			log_error("Insert msg error: %s", mysql_error(db));
 			ret = -1;
 			goto cleanup;
 		}
@@ -1284,7 +1284,7 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 
 		if (mysql_query(db, sql) != 0)
 		{
-			log_error("Update exp error: %s\n", mysql_error(db));
+			log_error("Update exp error: %s", mysql_error(db));
 			ret = -1;
 			goto cleanup;
 		}
@@ -1298,7 +1298,7 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 
 	if (mysql_query(db, sql) != 0)
 	{
-		log_error("Add log error: %s\n", mysql_error(db));
+		log_error("Add log error: %s", mysql_error(db));
 		ret = -1;
 		goto cleanup;
 	}
@@ -1306,7 +1306,7 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 	// Commit transaction
 	if (mysql_query(db, "COMMIT") != 0)
 	{
-		log_error("Commit transaction error: %s\n", mysql_error(db));
+		log_error("Commit transaction error: %s", mysql_error(db));
 		ret = -1;
 		goto cleanup;
 	}

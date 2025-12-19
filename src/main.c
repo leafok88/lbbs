@@ -218,7 +218,7 @@ int main(int argc, char *argv[])
 		log_error_redir(STDERR_FILENO);
 	}
 
-	log_common("Starting %s\n", APP_INFO);
+	log_common("Starting %s", APP_INFO);
 
 	// Load configuration
 	if (load_conf(CONF_BBSD) < 0)
@@ -235,7 +235,7 @@ int main(int argc, char *argv[])
 	// Get EULA modification tm
 	if (stat(DATA_EULA, &file_stat) == -1)
 	{
-		log_error("stat(%s) error\n", DATA_EULA, errno);
+		log_error("stat(%s) error", DATA_EULA, errno);
 		goto cleanup;
 	}
 	BBS_eula_tm = file_stat.st_mtim.tv_sec;
@@ -244,7 +244,7 @@ int main(int argc, char *argv[])
 	ret = mkdir(VAR_ARTICLE_CACHE_DIR, 0750);
 	if (ret == -1 && errno != EEXIST)
 	{
-		log_error("mkdir(%s) error (%d)\n", VAR_ARTICLE_CACHE_DIR, errno);
+		log_error("mkdir(%s) error (%d)", VAR_ARTICLE_CACHE_DIR, errno);
 		goto cleanup;
 	}
 
@@ -252,49 +252,49 @@ int main(int argc, char *argv[])
 	ret = mkdir(VAR_SECTION_AID_LOC_DIR, 0750);
 	if (ret == -1 && errno != EEXIST)
 	{
-		log_error("mkdir(%s) error (%d)\n", VAR_SECTION_AID_LOC_DIR, errno);
+		log_error("mkdir(%s) error (%d)", VAR_SECTION_AID_LOC_DIR, errno);
 		goto cleanup;
 	}
 
 	// Initialize data pools
 	if ((fp = fopen(VAR_ARTICLE_BLOCK_SHM, "w")) == NULL)
 	{
-		log_error("fopen(%s) error\n", VAR_ARTICLE_BLOCK_SHM);
+		log_error("fopen(%s) error", VAR_ARTICLE_BLOCK_SHM);
 		goto cleanup;
 	}
 	fclose(fp);
 	if ((fp = fopen(VAR_SECTION_LIST_SHM, "w")) == NULL)
 	{
-		log_error("fopen(%s) error\n", VAR_SECTION_LIST_SHM);
+		log_error("fopen(%s) error", VAR_SECTION_LIST_SHM);
 		goto cleanup;
 	}
 	fclose(fp);
 	if ((fp = fopen(VAR_TRIE_DICT_SHM, "w")) == NULL)
 	{
-		log_error("fopen(%s) error\n", VAR_TRIE_DICT_SHM);
+		log_error("fopen(%s) error", VAR_TRIE_DICT_SHM);
 		goto cleanup;
 	}
 	fclose(fp);
 	if ((fp = fopen(VAR_USER_LIST_SHM, "w")) == NULL)
 	{
-		log_error("fopen(%s) error\n", VAR_USER_LIST_SHM);
+		log_error("fopen(%s) error", VAR_USER_LIST_SHM);
 		goto cleanup;
 	}
 	fclose(fp);
 
 	if (trie_dict_init(VAR_TRIE_DICT_SHM, TRIE_NODE_PER_POOL) < 0)
 	{
-		log_error("trie_dict_init(%s, %d) error\n", VAR_TRIE_DICT_SHM, TRIE_NODE_PER_POOL);
+		log_error("trie_dict_init(%s, %d) error", VAR_TRIE_DICT_SHM, TRIE_NODE_PER_POOL);
 		goto cleanup;
 	}
 	if (article_block_init(VAR_ARTICLE_BLOCK_SHM, BBS_article_limit_per_section * BBS_max_section / BBS_article_count_per_block) < 0)
 	{
-		log_error("article_block_init(%s, %d) error\n", VAR_ARTICLE_BLOCK_SHM, BBS_article_limit_per_section * BBS_max_section / BBS_article_count_per_block);
+		log_error("article_block_init(%s, %d) error", VAR_ARTICLE_BLOCK_SHM, BBS_article_limit_per_section * BBS_max_section / BBS_article_count_per_block);
 		goto cleanup;
 	}
 	if (section_list_init(VAR_SECTION_LIST_SHM) < 0)
 	{
-		log_error("section_list_pool_init(%s) error\n", VAR_SECTION_LIST_SHM);
+		log_error("section_list_pool_init(%s) error", VAR_SECTION_LIST_SHM);
 		goto cleanup;
 	}
 
@@ -307,12 +307,12 @@ int main(int argc, char *argv[])
 	// Load menus
 	if (load_menu(&bbs_menu, CONF_MENU) < 0)
 	{
-		log_error("load_menu(bbs_menu) error\n");
+		log_error("load_menu(bbs_menu) error");
 		goto cleanup;
 	}
 	if (load_menu(&top10_menu, CONF_TOP10_MENU) < 0)
 	{
-		log_error("load_menu(top10_menu) error\n");
+		log_error("load_menu(top10_menu) error");
 		goto cleanup;
 	}
 	top10_menu.allow_exit = 1;
@@ -322,31 +322,31 @@ int main(int argc, char *argv[])
 	{
 		if (load_file(data_files_load_startup[i]) < 0)
 		{
-			log_error("load_file(%s) error\n", data_files_load_startup[i]);
+			log_error("load_file(%s) error", data_files_load_startup[i]);
 		}
 	}
 
 	// Load user_list and online_user_list
 	if (user_list_pool_init(VAR_USER_LIST_SHM) < 0)
 	{
-		log_error("user_list_pool_init(%s) error\n", VAR_USER_LIST_SHM);
+		log_error("user_list_pool_init(%s) error", VAR_USER_LIST_SHM);
 		goto cleanup;
 	}
 	if (user_list_pool_reload(0) < 0)
 	{
-		log_error("user_list_pool_reload(all_user) error\n");
+		log_error("user_list_pool_reload(all_user) error");
 		goto cleanup;
 	}
 	if (user_list_pool_reload(1) < 0)
 	{
-		log_error("user_list_pool_reload(online_user) error\n");
+		log_error("user_list_pool_reload(online_user) error");
 		goto cleanup;
 	}
 
 	// Load section config and gen_ex
 	if (load_section_config_from_db(1) < 0)
 	{
-		log_error("load_section_config_from_db(0) error\n");
+		log_error("load_section_config_from_db(0) error");
 		goto cleanup;
 	}
 
@@ -358,18 +358,18 @@ int main(int argc, char *argv[])
 	{
 		if ((ret = append_articles_from_db(last_aid + 1, 1, LOAD_ARTICLE_COUNT_LIMIT)) < 0)
 		{
-			log_error("append_articles_from_db(0, 1, %d) error\n", LOAD_ARTICLE_COUNT_LIMIT);
+			log_error("append_articles_from_db(0, 1, %d) error", LOAD_ARTICLE_COUNT_LIMIT);
 			goto cleanup;
 		}
 
 		last_aid = article_block_last_aid();
 	} while (ret == LOAD_ARTICLE_COUNT_LIMIT);
 
-	log_common("Initially load %d articles, last_aid = %d\n", article_block_article_count(), article_block_last_aid());
+	log_common("Initially load %d articles, last_aid = %d", article_block_article_count(), article_block_last_aid());
 
 	if ((ret = user_stat_update()) < 0)
 	{
-		log_error("user_stat_update() error\n");
+		log_error("user_stat_update() error");
 		goto cleanup;
 	}
 
@@ -377,38 +377,38 @@ int main(int argc, char *argv[])
 	act.sa_handler = sig_hup_handler;
 	if (sigaction(SIGHUP, &act, NULL) == -1)
 	{
-		log_error("set signal action of SIGHUP error: %d\n", errno);
+		log_error("set signal action of SIGHUP error: %d", errno);
 		goto cleanup;
 	}
 	act.sa_handler = sig_chld_handler;
 	if (sigaction(SIGCHLD, &act, NULL) == -1)
 	{
-		log_error("set signal action of SIGCHLD error: %d\n", errno);
+		log_error("set signal action of SIGCHLD error: %d", errno);
 		goto cleanup;
 	}
 	act.sa_handler = sig_term_handler;
 	if (sigaction(SIGTERM, &act, NULL) == -1)
 	{
-		log_error("set signal action of SIGTERM error: %d\n", errno);
+		log_error("set signal action of SIGTERM error: %d", errno);
 		goto cleanup;
 	}
 	act.sa_handler = SIG_IGN;
 	if (sigaction(SIGPIPE, &act, NULL) == -1)
 	{
-		log_error("set signal action of SIGPIPE error: %d\n", errno);
+		log_error("set signal action of SIGPIPE error: %d", errno);
 		goto cleanup;
 	}
 	act.sa_handler = SIG_IGN;
 	if (sigaction(SIGUSR1, &act, NULL) == -1)
 	{
-		log_error("set signal action of SIGUSR1 error: %d\n", errno);
+		log_error("set signal action of SIGUSR1 error: %d", errno);
 		goto cleanup;
 	}
 
 	// Launch section_list_loader process
 	if (section_list_loader_launch() < 0)
 	{
-		log_error("section_list_loader_launch() error\n");
+		log_error("section_list_loader_launch() error");
 		goto cleanup;
 	}
 
@@ -423,7 +423,7 @@ cleanup:
 
 		if (kill(section_list_loader_pid, SIGTERM) < 0)
 		{
-			log_error("Send SIGTERM signal failed (%d)\n", errno);
+			log_error("Send SIGTERM signal failed (%d)", errno);
 		}
 
 		for (i = 0; SYS_child_exit == 0 && i < 5; i++)
@@ -433,14 +433,14 @@ cleanup:
 
 		if ((ret = waitpid(section_list_loader_pid, NULL, WNOHANG)) < 0)
 		{
-			log_error("waitpid(%d) error (%d)\n", section_list_loader_pid, errno);
+			log_error("waitpid(%d) error (%d)", section_list_loader_pid, errno);
 		}
 		else if (ret == 0)
 		{
-			log_common("Force kill section_list_loader process (%d)\n", section_list_loader_pid);
+			log_common("Force kill section_list_loader process (%d)", section_list_loader_pid);
 			if (kill(section_list_loader_pid, SIGKILL) < 0)
 			{
-				log_error("Send SIGKILL signal failed (%d)\n", errno);
+				log_error("Send SIGKILL signal failed (%d)", errno);
 			}
 		}
 	}
@@ -450,7 +450,7 @@ cleanup:
 	{
 		if (unload_file(data_files_load_startup[i]) < 0)
 		{
-			log_error("unload_file(%s) error\n", data_files_load_startup[i]);
+			log_error("unload_file(%s) error", data_files_load_startup[i]);
 		}
 	}
 
@@ -466,22 +466,22 @@ cleanup:
 
 	if (unlink(VAR_ARTICLE_BLOCK_SHM) < 0)
 	{
-		log_error("unlink(%s) error\n", VAR_ARTICLE_BLOCK_SHM);
+		log_error("unlink(%s) error", VAR_ARTICLE_BLOCK_SHM);
 	}
 	if (unlink(VAR_SECTION_LIST_SHM) < 0)
 	{
-		log_error("unlink(%s) error\n", VAR_SECTION_LIST_SHM);
+		log_error("unlink(%s) error", VAR_SECTION_LIST_SHM);
 	}
 	if (unlink(VAR_TRIE_DICT_SHM) < 0)
 	{
-		log_error("unlink(%s) error\n", VAR_TRIE_DICT_SHM);
+		log_error("unlink(%s) error", VAR_TRIE_DICT_SHM);
 	}
 	if (unlink(VAR_USER_LIST_SHM) < 0)
 	{
-		log_error("unlink(%s) error\n", VAR_SECTION_LIST_SHM);
+		log_error("unlink(%s) error", VAR_SECTION_LIST_SHM);
 	}
 
-	log_common("Main process exit normally\n");
+	log_common("Main process exit normally");
 
 	log_end();
 

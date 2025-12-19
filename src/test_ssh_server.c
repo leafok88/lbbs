@@ -40,16 +40,16 @@ static int auth_password(ssh_session session, const char *user,
 {
 	(void)userdata;
 
-	log_common("Authenticating user %s pwd %s\n", user, password);
+	log_common("Authenticating user %s pwd %s", user, password);
 	if (strcmp(user, USER) == 0 && strcmp(password, PASSWORD) == 0)
 	{
 		authenticated = 1;
-		log_common("Authenticated\n");
+		log_common("Authenticated");
 		return SSH_AUTH_SUCCESS;
 	}
 	if (tries >= 3)
 	{
-		log_error("Too many authentication tries\n");
+		log_error("Too many authentication tries");
 		ssh_disconnect(session);
 		error = 1;
 		return SSH_AUTH_DENIED;
@@ -69,7 +69,7 @@ static int pty_request(ssh_session session, ssh_channel channel, const char *ter
 	(void)px;
 	(void)py;
 	(void)userdata;
-	log_common("Allocated terminal\n");
+	log_common("Allocated terminal");
 	return 0;
 }
 
@@ -78,7 +78,7 @@ static int shell_request(ssh_session session, ssh_channel channel, void *userdat
 	(void)session;
 	(void)channel;
 	(void)userdata;
-	log_common("Allocated shell\n");
+	log_common("Allocated shell");
 	return 0;
 }
 
@@ -94,7 +94,7 @@ static ssh_channel channel_open(ssh_session session, void *userdata)
 	if (SSH_channel != NULL)
 		return NULL;
 
-	log_common("Allocated session channel\n");
+	log_common("Allocated session channel");
 	SSH_channel = ssh_channel_new(session);
 	ssh_callbacks_init(&channel_cb);
 	ssh_set_channel_callbacks(SSH_channel, &channel_cb);
@@ -128,7 +128,7 @@ int ssh_server(const char *hostaddr, unsigned int port)
 
 	if (ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_HOSTKEY, SSH_HOST_RSA_KEY_FILE) < 0)
 	{
-		log_error("Error loading SSH RSA key: %s\n", SSH_HOST_RSA_KEY_FILE);
+		log_error("Error loading SSH RSA key: %s", SSH_HOST_RSA_KEY_FILE);
 	}
 	else
 	{
@@ -136,7 +136,7 @@ int ssh_server(const char *hostaddr, unsigned int port)
 	}
 	if (ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_HOSTKEY, SSH_HOST_ED25519_KEY_FILE) < 0)
 	{
-		log_error("Error loading SSH ED25519 key: %s\n", SSH_HOST_ED25519_KEY_FILE);
+		log_error("Error loading SSH ED25519 key: %s", SSH_HOST_ED25519_KEY_FILE);
 	}
 	else
 	{
@@ -144,7 +144,7 @@ int ssh_server(const char *hostaddr, unsigned int port)
 	}
 	if (ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_HOSTKEY, SSH_HOST_ECDSA_KEY_FILE) < 0)
 	{
-		log_error("Error loading SSH ECDSA key: %s\n", SSH_HOST_ECDSA_KEY_FILE);
+		log_error("Error loading SSH ECDSA key: %s", SSH_HOST_ECDSA_KEY_FILE);
 	}
 	else
 	{
@@ -153,24 +153,24 @@ int ssh_server(const char *hostaddr, unsigned int port)
 
 	if (!ssh_key_valid)
 	{
-		log_error("Error: no valid SSH host key\n");
+		log_error("Error: no valid SSH host key");
 		ssh_bind_free(sshbind);
 		return -1;
 	}
 
 	if (ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_BINDADDR, hostaddr) < 0 ||
 		ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_BINDPORT, &port) < 0 ||
-		ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_HOSTKEY_ALGORITHMS, "+ssh-rsa") < 0 ||
+		ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_HOSTKEY_ALGORITHMS, "+ssh-ed25519,ecdsa-sha2-nistp256,ssh-rsa") < 0 ||
 		ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_LOG_VERBOSITY, &ssh_log_level) < 0)
 	{
-		log_error("Error setting SSH bind options: %s\n", ssh_get_error(sshbind));
+		log_error("Error setting SSH bind options: %s", ssh_get_error(sshbind));
 		ssh_bind_free(sshbind);
 		return -1;
 	}
 
 	if (ssh_bind_listen(sshbind) < 0)
 	{
-		log_error("Error listening at SSH server port: %s\n", ssh_get_error(sshbind));
+		log_error("Error listening at SSH server port: %s", ssh_get_error(sshbind));
 		ssh_bind_free(sshbind);
 		return -1;
 	}
@@ -193,14 +193,14 @@ int ssh_server(const char *hostaddr, unsigned int port)
 				ssh_timeout = 60; // second
 				if (ssh_options_set(session, SSH_OPTIONS_TIMEOUT, &ssh_timeout) < 0)
 				{
-					log_error("Error setting SSH options: %s\n", ssh_get_error(session));
+					log_error("Error setting SSH options: %s", ssh_get_error(session));
 					ssh_disconnect(session);
 					_exit(1);
 				}
 
 				if (ssh_handle_key_exchange(session))
 				{
-					log_error("ssh_handle_key_exchange: %s\n", ssh_get_error(session));
+					log_error("ssh_handle_key_exchange: %s", ssh_get_error(session));
 					ssh_disconnect(session);
 					_exit(1);
 				}
@@ -216,7 +216,7 @@ int ssh_server(const char *hostaddr, unsigned int port)
 					r = ssh_event_dopoll(event, -1);
 					if (r == SSH_ERROR)
 					{
-						log_error("Error : %s\n", ssh_get_error(session));
+						log_error("Error : %s", ssh_get_error(session));
 						ssh_disconnect(session);
 						_exit(1);
 					}
@@ -224,23 +224,23 @@ int ssh_server(const char *hostaddr, unsigned int port)
 
 				if (error)
 				{
-					log_error("Error, exiting loop\n");
+					log_error("Error, exiting loop");
 					_exit(1);
 				}
 				else
 				{
-					log_common("Authenticated and got a channel\n");
+					log_common("Authenticated and got a channel");
 				}
 
 				ssh_timeout = 0;
 				if (ssh_options_set(session, SSH_OPTIONS_TIMEOUT, &ssh_timeout) < 0)
 				{
-					log_error("Error setting SSH options: %s\n", ssh_get_error(session));
+					log_error("Error setting SSH options: %s", ssh_get_error(session));
 					ssh_disconnect(session);
 					_exit(1);
 				}
 
-				snprintf(buf, sizeof(buf), "Hello, welcome to the Sample SSH proxy.\r\nPlease select your destination: ");
+				snprintf(buf, sizeof(buf), "Hello, welcome to the Sample SSH proxy.\nPlease select your destination: ");
 				ssh_channel_write(SSH_channel, buf, (uint32_t)strlen(buf));
 				do
 				{
@@ -261,11 +261,11 @@ int ssh_server(const char *hostaddr, unsigned int port)
 					}
 					else
 					{
-						log_error("Error: %s\n", ssh_get_error(session));
+						log_error("Error: %s", ssh_get_error(session));
 						_exit(1);
 					}
 				} while (i > 0);
-				snprintf(buf, sizeof(buf), "Trying to connect to \"%s\"\r\n", host);
+				snprintf(buf, sizeof(buf), "Trying to connect to \"%s\"\n", host);
 				ssh_channel_write(SSH_channel, buf, (uint32_t)strlen(buf));
 				log_common("%s", buf);
 
@@ -274,13 +274,13 @@ int ssh_server(const char *hostaddr, unsigned int port)
 
 				_exit(0);
 			case -1:
-				log_error("Failed to fork\n");
+				log_error("Failed to fork");
 				break;
 			}
 		}
 		else
 		{
-			log_error("%s\n", ssh_get_error(sshbind));
+			log_error("%s", ssh_get_error(sshbind));
 		}
 
 		/* Since the session has been passed to a child fork, do some cleaning

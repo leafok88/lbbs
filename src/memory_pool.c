@@ -21,14 +21,14 @@ MEMORY_POOL *memory_pool_init(size_t node_size, size_t node_count_per_chunk, int
 
 	if (node_size < sizeof(void *))
 	{
-		log_error("Error: node_size < sizeof(void *)\n");
+		log_error("Error: node_size < sizeof(void *)");
 		return NULL;
 	}
 
 	p_pool = malloc(sizeof(MEMORY_POOL));
 	if (p_pool == NULL)
 	{
-		log_error("malloc(MEMORY_POOL) error: OOM\n");
+		log_error("malloc(MEMORY_POOL) error: OOM");
 		return NULL;
 	}
 
@@ -41,7 +41,7 @@ MEMORY_POOL *memory_pool_init(size_t node_size, size_t node_count_per_chunk, int
 	p_pool->p_chunks = malloc(sizeof(void *) * (size_t)chunk_count_limit);
 	if (p_pool->p_chunks == NULL)
 	{
-		log_error("malloc(sizeof(void *) * %d) error: OOM\n", chunk_count_limit);
+		log_error("malloc(sizeof(void *) * %d) error: OOM", chunk_count_limit);
 		free(p_pool);
 		return NULL;
 	}
@@ -62,7 +62,7 @@ void memory_pool_cleanup(MEMORY_POOL *p_pool)
 
 	if (p_pool->node_count_allocated > 0)
 	{
-		log_error("Still have %d in-use nodes\n", p_pool->node_count_allocated);
+		log_error("Still have %d in-use nodes", p_pool->node_count_allocated);
 	}
 
 	while (p_pool->chunk_count > 0)
@@ -83,13 +83,13 @@ inline static void *memory_pool_add_chunk(MEMORY_POOL *p_pool)
 
 	if (p_pool->chunk_count >= p_pool->chunk_count_limit)
 	{
-		log_error("Chunk count limit %d reached\n", p_pool->chunk_count);
+		log_error("Chunk count limit %d reached", p_pool->chunk_count);
 		return NULL;
 	}
 	p_chunk = malloc(p_pool->node_size * p_pool->node_count_per_chunk);
 	if (p_chunk == NULL)
 	{
-		log_error("malloc(%d * %d) error: OOM\n", p_pool->node_size, p_pool->node_count_per_chunk);
+		log_error("malloc(%d * %d) error: OOM", p_pool->node_size, p_pool->node_count_per_chunk);
 		return NULL;
 	}
 
@@ -117,13 +117,13 @@ void *memory_pool_alloc(MEMORY_POOL *p_pool)
 
 	if (p_pool == NULL)
 	{
-		log_error("NULL pointer error\n");
+		log_error("NULL pointer error");
 		return NULL;
 	}
 
 	if (p_pool->p_free == NULL && memory_pool_add_chunk(p_pool) == NULL)
 	{
-		log_error("Add chunk error\n");
+		log_error("Add chunk error");
 		return NULL;
 	}
 
@@ -140,7 +140,7 @@ void memory_pool_free(MEMORY_POOL *p_pool, void *p_node)
 {
 	if (p_pool == NULL)
 	{
-		log_error("NULL pointer error\n");
+		log_error("NULL pointer error");
 		return;
 	}
 
@@ -163,7 +163,7 @@ int memory_pool_check_node(MEMORY_POOL *p_pool, void *p_node)
 
 	if (p_pool == NULL || p_node == NULL)
 	{
-		log_error("NULL pointer error\n");
+		log_error("NULL pointer error");
 		return -1;
 	}
 
@@ -179,13 +179,13 @@ int memory_pool_check_node(MEMORY_POOL *p_pool, void *p_node)
 			}
 			else
 			{
-				log_error("Address of node (%p) is not aligned with border of chunk %d [%p, %p)\n",
+				log_error("Address of node (%p) is not aligned with border of chunk %d [%p, %p)",
 						  i, p_node >= p_pool->p_chunks[i], (char *)(p_pool->p_chunks[i]) + chunk_size);
 				return -3;
 			}
 		}
 	}
 
-	log_error("Address of node is not in range of chunks\n");
+	log_error("Address of node is not in range of chunks");
 	return -2;
 }
