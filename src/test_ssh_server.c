@@ -240,7 +240,7 @@ int ssh_server(const char *hostaddr, unsigned int port)
 					_exit(1);
 				}
 
-				snprintf(buf, sizeof(buf), "Hello, welcome to the Sample SSH proxy.\r\nPlease select your destination: ");
+				snprintf(buf, sizeof(buf), "Hello, welcome to the Sample SSH proxy.\nPlease select your destination: ");
 				ssh_channel_write(SSH_channel, buf, (uint32_t)strlen(buf));
 				do
 				{
@@ -265,7 +265,7 @@ int ssh_server(const char *hostaddr, unsigned int port)
 						_exit(1);
 					}
 				} while (i > 0);
-				snprintf(buf, sizeof(buf), "Trying to connect to \"%s\"\r\n", host);
+				snprintf(buf, sizeof(buf), "Trying to connect to \"%s\"\n", host);
 				ssh_channel_write(SSH_channel, buf, (uint32_t)strlen(buf));
 				log_common("%s", buf);
 
