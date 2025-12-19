@@ -184,7 +184,7 @@ inline static void lml_init(void)
 	{                                                                                                                               \
 		if ((out_buf_offset) + (tag_out_len) >= (out_buf_len))                                                                      \
 		{                                                                                                                           \
-			log_error("Buffer is not longer enough for output string %d >= %d\n", (out_buf_offset) + (tag_out_len), (out_buf_len)); \
+			log_error("Buffer is not longer enough for output string %d >= %d", (out_buf_offset) + (tag_out_len), (out_buf_len)); \
 			out_buf[out_buf_offset] = '\0';                                                                                         \
 			return (out_buf_offset);                                                                                                \
 		}                                                                                                                           \
@@ -238,7 +238,7 @@ int lml_render(const char *str_in, char *str_out, int buf_len, int width, int qu
 #ifdef _DEBUG
 		if (i >= str_in_len)
 		{
-			log_error("Bug: i(%d) >= str_in_len(%d)\n", i, str_in_len);
+			log_error("Bug: i(%d) >= str_in_len(%d)", i, str_in_len);
 			break;
 		}
 #endif

@@ -123,7 +123,7 @@ int log_printf(enum log_level_t log_level, const char *app_file, int app_line, c
 		// Encoding error
 		return -1;
 	}
-	else if (offset + ret >= sizeof(buf))
+	else if (offset + ret + 1 >= sizeof(buf))
 	{
 		buf[sizeof(buf) - 2] = '\n'; // Add newline for truncated messages
 		buf[sizeof(buf) - 1] = '\0'; // Ensure null termination
@@ -135,11 +135,13 @@ int log_printf(enum log_level_t log_level, const char *app_file, int app_line, c
 	}
 	else
 	{
+		buf[offset + ret] = '\n';	  // Add newline
+		buf[offset + ret + 1] = '\0'; // Ensure null termination
 		if (fputs(buf, fp_log) == EOF)
 		{
 			return -3; // Write error
 		}
-		ret = offset + ret;
+		ret = offset + ret + 1; // Return number of characters written (including newline)
 	}
 
 	if (fflush(fp_log) == EOF)
@@ -172,7 +174,7 @@ int log_restart(void)
 		fp_common = fopen(path_common_log, "a");
 		if (fp_common == NULL)
 		{
-			log_error("fopen(%s) error: %s\n", path_common_log, strerror(errno));
+			log_error("fopen(%s) error: %s", path_common_log, strerror(errno));
 			return -1;
 		}
 	}
@@ -182,7 +184,7 @@ int log_restart(void)
 		fp_error = fopen(path_error_log, "a");
 		if (fp_error == NULL)
 		{
-			log_error("fopen(%s) error: %s\n", path_error_log, strerror(errno));
+			log_error("fopen(%s) error: %s", path_error_log, strerror(errno));
 			if (fp_common)
 			{
 				fclose(fp_common);

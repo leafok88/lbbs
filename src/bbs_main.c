@@ -43,7 +43,7 @@ static void child_proc_sig_usr1_handler(int i)
 	// Restart log
 	if (log_restart() < 0)
 	{
-		log_error("Restart logging failed\n");
+		log_error("Restart logging failed");
 	}
 }
 
@@ -64,7 +64,7 @@ int bbs_welcome(void)
 
 	if (get_user_online_list_count(&u_online, &u_anonymous) < 0)
 	{
-		log_error("get_user_online_list_count() error\n");
+		log_error("get_user_online_list_count() error");
 		u_online = 0;
 	}
 	u_online += u_anonymous;
@@ -76,13 +76,13 @@ int bbs_welcome(void)
 
 	if (get_user_list_count(&u_total) < 0)
 	{
-		log_error("get_user_list_count() error\n");
+		log_error("get_user_list_count() error");
 		u_total = 0;
 	}
 
 	if (get_user_login_count(&u_login_count) < 0)
 	{
-		log_error("get_user_login_count() error\n");
+		log_error("get_user_login_count() error");
 		u_login_count = 0;
 	}
 
@@ -122,7 +122,7 @@ int bbs_logout(void)
 
 	display_file(DATA_GOODBYE, 1);
 
-	log_common("User [%s] (uid=%d) logout, idle for %ld seconds since last input\n",
+	log_common("User [%s] (uid=%d) logout, idle for %ld seconds since last input",
 			   BBS_username, BBS_priv.uid, time(NULL) - BBS_last_access_tm);
 
 	return 0;
@@ -171,7 +171,7 @@ int bbs_center()
 		if (ch != KEY_NULL && ch != KEY_TIMEOUT)
 		{
 			BBS_last_access_tm = time(NULL);
-			log_debug("Debug: BBS_last_access_tm is updated\n");
+			log_debug("Debug: BBS_last_access_tm is updated");
 		}
 
 		if (bbs_menu.choose_step == 0 && time(NULL) - t_last_action >= 10)
@@ -186,19 +186,19 @@ int bbs_center()
 
 		if (user_online_update("MENU") < 0)
 		{
-			log_error("user_online_update(MENU) error\n");
+			log_error("user_online_update(MENU) error");
 		}
 
 		switch (ch)
 		{
 		case KEY_NULL: // broken pipe
-			log_debug("KEY_NULL\n");
+			log_debug("KEY_NULL");
 			loop = 0;
 			break;
 		case KEY_TIMEOUT:
 			if (time(NULL) - BBS_last_access_tm >= BBS_max_user_idle_time)
 			{
-				log_debug("User input timeout\n");
+				log_debug("User input timeout");
 				loop = 0;
 				break;
 			}
@@ -253,7 +253,7 @@ int bbs_charset_select()
 		case 'G':
 			if (io_conv_init("GBK") < 0)
 			{
-				log_error("io_conv_init(%s) error\n", "GBK");
+				log_error("io_conv_init(%s) error", "GBK");
 				return -1;
 			}
 			break;
@@ -301,19 +301,19 @@ int bbs_main()
 	act.sa_handler = SIG_IGN;
 	if (sigaction(SIGHUP, &act, NULL) == -1)
 	{
-		log_error("set signal action of SIGHUP error: %d\n", errno);
+		log_error("set signal action of SIGHUP error: %d", errno);
 		goto cleanup;
 	}
 	act.sa_handler = SIG_DFL;
 	if (sigaction(SIGCHLD, &act, NULL) == -1)
 	{
-		log_error("set signal action of SIGCHLD error: %d\n", errno);
+		log_error("set signal action of SIGCHLD error: %d", errno);
 		goto cleanup;
 	}
 	act.sa_handler = child_proc_sig_usr1_handler;
 	if (sigaction(SIGUSR1, &act, NULL) == -1)
 	{
-		log_error("set signal action of SIGUSR1 error: %d\n", errno);
+		log_error("set signal action of SIGUSR1 error: %d", errno);
 		goto cleanup;
 	}
 
@@ -346,7 +346,7 @@ int bbs_main()
 	// Set default charset
 	if (io_conv_init(BBS_default_charset) < 0)
 	{
-		log_error("io_conv_init(%s) error\n", BBS_default_charset);
+		log_error("io_conv_init(%s) error", BBS_default_charset);
 		goto cleanup;
 	}
 
@@ -380,7 +380,7 @@ int bbs_main()
 	{
 		goto cleanup;
 	}
-	log_common("User [%s] (uid=%d) login from %s:%d\n",
+	log_common("User [%s] (uid=%d) login from %s:%d",
 			   BBS_username, BBS_priv.uid, hostaddr_client, port_client);
 
 	// Check EULA update status
@@ -393,28 +393,28 @@ int bbs_main()
 	// Load section aid locations
 	if (section_aid_locations_load(BBS_priv.uid) < 0)
 	{
-		log_error("article_view_log_load() error\n");
+		log_error("article_view_log_load() error");
 		goto cleanup;
 	}
 
 	// Load article view log
 	if (article_view_log_load(BBS_priv.uid, &BBS_article_view_log, 0) < 0)
 	{
-		log_error("article_view_log_load() error\n");
+		log_error("article_view_log_load() error");
 		goto cleanup;
 	}
 
 	// Load article favorite
 	if (article_favor_load(BBS_priv.uid, &BBS_article_favor, 0) < 0)
 	{
-		log_error("article_favor_load() error\n");
+		log_error("article_favor_load() error");
 		goto cleanup;
 	}
 
 	// Init editor memory pool
 	if (editor_memory_pool_init() < 0)
 	{
-		log_error("editor_memory_pool_init() error\n");
+		log_error("editor_memory_pool_init() error");
 		goto cleanup;
 	}
 
@@ -432,19 +432,19 @@ int bbs_main()
 	// Save section aid locations
 	if (section_aid_locations_save(BBS_priv.uid) < 0)
 	{
-		log_error("article_view_log_save() error\n");
+		log_error("article_view_log_save() error");
 	}
 
 	// Save incremental article view log
 	if (article_view_log_save_inc(&BBS_article_view_log) < 0)
 	{
-		log_error("article_view_log_save_inc() error\n");
+		log_error("article_view_log_save_inc() error");
 	}
 
 	// Save incremental article favorite
 	if (article_favor_save_inc(&BBS_article_favor) < 0)
 	{
-		log_error("article_favor_save_inc() error\n");
+		log_error("article_favor_save_inc() error");
 	}
 
 cleanup:

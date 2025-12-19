@@ -43,7 +43,7 @@ MYSQL *db_open()
 	db = mysql_init(NULL);
 	if (db == NULL)
 	{
-		log_error("mysql_init() failed\n");
+		log_error("mysql_init() failed");
 		return NULL;
 	}
 
@@ -52,7 +52,7 @@ MYSQL *db_open()
 	{
 		if (errno != ENOENT)
 		{
-			log_error("open(%s) error: %d\n", DB_ca_cert, errno);
+			log_error("open(%s) error: %d", DB_ca_cert, errno);
 		}
 	}
 	else
@@ -66,20 +66,20 @@ MYSQL *db_open()
 
 	if (mysql_ssl_set(db, NULL, NULL, (have_ca_cert ? DB_ca_cert : NULL), NULL, NULL) != 0)
 	{
-		log_error("mysql_ssl_set() error\n");
+		log_error("mysql_ssl_set() error");
 		return NULL;
 	}
 
 #ifdef HAVE_MARIADB_CLIENT
 	if (mysql_optionsv(db, MYSQL_OPT_SSL_VERIFY_SERVER_CERT, &verify_server_cert) != 0)
 	{
-		log_error("mysql_optionsv() error\n");
+		log_error("mysql_optionsv() error");
 		return NULL;
 	}
 #else
 	if (mysql_options(db, MYSQL_OPT_SSL_MODE, &ssl_mode) != 0)
 	{
-		log_error("mysql_options() error\n");
+		log_error("mysql_options() error");
 		return NULL;
 	}
 #endif
@@ -87,14 +87,14 @@ MYSQL *db_open()
 	if (mysql_real_connect(db, DB_host, DB_username, DB_password, DB_database,
 						   0, NULL, 0) == NULL)
 	{
-		log_error("mysql_real_connect() error: %s\n", mysql_error(db));
+		log_error("mysql_real_connect() error: %s", mysql_error(db));
 		mysql_close(db);
 		return NULL;
 	}
 
 	if (mysql_set_character_set(db, "utf8") != 0)
 	{
-		log_error("Set character set error: %s\n", mysql_error(db));
+		log_error("Set character set error: %s", mysql_error(db));
 		mysql_close(db);
 		return NULL;
 	}
@@ -105,7 +105,7 @@ MYSQL *db_open()
 
 	if (mysql_query(db, sql) != 0)
 	{
-		log_error("Set timezone error: %s\n", mysql_error(db));
+		log_error("Set timezone error: %s", mysql_error(db));
 		mysql_close(db);
 		return NULL;
 	}

@@ -73,7 +73,7 @@ int chicken_main()
 
 	if (user_online_update("CHICKEN") < 0)
 	{
-		log_error("user_online_update(CHICKEN) error\n");
+		log_error("user_online_update(CHICKEN) error");
 	}
 
 	show_chicken();
@@ -112,7 +112,7 @@ static int load_chicken()
 				 &weight, &mon, &day, &satis, &age, &oo, &happy, &clean, &tiredstrong, &play, &winn, &losee, &food, &zfood, chicken_name);
 	if (ret != 15)
 	{
-		log_error("Error in chicken data\n");
+		log_error("Error in chicken data");
 	}
 	fclose(fp);
 
@@ -161,7 +161,7 @@ static int create_a_egg()
 		{
 			if ((ret = check_badwords(name_tmp, '*')) < 0)
 			{
-				log_error("check_badwords(name) error\n");
+				log_error("check_badwords(name) error");
 			}
 			else if (ret > 0)
 			{
@@ -174,7 +174,7 @@ static int create_a_egg()
 
 	if ((fp = fopen(fname, "w")) == NULL)
 	{
-		log_error("Error!!cannot open file '%s'!\n", fname);
+		log_error("Error!!cannot open file '%s'!", fname);
 		return -2;
 	}
 	fprintf(fp, "%d %d %d %d %d %d %d %d %d %d %d %d %d %d %s ",
@@ -183,7 +183,7 @@ static int create_a_egg()
 
 	if ((fp = fopen(LOG_FILE, "a")) == NULL)
 	{
-		log_error("Error!!cannot open file '%s'!\n", LOG_FILE);
+		log_error("Error!!cannot open file '%s'!", LOG_FILE);
 		return -2;
 	}
 	fprintf(fp, "[32m%s[m 在 [34;43m[%d/%d  %d:%02d][m  养了一只叫 [33m%s[m 的小鸡\r\n",
@@ -418,7 +418,7 @@ static int select_menu()
 		// Refresh current action
 		if (user_online_update(NULL) < 0)
 		{
-			log_error("user_online_update(NULL) error\n");
+			log_error("user_online_update(NULL) error");
 		}
 
 		if (tiredstrong > 20)
@@ -622,7 +622,7 @@ static int select_menu()
 			{
 				if ((ret = check_badwords(name_tmp, '*')) < 0)
 				{
-					log_error("check_badwords(name) error\n");
+					log_error("check_badwords(name) error");
 				}
 				else if (ret == 0)
 				{
@@ -656,7 +656,7 @@ int death()
 	clrtobot(5);
 	if ((fp = fopen(LOG_FILE, "a")) == NULL)
 	{
-		log_error("Error!!cannot open file '%s'!\n", LOG_FILE);
+		log_error("Error!!cannot open file '%s'!", LOG_FILE);
 		return -1;
 	}
 	fprintf(fp, "[32m%s[m 在 [34;43m[%d/%d  %d:%02d][m  的小鸡 [33m%s  [36m挂了~~[m \r\n",
@@ -838,7 +838,7 @@ int sell()
 
 	if (money_deposit(sel) <= 0)
 	{
-		log_error("Cannot deposit money %d\n", sel);
+		log_error("Cannot deposit money %d", sel);
 		moveto(21, 0);
 		prints("无法存钱，放弃交易！");
 		return -2;
@@ -846,7 +846,7 @@ int sell()
 
 	if ((fp = fopen(LOG_FILE, "a")) == NULL)
 	{
-		log_error("Error!!cannot open file '%s'!\n", LOG_FILE);
+		log_error("Error!!cannot open file '%s'!", LOG_FILE);
 		return -2;
 	}
 	fprintf(fp, "[32m%s[m 在 [34;43m[%d/%d  %d:%02d][m  把小鸡 [33m%s  [31m以 [37;44m%d[m [31m糖果卖了[m\r\n",

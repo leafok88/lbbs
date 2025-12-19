@@ -29,7 +29,7 @@ int article_favor_load(int uid, ARTICLE_FAVOR *p_favor, int keep_inc)
 
 	if (p_favor == NULL)
 	{
-		log_error("NULL pointer error\n");
+		log_error("NULL pointer error");
 		return -1;
 	}
 
@@ -49,7 +49,7 @@ int article_favor_load(int uid, ARTICLE_FAVOR *p_favor, int keep_inc)
 
 	if ((db = db_open()) == NULL)
 	{
-		log_error("article_favor_load() error: Unable to open DB\n");
+		log_error("article_favor_load() error: Unable to open DB");
 		return -2;
 	}
 
@@ -59,12 +59,12 @@ int article_favor_load(int uid, ARTICLE_FAVOR *p_favor, int keep_inc)
 			 uid);
 	if (mysql_query(db, sql) != 0)
 	{
-		log_error("Query article_favorite error: %s\n", mysql_error(db));
+		log_error("Query article_favorite error: %s", mysql_error(db));
 		return -3;
 	}
 	if ((rs = mysql_use_result(db)) == NULL)
 	{
-		log_error("Get article_favorite data failed\n");
+		log_error("Get article_favorite data failed");
 		return -3;
 	}
 
@@ -76,7 +76,7 @@ int article_favor_load(int uid, ARTICLE_FAVOR *p_favor, int keep_inc)
 		(p_favor->aid_base_cnt)++;
 		if (p_favor->aid_base_cnt >= MAX_FAVOR_AID_BASE_CNT)
 		{
-			log_error("Too many article_favorite records for uid=%d\n",
+			log_error("Too many article_favorite records for uid=%d",
 					  uid);
 			break;
 		}
@@ -85,7 +85,7 @@ int article_favor_load(int uid, ARTICLE_FAVOR *p_favor, int keep_inc)
 
 	mysql_close(db);
 
-	log_common("Loaded %d article_favorite records for uid=%d\n", p_favor->aid_base_cnt, uid);
+	log_common("Loaded %d article_favorite records for uid=%d", p_favor->aid_base_cnt, uid);
 
 	if (!keep_inc)
 	{
@@ -99,7 +99,7 @@ int article_favor_unload(ARTICLE_FAVOR *p_favor)
 {
 	if (p_favor == NULL)
 	{
-		log_error("NULL pointer error\n");
+		log_error("NULL pointer error");
 		return -1;
 	}
 
@@ -123,7 +123,7 @@ int article_favor_save_inc(const ARTICLE_FAVOR *p_favor)
 
 	if (p_favor == NULL)
 	{
-		log_error("NULL pointer error\n");
+		log_error("NULL pointer error");
 		return -1;
 	}
 
@@ -134,7 +134,7 @@ int article_favor_save_inc(const ARTICLE_FAVOR *p_favor)
 
 	if ((db = db_open()) == NULL)
 	{
-		log_error("article_favor_load() error: Unable to open DB\n");
+		log_error("article_favor_load() error: Unable to open DB");
 		return -2;
 	}
 
@@ -177,8 +177,8 @@ int article_favor_save_inc(const ARTICLE_FAVOR *p_favor)
 
 			if (mysql_query(db, sql_add) != 0)
 			{
-				log_error("Add article_favorite error: %s\n", mysql_error(db));
-				log_error("%s\n", sql_add);
+				log_error("Add article_favorite error: %s", mysql_error(db));
+				log_error("%s", sql_add);
 				mysql_close(db);
 				return -3;
 			}
@@ -197,8 +197,8 @@ int article_favor_save_inc(const ARTICLE_FAVOR *p_favor)
 
 			if (mysql_query(db, sql_del) != 0)
 			{
-				log_error("Delete article_favorite error: %s\n", mysql_error(db));
-				log_error("%s\n", sql_del);
+				log_error("Delete article_favorite error: %s", mysql_error(db));
+				log_error("%s", sql_del);
 				mysql_close(db);
 				return -3;
 			}
@@ -212,7 +212,7 @@ int article_favor_save_inc(const ARTICLE_FAVOR *p_favor)
 		}
 	}
 
-	log_common("Saved %d and deleted %d article_favorite records for uid=%d\n",
+	log_common("Saved %d and deleted %d article_favorite records for uid=%d",
 			   cnt_total_add, cnt_total_del, p_favor->uid);
 
 	mysql_close(db);
@@ -228,7 +228,7 @@ int article_favor_merge_inc(ARTICLE_FAVOR *p_favor)
 
 	if (p_favor == NULL)
 	{
-		log_error("NULL pointer error\n");
+		log_error("NULL pointer error");
 		return -1;
 	}
 
@@ -264,7 +264,7 @@ int article_favor_merge_inc(ARTICLE_FAVOR *p_favor)
 	}
 	if (i < p_favor->aid_base_cnt)
 	{
-		log_error("Too many base aids, %d will be discarded\n", p_favor->aid_base_cnt - i);
+		log_error("Too many base aids, %d will be discarded", p_favor->aid_base_cnt - i);
 	}
 
 	len = MIN(p_favor->aid_inc_cnt - j, MAX_FAVOR_AID_BASE_CNT - k);
@@ -277,7 +277,7 @@ int article_favor_merge_inc(ARTICLE_FAVOR *p_favor)
 	}
 	if (j < p_favor->aid_inc_cnt)
 	{
-		log_error("Too many inc aids, %d will be discarded\n", p_favor->aid_inc_cnt - j);
+		log_error("Too many inc aids, %d will be discarded", p_favor->aid_inc_cnt - j);
 	}
 
 	memcpy(p_favor->aid_base, aid_new, sizeof(int32_t) * (size_t)k);
@@ -298,7 +298,7 @@ int article_favor_check(int32_t aid, const ARTICLE_FAVOR *p_favor)
 
 	if (p_favor == NULL)
 	{
-		log_error("NULL pointer error\n");
+		log_error("NULL pointer error");
 		return -1;
 	}
 
@@ -349,7 +349,7 @@ int article_favor_set(int32_t aid, ARTICLE_FAVOR *p_favor, int state)
 
 	if (p_favor == NULL)
 	{
-		log_error("NULL pointer error\n");
+		log_error("NULL pointer error");
 		return -1;
 	}
 
@@ -412,7 +412,7 @@ int article_favor_set(int32_t aid, ARTICLE_FAVOR *p_favor, int state)
 		// Save incremental article favorite
 		if (article_favor_save_inc(p_favor) < 0)
 		{
-			log_error("article_favor_save_inc() error\n");
+			log_error("article_favor_save_inc() error");
 			return -2;
 		}
 
@@ -454,18 +454,18 @@ int query_favor_articles(ARTICLE_FAVOR *p_favor, int page_id, const ARTICLE **p_
 
 	if (p_favor == NULL || p_articles == NULL || p_article_count == NULL || p_page_count == NULL)
 	{
-		log_error("NULL pointer error\n");
+		log_error("NULL pointer error");
 		return -1;
 	}
 
 	if (article_favor_save_inc(p_favor) < 0)
 	{
-		log_error("article_favor_save_inc() error\n");
+		log_error("article_favor_save_inc() error");
 		return -2;
 	}
 	if (article_favor_merge_inc(p_favor) < 0)
 	{
-		log_error("article_favor_merge_inc() error\n");
+		log_error("article_favor_merge_inc() error");
 		return -2;
 	}
 
@@ -480,7 +480,7 @@ int query_favor_articles(ARTICLE_FAVOR *p_favor, int page_id, const ARTICLE **p_
 
 	if (page_id < 0 || page_id >= *p_page_count)
 	{
-		log_error("Invalid page_id = %d, not in range [0, %d)\n", page_id, *p_page_count);
+		log_error("Invalid page_id = %d, not in range [0, %d)", page_id, *p_page_count);
 		return -1;
 	}
 
@@ -493,20 +493,20 @@ int query_favor_articles(ARTICLE_FAVOR *p_favor, int page_id, const ARTICLE **p_
 		p_articles[i] = article_block_find_by_aid(aid);
 		if (p_articles[i] == NULL)
 		{
-			log_error("article_block_find_by_aid(aid=%d) error: page_id=%d, i=%d\n", aid, page_id, i);
+			log_error("article_block_find_by_aid(aid=%d) error: page_id=%d, i=%d", aid, page_id, i);
 			return -3;
 		}
 
 		p_section = section_list_find_by_sid(p_articles[i]->sid);
 		if (p_section == NULL)
 		{
-			log_error("section_list_find_by_sid(%d) error\n", p_articles[i]->sid);
+			log_error("section_list_find_by_sid(%d) error", p_articles[i]->sid);
 			return -3;
 		}
 
 		if (get_section_info(p_section, p_snames[i], NULL, NULL) < 0)
 		{
-			log_error("get_section_info(sid=%d) error\n", p_section->sid);
+			log_error("get_section_info(sid=%d) error", p_section->sid);
 			return -4;
 		}
 	}

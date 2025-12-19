@@ -63,7 +63,7 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 
 	if (p_menu_set == NULL || conf_file == NULL)
 	{
-		log_error("NULL pointer error\n");
+		log_error("NULL pointer error");
 		return -1;
 	}
 
@@ -74,7 +74,7 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 	p_menu_set->p_menu_name_dict = trie_dict_create();
 	if (p_menu_set->p_menu_name_dict == NULL)
 	{
-		log_error("trie_dict_create() error\n");
+		log_error("trie_dict_create() error");
 		return -1;
 	}
 
@@ -82,13 +82,13 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 	p_menu_set->p_menu_screen_dict = trie_dict_create();
 	if (p_menu_set->p_menu_screen_dict == NULL)
 	{
-		log_error("trie_dict_create() error\n");
+		log_error("trie_dict_create() error");
 		return -1;
 	}
 
 	if ((fin = fopen(conf_file, "r")) == NULL)
 	{
-		log_error("Open %s failed\n", conf_file);
+		log_error("Open %s failed", conf_file);
 		return -2;
 	}
 
@@ -105,18 +105,18 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 
 	if (shm_unlink(p_menu_set->shm_name) == -1 && errno != ENOENT)
 	{
-		log_error("shm_unlink(%s) error (%d)\n", p_menu_set->shm_name, errno);
+		log_error("shm_unlink(%s) error (%d)", p_menu_set->shm_name, errno);
 		return -2;
 	}
 
 	if ((fd = shm_open(p_menu_set->shm_name, O_CREAT | O_EXCL | O_RDWR, 0600)) == -1)
 	{
-		log_error("shm_open(%s) error (%d)\n", p_menu_set->shm_name, errno);
+		log_error("shm_open(%s) error (%d)", p_menu_set->shm_name, errno);
 		return -2;
 	}
 	if (ftruncate(fd, (off_t)size) == -1)
 	{
-		log_error("ftruncate(size=%d) error (%d)\n", size, errno);
+		log_error("ftruncate(size=%d) error (%d)", size, errno);
 		close(fd);
 		return -2;
 	}
@@ -124,14 +124,14 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 	p_shm = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0L);
 	if (p_shm == MAP_FAILED)
 	{
-		log_error("mmap() error (%d)\n", errno);
+		log_error("mmap() error (%d)", errno);
 		close(fd);
 		return -2;
 	}
 
 	if (close(fd) < 0)
 	{
-		log_error("close(fd) error (%d)\n", errno);
+		log_error("close(fd) error (%d)", errno);
 		return -1;
 	}
 
@@ -175,13 +175,13 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 			{
 				if (p_menu != NULL)
 				{
-					log_error("Incomplete menu definition in menu config line %d\n", fin_line);
+					log_error("Incomplete menu definition in menu config line %d", fin_line);
 					return -1;
 				}
 
 				if (p_menu_set->menu_count >= MAX_MENUS)
 				{
-					log_error("Menu count (%d) exceed limit (%d)\n", p_menu_set->menu_count, MAX_MENUS);
+					log_error("Menu count (%d) exceed limit (%d)", p_menu_set->menu_count, MAX_MENUS);
 					return -3;
 				}
 				menu_id = (MENU_ID)p_menu_set->menu_count;
@@ -199,7 +199,7 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 				q = strtok_r(NULL, MENU_CONF_DELIM_WITH_SPACE, &saveptr);
 				if (q == NULL)
 				{
-					log_error("Error menu name in menu config line %d\n", fin_line);
+					log_error("Error menu name in menu config line %d", fin_line);
 					return -1;
 				}
 				p = q;
@@ -209,13 +209,13 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 				}
 				if (*q != '\0')
 				{
-					log_error("Error menu name in menu config line %d\n", fin_line);
+					log_error("Error menu name in menu config line %d", fin_line);
 					return -1;
 				}
 
 				if (q - p > sizeof(p_menu->name) - 1)
 				{
-					log_error("Too longer menu name in menu config line %d\n", fin_line);
+					log_error("Too longer menu name in menu config line %d", fin_line);
 					return -1;
 				}
 				strncpy(p_menu->name, p, sizeof(p_menu->name) - 1);
@@ -223,14 +223,14 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 
 				if (trie_dict_set(p_menu_set->p_menu_name_dict, p_menu->name, (int64_t)menu_id) != 1)
 				{
-					log_error("Error set menu dict [%s]\n", p_menu->name);
+					log_error("Error set menu dict [%s]", p_menu->name);
 				}
 
 				// Check syntax
 				q = strtok_r(NULL, MENU_CONF_DELIM_WITH_SPACE, &saveptr);
 				if (q != NULL)
 				{
-					log_error("Unknown extra content in menu config line %d\n", fin_line);
+					log_error("Unknown extra content in menu config line %d", fin_line);
 					return -1;
 				}
 
@@ -259,12 +259,12 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 						// BEGIN of menu item
 						if (p_menu->item_count >= MAX_ITEMS_PER_MENU)
 						{
-							log_error("Menuitem count per menu (%d) exceed limit (%d)\n", p_menu->item_count, MAX_ITEMS_PER_MENU);
+							log_error("Menuitem count per menu (%d) exceed limit (%d)", p_menu->item_count, MAX_ITEMS_PER_MENU);
 							return -1;
 						}
 						if (p_menu_set->menu_item_count >= MAX_MENUITEMS)
 						{
-							log_error("Menuitem count (%d) exceed limit (%d)\n", p_menu_set->menu_item_count, MAX_MENUITEMS);
+							log_error("Menuitem count (%d) exceed limit (%d)", p_menu_set->menu_item_count, MAX_MENUITEMS);
 							return -3;
 						}
 						menu_item_id = (MENU_ITEM_ID)p_menu_set->menu_item_count;
@@ -292,14 +292,14 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 							}
 							if (*q != '\0')
 							{
-								log_error("Error menu item action in menu config line %d\n", fin_line);
+								log_error("Error menu item action in menu config line %d", fin_line);
 								return -1;
 							}
 						}
 
 						if (q - p > sizeof(p_menu_item->action) - 1)
 						{
-							log_error("Too longer menu action in menu config line %d\n", fin_line);
+							log_error("Too longer menu action in menu config line %d", fin_line);
 							return -1;
 						}
 						strncpy(p_menu_item->action, p, sizeof(p_menu_item->action) - 1);
@@ -309,7 +309,7 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 						q = strtok_r(NULL, MENU_CONF_DELIM_WITH_SPACE, &saveptr);
 						if (q == NULL)
 						{
-							log_error("Error menu item row in menu config line %d\n", fin_line);
+							log_error("Error menu item row in menu config line %d", fin_line);
 							return -1;
 						}
 						p = q;
@@ -319,7 +319,7 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 						}
 						if (*q != '\0')
 						{
-							log_error("Error menu item row in menu config line %d\n", fin_line);
+							log_error("Error menu item row in menu config line %d", fin_line);
 							return -1;
 						}
 						p_menu_item->row = (int16_t)atoi(p);
@@ -328,7 +328,7 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 						q = strtok_r(NULL, MENU_CONF_DELIM_WITH_SPACE, &saveptr);
 						if (q == NULL)
 						{
-							log_error("Error menu item col in menu config line %d\n", fin_line);
+							log_error("Error menu item col in menu config line %d", fin_line);
 							return -1;
 						}
 						p = q;
@@ -338,7 +338,7 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 						}
 						if (*q != '\0')
 						{
-							log_error("Error menu item col in menu config line %d\n", fin_line);
+							log_error("Error menu item col in menu config line %d", fin_line);
 							return -1;
 						}
 						p_menu_item->col = (int16_t)atoi(p);
@@ -347,7 +347,7 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 						q = strtok_r(NULL, MENU_CONF_DELIM_WITH_SPACE, &saveptr);
 						if (q == NULL)
 						{
-							log_error("Error menu item priv in menu config line %d\n", fin_line);
+							log_error("Error menu item priv in menu config line %d", fin_line);
 							return -1;
 						}
 						p = q;
@@ -357,7 +357,7 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 						}
 						if (*q != '\0')
 						{
-							log_error("Error menu item priv in menu config line %d\n", fin_line);
+							log_error("Error menu item priv in menu config line %d", fin_line);
 							return -1;
 						}
 						p_menu_item->priv = atoi(p);
@@ -366,7 +366,7 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 						q = strtok_r(NULL, MENU_CONF_DELIM_WITH_SPACE, &saveptr);
 						if (q == NULL)
 						{
-							log_error("Error menu item level in menu config line %d\n", fin_line);
+							log_error("Error menu item level in menu config line %d", fin_line);
 							return -1;
 						}
 						p = q;
@@ -376,7 +376,7 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 						}
 						if (*q != '\0')
 						{
-							log_error("Error menu item level in menu config line %d\n", fin_line);
+							log_error("Error menu item level in menu config line %d", fin_line);
 							return -1;
 						}
 						p_menu_item->level = atoi(p);
@@ -385,7 +385,7 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 						q = strtok_r(NULL, MENU_CONF_DELIM_WITH_SPACE, &saveptr);
 						if (q == NULL || *q != '\"')
 						{
-							log_error("Error menu item name in menu config line %d\n", fin_line);
+							log_error("Error menu item name in menu config line %d", fin_line);
 							return -1;
 						}
 						q++;
@@ -405,14 +405,14 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 						}
 						if (*q != '\"' || *(q + 1) != '\0')
 						{
-							log_error("Error menu item name in menu config line %d\n", fin_line);
+							log_error("Error menu item name in menu config line %d", fin_line);
 							return -1;
 						}
 						*q = '\0';
 
 						if (q - p > sizeof(p_menu_item->name) - 1)
 						{
-							log_error("Too longer menu name in menu config line %d\n", fin_line);
+							log_error("Too longer menu name in menu config line %d", fin_line);
 							return -1;
 						}
 						strncpy(p_menu_item->name, p, sizeof(p_menu_item->name) - 1);
@@ -422,7 +422,7 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 						q = strtok_r(NULL, MENU_CONF_DELIM_WITHOUT_SPACE, &saveptr);
 						if (q == NULL || (q = strchr(q, '\"')) == NULL)
 						{
-							log_error("Error menu item text in menu config line %d\n", fin_line);
+							log_error("Error menu item text in menu config line %d", fin_line);
 							return -1;
 						}
 						q++;
@@ -442,14 +442,14 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 						}
 						if (*q != '\"')
 						{
-							log_error("Error menu item text in menu config line %d\n", fin_line);
+							log_error("Error menu item text in menu config line %d", fin_line);
 							return -1;
 						}
 						*q = '\0';
 
 						if (q - p > sizeof(p_menu_item->text) - 1)
 						{
-							log_error("Too longer menu item text in menu config line %d\n", fin_line);
+							log_error("Too longer menu item text in menu config line %d", fin_line);
 							return -1;
 						}
 						strncpy(p_menu_item->text, p, sizeof(p_menu_item->text) - 1);
@@ -459,7 +459,7 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 						q = strtok_r(q + 1, MENU_CONF_DELIM_WITH_SPACE, &saveptr);
 						if (q != NULL)
 						{
-							log_error("Unknown extra content in menu config line %d\n", fin_line);
+							log_error("Unknown extra content in menu config line %d", fin_line);
 							return -1;
 						}
 					}
@@ -471,7 +471,7 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 						q = strtok_r(NULL, MENU_CONF_DELIM_WITH_SPACE, &saveptr);
 						if (q == NULL)
 						{
-							log_error("Error menu title row in menu config line %d\n", fin_line);
+							log_error("Error menu title row in menu config line %d", fin_line);
 							return -1;
 						}
 						p = q;
@@ -481,7 +481,7 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 						}
 						if (*q != '\0')
 						{
-							log_error("Error menu title row in menu config line %d\n", fin_line);
+							log_error("Error menu title row in menu config line %d", fin_line);
 							return -1;
 						}
 						p_menu->title.row = (int16_t)atoi(p);
@@ -490,7 +490,7 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 						q = strtok_r(NULL, MENU_CONF_DELIM_WITH_SPACE, &saveptr);
 						if (q == NULL)
 						{
-							log_error("Error menu title col in menu config line %d\n", fin_line);
+							log_error("Error menu title col in menu config line %d", fin_line);
 							return -1;
 						}
 						p = q;
@@ -500,7 +500,7 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 						}
 						if (*q != '\0')
 						{
-							log_error("Error menu title col in menu config line %d\n", fin_line);
+							log_error("Error menu title col in menu config line %d", fin_line);
 							return -1;
 						}
 						p_menu->title.col = (int16_t)atoi(p);
@@ -509,7 +509,7 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 						q = strtok_r(NULL, MENU_CONF_DELIM_WITHOUT_SPACE, &saveptr);
 						if (q == NULL || (q = strchr(q, '\"')) == NULL)
 						{
-							log_error("Error menu title text in menu config line %d\n", fin_line);
+							log_error("Error menu title text in menu config line %d", fin_line);
 							return -1;
 						}
 						q++;
@@ -529,14 +529,14 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 						}
 						if (*q != '\"')
 						{
-							log_error("Error menu title text in menu config line %d\n", fin_line);
+							log_error("Error menu title text in menu config line %d", fin_line);
 							return -1;
 						}
 						*q = '\0';
 
 						if (q - p > sizeof(p_menu->title.text) - 1)
 						{
-							log_error("Too longer menu title text in menu config line %d\n", fin_line);
+							log_error("Too longer menu title text in menu config line %d", fin_line);
 							return -1;
 						}
 						strncpy(p_menu->title.text, p, sizeof(p_menu->title.text) - 1);
@@ -546,7 +546,7 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 						q = strtok_r(q + 1, MENU_CONF_DELIM_WITH_SPACE, &saveptr);
 						if (q != NULL)
 						{
-							log_error("Unknown extra content in menu config line %d\n", fin_line);
+							log_error("Unknown extra content in menu config line %d", fin_line);
 							return -1;
 						}
 					}
@@ -558,7 +558,7 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 						q = strtok_r(NULL, MENU_CONF_DELIM_WITH_SPACE, &saveptr);
 						if (q == NULL)
 						{
-							log_error("Error menu screen row in menu config line %d\n", fin_line);
+							log_error("Error menu screen row in menu config line %d", fin_line);
 							return -1;
 						}
 						p = q;
@@ -568,7 +568,7 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 						}
 						if (*q != '\0')
 						{
-							log_error("Error menu screen row in menu config line %d\n", fin_line);
+							log_error("Error menu screen row in menu config line %d", fin_line);
 							return -1;
 						}
 						p_menu->screen_row = (int16_t)atoi(p);
@@ -577,7 +577,7 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 						q = strtok_r(NULL, MENU_CONF_DELIM_WITH_SPACE, &saveptr);
 						if (q == NULL)
 						{
-							log_error("Error menu screen col in menu config line %d\n", fin_line);
+							log_error("Error menu screen col in menu config line %d", fin_line);
 							return -1;
 						}
 						p = q;
@@ -587,7 +587,7 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 						}
 						if (*q != '\0')
 						{
-							log_error("Error menu screen col in menu config line %d\n", fin_line);
+							log_error("Error menu screen col in menu config line %d", fin_line);
 							return -1;
 						}
 						p_menu->screen_col = (int16_t)atoi(p);
@@ -596,7 +596,7 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 						q = strtok_r(NULL, MENU_CONF_DELIM_WITH_SPACE, &saveptr);
 						if (q == NULL)
 						{
-							log_error("Error menu screen name in menu config line %d\n", fin_line);
+							log_error("Error menu screen name in menu config line %d", fin_line);
 							return -1;
 						}
 						p = q;
@@ -606,7 +606,7 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 						}
 						if (*q != '\0')
 						{
-							log_error("Error menu screen name in menu config line %d\n", fin_line);
+							log_error("Error menu screen name in menu config line %d", fin_line);
 							return -1;
 						}
 						strncpy(p_menu->screen_name, p, sizeof(p_menu->screen_name) - 1);
@@ -616,7 +616,7 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 						q = strtok_r(NULL, MENU_CONF_DELIM_WITH_SPACE, &saveptr);
 						if (q != NULL)
 						{
-							log_error("Unknown extra content in menu config line %d\n", fin_line);
+							log_error("Unknown extra content in menu config line %d", fin_line);
 							return -1;
 						}
 					}
@@ -626,7 +626,7 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 						q = strtok_r(NULL, MENU_CONF_DELIM_WITH_SPACE, &saveptr);
 						if (q == NULL)
 						{
-							log_error("Error menu page row in menu config line %d\n", fin_line);
+							log_error("Error menu page row in menu config line %d", fin_line);
 							return -1;
 						}
 						p = q;
@@ -636,7 +636,7 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 						}
 						if (*q != '\0')
 						{
-							log_error("Error menu page row in menu config line %d\n", fin_line);
+							log_error("Error menu page row in menu config line %d", fin_line);
 							return -1;
 						}
 						p_menu->page_row = (int16_t)atoi(p);
@@ -645,7 +645,7 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 						q = strtok_r(NULL, MENU_CONF_DELIM_WITH_SPACE, &saveptr);
 						if (q == NULL)
 						{
-							log_error("Error menu page col in menu config line %d\n", fin_line);
+							log_error("Error menu page col in menu config line %d", fin_line);
 							return -1;
 						}
 						p = q;
@@ -655,7 +655,7 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 						}
 						if (*q != '\0')
 						{
-							log_error("Error menu page col in menu config line %d\n", fin_line);
+							log_error("Error menu page col in menu config line %d", fin_line);
 							return -1;
 						}
 						p_menu->page_col = (int16_t)atoi(p);
@@ -664,7 +664,7 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 						q = strtok_r(NULL, MENU_CONF_DELIM_WITH_SPACE, &saveptr);
 						if (q == NULL)
 						{
-							log_error("Error menu page item limit in menu config line %d\n", fin_line);
+							log_error("Error menu page item limit in menu config line %d", fin_line);
 							return -1;
 						}
 						p = q;
@@ -674,7 +674,7 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 						}
 						if (*q != '\0')
 						{
-							log_error("Error menu page item limit in menu config line %d\n", fin_line);
+							log_error("Error menu page item limit in menu config line %d", fin_line);
 							return -1;
 						}
 						p_menu->page_item_limit = (int16_t)atoi(p);
@@ -683,7 +683,7 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 						q = strtok_r(NULL, MENU_CONF_DELIM_WITH_SPACE, &saveptr);
 						if (q != NULL)
 						{
-							log_error("Unknown extra content in menu config line %d\n", fin_line);
+							log_error("Unknown extra content in menu config line %d", fin_line);
 							return -1;
 						}
 					}
@@ -695,7 +695,7 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 						q = strtok_r(NULL, MENU_CONF_DELIM_WITH_SPACE, &saveptr);
 						if (q != NULL)
 						{
-							log_error("Unknown extra content in menu config line %d\n", fin_line);
+							log_error("Unknown extra content in menu config line %d", fin_line);
 							return -1;
 						}
 					}
@@ -705,7 +705,7 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 			{
 				if (p_menu_set->menu_item_count >= MAX_MENUS)
 				{
-					log_error("Menu screen count (%d) exceed limit (%d)\n", p_menu_set->menu_screen_count, MAX_MENUS);
+					log_error("Menu screen count (%d) exceed limit (%d)", p_menu_set->menu_screen_count, MAX_MENUS);
 					return -3;
 				}
 				screen_id = (MENU_SCREEN_ID)p_menu_set->menu_screen_count;
@@ -720,7 +720,7 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 				}
 				if (*q != '\0')
 				{
-					log_error("Error menu screen name in menu config line %d\n", fin_line);
+					log_error("Error menu screen name in menu config line %d", fin_line);
 					return -1;
 				}
 				strncpy(p_screen->name, p, sizeof(p_screen->name) - 1);
@@ -728,14 +728,14 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 
 				if (trie_dict_set(p_menu_set->p_menu_screen_dict, p_screen->name, (int64_t)screen_id) != 1)
 				{
-					log_error("Error set menu screen dict [%s]\n", p_screen->name);
+					log_error("Error set menu screen dict [%s]", p_screen->name);
 				}
 
 				// Check syntax
 				q = strtok_r(NULL, MENU_CONF_DELIM_WITH_SPACE, &saveptr);
 				if (q != NULL)
 				{
-					log_error("Unknown extra content in menu config line %d\n", fin_line);
+					log_error("Unknown extra content in menu config line %d", fin_line);
 					return -1;
 				}
 
@@ -756,7 +756,7 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 					{
 						if (p_menu_set->p_menu_screen_buf_free + 1 > q)
 						{
-							log_error("Menu screen buffer depleted (%p + 1 > %p)\n", p_menu_set->p_menu_screen_buf_free, q);
+							log_error("Menu screen buffer depleted (%p + 1 > %p)", p_menu_set->p_menu_screen_buf_free, q);
 							return -3;
 						}
 
@@ -769,7 +769,7 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 					// Clear line
 					if (p_menu_set->p_menu_screen_buf_free + strlen(CTRL_SEQ_CLR_LINE) > q)
 					{
-						log_error("Menu screen buffer depleted (%p + %d > %p)\n", p_menu_set->p_menu_screen_buf_free, q, strlen(CTRL_SEQ_CLR_LINE));
+						log_error("Menu screen buffer depleted (%p + %d > %p)", p_menu_set->p_menu_screen_buf_free, q, strlen(CTRL_SEQ_CLR_LINE));
 						return -3;
 					}
 					p_menu_set->p_menu_screen_buf_free = stpcpy(p_menu_set->p_menu_screen_buf_free, CTRL_SEQ_CLR_LINE);
@@ -779,7 +779,7 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 					{
 						if (p_menu_set->p_menu_screen_buf_free + 2 > q)
 						{
-							log_error("Menu screen buffer depleted (%p + 2 > %p)\n", p_menu_set->p_menu_screen_buf_free, q);
+							log_error("Menu screen buffer depleted (%p + 2 > %p)", p_menu_set->p_menu_screen_buf_free, q);
 							return -3;
 						}
 
@@ -797,13 +797,13 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 
 				if (p_screen->buf_length == -1)
 				{
-					log_error("End of menu screen [%s] not found\n", p_screen->name);
+					log_error("End of menu screen [%s] not found", p_screen->name);
 				}
 			}
 		}
 		else // Invalid prefix
 		{
-			log_error("Error in menu config line %d\n", fin_line);
+			log_error("Error in menu config line %d", fin_line);
 			return -1;
 		}
 	}
@@ -815,7 +815,7 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 
 		if (trie_dict_get(p_menu_set->p_menu_screen_dict, p_menu->screen_name, (int64_t *)(&(p_menu->screen_id))) != 1)
 		{
-			log_error("Undefined menu screen [%s]\n", p);
+			log_error("Undefined menu screen [%s]", p);
 			return -1;
 		}
 
@@ -824,7 +824,7 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 		{
 			if ((p_menu->filter_handler = get_cmd_handler(p_menu->name)) == NULL)
 			{
-				log_error("Undefined menu filter handler [%s]\n", p_menu->name);
+				log_error("Undefined menu filter handler [%s]", p_menu->name);
 				return -1;
 			}
 		}
@@ -839,7 +839,7 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 		{
 			if ((p_menu_item->action_cmd_handler = get_cmd_handler(p_menu_item->action)) == NULL)
 			{
-				log_error("Undefined menu action cmd handler [%s]\n", p_menu_item->action);
+				log_error("Undefined menu action cmd handler [%s]", p_menu_item->action);
 				return -1;
 			}
 		}
@@ -848,7 +848,7 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 		{
 			if (trie_dict_get(p_menu_set->p_menu_name_dict, p_menu_item->action, (int64_t *)&menu_id) != 1)
 			{
-				log_error("Undefined sub menu id [%s]\n", p_menu_item->action);
+				log_error("Undefined sub menu id [%s]", p_menu_item->action);
 				return -1;
 			}
 			p_menu_item->action_menu_id = menu_id;
@@ -875,7 +875,7 @@ int display_menu_cursor(MENU_SET *p_menu_set, int show)
 	p_menu = get_menu_by_id(p_menu_set, menu_id);
 	if (p_menu == NULL)
 	{
-		log_error("get_menu_by_id(%d) return NULL pointer\n", menu_id);
+		log_error("get_menu_by_id(%d) return NULL pointer", menu_id);
 		return -1;
 	}
 
@@ -884,7 +884,7 @@ int display_menu_cursor(MENU_SET *p_menu_set, int show)
 	p_menu_item = get_menu_item_by_id(p_menu_set, menu_item_id);
 	if (p_menu_item == NULL)
 	{
-		log_error("get_menu_item_by_id(%d) return NULL pointer\n", menu_item_id);
+		log_error("get_menu_item_by_id(%d) return NULL pointer", menu_item_id);
 		return -1;
 	}
 
@@ -910,7 +910,7 @@ static int display_menu_current_page(MENU_SET *p_menu_set)
 	p_menu = get_menu_by_id(p_menu_set, menu_id);
 	if (p_menu == NULL)
 	{
-		log_error("get_menu_by_id(%d) return NULL pointer\n", menu_id);
+		log_error("get_menu_by_id(%d) return NULL pointer", menu_id);
 		return -1;
 	}
 
@@ -934,7 +934,7 @@ static int display_menu_current_page(MENU_SET *p_menu_set)
 		p_menu_screen = get_menu_screen_by_id(p_menu_set, p_menu->screen_id);
 		if (p_menu_screen == NULL)
 		{
-			log_error("get_menu_screen_by_id(%d) return NULL pointer\n", p_menu->screen_id);
+			log_error("get_menu_screen_by_id(%d) return NULL pointer", p_menu->screen_id);
 			return -1;
 		}
 
@@ -1006,7 +1006,7 @@ int display_menu(MENU_SET *p_menu_set)
 	p_menu = get_menu_by_id(p_menu_set, menu_id);
 	if (p_menu == NULL)
 	{
-		log_error("get_menu_by_id(%d) return NULL pointer\n", menu_id);
+		log_error("get_menu_by_id(%d) return NULL pointer", menu_id);
 		if (p_menu_set->choose_step > 0)
 		{
 			p_menu_set->choose_step--;
@@ -1029,7 +1029,7 @@ int display_menu(MENU_SET *p_menu_set)
 	p_menu_item = get_menu_item_by_id(p_menu_set, menu_item_id);
 	if (p_menu_item == NULL)
 	{
-		log_error("get_menu_item_by_id(%d) return NULL pointer\n", menu_item_id);
+		log_error("get_menu_item_by_id(%d) return NULL pointer", menu_item_id);
 		return EXITMENU;
 	}
 
@@ -1122,7 +1122,7 @@ int menu_control(MENU_SET *p_menu_set, int key)
 
 	if (p_menu_set->menu_count == 0)
 	{
-		log_error("Empty menu set\n");
+		log_error("Empty menu set");
 		return EXITBBS;
 	}
 
@@ -1130,7 +1130,7 @@ int menu_control(MENU_SET *p_menu_set, int key)
 	p_menu = get_menu_by_id(p_menu_set, menu_id);
 	if (p_menu == NULL)
 	{
-		log_error("get_menu_by_id(%d) return NULL pointer\n", menu_id);
+		log_error("get_menu_by_id(%d) return NULL pointer", menu_id);
 		if (p_menu_set->choose_step > 0)
 		{
 			p_menu_set->choose_step--;
@@ -1141,7 +1141,7 @@ int menu_control(MENU_SET *p_menu_set, int key)
 
 	if (p_menu->item_count == 0)
 	{
-		log_debug("Empty menu (%s)\n", p_menu->name);
+		log_debug("Empty menu (%s)", p_menu->name);
 		if (p_menu_set->choose_step > 0)
 		{
 			p_menu_set->choose_step--;
@@ -1157,7 +1157,7 @@ int menu_control(MENU_SET *p_menu_set, int key)
 	p_menu_item = get_menu_item_by_id(p_menu_set, menu_item_id);
 	if (p_menu_item == NULL)
 	{
-		log_error("get_menu_item_by_id(%d) return NULL pointer\n", menu_item_id);
+		log_error("get_menu_item_by_id(%d) return NULL pointer", menu_item_id);
 		p_menu_set->menu_item_pos[p_menu_set->choose_step] = 0;
 		return REDRAW;
 	}
@@ -1208,7 +1208,7 @@ int menu_control(MENU_SET *p_menu_set, int key)
 				p_menu_item = get_menu_item_by_id(p_menu_set, menu_item_id);
 				if (p_menu_item == NULL)
 				{
-					log_error("get_menu_item_by_id(%d) return NULL pointer\n", menu_item_id);
+					log_error("get_menu_item_by_id(%d) return NULL pointer", menu_item_id);
 					return -1;
 				}
 
@@ -1241,7 +1241,7 @@ int menu_control(MENU_SET *p_menu_set, int key)
 			p_menu_item = get_menu_item_by_id(p_menu_set, menu_item_id);
 			if (p_menu_item == NULL)
 			{
-				log_error("get_menu_item_by_id(%d) return NULL pointer\n", menu_item_id);
+				log_error("get_menu_item_by_id(%d) return NULL pointer", menu_item_id);
 				return -1;
 			}
 			if (require_page_change && p_menu_set->menu_item_page_id[menu_item_pos] != page_id)
@@ -1272,7 +1272,7 @@ int menu_control(MENU_SET *p_menu_set, int key)
 			p_menu_item = get_menu_item_by_id(p_menu_set, menu_item_id);
 			if (p_menu_item == NULL)
 			{
-				log_error("get_menu_item_by_id(%d) return NULL pointer\n", menu_item_id);
+				log_error("get_menu_item_by_id(%d) return NULL pointer", menu_item_id);
 				return -1;
 			}
 			if (require_page_change && p_menu_set->menu_item_page_id[menu_item_pos] != page_id)
@@ -1296,7 +1296,7 @@ int menu_control(MENU_SET *p_menu_set, int key)
 			p_menu_item = get_menu_item_by_id(p_menu_set, menu_item_id);
 			if (p_menu_item == NULL)
 			{
-				log_error("get_menu_item_by_id(%d) return NULL pointer\n", menu_item_id);
+				log_error("get_menu_item_by_id(%d) return NULL pointer", menu_item_id);
 				return -1;
 			}
 
@@ -1323,7 +1323,7 @@ int menu_control(MENU_SET *p_menu_set, int key)
 			p_menu_item = get_menu_item_by_id(p_menu_set, menu_item_id);
 			if (p_menu_item == NULL)
 			{
-				log_error("get_menu_item_by_id(%d) return NULL pointer\n", menu_item_id);
+				log_error("get_menu_item_by_id(%d) return NULL pointer", menu_item_id);
 				return -1;
 			}
 
@@ -1350,7 +1350,7 @@ int menu_control(MENU_SET *p_menu_set, int key)
 				p_menu_item = get_menu_item_by_id(p_menu_set, menu_item_id);
 				if (p_menu_item == NULL)
 				{
-					log_error("get_menu_item_by_id(%d) return NULL pointer\n", menu_item_id);
+					log_error("get_menu_item_by_id(%d) return NULL pointer", menu_item_id);
 					return -1;
 				}
 
@@ -1377,7 +1377,7 @@ int unload_menu(MENU_SET *p_menu_set)
 {
 	if (p_menu_set == NULL)
 	{
-		log_error("NULL pointer error\n");
+		log_error("NULL pointer error");
 		return -1;
 	}
 
@@ -1397,7 +1397,7 @@ int unload_menu(MENU_SET *p_menu_set)
 
 	if (shm_unlink(p_menu_set->shm_name) == -1 && errno != ENOENT)
 	{
-		log_error("shm_unlink(%s) error (%d)\n", p_menu_set->shm_name, errno);
+		log_error("shm_unlink(%s) error (%d)", p_menu_set->shm_name, errno);
 		return -2;
 	}
 
@@ -1413,19 +1413,19 @@ int get_menu_shm_readonly(MENU_SET *p_menu_set)
 
 	if (p_menu_set == NULL)
 	{
-		log_error("NULL pointer error\n");
+		log_error("NULL pointer error");
 		return -1;
 	}
 
 	if ((fd = shm_open(p_menu_set->shm_name, O_RDONLY, 0600)) == -1)
 	{
-		log_error("shm_open(%s) error (%d)\n", p_menu_set->shm_name, errno);
+		log_error("shm_open(%s) error (%d)", p_menu_set->shm_name, errno);
 		return -2;
 	}
 
 	if (fstat(fd, &sb) < 0)
 	{
-		log_error("fstat(fd) error (%d)\n", errno);
+		log_error("fstat(fd) error (%d)", errno);
 		close(fd);
 		return -2;
 	}
@@ -1435,14 +1435,14 @@ int get_menu_shm_readonly(MENU_SET *p_menu_set)
 	p_shm = mmap(NULL, size, PROT_READ, MAP_SHARED, fd, 0L);
 	if (p_shm == MAP_FAILED)
 	{
-		log_error("mmap() error (%d)\n", errno);
+		log_error("mmap() error (%d)", errno);
 		close(fd);
 		return -2;
 	}
 
 	if (close(fd) < 0)
 	{
-		log_error("close(fd) error (%d)\n", errno);
+		log_error("close(fd) error (%d)", errno);
 		return -1;
 	}
 
@@ -1466,13 +1466,13 @@ int set_menu_shm_readonly(MENU_SET *p_menu_set)
 {
 	if (p_menu_set == NULL)
 	{
-		log_error("NULL pointer error\n");
+		log_error("NULL pointer error");
 		return -1;
 	}
 
 	if (p_menu_set->p_reserved != NULL && mprotect(p_menu_set->p_reserved, p_menu_set->shm_size, PROT_READ) < 0)
 	{
-		log_error("mprotect() error (%d)\n", errno);
+		log_error("mprotect() error (%d)", errno);
 		return -2;
 	}
 
@@ -1483,7 +1483,7 @@ int detach_menu_shm(MENU_SET *p_menu_set)
 {
 	if (p_menu_set == NULL)
 	{
-		log_error("NULL pointer error\n");
+		log_error("NULL pointer error");
 		return -1;
 	}
 
@@ -1503,7 +1503,7 @@ int detach_menu_shm(MENU_SET *p_menu_set)
 
 	if (p_menu_set->p_reserved != NULL && munmap(p_menu_set->p_reserved, p_menu_set->shm_size) < 0)
 	{
-		log_error("munmap() error (%d)\n", errno);
+		log_error("munmap() error (%d)", errno);
 		return -2;
 	}
 

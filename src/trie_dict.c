@@ -46,19 +46,19 @@ int trie_dict_init(const char *filename, int node_count_limit)
 
 	if (filename == NULL)
 	{
-		log_error("NULL pointer error\n");
+		log_error("NULL pointer error");
 		return -1;
 	}
 
 	if (p_trie_node_pool != NULL)
 	{
-		log_error("trie_dict_pool already initialized\n");
+		log_error("trie_dict_pool already initialized");
 		return -1;
 	}
 
 	if (node_count_limit <= 0 || node_count_limit > TRIE_NODE_PER_POOL)
 	{
-		log_error("trie_dict_init(%d) error: invalid node_count_limit\n", node_count_limit);
+		log_error("trie_dict_init(%d) error: invalid node_count_limit", node_count_limit);
 		return -1;
 	}
 
@@ -71,18 +71,18 @@ int trie_dict_init(const char *filename, int node_count_limit)
 
 	if (shm_unlink(trie_node_shm_name) == -1 && errno != ENOENT)
 	{
-		log_error("shm_unlink(%s) error (%d)\n", trie_node_shm_name, errno);
+		log_error("shm_unlink(%s) error (%d)", trie_node_shm_name, errno);
 		return -2;
 	}
 
 	if ((fd = shm_open(trie_node_shm_name, O_CREAT | O_EXCL | O_RDWR, 0600)) == -1)
 	{
-		log_error("shm_open(%s) error (%d)\n", trie_node_shm_name, errno);
+		log_error("shm_open(%s) error (%d)", trie_node_shm_name, errno);
 		return -2;
 	}
 	if (ftruncate(fd, (off_t)size) == -1)
 	{
-		log_error("ftruncate(size=%d) error (%d)\n", size, errno);
+		log_error("ftruncate(size=%d) error (%d)", size, errno);
 		close(fd);
 		return -2;
 	}
@@ -90,14 +90,14 @@ int trie_dict_init(const char *filename, int node_count_limit)
 	p_shm = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0L);
 	if (p_shm == MAP_FAILED)
 	{
-		log_error("mmap() error (%d)\n", errno);
+		log_error("mmap() error (%d)", errno);
 		close(fd);
 		return -2;
 	}
 
 	if (close(fd) < 0)
 	{
-		log_error("close(fd) error (%d)\n", errno);
+		log_error("close(fd) error (%d)", errno);
 		return -1;
 	}
 
@@ -128,7 +128,7 @@ void trie_dict_cleanup(void)
 
 	if (shm_unlink(trie_node_shm_name) == -1 && errno != ENOENT)
 	{
-		log_error("shm_unlink(%s) error (%d)\n", trie_node_shm_name, errno);
+		log_error("shm_unlink(%s) error (%d)", trie_node_shm_name, errno);
 	}
 
 	trie_node_shm_name[0] = '\0';
@@ -138,7 +138,7 @@ int set_trie_dict_shm_readonly(void)
 {
 	if (p_trie_node_pool != NULL && mprotect(p_trie_node_pool, p_trie_node_pool->shm_size, PROT_READ) < 0)
 	{
-		log_error("mprotect() error (%d)\n", errno);
+		log_error("mprotect() error (%d)", errno);
 		return -1;
 	}
 
@@ -149,7 +149,7 @@ int detach_trie_dict_shm(void)
 {
 	if (p_trie_node_pool != NULL && munmap(p_trie_node_pool, p_trie_node_pool->shm_size) < 0)
 	{
-		log_error("munmap() error (%d)\n", errno);
+		log_error("munmap() error (%d)", errno);
 		return -1;
 	}
 
@@ -173,7 +173,7 @@ TRIE_NODE *trie_dict_create(void)
 	}
 	else if (p_trie_node_pool != NULL)
 	{
-		log_error("trie_dict_create() error: node depleted %d >= %d\n", p_trie_node_pool->node_count, p_trie_node_pool->node_count_limit);
+		log_error("trie_dict_create() error: node depleted %d >= %d", p_trie_node_pool->node_count, p_trie_node_pool->node_count_limit);
 	}
 
 	return p_dict;

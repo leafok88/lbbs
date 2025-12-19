@@ -126,12 +126,12 @@ int load_priv(MYSQL *db, BBS_user_priv *p_priv, int uid)
 			 uid);
 	if (mysql_query(db, sql) != 0)
 	{
-		log_error("Query user_list error: %s\n", mysql_error(db));
+		log_error("Query user_list error: %s", mysql_error(db));
 		return -1;
 	}
 	if ((rs = mysql_store_result(db)) == NULL)
 	{
-		log_error("Get user_list data failed\n");
+		log_error("Get user_list data failed");
 		return -1;
 	}
 	if ((row = mysql_fetch_row(rs)))
@@ -148,12 +148,12 @@ int load_priv(MYSQL *db, BBS_user_priv *p_priv, int uid)
 			 uid);
 	if (mysql_query(db, sql) != 0)
 	{
-		log_error("Query admin_config error: %s\n", mysql_error(db));
+		log_error("Query admin_config error: %s", mysql_error(db));
 		return -1;
 	}
 	if ((rs = mysql_store_result(db)) == NULL)
 	{
-		log_error("Get admin_config data failed\n");
+		log_error("Get admin_config data failed");
 		return -1;
 	}
 	if ((row = mysql_fetch_row(rs)))
@@ -172,12 +172,12 @@ int load_priv(MYSQL *db, BBS_user_priv *p_priv, int uid)
 			 uid);
 	if (mysql_query(db, sql) != 0)
 	{
-		log_error("Query section_master error: %s\n", mysql_error(db));
+		log_error("Query section_master error: %s", mysql_error(db));
 		return -1;
 	}
 	if ((rs = mysql_store_result(db)) == NULL)
 	{
-		log_error("Get section_master data failed\n");
+		log_error("Get section_master data failed");
 		return -1;
 	}
 	while ((row = mysql_fetch_row(rs)))
@@ -196,12 +196,12 @@ int load_priv(MYSQL *db, BBS_user_priv *p_priv, int uid)
 			 "ORDER BY SID");
 	if (mysql_query(db, sql) != 0)
 	{
-		log_error("Query section_config error: %s\n", mysql_error(db));
+		log_error("Query section_config error: %s", mysql_error(db));
 		return -1;
 	}
 	if ((rs = mysql_store_result(db)) == NULL)
 	{
-		log_error("Get section_config data failed\n");
+		log_error("Get section_config data failed");
 		return -1;
 	}
 	while ((row = mysql_fetch_row(rs)))
@@ -230,12 +230,12 @@ int load_priv(MYSQL *db, BBS_user_priv *p_priv, int uid)
 			 uid);
 	if (mysql_query(db, sql) != 0)
 	{
-		log_error("Query ban_user_list error: %s\n", mysql_error(db));
+		log_error("Query ban_user_list error: %s", mysql_error(db));
 		return -1;
 	}
 	if ((rs = mysql_store_result(db)) == NULL)
 	{
-		log_error("Get ban_user_list data failed\n");
+		log_error("Get ban_user_list data failed");
 		return -1;
 	}
 	while ((row = mysql_fetch_row(rs)))
@@ -251,12 +251,12 @@ int load_priv(MYSQL *db, BBS_user_priv *p_priv, int uid)
 			 uid);
 	if (mysql_query(db, sql) != 0)
 	{
-		log_error("Query section_favorite error: %s\n", mysql_error(db));
+		log_error("Query section_favorite error: %s", mysql_error(db));
 		return -1;
 	}
 	if ((rs = mysql_store_result(db)) == NULL)
 	{
-		log_error("Get section_favorite data failed\n");
+		log_error("Get section_favorite data failed");
 		return -1;
 	}
 	while ((row = mysql_fetch_row(rs)))
