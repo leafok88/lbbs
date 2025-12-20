@@ -9,15 +9,10 @@
 #ifndef _ARTICLE_OP_H_
 #define _ARTICLE_OP_H_
 
-#include <section_list.h>
+#include "section_list.h"
 #include <stdint.h>
 
-enum bbs_article_op_type_t
-{
-	BBS_article_set_excerption = 'E',
-	BBS_article_unset_excerption = 'O',
-};
 extern int display_article_meta(int32_t aid);
-extern int article_exc_set(SECTION_LIST *p_section,int32_t aid, int8_t is_exc);
+extern int article_excerption_set(SECTION_LIST *p_section, int32_t aid, int8_t set);
 
 #endif //_ARTICLE_OP_H_

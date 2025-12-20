@@ -1101,15 +1101,14 @@ int section_list_display(const char *sname, int32_t aid)
 			}
 			break;
 		case SET_EXCERPTION_ARTICLE:
-			if (!checkpriv(&BBS_priv, p_section->sid, S_POST) || !checkpriv(&BBS_priv, p_section->sid, S_MAN_S))
+			if (checkpriv(&BBS_priv, p_section->sid, S_POST | S_MAN_S))
 			{
-				break;
-			}
-			ret = article_exc_set(p_section, p_articles[selected_index]->aid, p_articles[selected_index]->excerption);
-			if (ret < 0)
-			{
-				log_error("article_exc_set(aid=%d, excerption=%d) error\n",
-						  p_articles[selected_index]->aid, p_articles[selected_index]->excerption);
+				ret = article_excerption_set(p_section, p_articles[selected_index]->aid, (p_articles[selected_index]->excerption ? 0 : 1));
+				if (ret < 0)
+				{
+					log_error("article_excerption_set(sid=%d, aid=%d, set=%d) error\n",
+							  p_section->sid, p_articles[selected_index]->aid, (p_articles[selected_index]->excerption ? 0 : 1));
+				}
 			}
 			break;
 		case FIRST_TOPIC_ARTICLE:
