@@ -18,11 +18,6 @@
 #include "screen.h"
 #include "user_priv.h"
 
-enum ret_msg_len_t
-{
-	ret_msg_len = 20,
-};
-
 int display_article_meta(int32_t aid)
 {
 	clearscr();
@@ -234,7 +229,7 @@ int article_excerption_set(SECTION_LIST *p_section, int32_t aid, int8_t set)
 	// Commit transaction
 	if (mysql_query(db, "COMMIT") != 0)
 	{
-		log_error("Mysqli error: %s\n", mysql_error(db));
+		log_error("Mysqli error: %s", mysql_error(db));
 
 		// Rollback change to avoid data inconsistency
 		if (section_list_rw_lock(p_section) < 0)
