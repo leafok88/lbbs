@@ -209,7 +209,6 @@ static void progress_bar(int percent, int len)
 {
 	char line[LINE_BUFFER_LEN];
 	char buf[LINE_BUFFER_LEN];
-	char buf2[LINE_BUFFER_LEN];
 	int pos;
 
 	if (len < 4)
@@ -241,12 +240,10 @@ static void progress_bar(int percent, int len)
 
 	snprintf(buf, sizeof(buf), "%*s%3d%%%*s",
 			 (len - 4) / 2, "", percent, (len - 4 + 1) / 2, "");
-	memcpy(buf2, buf, (size_t)pos);
-	buf2[pos] = '\0';
 
 	moveto(4, 1);
 	prints("%s\r\n", line);
-	prints("|\033[46m%s\033[44m%s\033[m|\r\n", buf2, buf + pos);
+	prints("|\033[46m%.*s\033[44m%s\033[m|\r\n", pos, buf, buf + pos);
 	prints("%s\r\n", line);
 	iflush();
 }
