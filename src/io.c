@@ -590,7 +590,7 @@ int igetch(int timeout)
 #ifdef _DEBUG
 			for (int j = stdin_buf_offset; j < stdin_buf_len; j++)
 			{
-				log_debug("input: <--[%u]", (stdin_buf[j] + 256) % 256);
+				log_debug("input: <--[%u]", (unsigned char)(stdin_buf[j]));
 			}
 #endif
 		}
@@ -608,7 +608,7 @@ int igetch(int timeout)
 #ifdef _DEBUG
 			for (int j = stdin_conv_offset; j < stdin_conv_len; j++)
 			{
-				log_debug("input_conv: <--[%u]", (stdin_conv[j] + 256) % 256);
+				log_debug("input_conv: <--[%u]", (unsigned char)(stdin_conv[j]));
 			}
 #endif
 		}
@@ -1060,7 +1060,7 @@ int igetch(int timeout)
 			continue;
 		}
 
-		out = ((int)c + 256) % 256;
+		out = c;
 		break;
 	}
 

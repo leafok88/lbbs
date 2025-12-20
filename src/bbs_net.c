@@ -1252,7 +1252,7 @@ static int bbsnet_connect(int n)
 #ifdef _DEBUG
 				for (int j = input_buf_offset; j < input_buf_len; j++)
 				{
-					log_debug("input: <--[%u]", (input_buf[j] + 256) % 256);
+					log_debug("input: <--[%u]", (unsigned char)(input_buf[j]));
 				}
 #endif
 
@@ -1267,7 +1267,7 @@ static int bbsnet_connect(int n)
 #ifdef _DEBUG
 				for (int j = input_conv_offset; j < input_conv_len; j++)
 				{
-					log_debug("input_conv: <--[%u]", (input_conv[j] + 256) % 256);
+					log_debug("input_conv: <--[%u]", (unsigned char)(input_conv[j]));
 				}
 #endif
 			}
