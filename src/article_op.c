@@ -123,7 +123,7 @@ int article_exc_set(SECTION_LIST *p_section, int32_t aid, int8_t is_exc)
 
 	// Check if already set
 	if (set_exc == excerption)
-	{		
+	{
 		snprintf(ret_msg, sizeof(ret_msg), "已%s文摘区", set_exc ? "收录" : "移出");
 		ret = 1;
 		goto cleanup;
