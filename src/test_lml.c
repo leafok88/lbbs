@@ -69,6 +69,7 @@ const char *str_in[] = {
 	": : 555555555555\n"
 	": : ",
 	"[image http://us.ent4.yimg.com/movies.yahoo.com/images/hv/photo/movie_pix/images/hv/photo/movie_pix/]\n",
+	"[tag-name-buffer-overflow abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789]\n",
 };
 
 const int str_cnt = sizeof(str_in) / sizeof(const char *);
