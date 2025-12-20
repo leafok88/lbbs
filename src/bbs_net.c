@@ -251,6 +251,39 @@ static void progress_bar(int percent, int len)
 	iflush();
 }
 
+static int progress_update(struct timespec *p_ts_begin, struct timespec *p_ts_now,
+						   int total_time_ms, int *p_progress_last, int bar_len)
+{
+	int progress;
+
+	if (clock_gettime(CLOCK_REALTIME, p_ts_now) == -1)
+	{
+		log_error("clock_gettime() error (%d)", errno);
+		return -1;
+	}
+
+	progress = (int)((p_ts_now->tv_sec - p_ts_begin->tv_sec) * 1000 +
+					 (p_ts_now->tv_nsec - p_ts_begin->tv_nsec) / 1000 / 1000) /
+				   REMOTE_CONNECT_TIMEOUT / 10 +
+			   1;
+	if (progress < 0)
+	{
+		progress = 0;
+	}
+	if (progress > 100)
+	{
+		progress = 100;
+	}
+
+	if (progress != *p_progress_last)
+	{
+		*p_progress_last = progress;
+		progress_bar(progress, PROGRESS_BAR_LEN);
+	}
+
+	return 0;
+}
+
 static int bbsnet_connect(int n)
 {
 	int sock = -1;
@@ -299,7 +332,7 @@ static int bbsnet_connect(int n)
 	socklen_t sock_len;
 	time_t t_begin, t_used;
 	struct timespec ts_begin, ts_now;
-	int progress, progress_last;
+	int progress_last = 0;
 	int ch;
 	char remote_user[USERNAME_MAX_LEN + 1];
 	char remote_pass[PASSWORD_MAX_LEN + 1];
@@ -357,7 +390,16 @@ static int bbsnet_connect(int n)
 	moveto(1, 1);
 	prints("\033[1;32m正在测试往 %s (%s) 的连接，请稍候... \033[m\r\n",
 		   bbsnet_conf[n].site_name, bbsnet_conf[n].host_name);
-	iflush();
+	prints("\033[1;32m连接进行中，按\033[1;33mCtrl+C\033[1;32m中断。\033[m\r\n");
+	progress_bar(0, PROGRESS_BAR_LEN);
+
+	if (clock_gettime(CLOCK_REALTIME, &ts_begin) == -1)
+	{
+		log_error("clock_gettime() error (%d)", errno);
+		ret = -1;
+		goto cleanup;
+	}
+	ts_now = ts_begin;
 
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_family = AF_INET;
@@ -488,8 +530,18 @@ static int bbsnet_connect(int n)
 	}
 #endif
 
-	while (!SYS_server_exit)
+	while ((ts_now.tv_sec - ts_begin.tv_sec) * 1000 +
+				   (ts_now.tv_nsec - ts_begin.tv_nsec) / 1000 / 1000 <
+			   REMOTE_CONNECT_TIMEOUT * 1000 &&
+		   !SYS_server_exit)
 	{
+		if (clock_gettime(CLOCK_REALTIME, &ts_now) == -1)
+		{
+			log_error("clock_gettime() error (%d)", errno);
+			ret = -1;
+			goto cleanup;
+		}
+
 		if ((ret = connect(sock, res->ai_addr, res->ai_addrlen)) == 0)
 		{
 			sock_connected = 1;
@@ -506,7 +558,6 @@ static int bbsnet_connect(int n)
 			}
 			else if (errno == EINTR)
 			{
-				continue;
 			}
 			else
 			{
@@ -516,26 +567,30 @@ static int bbsnet_connect(int n)
 				ret = -1;
 				goto cleanup;
 			}
+
+			if (progress_update(&ts_begin, &ts_now,
+								REMOTE_CONNECT_TIMEOUT * 1000,
+								&progress_last, PROGRESS_BAR_LEN) < 0)
+			{
+				log_error("progress_update() error");
+				ret = -1;
+				goto cleanup;
+			}
 		}
 	}
-
-	progress = progress_last = 0;
-	prints("\033[1;32m连接进行中，按\033[1;33mCtrl+C\033[1;32m中断。\033[m\r\n");
-	progress_bar(0, PROGRESS_BAR_LEN);
-
-	if (clock_gettime(CLOCK_REALTIME, &ts_begin) == -1)
-	{
-		log_error("clock_gettime() error (%d)", errno);
-		ret = -1;
-		goto cleanup;
-	}
-	ts_now = ts_begin;
 
 	while ((ts_now.tv_sec - ts_begin.tv_sec) * 1000 +
 				   (ts_now.tv_nsec - ts_begin.tv_nsec) / 1000 / 1000 <
 			   REMOTE_CONNECT_TIMEOUT * 1000 &&
 		   !sock_connected && !SYS_server_exit)
 	{
+		if (clock_gettime(CLOCK_REALTIME, &ts_now) == -1)
+		{
+			log_error("clock_gettime() error (%d)", errno);
+			ret = -1;
+			goto cleanup;
+		}
+
 #ifdef HAVE_SYS_EPOLL_H
 		nfds = epoll_wait(epollfd, events, MAX_EVENTS, 100); // 0.1 second
 		ret = nfds;
@@ -562,31 +617,6 @@ static int bbsnet_connect(int n)
 		}
 		else if (ret == 0) // timeout
 		{
-			if (clock_gettime(CLOCK_REALTIME, &ts_now) == -1)
-			{
-				log_error("clock_gettime() error (%d)", errno);
-				ret = -1;
-				goto cleanup;
-			}
-
-			progress = (int)((ts_now.tv_sec - ts_begin.tv_sec) * 1000 +
-							 (ts_now.tv_nsec - ts_begin.tv_nsec) / 1000 / 1000) /
-						   REMOTE_CONNECT_TIMEOUT / 10 +
-					   1;
-			if (progress < 0)
-			{
-				progress = 0;
-			}
-			if (progress > 100)
-			{
-				progress = 100;
-			}
-
-			if (progress > progress_last)
-			{
-				progress_last = progress;
-				progress_bar(progress, PROGRESS_BAR_LEN);
-			}
 		}
 		else // ret > 0
 		{
@@ -628,6 +658,15 @@ static int bbsnet_connect(int n)
 					}
 				}
 			}
+		}
+
+		if (progress_update(&ts_begin, &ts_now,
+							REMOTE_CONNECT_TIMEOUT * 1000,
+							&progress_last, PROGRESS_BAR_LEN) < 0)
+		{
+			log_error("progress_update() error");
+			ret = -1;
+			goto cleanup;
 		}
 	}
 	if (SYS_server_exit)
@@ -693,8 +732,18 @@ static int bbsnet_connect(int n)
 
 		t_begin = time(NULL);
 		ret = SSH_ERROR;
-		while (!SYS_server_exit && time(NULL) - t_begin < SSH_CONNECT_TIMEOUT)
+		while ((ts_now.tv_sec - ts_begin.tv_sec) * 1000 +
+					   (ts_now.tv_nsec - ts_begin.tv_nsec) / 1000 / 1000 <
+				   REMOTE_CONNECT_TIMEOUT * 1000 &&
+			   !SYS_server_exit)
 		{
+			if (clock_gettime(CLOCK_REALTIME, &ts_now) == -1)
+			{
+				log_error("clock_gettime() error (%d)", errno);
+				ret = -1;
+				goto cleanup;
+			}
+
 			ret = ssh_connect(outbound_session);
 			if (ret == SSH_OK)
 			{
@@ -710,9 +759,19 @@ static int bbsnet_connect(int n)
 				ret = -1;
 				goto cleanup;
 			}
+
+			if (progress_update(&ts_begin, &ts_now,
+								REMOTE_CONNECT_TIMEOUT * 1000,
+								&progress_last, PROGRESS_BAR_LEN) < 0)
+			{
+				log_error("progress_update() error");
+				ret = -1;
+				goto cleanup;
+			}
 		}
 		if (ret != SSH_OK)
 		{
+			progress_bar(100, PROGRESS_BAR_LEN);
 			prints("\033[1;31m连接超时！\033[m\r\n");
 			press_any_key();
 			ret = -1;
@@ -745,8 +804,18 @@ static int bbsnet_connect(int n)
 		}
 
 		ret = SSH_AUTH_ERROR;
-		while (!SYS_server_exit && time(NULL) - t_begin < SSH_CONNECT_TIMEOUT)
+		while ((ts_now.tv_sec - ts_begin.tv_sec) * 1000 +
+					   (ts_now.tv_nsec - ts_begin.tv_nsec) / 1000 / 1000 <
+				   REMOTE_CONNECT_TIMEOUT * 1000 &&
+			   !SYS_server_exit)
 		{
+			if (clock_gettime(CLOCK_REALTIME, &ts_now) == -1)
+			{
+				log_error("clock_gettime() error (%d)", errno);
+				ret = -1;
+				goto cleanup;
+			}
+
 			ret = ssh_userauth_password(outbound_session, NULL, remote_pass);
 			if (ret == SSH_AUTH_SUCCESS)
 			{
@@ -764,15 +833,25 @@ static int bbsnet_connect(int n)
 			}
 			else // if (ret == SSH_AUTH_DENIED)
 			{
-				log_error("ssh_userauth_password() error: SSH_AUTH_DENIED");
+				log_debug("ssh_userauth_password() error: SSH_AUTH_DENIED");
 				prints("\033[1;31m身份验证失败！\033[m\r\n");
 				press_any_key();
+				ret = 0;
+				goto cleanup;
+			}
+
+			if (progress_update(&ts_begin, &ts_now,
+								REMOTE_CONNECT_TIMEOUT * 1000,
+								&progress_last, PROGRESS_BAR_LEN) < 0)
+			{
+				log_error("progress_update() error");
 				ret = -1;
 				goto cleanup;
 			}
 		}
 		if (ret != SSH_AUTH_SUCCESS)
 		{
+			progress_bar(100, PROGRESS_BAR_LEN);
 			prints("\033[1;31m连接超时！\033[m\r\n");
 			press_any_key();
 			ret = -1;
@@ -788,8 +867,18 @@ static int bbsnet_connect(int n)
 		}
 
 		ret = SSH_ERROR;
-		while (!SYS_server_exit && time(NULL) - t_begin < SSH_CONNECT_TIMEOUT)
+		while ((ts_now.tv_sec - ts_begin.tv_sec) * 1000 +
+					   (ts_now.tv_nsec - ts_begin.tv_nsec) / 1000 / 1000 <
+				   REMOTE_CONNECT_TIMEOUT * 1000 &&
+			   !SYS_server_exit)
 		{
+			if (clock_gettime(CLOCK_REALTIME, &ts_now) == -1)
+			{
+				log_error("clock_gettime() error (%d)", errno);
+				ret = -1;
+				goto cleanup;
+			}
+
 			ret = ssh_channel_open_session(outbound_channel);
 			if (ret == SSH_OK)
 			{
@@ -805,9 +894,19 @@ static int bbsnet_connect(int n)
 				ret = -1;
 				goto cleanup;
 			}
+
+			if (progress_update(&ts_begin, &ts_now,
+								REMOTE_CONNECT_TIMEOUT * 1000,
+								&progress_last, PROGRESS_BAR_LEN) < 0)
+			{
+				log_error("progress_update() error");
+				ret = -1;
+				goto cleanup;
+			}
 		}
 		if (ret != SSH_OK)
 		{
+			progress_bar(100, PROGRESS_BAR_LEN);
 			prints("\033[1;31m连接超时！\033[m\r\n");
 			press_any_key();
 			ret = -1;
@@ -815,8 +914,18 @@ static int bbsnet_connect(int n)
 		}
 
 		ret = SSH_ERROR;
-		while (!SYS_server_exit && time(NULL) - t_begin < SSH_CONNECT_TIMEOUT)
+		while ((ts_now.tv_sec - ts_begin.tv_sec) * 1000 +
+					   (ts_now.tv_nsec - ts_begin.tv_nsec) / 1000 / 1000 <
+				   REMOTE_CONNECT_TIMEOUT * 1000 &&
+			   !SYS_server_exit)
 		{
+			if (clock_gettime(CLOCK_REALTIME, &ts_now) == -1)
+			{
+				log_error("clock_gettime() error (%d)", errno);
+				ret = -1;
+				goto cleanup;
+			}
+
 			ret = ssh_channel_request_pty(outbound_channel);
 			if (ret == SSH_OK)
 			{
@@ -832,9 +941,19 @@ static int bbsnet_connect(int n)
 				ret = -1;
 				goto cleanup;
 			}
+
+			if (progress_update(&ts_begin, &ts_now,
+								REMOTE_CONNECT_TIMEOUT * 1000,
+								&progress_last, PROGRESS_BAR_LEN) < 0)
+			{
+				log_error("progress_update() error");
+				ret = -1;
+				goto cleanup;
+			}
 		}
 		if (ret != SSH_OK)
 		{
+			progress_bar(100, PROGRESS_BAR_LEN);
 			prints("\033[1;31m连接超时！\033[m\r\n");
 			press_any_key();
 			ret = -1;
@@ -842,8 +961,18 @@ static int bbsnet_connect(int n)
 		}
 
 		ret = SSH_ERROR;
-		while (!SYS_server_exit && time(NULL) - t_begin < SSH_CONNECT_TIMEOUT)
+		while ((ts_now.tv_sec - ts_begin.tv_sec) * 1000 +
+					   (ts_now.tv_nsec - ts_begin.tv_nsec) / 1000 / 1000 <
+				   REMOTE_CONNECT_TIMEOUT * 1000 &&
+			   !SYS_server_exit)
 		{
+			if (clock_gettime(CLOCK_REALTIME, &ts_now) == -1)
+			{
+				log_error("clock_gettime() error (%d)", errno);
+				ret = -1;
+				goto cleanup;
+			}
+
 			ret = ssh_channel_request_shell(outbound_channel);
 			if (ret == SSH_OK)
 			{
@@ -859,9 +988,19 @@ static int bbsnet_connect(int n)
 				ret = -1;
 				goto cleanup;
 			}
+
+			if (progress_update(&ts_begin, &ts_now,
+								REMOTE_CONNECT_TIMEOUT * 1000,
+								&progress_last, PROGRESS_BAR_LEN) < 0)
+			{
+				log_error("progress_update() error");
+				ret = -1;
+				goto cleanup;
+			}
 		}
 		if (ret != SSH_OK)
 		{
+			progress_bar(100, PROGRESS_BAR_LEN);
 			prints("\033[1;31m连接超时！\033[m\r\n");
 			press_any_key();
 			ret = -1;
