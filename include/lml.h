@@ -14,6 +14,9 @@
 
 extern clock_t lml_total_exec_duration; // For testing purpose
 
+extern int lml_init(void);
+extern void lml_cleanup(void);
+
 extern int lml_render(const char *str_in, char *str_out, int buf_len, int width, int quote_mode);
 
 #endif //_LML_H_

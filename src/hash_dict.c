@@ -42,14 +42,14 @@ HASH_DICT *hash_dict_create(int item_count_limit)
 
 	if (item_count_limit <= 0)
 	{
-		log_error("Invalid item_count_limit(%d)<=0\n", item_count_limit);
+		log_error("Invalid item_count_limit(%d)<=0", item_count_limit);
 		return NULL;
 	}
 
 	p_dict = (HASH_DICT *)malloc(sizeof(HASH_DICT));
 	if (p_dict == NULL)
 	{
-		log_error("malloc(HASH_DICT) error\n");
+		log_error("malloc(HASH_DICT) error");
 		return NULL;
 	}
 
@@ -68,7 +68,7 @@ HASH_DICT *hash_dict_create(int item_count_limit)
 	p_dict->p_item_pool = memory_pool_init(sizeof(HASH_ITEM), MP_NODE_COUNT_PER_CHUNK, item_count_limit / MP_NODE_COUNT_PER_CHUNK + 1);
 	if (p_dict->p_item_pool == NULL)
 	{
-		log_error("memory_pool_init(HASH_ITEM) error\n");
+		log_error("memory_pool_init(HASH_ITEM) error");
 		free(p_dict);
 		return NULL;
 	}
@@ -78,7 +78,7 @@ HASH_DICT *hash_dict_create(int item_count_limit)
 		p_dict->buckets[i] = calloc(HASH_DICT_BUCKET_SIZE, sizeof(HASH_ITEM *));
 		if (p_dict->buckets[i] == NULL)
 		{
-			log_error("calloc(HASH_DICT_BUCKET_SIZE, HASH_ITEM) error at bucket %d\n", i);
+			log_error("calloc(HASH_DICT_BUCKET_SIZE, HASH_ITEM) error at bucket %d", i);
 			p_dict->bucket_count = i;
 			hash_dict_destroy(p_dict);
 			return NULL;
@@ -127,7 +127,7 @@ int hash_dict_set(HASH_DICT *p_dict, uint64_t key, int64_t value)
 
 	if (p_dict == NULL)
 	{
-		log_error("NULL pointer error\n");
+		log_error("NULL pointer error");
 		return -1;
 	}
 
@@ -148,7 +148,7 @@ int hash_dict_set(HASH_DICT *p_dict, uint64_t key, int64_t value)
 	p_item = (HASH_ITEM *)memory_pool_alloc(p_dict->p_item_pool);
 	if (p_item == NULL)
 	{
-		log_error("memory_pool_alloc(HASH_ITEM) error\n");
+		log_error("memory_pool_alloc(HASH_ITEM) error");
 		return -1;
 	}
 
@@ -170,7 +170,7 @@ int hash_dict_inc(HASH_DICT *p_dict, uint64_t key, int64_t value_inc)
 
 	if (p_dict == NULL)
 	{
-		log_error("NULL pointer error\n");
+		log_error("NULL pointer error");
 		return -1;
 	}
 
@@ -199,7 +199,7 @@ int hash_dict_get(HASH_DICT *p_dict, uint64_t key, int64_t *p_value)
 
 	if (p_dict == NULL || p_value == NULL)
 	{
-		log_error("NULL pointer error\n");
+		log_error("NULL pointer error");
 		return -1;
 	}
 
@@ -229,7 +229,7 @@ int hash_dict_del(HASH_DICT *p_dict, uint64_t key)
 
 	if (p_dict == NULL)
 	{
-		log_error("NULL pointer error\n");
+		log_error("NULL pointer error");
 		return -1;
 	}
 

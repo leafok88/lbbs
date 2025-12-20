@@ -38,21 +38,21 @@ int editor_memory_pool_init(void)
 {
 	if (p_mp_data_line != NULL || p_mp_editor_data != NULL)
 	{
-		log_error("Editor mem pool already initialized\n");
+		log_error("Editor mem pool already initialized");
 		return -1;
 	}
 
 	p_mp_data_line = memory_pool_init(MAX_EDITOR_DATA_LINE_LENGTH, EDITOR_MEM_POOL_LINE_PER_CHUNK, EDITOR_MEM_POOL_CHUNK_LIMIT);
 	if (p_mp_data_line == NULL)
 	{
-		log_error("Memory pool init error\n");
+		log_error("Memory pool init error");
 		return -2;
 	}
 
 	p_mp_editor_data = memory_pool_init(sizeof(EDITOR_DATA), 1, 1);
 	if (p_mp_editor_data == NULL)
 	{
-		log_error("Memory pool init error\n");
+		log_error("Memory pool init error");
 		return -3;
 	}
 
@@ -85,14 +85,14 @@ EDITOR_DATA *editor_data_load(const char *p_data)
 
 	if (p_data == NULL)
 	{
-		log_error("NULL pointer error\n");
+		log_error("NULL pointer error");
 		return NULL;
 	}
 
 	p_editor_data = memory_pool_alloc(p_mp_editor_data);
 	if (p_editor_data == NULL)
 	{
-		log_error("memory_pool_alloc() error\n");
+		log_error("memory_pool_alloc() error");
 		return NULL;
 	}
 
@@ -111,7 +111,7 @@ EDITOR_DATA *editor_data_load(const char *p_data)
 			p_data_line = memory_pool_alloc(p_mp_data_line);
 			if (p_data_line == NULL)
 			{
-				log_error("memory_pool_alloc() error: i = %d\n", i);
+				log_error("memory_pool_alloc() error: i = %d", i);
 				// Cleanup
 				editor_data_cleanup(p_editor_data);
 				return NULL;
@@ -161,7 +161,7 @@ long editor_data_save(const EDITOR_DATA *p_editor_data, char *p_data, size_t buf
 
 	if (p_editor_data == NULL || p_data == NULL)
 	{
-		log_error("NULL pointer error\n");
+		log_error("NULL pointer error");
 		return -1;
 	}
 
@@ -169,7 +169,7 @@ long editor_data_save(const EDITOR_DATA *p_editor_data, char *p_data, size_t buf
 	{
 		if (current_pos + p_editor_data->display_line_lengths[i] + 1 > buf_len)
 		{
-			log_error("Data buffer not longer enough %d > %d\n", current_pos + p_editor_data->display_line_lengths[i] + 1, buf_len);
+			log_error("Data buffer not longer enough %d > %d", current_pos + p_editor_data->display_line_lengths[i] + 1, buf_len);
 			p_data[current_pos] = '\0';
 			return -2;
 		}
@@ -235,7 +235,7 @@ int editor_data_insert(EDITOR_DATA *p_editor_data, long *p_display_line, long *p
 
 	if (p_editor_data == NULL || p_last_updated_line == NULL)
 	{
-		log_error("NULL pointer error\n");
+		log_error("NULL pointer error");
 		return -1;
 	}
 
@@ -272,7 +272,7 @@ int editor_data_insert(EDITOR_DATA *p_editor_data, long *p_display_line, long *p
 	{
 		if (p_editor_data->display_line_total >= MAX_EDITOR_DATA_LINES)
 		{
-			log_debug("Split line error, display_line_total(%ld) reach limit(%d)\n",
+			log_debug("Split line error, display_line_total(%ld) reach limit(%d)",
 					  p_editor_data->display_line_total, MAX_EDITOR_DATA_LINES);
 
 			return -2;
@@ -282,7 +282,7 @@ int editor_data_insert(EDITOR_DATA *p_editor_data, long *p_display_line, long *p
 		p_data_line = memory_pool_alloc(p_mp_data_line);
 		if (p_data_line == NULL)
 		{
-			log_error("memory_pool_alloc() error\n");
+			log_error("memory_pool_alloc() error");
 			return -2;
 		}
 
@@ -367,7 +367,7 @@ int editor_data_insert(EDITOR_DATA *p_editor_data, long *p_display_line, long *p
 			// Insert blank display line after last_display_line
 			if (p_editor_data->display_line_total >= MAX_EDITOR_DATA_LINES)
 			{
-				log_debug("display_line_total over limit %d >= %d\n", p_editor_data->display_line_total, MAX_EDITOR_DATA_LINES);
+				log_debug("display_line_total over limit %d >= %d", p_editor_data->display_line_total, MAX_EDITOR_DATA_LINES);
 
 				// Terminate prior display line with \n, to avoid error on cleanup
 				if (display_line + i - 1 >= 0 && p_editor_data->display_line_lengths[display_line + i - 1] > 0)
@@ -469,7 +469,7 @@ int editor_data_delete(EDITOR_DATA *p_editor_data, long *p_display_line, long *p
 
 	if (p_editor_data == NULL || p_last_updated_line == NULL)
 	{
-		log_error("NULL pointer error\n");
+		log_error("NULL pointer error");
 		return -1;
 	}
 
@@ -527,7 +527,7 @@ int editor_data_delete(EDITOR_DATA *p_editor_data, long *p_display_line, long *p
 	}
 	else
 	{
-		log_error("Some strange character at display_line %ld, offset %ld: %d %d\n",
+		log_error("Some strange character at display_line %ld, offset %ld: %d %d",
 				  display_line, offset, p_data_line[offset_data_line], p_data_line[offset_data_line + 1]);
 		str_len = 1;
 	}
@@ -759,7 +759,7 @@ int editor_display(EDITOR_DATA *p_editor_data)
 						ch = igetch(100);						 // 0.1 second
 						if (ch == KEY_NULL || ch == KEY_TIMEOUT) // Ignore received bytes if no futher input
 						{
-							log_debug("Ignore %d bytes of incomplete UTF8 character\n", str_len);
+							log_debug("Ignore %d bytes of incomplete UTF8 character", str_len);
 							str_len = 0;
 							break;
 						}
@@ -773,7 +773,7 @@ int editor_display(EDITOR_DATA *p_editor_data)
 					// Refresh current action while user input
 					if (user_online_update(NULL) < 0)
 					{
-						log_error("user_online_update(NULL) error\n");
+						log_error("user_online_update(NULL) error");
 					}
 
 					if (str_len == 0) // ch >= 32 && ch < 127
@@ -794,14 +794,14 @@ int editor_display(EDITOR_DATA *p_editor_data)
 						if (editor_data_delete(p_editor_data, &display_line_out, &offset_out,
 											   &last_updated_line, 0) < 0)
 						{
-							log_error("editor_data_delete() error\n");
+							log_error("editor_data_delete() error");
 						}
 					}
 
 					if (editor_data_insert(p_editor_data, &display_line_out, &offset_out,
 										   input_str, str_len, &last_updated_line) < 0)
 					{
-						log_error("editor_data_insert(str_len=%d) error\n", str_len);
+						log_error("editor_data_insert(str_len=%d) error", str_len);
 					}
 					else
 					{
@@ -844,7 +844,7 @@ int editor_display(EDITOR_DATA *p_editor_data)
 							{
 								if (mbstowcs(wcs, input_str, 1) == (size_t)-1)
 								{
-									log_error("mbstowcs() error\n");
+									log_error("mbstowcs() error");
 								}
 								col_pos += (str_len == 1 ? 1 : (UTF8_fixed_width ? 2 : wcwidth(wcs[0])));
 							}
@@ -877,7 +877,7 @@ int editor_display(EDITOR_DATA *p_editor_data)
 					// Refresh current action while user input
 					if (user_online_update(NULL) < 0)
 					{
-						log_error("user_online_update(NULL) error\n");
+						log_error("user_online_update(NULL) error");
 					}
 
 					del_line = 0;
@@ -916,7 +916,7 @@ int editor_display(EDITOR_DATA *p_editor_data)
 					if ((str_len = editor_data_delete(p_editor_data, &display_line_out, &offset_out,
 													  &last_updated_line, del_line)) < 0)
 					{
-						log_error("editor_data_delete() error: %d\n", str_len);
+						log_error("editor_data_delete() error: %d", str_len);
 					}
 					else
 					{
@@ -968,10 +968,10 @@ int editor_display(EDITOR_DATA *p_editor_data)
 				switch (ch)
 				{
 				case KEY_NULL:
-					log_debug("KEY_NULL\n");
+					log_debug("KEY_NULL");
 					goto cleanup;
 				case KEY_TIMEOUT:
-					log_debug("User input timeout\n");
+					log_debug("User input timeout");
 					goto cleanup;
 				case Ctrl('W'):
 				case Ctrl('X'):
@@ -1065,13 +1065,13 @@ int editor_display(EDITOR_DATA *p_editor_data)
 
 							if (str_len > 4)
 							{
-								log_error("Invalid UTF-8 data detected: str_len > 4\n");
+								log_error("Invalid UTF-8 data detected: str_len > 4");
 							}
 
 							if (mbstowcs(wcs, p_editor_data->p_display_lines[line_current - output_current_row + row_pos] + offset_in, 1) ==
 								(size_t)-1)
 							{
-								log_error("mbstowcs() error\n");
+								log_error("mbstowcs() error");
 							}
 							wc_len = (UTF8_fixed_width ? 2 : wcwidth(wcs[0]));
 
@@ -1124,13 +1124,13 @@ int editor_display(EDITOR_DATA *p_editor_data)
 
 							if (str_len > 4)
 							{
-								log_error("Invalid UTF-8 data detected: str_len > 4\n");
+								log_error("Invalid UTF-8 data detected: str_len > 4");
 							}
 
 							if (mbstowcs(wcs, p_editor_data->p_display_lines[line_current - output_current_row + row_pos] + offset_in, 1) ==
 								(size_t)-1)
 							{
-								log_error("mbstowcs() error\n");
+								log_error("mbstowcs() error");
 							}
 							wc_len = (UTF8_fixed_width ? 2 : wcwidth(wcs[0]));
 
@@ -1229,7 +1229,7 @@ int editor_display(EDITOR_DATA *p_editor_data)
 				// Refresh current action while user input
 				if (user_online_update(NULL) < 0)
 				{
-					log_error("user_online_update(NULL) error\n");
+					log_error("user_online_update(NULL) error");
 				}
 
 				if (input_ok)
@@ -1246,12 +1246,12 @@ int editor_display(EDITOR_DATA *p_editor_data)
 		len = p_editor_data->display_line_lengths[line_current];
 		if (len >= sizeof(buffer))
 		{
-			log_error("Buffer overflow: len=%ld line=%ld \n", len, line_current);
+			log_error("Buffer overflow: len=%ld line=%ld ", len, line_current);
 			len = sizeof(buffer) - 1;
 		}
 		else if (len < 0)
 		{
-			log_error("Incorrect line offsets: len=%ld line=%ld \n", len, line_current);
+			log_error("Incorrect line offsets: len=%ld line=%ld ", len, line_current);
 			len = 0;
 		}
 

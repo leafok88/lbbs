@@ -47,13 +47,13 @@ int money_deposit(int money)
 	// Begin transaction
 	if (mysql_query(db, "SET autocommit=0") != 0)
 	{
-		log_error("SET autocommit=0 error: %s\n", mysql_error(db));
+		log_error("SET autocommit=0 error: %s", mysql_error(db));
 		return -1;
 	}
 
 	if (mysql_query(db, "BEGIN") != 0)
 	{
-		log_error("Begin transaction error: %s\n", mysql_error(db));
+		log_error("Begin transaction error: %s", mysql_error(db));
 		return -1;
 	}
 
@@ -63,12 +63,12 @@ int money_deposit(int money)
 
 	if (mysql_query(db, sql) != 0)
 	{
-		log_error("Query user_pubinfo error: %s\n", mysql_error(db));
+		log_error("Query user_pubinfo error: %s", mysql_error(db));
 		return -1;
 	}
 	if ((rs = mysql_store_result(db)) == NULL)
 	{
-		log_error("Get user money failed\n");
+		log_error("Get user money failed");
 		return -1;
 	}
 	if ((row = mysql_fetch_row(rs)))
@@ -99,14 +99,14 @@ int money_deposit(int money)
 
 	if (mysql_query(db, sql) != 0)
 	{
-		log_error("Update user_pubinfo error: %s\n", mysql_error(db));
+		log_error("Update user_pubinfo error: %s", mysql_error(db));
 		return -1;
 	}
 
 	// Commit transaction
 	if (mysql_query(db, "COMMIT") != 0)
 	{
-		log_error("Commit transaction error: %s\n", mysql_error(db));
+		log_error("Commit transaction error: %s", mysql_error(db));
 		return -1;
 	}
 
@@ -137,13 +137,13 @@ int money_withdraw(int money)
 	// Begin transaction
 	if (mysql_query(db, "SET autocommit=0") != 0)
 	{
-		log_error("SET autocommit=0 error: %s\n", mysql_error(db));
+		log_error("SET autocommit=0 error: %s", mysql_error(db));
 		return -1;
 	}
 
 	if (mysql_query(db, "BEGIN") != 0)
 	{
-		log_error("Begin transaction error: %s\n", mysql_error(db));
+		log_error("Begin transaction error: %s", mysql_error(db));
 		return -1;
 	}
 
@@ -153,12 +153,12 @@ int money_withdraw(int money)
 
 	if (mysql_query(db, sql) != 0)
 	{
-		log_error("Query user_pubinfo error: %s\n", mysql_error(db));
+		log_error("Query user_pubinfo error: %s", mysql_error(db));
 		return -1;
 	}
 	if ((rs = mysql_store_result(db)) == NULL)
 	{
-		log_error("Get user money failed\n");
+		log_error("Get user money failed");
 		return -1;
 	}
 	if ((row = mysql_fetch_row(rs)))
@@ -184,14 +184,14 @@ int money_withdraw(int money)
 
 	if (mysql_query(db, sql) != 0)
 	{
-		log_error("Update user_pubinfo error: %s\n", mysql_error(db));
+		log_error("Update user_pubinfo error: %s", mysql_error(db));
 		return -1;
 	}
 
 	// Commit transaction
 	if (mysql_query(db, "COMMIT") != 0)
 	{
-		log_error("Commit transaction error: %s\n", mysql_error(db));
+		log_error("Commit transaction error: %s", mysql_error(db));
 		return -1;
 	}
 
@@ -219,12 +219,12 @@ int money_refresh(void)
 
 	if (mysql_query(db, sql) != 0)
 	{
-		log_error("Query user_pubinfo error: %s\n", mysql_error(db));
+		log_error("Query user_pubinfo error: %s", mysql_error(db));
 		return -1;
 	}
 	if ((rs = mysql_store_result(db)) == NULL)
 	{
-		log_error("Get user money failed\n");
+		log_error("Get user money failed");
 		return -1;
 	}
 	if ((row = mysql_fetch_row(rs)))

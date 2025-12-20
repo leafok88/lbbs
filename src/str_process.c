@@ -76,7 +76,7 @@ int str_length(const char *str, int skip_ctrl_seq)
 
 			if (mbstowcs(wcs, input_str, 1) == (size_t)-1)
 			{
-				log_debug("mbstowcs(%s) error\n", input_str);
+				log_debug("mbstowcs(%s) error", input_str);
 				wc_len = (UTF8_fixed_width ? 2 : 1); // Fallback
 			}
 			else
@@ -140,7 +140,7 @@ int split_line(const char *buffer, int max_display_len, int *p_eol, int *p_displ
 
 			if (mbstowcs(wcs, input_str, 1) == (size_t)-1)
 			{
-				log_debug("mbstowcs(%s) error\n", input_str);
+				log_debug("mbstowcs(%s) error", input_str);
 				wc_len = (UTF8_fixed_width ? 2 : 1); // Fallback
 			}
 			else
@@ -199,7 +199,7 @@ long split_data_lines(const char *p_buf, int max_display_len, long *p_line_offse
 		// Exceed max_line_cnt
 		if (line_cnt + 1 >= line_offsets_count)
 		{
-			log_debug("Line count %d reaches limit %d\n", line_cnt + 1, line_offsets_count);
+			log_debug("Line count %d reaches limit %d", line_cnt + 1, line_offsets_count);
 			return line_cnt;
 		}
 

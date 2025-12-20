@@ -75,7 +75,7 @@ static int user_list_draw_items(int page_id, USER_INFO *p_users, int user_count)
 		p_tm = gmtime(&tm_duration);
 		if (p_tm == NULL)
 		{
-			log_error("Invalid time duration\n");
+			log_error("Invalid time duration");
 			str_time_login[0] = '\0';
 		}
 		else if (p_tm->tm_year > 70)
@@ -135,7 +135,7 @@ static int user_online_list_draw_items(int page_id, USER_ONLINE_INFO *p_users, i
 		p_tm = gmtime(&tm_duration);
 		if (p_tm == NULL)
 		{
-			log_error("Invalid time duration\n");
+			log_error("Invalid time duration");
 			str_time_login[0] = '\0';
 		}
 		else if (p_tm->tm_yday > 0)
@@ -158,7 +158,7 @@ static int user_online_list_draw_items(int page_id, USER_ONLINE_INFO *p_users, i
 		p_tm = gmtime(&tm_duration);
 		if (p_tm == NULL)
 		{
-			log_error("Invalid time duration\n");
+			log_error("Invalid time duration");
 			str_time_idle[0] = '\0';
 		}
 		else if (p_tm->tm_min > 0)
@@ -222,21 +222,21 @@ static enum select_cmd_t user_list_select(int total_page, int item_count, int *p
 			// Refresh current action
 			if (user_online_update(NULL) < 0)
 			{
-				log_error("user_online_update(NULL) error\n");
+				log_error("user_online_update(NULL) error");
 			}
 		}
 
 		switch (ch)
 		{
 		case KEY_NULL: // broken pipe
-			log_debug("KEY_NULL\n");
+			log_debug("KEY_NULL");
 		case KEY_ESC:
 		case KEY_LEFT:
 			return EXIT_LIST; // exit list
 		case KEY_TIMEOUT:
 			if (time(NULL) - BBS_last_access_tm >= BBS_max_user_idle_time)
 			{
-				log_debug("User input timeout\n");
+				log_debug("User input timeout");
 				return EXIT_LIST; // exit list
 			}
 			continue;
@@ -364,7 +364,7 @@ int user_list_display(int online_user)
 		ret = query_user_online_list(page_id, online_users, &user_count, &page_count);
 		if (ret < 0)
 		{
-			log_error("query_user_online_list(page_id=%d) error\n", page_id);
+			log_error("query_user_online_list(page_id=%d) error", page_id);
 			return -2;
 		}
 	}
@@ -373,7 +373,7 @@ int user_list_display(int online_user)
 		ret = query_user_list(page_id, users, &user_count, &page_count);
 		if (ret < 0)
 		{
-			log_error("query_user_list(page_id=%d) error\n", page_id);
+			log_error("query_user_list(page_id=%d) error", page_id);
 			return -2;
 		}
 	}
@@ -390,7 +390,7 @@ int user_list_display(int online_user)
 			ret = user_online_list_draw_items(page_id, online_users, user_count);
 			if (ret < 0)
 			{
-				log_error("user_online_list_draw_items(page_id=%d) error\n", page_id);
+				log_error("user_online_list_draw_items(page_id=%d) error", page_id);
 				return -3;
 			}
 		}
@@ -399,7 +399,7 @@ int user_list_display(int online_user)
 			ret = user_list_draw_items(page_id, users, user_count);
 			if (ret < 0)
 			{
-				log_error("user_list_draw_items(page_id=%d) error\n", page_id);
+				log_error("user_list_draw_items(page_id=%d) error", page_id);
 				return -3;
 			}
 		}
@@ -413,7 +413,7 @@ int user_list_display(int online_user)
 
 		if (user_online_update(online_user ? "USER_ONLINE" : "USER_LIST") < 0)
 		{
-			log_error("user_online_update(%s) error\n",
+			log_error("user_online_update(%s) error",
 					  (online_user ? "USER_ONLINE" : "USER_LIST"));
 		}
 
@@ -429,7 +429,7 @@ int user_list_display(int online_user)
 				ret = query_user_online_list(page_id, online_users, &user_count, &page_count);
 				if (ret < 0)
 				{
-					log_error("query_user_online_list(page_id=%d) error\n", page_id);
+					log_error("query_user_online_list(page_id=%d) error", page_id);
 					return -2;
 				}
 			}
@@ -438,7 +438,7 @@ int user_list_display(int online_user)
 				ret = query_user_list(page_id, users, &user_count, &page_count);
 				if (ret < 0)
 				{
-					log_error("query_user_list(page_id=%d) error\n", page_id);
+					log_error("query_user_list(page_id=%d) error", page_id);
 					return -2;
 				}
 			}
@@ -466,7 +466,7 @@ int user_list_display(int online_user)
 			user_list_draw_screen(online_user);
 			break;
 		default:
-			log_error("Unknown command %d\n", ret);
+			log_error("Unknown command %d", ret);
 		}
 	}
 
@@ -529,7 +529,7 @@ int user_list_search(void)
 
 		if (ret < 0)
 		{
-			log_error("query_user_info_by_username(%s) error\n", username);
+			log_error("query_user_info_by_username(%s) error", username);
 			return -1;
 		}
 		else if (ret > 1)
@@ -583,12 +583,12 @@ int user_list_search(void)
 		{
 			if (query_user_info_by_uid(uid_list[0], &user_info, user_intro, sizeof(user_intro)) <= 0)
 			{
-				log_error("query_user_info_by_uid(uid=%d) error\n", uid_list[0]);
+				log_error("query_user_info_by_uid(uid=%d) error", uid_list[0]);
 				return -2;
 			}
 			else if (user_info_display(&user_info) < 0)
 			{
-				log_error("user_info_display(uid=%d) error\n", uid_list[0]);
+				log_error("user_info_display(uid=%d) error", uid_list[0]);
 				return -3;
 			}
 			return 1;

@@ -73,7 +73,7 @@ int main(int argc, char *argv[])
 
 			if (detach_file_shm(p_shm) < 0)
 			{
-				log_error("detach_file_shm(%s) error\n", files[i]);
+				log_error("detach_file_shm(%s) error", files[i]);
 			}
 		}
 	}
@@ -123,7 +123,7 @@ int main(int argc, char *argv[])
 
 				if (detach_file_shm(p_shm) < 0)
 				{
-					log_error("detach_file_shm(%s) error\n", files[i]);
+					log_error("detach_file_shm(%s) error", files[i]);
 				}
 			}
 		}

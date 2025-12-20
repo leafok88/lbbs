@@ -159,7 +159,7 @@ int reload_bbs_conf(void *param)
 
 	if (kill(getppid(), SIGHUP) < 0)
 	{
-		log_error("Send SIGHUP signal failed (%d)\n", errno);
+		log_error("Send SIGHUP signal failed (%d)", errno);
 
 		prints("发送指令失败\r\n");
 	}
@@ -182,11 +182,11 @@ int shutdown_bbs(void *param)
 
 	if (toupper(buf[0]) == 'Y')
 	{
-		log_common("Notify main process to exit by [%s]\n", BBS_username);
+		log_common("Notify main process to exit by [%s]", BBS_username);
 
 		if (kill(getppid(), SIGTERM) < 0)
 		{
-			log_error("Send SIGTERM signal failed (%d)\n", errno);
+			log_error("Send SIGTERM signal failed (%d)", errno);
 		}
 	}
 
@@ -227,19 +227,19 @@ int view_ex_article(void *param)
 	p_article = article_block_find_by_aid(aid);
 	if (p_article == NULL)
 	{
-		log_error("article_block_find_by_aid(%d) error\n", aid);
+		log_error("article_block_find_by_aid(%d) error", aid);
 		return NOREDRAW;
 	}
 
 	if (article_cache_load(&cache, VAR_ARTICLE_CACHE_DIR, p_article) < 0)
 	{
-		log_error("article_cache_load(aid=%d, cid=%d) error\n", p_article->aid, p_article->cid);
+		log_error("article_cache_load(aid=%d, cid=%d) error", p_article->aid, p_article->cid);
 		return NOREDRAW;
 	}
 
 	if (user_online_update("VIEW_ARTICLE") < 0)
 	{
-		log_error("user_online_update(VIEW_ARTICLE) error\n");
+		log_error("user_online_update(VIEW_ARTICLE) error");
 	}
 
 	ret = display_data(cache.p_data, cache.line_total, cache.line_offsets, 0,
@@ -247,13 +247,13 @@ int view_ex_article(void *param)
 
 	if (article_cache_unload(&cache) < 0)
 	{
-		log_error("article_cache_unload(aid=%d, cid=%d) error\n", p_article->aid, p_article->cid);
+		log_error("article_cache_unload(aid=%d, cid=%d) error", p_article->aid, p_article->cid);
 	}
 
 	// Update article_view_log
 	if (article_view_log_set_viewed(p_article->aid, &BBS_article_view_log) < 0)
 	{
-		log_error("article_view_log_set_viewed(aid=%d) error\n", p_article->aid);
+		log_error("article_view_log_set_viewed(aid=%d) error", p_article->aid);
 	}
 
 	return REDRAW;
@@ -266,13 +266,13 @@ int list_ex_section(void *param)
 	p_section = section_list_find_by_name(param);
 	if (p_section == NULL)
 	{
-		log_error("Section %s not found\n", (const char *)param);
+		log_error("Section %s not found", (const char *)param);
 		return -1;
 	}
 
 	if (section_list_ex_dir_display(p_section) < 0)
 	{
-		log_error("section_list_ex_dir_display(sid=%d) error\n", p_section->sid);
+		log_error("section_list_ex_dir_display(sid=%d) error", p_section->sid);
 	}
 
 	return REDRAW;
@@ -308,19 +308,19 @@ int show_top10_menu(void *param)
 
 			if (user_online_update("TOP10_MENU") < 0)
 			{
-				log_error("user_online_update(TOP10_MENU) error\n");
+				log_error("user_online_update(TOP10_MENU) error");
 			}
 
 			switch (ch)
 			{
 			case KEY_NULL: // broken pipe
-				log_debug("KEY_NULL\n");
+				log_debug("KEY_NULL");
 				loop = 0;
 				break;
 			case KEY_TIMEOUT:
 				if (time(NULL) - BBS_last_access_tm >= BBS_max_user_idle_time)
 				{
-					log_debug("User input timeout\n");
+					log_debug("User input timeout");
 					loop = 0;
 					break;
 				}
@@ -363,7 +363,7 @@ int locate_article(void *param)
 
 	if (sname == NULL || aid == NULL)
 	{
-		log_error("top10_locate(%s) error: invalid parameter\n", param);
+		log_error("top10_locate(%s) error: invalid parameter", param);
 		return NOREDRAW;
 	}
 
@@ -376,7 +376,7 @@ int favor_topic(void *param)
 {
 	if (article_favor_display(&BBS_article_favor) < 0)
 	{
-		log_error("article_favor_display() error\n");
+		log_error("article_favor_display() error");
 	}
 
 	return REDRAW;
@@ -386,7 +386,7 @@ int list_user(void *param)
 {
 	if (user_list_display(0) < 0)
 	{
-		log_error("user_list_display(all_user) error\n");
+		log_error("user_list_display(all_user) error");
 	}
 
 	return REDRAW;
@@ -396,7 +396,7 @@ int list_online_user(void *param)
 {
 	if (user_list_display(1) < 0)
 	{
-		log_error("user_list_display(online_user) error\n");
+		log_error("user_list_display(online_user) error");
 	}
 
 	return REDRAW;
@@ -406,7 +406,7 @@ int edit_intro(void *param)
 {
 	if (user_intro_edit(BBS_priv.uid) < 0)
 	{
-		log_error("user_intro_edit(%d) error\n", BBS_priv.uid);
+		log_error("user_intro_edit(%d) error", BBS_priv.uid);
 	}
 
 	return REDRAW;
@@ -416,7 +416,7 @@ int edit_sign(void *param)
 {
 	if (user_sign_edit(BBS_priv.uid) < 0)
 	{
-		log_error("user_sign_edit(%d) error\n", BBS_priv.uid);
+		log_error("user_sign_edit(%d) error", BBS_priv.uid);
 	}
 
 	return REDRAW;

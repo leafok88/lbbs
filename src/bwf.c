@@ -38,13 +38,13 @@ int bwf_load(const char *filename)
 
 	if (filename == NULL)
 	{
-		log_error("NULL pointer error\n");
+		log_error("NULL pointer error");
 		return -1;
 	}
 
 	if ((fp = fopen(filename, "r")) == NULL)
 	{
-		log_error("fopen(%s) error: %d\n", filename, errno);
+		log_error("fopen(%s) error: %d", filename, errno);
 		return -2;
 	}
 
@@ -53,7 +53,7 @@ int bwf_load(const char *filename)
 		len_line = strnlen(line, sizeof(line) - 1);
 		if (!feof(fp) && line[len_line - 1] != '\n')
 		{
-			log_error("Data line %d (len=%d) is truncated\n", line_id, len_line);
+			log_error("Data line %d (len=%d) is truncated", line_id, len_line);
 			bwf_pattern_str[0] = '\0';
 			return -3;
 		}
@@ -76,7 +76,7 @@ int bwf_load(const char *filename)
 
 		if (len_line + 2 > sizeof(bwf_pattern_str) - 1 - (size_t)(p - bwf_pattern_str))
 		{
-			log_error("Data in %s exceed length limit %d\n", filename, sizeof(bwf_pattern_str) - 1);
+			log_error("Data in %s exceed length limit %d", filename, sizeof(bwf_pattern_str) - 1);
 			bwf_pattern_str[0] = '\0';
 			return -3;
 		}
@@ -91,7 +91,7 @@ int bwf_load(const char *filename)
 
 	fclose(fp);
 
-	log_debug("Debug: bwf_pattern_str: %s\n", bwf_pattern_str);
+	log_debug("Debug: bwf_pattern_str: %s", bwf_pattern_str);
 
 	return 0;
 }
@@ -134,7 +134,7 @@ int check_badwords(char *str, char c_mask)
 
 	if (bwf_code == NULL)
 	{
-		log_error("BWF not loaded\n");
+		log_error("BWF not loaded");
 		return -1;
 	}
 
@@ -150,11 +150,11 @@ int check_badwords(char *str, char c_mask)
 		}
 		else if (ret < 0)
 		{
-			log_error("pcre2_match() error: %d\n", ret);
+			log_error("pcre2_match() error: %d", ret);
 		}
 		else if (ret == 0)
 		{
-			log_error("Vector of offsets is too small\n");
+			log_error("Vector of offsets is too small");
 		}
 		else // ret >= 1
 		{
@@ -170,7 +170,7 @@ int check_badwords(char *str, char c_mask)
 			}
 			else
 			{
-				log_debug("Debug: match pattern #%d of %d at offsets [%d, %d]\n",
+				log_debug("Debug: match pattern #%d of %d at offsets [%d, %d]",
 						  i, match_count, ovector[i * 2], ovector[i * 2 + 1] - ovector[i * 2]);
 				memset(str + ovector[i * 2], c_mask, ovector[i * 2 + 1] - ovector[i * 2]);
 				total_match_count++;

@@ -67,7 +67,7 @@ int user_info_display(USER_INFO *p_user_info)
 
 	if (p_user_info == NULL)
 	{
-		log_error("NULL pointer error\n");
+		log_error("NULL pointer error");
 		return -1;
 	}
 
@@ -111,7 +111,7 @@ int user_info_display(USER_INFO *p_user_info)
 	ret = query_user_online_info_by_uid(p_user_info->uid, sessions, &session_cnt, 0);
 	if (ret < 0)
 	{
-		log_error("query_user_online_info_by_uid(uid=%d, cnt=%d) error: %d\n",
+		log_error("query_user_online_info_by_uid(uid=%d, cnt=%d) error: %d",
 				  p_user_info->uid, session_cnt, ret);
 		session_cnt = 0;
 	}
@@ -125,7 +125,7 @@ int user_info_display(USER_INFO *p_user_info)
 
 		if (p + strlen(p_action_title) + 4 >= action_str + sizeof(action_str)) // buffer overflow
 		{
-			log_error("action_str of user(uid=%d) truncated at i=%d\n", p_user_info->uid, i);
+			log_error("action_str of user(uid=%d) truncated at i=%d", p_user_info->uid, i);
 			break;
 		}
 		*p++ = '[';

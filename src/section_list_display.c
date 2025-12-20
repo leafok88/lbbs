@@ -101,7 +101,7 @@ static int section_list_draw_items(int page_id, const ARTICLE *p_articles[], int
 			is_viewed = article_view_log_is_viewed(p_articles[i]->aid, &BBS_article_view_log);
 			if (is_viewed < 0)
 			{
-				log_error("article_view_log_is_viewed(aid=%d) error\n", p_articles[i]->aid);
+				log_error("article_view_log_is_viewed(aid=%d) error", p_articles[i]->aid);
 				is_viewed = 0;
 			}
 		}
@@ -111,7 +111,7 @@ static int section_list_draw_items(int page_id, const ARTICLE *p_articles[], int
 			is_favor = article_favor_check(p_articles[i]->aid, &BBS_article_favor);
 			if (is_favor < 0)
 			{
-				log_error("article_favor_check(aid=%d) error\n", p_articles[i]->aid);
+				log_error("article_favor_check(aid=%d) error", p_articles[i]->aid);
 				is_favor = 0;
 			}
 		}
@@ -274,19 +274,19 @@ static enum select_cmd_t section_list_select(int total_page, int item_count, int
 			// Refresh current action
 			if (user_online_update(NULL) < 0)
 			{
-				log_error("user_online_update(NULL) error\n");
+				log_error("user_online_update(NULL) error");
 			}
 		}
 
 		switch (ch)
 		{
 		case KEY_NULL: // broken pipe
-			log_debug("KEY_NULL\n");
+			log_debug("KEY_NULL");
 			return EXIT_SECTION;
 		case KEY_TIMEOUT:
 			if (time(NULL) - BBS_last_access_tm >= BBS_max_user_idle_time)
 			{
-				log_debug("User input timeout\n");
+				log_debug("User input timeout");
 				return EXIT_SECTION;
 			}
 			continue;
@@ -615,13 +615,13 @@ int section_list_display(const char *sname, int32_t aid)
 	p_section = section_list_find_by_name(sname);
 	if (p_section == NULL)
 	{
-		log_error("Section %s not found\n", sname);
+		log_error("Section %s not found", sname);
 		return -1;
 	}
 
 	if (!checkpriv(&BBS_priv, p_section->sid, S_LIST))
 	{
-		log_error("Forbid access to unauthorized section, sid=%d, uid=%d\n",
+		log_error("Forbid access to unauthorized section, sid=%d, uid=%d",
 				  p_section->sid, BBS_priv.uid);
 		return -1;
 	}
@@ -630,7 +630,7 @@ int section_list_display(const char *sname, int32_t aid)
 
 	if (get_section_info(p_section, NULL, stitle, master_list) < 0)
 	{
-		log_error("get_section_info(sid=%d) error\n", p_section->sid);
+		log_error("get_section_info(sid=%d) error", p_section->sid);
 		return -4;
 	}
 
@@ -649,7 +649,7 @@ int section_list_display(const char *sname, int32_t aid)
 		p_article_locate = article_block_find_by_aid(aid_location);
 		if (p_article_locate == NULL)
 		{
-			log_error("article_block_find_by_aid(%d) error\n", aid_location);
+			log_error("article_block_find_by_aid(%d) error", aid_location);
 			return -3;
 		}
 
@@ -657,7 +657,7 @@ int section_list_display(const char *sname, int32_t aid)
 										&page_id, &selected_index, &article_count);
 		if (ret < 0)
 		{
-			log_error("locate_article_in_section(sid=%d, aid=%d, direction=0, step=0) error\n",
+			log_error("locate_article_in_section(sid=%d, aid=%d, direction=0, step=0) error",
 					  p_section->sid, p_article_locate->aid);
 			return -3;
 		}
@@ -665,14 +665,14 @@ int section_list_display(const char *sname, int32_t aid)
 
 	if (section_list_draw_screen(sname, stitle, master_list, display_nickname) < 0)
 	{
-		log_error("section_list_draw_screen() error\n");
+		log_error("section_list_draw_screen() error");
 		return -2;
 	}
 
 	ret = query_section_articles(p_section, page_id, p_articles, &article_count, &page_count, &ontop_start_offset);
 	if (ret < 0)
 	{
-		log_error("query_section_articles(sid=%d, page_id=%d) error\n", p_section->sid, page_id);
+		log_error("query_section_articles(sid=%d, page_id=%d) error", p_section->sid, page_id);
 		return -3;
 	}
 
@@ -696,7 +696,7 @@ int section_list_display(const char *sname, int32_t aid)
 		ret = section_list_draw_items(page_id, p_articles, article_count, display_nickname, ontop_start_offset);
 		if (ret < 0)
 		{
-			log_error("section_list_draw_items(sid=%d, page_id=%d) error\n", p_section->sid, page_id);
+			log_error("section_list_draw_items(sid=%d, page_id=%d) error", p_section->sid, page_id);
 			return -4;
 		}
 
@@ -709,7 +709,7 @@ int section_list_display(const char *sname, int32_t aid)
 
 		if (user_online_update(sname) < 0)
 		{
-			log_error("user_online_update(%s) error\n", sname);
+			log_error("user_online_update(%s) error", sname);
 		}
 
 		ret = section_list_select(page_count, article_count, &page_id, &selected_index);
@@ -725,7 +725,7 @@ int section_list_display(const char *sname, int32_t aid)
 					ret = last_article_in_section(p_section, &p_article_locate);
 					if (ret < 0)
 					{
-						log_error("last_article_in_section(sid=%d) error\n", p_section->sid);
+						log_error("last_article_in_section(sid=%d) error", p_section->sid);
 						return -3;
 					}
 					else if (ret == 0)
@@ -747,7 +747,7 @@ int section_list_display(const char *sname, int32_t aid)
 			ret = query_section_articles(p_section, page_id, p_articles, &article_count, &page_count, &ontop_start_offset);
 			if (ret < 0)
 			{
-				log_error("query_section_articles(sid=%d, page_id=%d) error\n", p_section->sid, page_id);
+				log_error("query_section_articles(sid=%d, page_id=%d) error", p_section->sid, page_id);
 				return -3;
 			}
 			if (article_count == 0) // empty section
@@ -766,13 +766,13 @@ int section_list_display(const char *sname, int32_t aid)
 
 				if (article_cache_load(&cache, VAR_ARTICLE_CACHE_DIR, p_articles[selected_index]) < 0)
 				{
-					log_error("article_cache_load(aid=%d, cid=%d) error\n", p_articles[selected_index]->aid, p_articles[selected_index]->cid);
+					log_error("article_cache_load(aid=%d, cid=%d) error", p_articles[selected_index]->aid, p_articles[selected_index]->cid);
 					break;
 				}
 
 				if (user_online_update("VIEW_ARTICLE") < 0)
 				{
-					log_error("user_online_update(VIEW_ARTICLE) error\n");
+					log_error("user_online_update(VIEW_ARTICLE) error");
 				}
 
 				ret = display_data(cache.p_data, cache.line_total, cache.line_offsets, 0,
@@ -780,14 +780,14 @@ int section_list_display(const char *sname, int32_t aid)
 
 				if (article_cache_unload(&cache) < 0)
 				{
-					log_error("article_cache_unload(aid=%d, cid=%d) error\n", p_articles[selected_index]->aid, p_articles[selected_index]->cid);
+					log_error("article_cache_unload(aid=%d, cid=%d) error", p_articles[selected_index]->aid, p_articles[selected_index]->cid);
 					break;
 				}
 
 				// Update article_view_log
 				if (article_view_log_set_viewed(p_articles[selected_index]->aid, &BBS_article_view_log) < 0)
 				{
-					log_error("article_view_log_set_viewed(aid=%d) error\n", p_articles[selected_index]->aid);
+					log_error("article_view_log_set_viewed(aid=%d) error", p_articles[selected_index]->aid);
 				}
 
 				switch (ret)
@@ -803,7 +803,7 @@ int section_list_display(const char *sname, int32_t aid)
 							ret = query_section_articles(p_section, page_id, p_articles, &article_count, &page_count, &ontop_start_offset);
 							if (ret < 0)
 							{
-								log_error("query_section_articles(sid=%d, page_id=%d) error\n", p_section->sid, page_id);
+								log_error("query_section_articles(sid=%d, page_id=%d) error", p_section->sid, page_id);
 								return -3;
 							}
 
@@ -834,7 +834,7 @@ int section_list_display(const char *sname, int32_t aid)
 							ret = query_section_articles(p_section, page_id, p_articles, &article_count, &page_count, &ontop_start_offset);
 							if (ret < 0)
 							{
-								log_error("query_section_articles(sid=%d, page_id=%d) error\n", p_section->sid, page_id);
+								log_error("query_section_articles(sid=%d, page_id=%d) error", p_section->sid, page_id);
 								return -3;
 							}
 
@@ -861,7 +861,7 @@ int section_list_display(const char *sname, int32_t aid)
 													&page_id, &selected_index, &article_count);
 					if (ret < 0)
 					{
-						log_error("locate_article_in_section(sid=%d, aid=%d, direction=%d, step=1) error\n",
+						log_error("locate_article_in_section(sid=%d, aid=%d, direction=%d, step=1) error",
 								  p_section->sid, p_articles[selected_index]->aid, direction);
 						return -3;
 					}
@@ -870,7 +870,7 @@ int section_list_display(const char *sname, int32_t aid)
 						ret = query_section_articles(p_section, page_id, p_articles, &article_count, &page_count, &ontop_start_offset);
 						if (ret < 0)
 						{
-							log_error("query_section_articles(sid=%d, page_id=%d) error\n", p_section->sid, page_id);
+							log_error("query_section_articles(sid=%d, page_id=%d) error", p_section->sid, page_id);
 							return -3;
 						}
 						loop = 1;
@@ -879,19 +879,19 @@ int section_list_display(const char *sname, int32_t aid)
 				case 'r': // Reply article
 					if (user_online_update("REPLY_ARTICLE") < 0)
 					{
-						log_error("user_online_update(REPLY_ARTICLE) error\n");
+						log_error("user_online_update(REPLY_ARTICLE) error");
 					}
 
 					if (article_reply(p_section, p_articles[selected_index], &article_new) < 0)
 					{
-						log_error("article_reply(aid=%d) error\n", p_articles[selected_index]->aid);
+						log_error("article_reply(aid=%d) error", p_articles[selected_index]->aid);
 					}
 					else if (ret > 0) // Article replied
 					{
 						ret = query_section_articles(p_section, page_id, p_articles, &article_count, &page_count, &ontop_start_offset);
 						if (ret < 0)
 						{
-							log_error("query_section_articles(sid=%d, page_id=%d) error\n", p_section->sid, page_id);
+							log_error("query_section_articles(sid=%d, page_id=%d) error", p_section->sid, page_id);
 							return -3;
 						}
 					}
@@ -905,7 +905,7 @@ int section_list_display(const char *sname, int32_t aid)
 													&page_id, &selected_index, &article_count);
 					if (ret < 0)
 					{
-						log_error("locate_article_in_section(sid=%d, aid=%d, direction=%d, step=%d) error\n",
+						log_error("locate_article_in_section(sid=%d, aid=%d, direction=%d, step=%d) error",
 								  p_section->sid, p_articles[selected_index]->aid, direction, BBS_article_limit_per_section);
 						return -3;
 					}
@@ -916,7 +916,7 @@ int section_list_display(const char *sname, int32_t aid)
 							ret = query_section_articles(p_section, page_id, p_articles, &article_count, &page_count, &ontop_start_offset);
 							if (ret < 0)
 							{
-								log_error("query_section_articles(sid=%d, page_id=%d) error\n", p_section->sid, page_id);
+								log_error("query_section_articles(sid=%d, page_id=%d) error", p_section->sid, page_id);
 								return -3;
 							}
 						}
@@ -931,7 +931,7 @@ int section_list_display(const char *sname, int32_t aid)
 
 			if (section_list_draw_screen(sname, stitle, master_list, display_nickname) < 0)
 			{
-				log_error("section_list_draw_screen() error\n");
+				log_error("section_list_draw_screen() error");
 				return -2;
 			}
 			break;
@@ -939,32 +939,32 @@ int section_list_display(const char *sname, int32_t aid)
 			display_nickname = !display_nickname;
 			if (section_list_draw_screen(sname, stitle, master_list, display_nickname) < 0)
 			{
-				log_error("section_list_draw_screen() error\n");
+				log_error("section_list_draw_screen() error");
 				return -2;
 			}
 			break;
 		case POST_ARTICLE:
 			if (user_online_update("POST_ARTICLE") < 0)
 			{
-				log_error("user_online_update(POST_ARTICLE) error\n");
+				log_error("user_online_update(POST_ARTICLE) error");
 			}
 
 			if ((ret = article_post(p_section, &article_new)) < 0)
 			{
-				log_error("article_post(sid=%d) error\n", p_section->sid);
+				log_error("article_post(sid=%d) error", p_section->sid);
 			}
 			else if (ret > 0) // New article posted
 			{
 				ret = query_section_articles(p_section, page_id, p_articles, &article_count, &page_count, &ontop_start_offset);
 				if (ret < 0)
 				{
-					log_error("query_section_articles(sid=%d, page_id=%d) error: %d\n", p_section->sid, page_id, ret);
+					log_error("query_section_articles(sid=%d, page_id=%d) error: %d", p_section->sid, page_id, ret);
 					return -3;
 				}
 			}
 			if (section_list_draw_screen(sname, stitle, master_list, display_nickname) < 0)
 			{
-				log_error("section_list_draw_screen() error\n");
+				log_error("section_list_draw_screen() error");
 				return -2;
 			}
 			break;
@@ -977,25 +977,25 @@ int section_list_display(const char *sname, int32_t aid)
 
 			if (user_online_update("EDIT_ARTICLE") < 0)
 			{
-				log_error("user_online_update() error\n");
+				log_error("user_online_update() error");
 			}
 
 			if (article_modify(p_section, p_articles[selected_index], &article_new) < 0)
 			{
-				log_error("article_modify(aid=%d) error\n", p_articles[selected_index]->aid);
+				log_error("article_modify(aid=%d) error", p_articles[selected_index]->aid);
 			}
 			else if (ret > 0) // Article modified
 			{
 				ret = query_section_articles(p_section, page_id, p_articles, &article_count, &page_count, &ontop_start_offset);
 				if (ret < 0)
 				{
-					log_error("query_section_articles(sid=%d, page_id=%d) error\n", p_section->sid, page_id);
+					log_error("query_section_articles(sid=%d, page_id=%d) error", p_section->sid, page_id);
 					return -3;
 				}
 			}
 			if (section_list_draw_screen(sname, stitle, master_list, display_nickname) < 0)
 			{
-				log_error("section_list_draw_screen() error\n");
+				log_error("section_list_draw_screen() error");
 				return -2;
 			}
 			break;
@@ -1007,7 +1007,7 @@ int section_list_display(const char *sname, int32_t aid)
 			}
 			if ((ret = article_del(p_section, p_articles[selected_index])) < 0)
 			{
-				log_error("article_del(aid=%d) error\n", p_articles[selected_index]->aid);
+				log_error("article_del(aid=%d) error", p_articles[selected_index]->aid);
 			}
 			else if (ret > 0) // Article deleted
 			{
@@ -1033,25 +1033,25 @@ int section_list_display(const char *sname, int32_t aid)
 			}
 			if (section_list_draw_screen(sname, stitle, master_list, display_nickname) < 0)
 			{
-				log_error("section_list_draw_screen() error\n");
+				log_error("section_list_draw_screen() error");
 				return -2;
 			}
 			break;
 		case QUERY_ARTICLE:
 			if ((ret = display_article_meta(p_articles[selected_index]->aid)) < 0)
 			{
-				log_error("display_article_meta(aid=%d) error\n", p_articles[selected_index]->aid);
+				log_error("display_article_meta(aid=%d) error", p_articles[selected_index]->aid);
 			}
 			if (section_list_draw_screen(sname, stitle, master_list, display_nickname) < 0)
 			{
-				log_error("section_list_draw_screen() error\n");
+				log_error("section_list_draw_screen() error");
 				return -2;
 			}
 			break;
 		case QUERY_USER:
 			if ((ret = query_user_info_by_uid(p_articles[selected_index]->uid, &user_info, user_intro, sizeof(user_intro))) < 0)
 			{
-				log_error("query_user_info_by_uid(uid=%d) error\n", p_articles[selected_index]->uid);
+				log_error("query_user_info_by_uid(uid=%d) error", p_articles[selected_index]->uid);
 				return -2;
 			}
 			else if (ret == 0)
@@ -1062,12 +1062,12 @@ int section_list_display(const char *sname, int32_t aid)
 			}
 			else if (user_info_display(&user_info) < 0) // && ret > 0
 			{
-				log_error("user_info_display(uid=%d) error\n", p_articles[selected_index]->uid);
+				log_error("user_info_display(uid=%d) error", p_articles[selected_index]->uid);
 			}
 
 			if (section_list_draw_screen(sname, stitle, master_list, display_nickname) < 0)
 			{
-				log_error("section_list_draw_screen() error\n");
+				log_error("section_list_draw_screen() error");
 				return -2;
 			}
 			break;
@@ -1078,7 +1078,7 @@ int section_list_display(const char *sname, int32_t aid)
 									&BBS_article_favor, 1);
 			if (ret < 0)
 			{
-				log_error("article_favor_set(aid=%d, 1) error\n",
+				log_error("article_favor_set(aid=%d, 1) error",
 						  p_articles[selected_index]->tid == 0 ? p_articles[selected_index]->aid : p_articles[selected_index]->tid);
 			}
 			break;
@@ -1089,7 +1089,7 @@ int section_list_display(const char *sname, int32_t aid)
 									&BBS_article_favor, 0);
 			if (ret < 0)
 			{
-				log_error("article_favor_set(aid=%d, 0) error\n",
+				log_error("article_favor_set(aid=%d, 0) error",
 						  p_articles[selected_index]->tid == 0 ? p_articles[selected_index]->aid : p_articles[selected_index]->tid);
 			}
 			break;
@@ -1101,7 +1101,7 @@ int section_list_display(const char *sname, int32_t aid)
 											&page_id, &selected_index, &article_count);
 			if (ret < 0)
 			{
-				log_error("locate_article_in_section(sid=%d, aid=%d, direction=%d, step=%d) error\n",
+				log_error("locate_article_in_section(sid=%d, aid=%d, direction=%d, step=%d) error",
 						  p_section->sid, p_articles[selected_index]->aid, direction, BBS_article_limit_per_section);
 				return -3;
 			}
@@ -1110,7 +1110,7 @@ int section_list_display(const char *sname, int32_t aid)
 				ret = query_section_articles(p_section, page_id, p_articles, &article_count, &page_count, &ontop_start_offset);
 				if (ret < 0)
 				{
-					log_error("query_section_articles(sid=%d, page_id=%d) error\n", p_section->sid, page_id);
+					log_error("query_section_articles(sid=%d, page_id=%d) error", p_section->sid, page_id);
 					return -3;
 				}
 			}
@@ -1120,7 +1120,7 @@ int section_list_display(const char *sname, int32_t aid)
 			ret = last_article_in_section(p_section, &p_article_locate);
 			if (ret < 0)
 			{
-				log_error("last_article_in_section(sid=%d) error\n", p_section->sid);
+				log_error("last_article_in_section(sid=%d) error", p_section->sid);
 				return -3;
 			}
 			else if (ret == 0)
@@ -1131,7 +1131,7 @@ int section_list_display(const char *sname, int32_t aid)
 											&page_id, &selected_index, &article_count);
 			if (ret < 0)
 			{
-				log_error("locate_article_in_section(sid=%d, aid=%d, direction=0, step=0) error\n",
+				log_error("locate_article_in_section(sid=%d, aid=%d, direction=0, step=0) error",
 						  p_section->sid, p_article_locate->aid);
 				return -3;
 			}
@@ -1140,7 +1140,7 @@ int section_list_display(const char *sname, int32_t aid)
 				ret = query_section_articles(p_section, page_id, p_articles, &article_count, &page_count, &ontop_start_offset);
 				if (ret < 0)
 				{
-					log_error("query_section_articles(sid=%d, page_id=%d) error\n", p_section->sid, page_id);
+					log_error("query_section_articles(sid=%d, page_id=%d) error", p_section->sid, page_id);
 					return -3;
 				}
 			}
@@ -1149,7 +1149,7 @@ int section_list_display(const char *sname, int32_t aid)
 			ret = scan_unread_article_in_section(p_section, p_articles[selected_index], &p_article_locate);
 			if (ret < 0)
 			{
-				log_error("scan_unread_article_in_section(sid=%d, aid=%d) error\n",
+				log_error("scan_unread_article_in_section(sid=%d, aid=%d) error",
 						  p_section->sid, p_articles[selected_index]->aid);
 				return -3;
 			}
@@ -1162,7 +1162,7 @@ int section_list_display(const char *sname, int32_t aid)
 											&page_id, &selected_index, &article_count);
 			if (ret < 0)
 			{
-				log_error("locate_article_in_section(sid=%d, aid=%d, direction=0, step=0) error\n",
+				log_error("locate_article_in_section(sid=%d, aid=%d, direction=0, step=0) error",
 						  p_section->sid, p_article_locate->aid);
 				return -3;
 			}
@@ -1171,7 +1171,7 @@ int section_list_display(const char *sname, int32_t aid)
 				ret = query_section_articles(p_section, page_id, p_articles, &article_count, &page_count, &ontop_start_offset);
 				if (ret < 0)
 				{
-					log_error("query_section_articles(sid=%d, page_id=%d) error\n", p_section->sid, page_id);
+					log_error("query_section_articles(sid=%d, page_id=%d) error", p_section->sid, page_id);
 					return -3;
 				}
 			}
@@ -1214,7 +1214,7 @@ int section_list_display(const char *sname, int32_t aid)
 			ret = query_user_info_by_username(username, 1, &uid, username_list);
 			if (ret < 0)
 			{
-				log_error("query_user_info_by_username(%s) error\n", username);
+				log_error("query_user_info_by_username(%s) error", username);
 				break;
 			}
 
@@ -1224,7 +1224,7 @@ int section_list_display(const char *sname, int32_t aid)
 													 direction, uid, &p_article_locate);
 				if (ret < 0)
 				{
-					log_error("scan_article_in_section_by_uid(sid=%d, aid=%d, direction=%d, uid=%d) error\n",
+					log_error("scan_article_in_section_by_uid(sid=%d, aid=%d, direction=%d, uid=%d) error",
 							  p_section->sid, p_articles[selected_index]->aid, direction, uid);
 					return -3;
 				}
@@ -1239,7 +1239,7 @@ int section_list_display(const char *sname, int32_t aid)
 														  direction, username, &p_article_locate);
 				if (ret < 0)
 				{
-					log_error("scan_article_in_section_by_username(sid=%d, aid=%d, direction=%d, username=%s) error\n",
+					log_error("scan_article_in_section_by_username(sid=%d, aid=%d, direction=%d, username=%s) error",
 							  p_section->sid, p_articles[selected_index]->aid, direction, username);
 					return -3;
 				}
@@ -1254,7 +1254,7 @@ int section_list_display(const char *sname, int32_t aid)
 											&page_id, &selected_index, &article_count);
 			if (ret < 0)
 			{
-				log_error("locate_article_in_section(sid=%d, aid=%d, direction=0, step=0) error\n",
+				log_error("locate_article_in_section(sid=%d, aid=%d, direction=0, step=0) error",
 						  p_section->sid, p_article_locate->aid);
 				return -3;
 			}
@@ -1263,7 +1263,7 @@ int section_list_display(const char *sname, int32_t aid)
 				ret = query_section_articles(p_section, page_id, p_articles, &article_count, &page_count, &ontop_start_offset);
 				if (ret < 0)
 				{
-					log_error("query_section_articles(sid=%d, page_id=%d) error\n", p_section->sid, page_id);
+					log_error("query_section_articles(sid=%d, page_id=%d) error", p_section->sid, page_id);
 					return -3;
 				}
 			}
@@ -1287,7 +1287,7 @@ int section_list_display(const char *sname, int32_t aid)
 												   direction, title, &p_article_locate);
 			if (ret < 0)
 			{
-				log_error("scan_article_in_section_by_title(sid=%d, aid=%d, direction=%d, title=%s) error\n",
+				log_error("scan_article_in_section_by_title(sid=%d, aid=%d, direction=%d, title=%s) error",
 						  p_section->sid, p_articles[selected_index]->aid, direction, title);
 				return -3;
 			}
@@ -1301,7 +1301,7 @@ int section_list_display(const char *sname, int32_t aid)
 											&page_id, &selected_index, &article_count);
 			if (ret < 0)
 			{
-				log_error("locate_article_in_section(sid=%d, aid=%d, direction=0, step=0) error\n",
+				log_error("locate_article_in_section(sid=%d, aid=%d, direction=0, step=0) error",
 						  p_section->sid, p_article_locate->aid);
 				return -3;
 			}
@@ -1310,7 +1310,7 @@ int section_list_display(const char *sname, int32_t aid)
 				ret = query_section_articles(p_section, page_id, p_articles, &article_count, &page_count, &ontop_start_offset);
 				if (ret < 0)
 				{
-					log_error("query_section_articles(sid=%d, page_id=%d) error\n", p_section->sid, page_id);
+					log_error("query_section_articles(sid=%d, page_id=%d) error", p_section->sid, page_id);
 					return -3;
 				}
 			}
@@ -1319,7 +1319,7 @@ int section_list_display(const char *sname, int32_t aid)
 			user_list_search();
 			if (section_list_draw_screen(sname, stitle, master_list, display_nickname) < 0)
 			{
-				log_error("section_list_draw_screen() error\n");
+				log_error("section_list_draw_screen() error");
 				return -2;
 			}
 			break;
@@ -1328,18 +1328,18 @@ int section_list_display(const char *sname, int32_t aid)
 			display_file(DATA_READ_HELP, 1);
 			if (section_list_draw_screen(sname, stitle, master_list, display_nickname) < 0)
 			{
-				log_error("section_list_draw_screen() error\n");
+				log_error("section_list_draw_screen() error");
 				return -2;
 			}
 			break;
 		case VIEW_EX_DIR:
 			if (section_list_ex_dir_display(p_section) < 0)
 			{
-				log_error("section_list_ex_dir_display(sid=%d) error\n", p_section->sid);
+				log_error("section_list_ex_dir_display(sid=%d) error", p_section->sid);
 			}
 			if (section_list_draw_screen(sname, stitle, master_list, display_nickname) < 0)
 			{
-				log_error("section_list_draw_screen() error\n");
+				log_error("section_list_draw_screen() error");
 				return -2;
 			}
 			break;
@@ -1347,12 +1347,12 @@ int section_list_display(const char *sname, int32_t aid)
 			show_top10_menu(NULL);
 			if (section_list_draw_screen(sname, stitle, master_list, display_nickname) < 0)
 			{
-				log_error("section_list_draw_screen() error\n");
+				log_error("section_list_draw_screen() error");
 				return -2;
 			}
 			break;
 		default:
-			log_error("Unknown command %d\n", ret);
+			log_error("Unknown command %d", ret);
 		}
 	}
 
@@ -1367,7 +1367,7 @@ int section_list_ex_dir_display(SECTION_LIST *p_section)
 
 	if (p_section == NULL)
 	{
-		log_error("NULL pointer error\n");
+		log_error("NULL pointer error");
 		return -1;
 	}
 
@@ -1382,12 +1382,12 @@ int section_list_ex_dir_display(SECTION_LIST *p_section)
 
 	if (get_section_ex_menu_set(p_section, &ex_menu_set) < 0)
 	{
-		log_error("get_section_ex_menu_set(sid=%d) error\n", p_section->sid);
+		log_error("get_section_ex_menu_set(sid=%d) error", p_section->sid);
 		return -3;
 	}
 	if (get_menu_shm_readonly(&ex_menu_set) < 0)
 	{
-		log_error("get_menu_shm_readonly(sid=%d) error\n", p_section->sid);
+		log_error("get_menu_shm_readonly(sid=%d) error", p_section->sid);
 		return -3;
 	}
 
@@ -1408,20 +1408,20 @@ int section_list_ex_dir_display(SECTION_LIST *p_section)
 				// Refresh current action
 				if (user_online_update(NULL) < 0)
 				{
-					log_error("user_online_update(NULL) error\n");
+					log_error("user_online_update(NULL) error");
 				}
 			}
 
 			switch (ch)
 			{
 			case KEY_NULL: // broken pipe
-				log_debug("KEY_NULL\n");
+				log_debug("KEY_NULL");
 				loop = 0;
 				break;
 			case KEY_TIMEOUT:
 				if (time(NULL) - BBS_last_access_tm >= BBS_max_user_idle_time)
 				{
-					log_debug("User input timeout\n");
+					log_debug("User input timeout");
 					loop = 0;
 					break;
 				}
@@ -1463,7 +1463,7 @@ int section_aid_locations_save(int uid)
 
 	if ((fp = fopen(filename, "wb")) == NULL)
 	{
-		log_error("fopen(%s, wb) error: %d\n", filename, errno);
+		log_error("fopen(%s, wb) error: %d", filename, errno);
 		return -1;
 	}
 
@@ -1471,14 +1471,14 @@ int section_aid_locations_save(int uid)
 	{
 		if (fwrite(&(p_section_list_pool->sections[i].sid), sizeof(p_section_list_pool->sections[i].sid), 1, fp) != 1)
 		{
-			log_error("fwrite(%s, sid) error\n", filename);
+			log_error("fwrite(%s, sid) error", filename);
 			ret = -2;
 			break;
 		}
 
 		if (fwrite(&(section_aid_locations[i]), sizeof(section_aid_locations[i]), 1, fp) != 1)
 		{
-			log_error("fwrite(%s, aid) error\n", filename);
+			log_error("fwrite(%s, aid) error", filename);
 			ret = -2;
 			break;
 		}
@@ -1486,7 +1486,7 @@ int section_aid_locations_save(int uid)
 
 	if (fclose(fp) < 0)
 	{
-		log_error("fclose(%s) error: %d\n", filename, errno);
+		log_error("fclose(%s) error: %d", filename, errno);
 		ret = -1;
 	}
 
@@ -1511,7 +1511,7 @@ int section_aid_locations_load(int uid)
 		{
 			return 0;
 		}
-		log_error("fopen(%s, rb) error: %d\n", filename, errno);
+		log_error("fopen(%s, rb) error: %d", filename, errno);
 		return -1;
 	}
 
@@ -1523,7 +1523,7 @@ int section_aid_locations_load(int uid)
 			{
 				break;
 			}
-			log_error("fread(%s, sid) error: %d\n", filename, ferror(fp));
+			log_error("fread(%s, sid) error: %d", filename, ferror(fp));
 			ret = -2;
 			break;
 		}
@@ -1534,7 +1534,7 @@ int section_aid_locations_load(int uid)
 			{
 				break;
 			}
-			log_error("fread(%s, aid) error: %d\n", filename, ferror(fp));
+			log_error("fread(%s, aid) error: %d", filename, ferror(fp));
 			ret = -2;
 			break;
 		}
@@ -1548,7 +1548,7 @@ int section_aid_locations_load(int uid)
 		i = get_section_index(p_section);
 		if (i < 0)
 		{
-			log_error("get_section_index(sid=%d) error\n", sid);
+			log_error("get_section_index(sid=%d) error", sid);
 			ret = -3;
 			break;
 		}
@@ -1557,7 +1557,7 @@ int section_aid_locations_load(int uid)
 
 	if (fclose(fp) < 0)
 	{
-		log_error("fclose(%s) error: %d\n", filename, errno);
+		log_error("fclose(%s) error: %d", filename, errno);
 		ret = -1;
 	}
 

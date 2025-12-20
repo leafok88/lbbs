@@ -45,19 +45,19 @@ int load_file(const char *filename)
 
 	if (filename == NULL)
 	{
-		log_error("NULL pointer error\n");
+		log_error("NULL pointer error");
 		return -1;
 	}
 
 	if ((fd = open(filename, O_RDONLY)) < 0)
 	{
-		log_error("open(%s) error (%d)\n", filename, errno);
+		log_error("open(%s) error (%d)", filename, errno);
 		return -1;
 	}
 
 	if (fstat(fd, &sb) < 0)
 	{
-		log_error("fstat(fd) error (%d)\n", errno);
+		log_error("fstat(fd) error (%d)", errno);
 		close(fd);
 		return -1;
 	}
@@ -66,14 +66,14 @@ int load_file(const char *filename)
 	p_data = mmap(NULL, data_len, PROT_READ, MAP_SHARED, fd, 0L);
 	if (p_data == MAP_FAILED)
 	{
-		log_error("mmap() error (%d)\n", errno);
+		log_error("mmap() error (%d)", errno);
 		close(fd);
 		return -2;
 	}
 
 	if (close(fd) < 0)
 	{
-		log_error("close(fd) error (%d)\n", errno);
+		log_error("close(fd) error (%d)", errno);
 		return -1;
 	}
 
@@ -88,18 +88,18 @@ int load_file(const char *filename)
 
 	if (shm_unlink(shm_name) == -1 && errno != ENOENT)
 	{
-		log_error("shm_unlink(%s) error (%d)\n", shm_name, errno);
+		log_error("shm_unlink(%s) error (%d)", shm_name, errno);
 		return -2;
 	}
 
 	if ((fd = shm_open(shm_name, O_CREAT | O_EXCL | O_RDWR, 0600)) == -1)
 	{
-		log_error("shm_open(%s) error (%d)\n", shm_name, errno);
+		log_error("shm_open(%s) error (%d)", shm_name, errno);
 		return -2;
 	}
 	if (ftruncate(fd, (off_t)size) == -1)
 	{
-		log_error("ftruncate(size=%d) error (%d)\n", size, errno);
+		log_error("ftruncate(size=%d) error (%d)", size, errno);
 		close(fd);
 		return -2;
 	}
@@ -107,14 +107,14 @@ int load_file(const char *filename)
 	p_shm = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0L);
 	if (p_shm == MAP_FAILED)
 	{
-		log_error("mmap() error (%d)\n", errno);
+		log_error("mmap() error (%d)", errno);
 		close(fd);
 		return -2;
 	}
 
 	if (close(fd) < 0)
 	{
-		log_error("close(fd) error (%d)\n", errno);
+		log_error("close(fd) error (%d)", errno);
 		return -1;
 	}
 
@@ -125,7 +125,7 @@ int load_file(const char *filename)
 
 	if (munmap(p_data, data_len) < 0)
 	{
-		log_error("munmap() error (%d)\n", errno);
+		log_error("munmap() error (%d)", errno);
 		munmap(p_shm, size);
 		return -2;
 	}
@@ -136,7 +136,7 @@ int load_file(const char *filename)
 
 	if (munmap(p_shm, size) < 0)
 	{
-		log_error("munmap() error (%d)\n", errno);
+		log_error("munmap() error (%d)", errno);
 		return -2;
 	}
 
@@ -150,7 +150,7 @@ int unload_file(const char *filename)
 
 	if (filename == NULL)
 	{
-		log_error("NULL pointer error\n");
+		log_error("NULL pointer error");
 		return -1;
 	}
 
@@ -160,7 +160,7 @@ int unload_file(const char *filename)
 
 	if (shm_unlink(shm_name) == -1 && errno != ENOENT)
 	{
-		log_error("shm_unlink(%s) error (%d)\n", shm_name, errno);
+		log_error("shm_unlink(%s) error (%d)", shm_name, errno);
 		return -2;
 	}
 
@@ -178,7 +178,7 @@ void *get_file_shm_readonly(const char *filename, size_t *p_data_len, long *p_li
 
 	if (filename == NULL || p_data_len == NULL || p_line_total == NULL || pp_data == NULL || pp_line_offsets == NULL)
 	{
-		log_error("NULL pointer error\n");
+		log_error("NULL pointer error");
 		return NULL;
 	}
 
@@ -188,13 +188,13 @@ void *get_file_shm_readonly(const char *filename, size_t *p_data_len, long *p_li
 
 	if ((fd = shm_open(shm_name, O_RDONLY, 0600)) == -1)
 	{
-		log_error("shm_open(%s) error (%d)\n", shm_name, errno);
+		log_error("shm_open(%s) error (%d)", shm_name, errno);
 		return NULL;
 	}
 
 	if (fstat(fd, &sb) < 0)
 	{
-		log_error("fstat(fd) error (%d)\n", errno);
+		log_error("fstat(fd) error (%d)", errno);
 		close(fd);
 		return NULL;
 	}
@@ -204,20 +204,20 @@ void *get_file_shm_readonly(const char *filename, size_t *p_data_len, long *p_li
 	p_shm = mmap(NULL, size, PROT_READ, MAP_SHARED, fd, 0L);
 	if (p_shm == MAP_FAILED)
 	{
-		log_error("mmap() error (%d)\n", errno);
+		log_error("mmap() error (%d)", errno);
 		close(fd);
 		return NULL;
 	}
 
 	if (close(fd) < 0)
 	{
-		log_error("close(fd) error (%d)\n", errno);
+		log_error("close(fd) error (%d)", errno);
 		return NULL;
 	}
 
 	if (((struct shm_header_t *)p_shm)->shm_size != size)
 	{
-		log_error("Shared memory size mismatch (%ld != %ld)\n", ((struct shm_header_t *)p_shm)->shm_size, size);
+		log_error("Shared memory size mismatch (%ld != %ld)", ((struct shm_header_t *)p_shm)->shm_size, size);
 		munmap(p_shm, size);
 		return NULL;
 	}
@@ -243,7 +243,7 @@ int detach_file_shm(void *p_shm)
 
 	if (munmap(p_shm, size) < 0)
 	{
-		log_error("munmap() error (%d)\n", errno);
+		log_error("munmap() error (%d)", errno);
 		return -2;
 	}
 

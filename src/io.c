@@ -77,7 +77,7 @@ int io_init(void)
 		stdin_epollfd = epoll_create1(0);
 		if (stdin_epollfd == -1)
 		{
-			log_error("epoll_create1() error (%d)\n", errno);
+			log_error("epoll_create1() error (%d)", errno);
 			return -1;
 		}
 
@@ -85,10 +85,10 @@ int io_init(void)
 		ev.data.fd = STDIN_FILENO;
 		if (epoll_ctl(stdin_epollfd, EPOLL_CTL_ADD, STDIN_FILENO, &ev) == -1)
 		{
-			log_error("epoll_ctl(STDIN_FILENO) error (%d)\n", errno);
+			log_error("epoll_ctl(STDIN_FILENO) error (%d)", errno);
 			if (close(stdin_epollfd) < 0)
 			{
-				log_error("close(stdin_epollfd) error (%d)\n", errno);
+				log_error("close(stdin_epollfd) error (%d)", errno);
 			}
 			stdin_epollfd = -1;
 			return -1;
@@ -96,20 +96,20 @@ int io_init(void)
 
 		if ((stdin_flags = fcntl(STDIN_FILENO, F_GETFL, 0)) == -1)
 		{
-			log_error("fcntl(F_GETFL) error (%d)\n", errno);
+			log_error("fcntl(F_GETFL) error (%d)", errno);
 			if (close(stdin_epollfd) < 0)
 			{
-				log_error("close(stdin_epollfd) error (%d)\n", errno);
+				log_error("close(stdin_epollfd) error (%d)", errno);
 			}
 			stdin_epollfd = -1;
 			return -1;
 		}
 		if ((fcntl(STDIN_FILENO, F_SETFL, stdin_flags | O_NONBLOCK)) == -1)
 		{
-			log_error("fcntl(F_SETFL) error (%d)\n", errno);
+			log_error("fcntl(F_SETFL) error (%d)", errno);
 			if (close(stdin_epollfd) < 0)
 			{
-				log_error("close(stdin_epollfd) error (%d)\n", errno);
+				log_error("close(stdin_epollfd) error (%d)", errno);
 			}
 			stdin_epollfd = -1;
 			return -1;
@@ -121,7 +121,7 @@ int io_init(void)
 		stdout_epollfd = epoll_create1(0);
 		if (stdout_epollfd == -1)
 		{
-			log_error("epoll_create1() error (%d)\n", errno);
+			log_error("epoll_create1() error (%d)", errno);
 			return -1;
 		}
 
@@ -129,10 +129,10 @@ int io_init(void)
 		ev.data.fd = STDOUT_FILENO;
 		if (epoll_ctl(stdout_epollfd, EPOLL_CTL_ADD, STDOUT_FILENO, &ev) == -1)
 		{
-			log_error("epoll_ctl(STDOUT_FILENO) error (%d)\n", errno);
+			log_error("epoll_ctl(STDOUT_FILENO) error (%d)", errno);
 			if (close(stdout_epollfd) < 0)
 			{
-				log_error("close(stdout_epollfd) error (%d)\n", errno);
+				log_error("close(stdout_epollfd) error (%d)", errno);
 			}
 			stdout_epollfd = -1;
 			return -1;
@@ -140,20 +140,20 @@ int io_init(void)
 
 		if ((stdout_flags = fcntl(STDOUT_FILENO, F_GETFL, 0)) == -1)
 		{
-			log_error("fcntl(F_GETFL) error (%d)\n", errno);
+			log_error("fcntl(F_GETFL) error (%d)", errno);
 			if (close(stdout_epollfd) < 0)
 			{
-				log_error("close(stdout_epollfd) error (%d)\n", errno);
+				log_error("close(stdout_epollfd) error (%d)", errno);
 			}
 			stdout_epollfd = -1;
 			return -1;
 		}
 		if ((fcntl(STDOUT_FILENO, F_SETFL, stdout_flags | O_NONBLOCK)) == -1)
 		{
-			log_error("fcntl(F_SETFL) error (%d)\n", errno);
+			log_error("fcntl(F_SETFL) error (%d)", errno);
 			if (close(stdout_epollfd) < 0)
 			{
-				log_error("close(stdout_epollfd) error (%d)\n", errno);
+				log_error("close(stdout_epollfd) error (%d)", errno);
 			}
 			stdout_epollfd = -1;
 			return -1;
@@ -164,12 +164,12 @@ int io_init(void)
 	{
 		if ((stdin_flags = fcntl(STDIN_FILENO, F_GETFL, 0)) == -1)
 		{
-			log_error("fcntl(F_GETFL) error (%d)\n", errno);
+			log_error("fcntl(F_GETFL) error (%d)", errno);
 			return -1;
 		}
 		if ((fcntl(STDIN_FILENO, F_SETFL, stdin_flags | O_NONBLOCK)) == -1)
 		{
-			log_error("fcntl(F_SETFL) error (%d)\n", errno);
+			log_error("fcntl(F_SETFL) error (%d)", errno);
 			return -1;
 		}
 	}
@@ -178,12 +178,12 @@ int io_init(void)
 	{
 		if ((stdout_flags = fcntl(STDOUT_FILENO, F_GETFL, 0)) == -1)
 		{
-			log_error("fcntl(F_GETFL) error (%d)\n", errno);
+			log_error("fcntl(F_GETFL) error (%d)", errno);
 			return -1;
 		}
 		if ((fcntl(STDOUT_FILENO, F_SETFL, stdout_flags | O_NONBLOCK)) == -1)
 		{
-			log_error("fcntl(F_SETFL) error (%d)\n", errno);
+			log_error("fcntl(F_SETFL) error (%d)", errno);
 			return -1;
 		}
 	}
@@ -202,7 +202,7 @@ void io_cleanup(void)
 
 		if (close(stdin_epollfd) < 0)
 		{
-			log_error("close(stdin_epollfd) error (%d)\n", errno);
+			log_error("close(stdin_epollfd) error (%d)", errno);
 		}
 		stdin_epollfd = -1;
 	}
@@ -214,7 +214,7 @@ void io_cleanup(void)
 
 		if (close(stdout_epollfd) < 0)
 		{
-			log_error("close(stdout_epollfd) error (%d)\n", errno);
+			log_error("close(stdout_epollfd) error (%d)", errno);
 		}
 		stdout_epollfd = -1;
 	}
@@ -262,7 +262,7 @@ int prints(const char *format, ...)
 		{
 			errno = EAGAIN;
 			int need = stdout_buf_len + written - OUTPUT_BUF_SIZE;
-			log_error("Output buffer is full, additional %d bytes are required\n", need);
+			log_error("Output buffer is full, additional %d bytes are required", need);
 			ret = -need;
 		}
 	}
@@ -322,9 +322,9 @@ int iflush(void)
 			if (errno != EINTR)
 			{
 #ifdef HAVE_SYS_EPOLL_H
-				log_error("epoll_wait() error (%d)\n", errno);
+				log_error("epoll_wait() error (%d)", errno);
 #else
-				log_error("poll() error (%d)\n", errno);
+				log_error("poll() error (%d)", errno);
 #endif
 				break;
 			}
@@ -344,9 +344,9 @@ int iflush(void)
 #endif
 			{
 #ifdef HAVE_SYS_EPOLL_H
-				log_debug("STDOUT error events (%d)\n", events[i].events);
+				log_debug("STDOUT error events (%d)", events[i].events);
 #else
-				log_debug("STDOUT error events (%d)\n", pfds[i].revents);
+				log_debug("STDOUT error events (%d)", pfds[i].revents);
 #endif
 				retry = 0;
 				break;
@@ -363,7 +363,7 @@ int iflush(void)
 					ret = io_buf_conv(stdout_cd, stdout_buf, &stdout_buf_len, &stdout_buf_offset, stdout_conv, sizeof(stdout_conv), &stdout_conv_len);
 					if (ret < 0)
 					{
-						log_error("io_buf_conv(stdout, %d, %d, %d) error\n", stdout_buf_len, stdout_buf_offset, stdout_conv_len);
+						log_error("io_buf_conv(stdout, %d, %d, %d) error", stdout_buf_len, stdout_buf_offset, stdout_conv_len);
 						stdout_buf_len = stdout_buf_offset; // Discard invalid sequence
 					}
 				}
@@ -375,7 +375,7 @@ int iflush(void)
 						ret = ssh_channel_write(SSH_channel, stdout_conv + stdout_conv_offset, (uint32_t)(stdout_conv_len - stdout_conv_offset));
 						if (ret == SSH_ERROR)
 						{
-							log_debug("ssh_channel_write() error: %s\n", ssh_get_error(SSH_session));
+							log_debug("ssh_channel_write() error: %s", ssh_get_error(SSH_session));
 							retry = 0;
 							break;
 						}
@@ -396,7 +396,7 @@ int iflush(void)
 						}
 						else
 						{
-							log_debug("write(STDOUT) error (%d)\n", errno);
+							log_debug("write(STDOUT) error (%d)", errno);
 							retry = 0;
 							break;
 						}
@@ -457,7 +457,7 @@ int igetch(int timeout)
 		{
 			if (SSH_v2 && ssh_channel_is_closed(SSH_channel))
 			{
-				log_debug("SSH channel is closed\n");
+				log_debug("SSH channel is closed");
 				loop = 0;
 				break;
 			}
@@ -479,9 +479,9 @@ int igetch(int timeout)
 					if (errno != EINTR)
 					{
 #ifdef HAVE_SYS_EPOLL_H
-						log_error("epoll_wait() error (%d)\n", errno);
+						log_error("epoll_wait() error (%d)", errno);
 #else
-						log_error("poll() error (%d)\n", errno);
+						log_error("poll() error (%d)", errno);
 #endif
 						break;
 					}
@@ -502,9 +502,9 @@ int igetch(int timeout)
 #endif
 					{
 #ifdef HAVE_SYS_EPOLL_H
-						log_debug("STDIN error events (%d)\n", events[i].events);
+						log_debug("STDIN error events (%d)", events[i].events);
 #else
-						log_debug("STDIN error events (%d)\n", pfds[i].revents);
+						log_debug("STDIN error events (%d)", pfds[i].revents);
 #endif
 						loop = 0;
 						break;
@@ -530,7 +530,7 @@ int igetch(int timeout)
 						ret = ssh_channel_read_nonblocking(SSH_channel, stdin_buf + stdin_buf_len, sizeof(stdin_buf) - (uint32_t)stdin_buf_len, 0);
 						if (ret == SSH_ERROR)
 						{
-							log_debug("ssh_channel_read_nonblocking() error: %s\n", ssh_get_error(SSH_session));
+							log_debug("ssh_channel_read_nonblocking() error: %s", ssh_get_error(SSH_session));
 							loop = 0;
 							break;
 						}
@@ -567,7 +567,7 @@ int igetch(int timeout)
 						}
 						else
 						{
-							log_debug("read(STDIN) error (%d)\n", errno);
+							log_debug("read(STDIN) error (%d)", errno);
 							loop = 0;
 							break;
 						}
@@ -590,7 +590,7 @@ int igetch(int timeout)
 #ifdef _DEBUG
 			for (int j = stdin_buf_offset; j < stdin_buf_len; j++)
 			{
-				log_debug("input: <--[%u]\n", (stdin_buf[j] + 256) % 256);
+				log_debug("input: <--[%u]", (stdin_buf[j] + 256) % 256);
 			}
 #endif
 		}
@@ -600,7 +600,7 @@ int igetch(int timeout)
 			ret = io_buf_conv(stdin_cd, stdin_buf, &stdin_buf_len, &stdin_buf_offset, stdin_conv, sizeof(stdin_conv), &stdin_conv_len);
 			if (ret < 0)
 			{
-				log_error("io_buf_conv(stdin, %d, %d, %d) error\n", stdin_buf_len, stdin_buf_offset, stdin_conv_len);
+				log_error("io_buf_conv(stdin, %d, %d, %d) error", stdin_buf_len, stdin_buf_offset, stdin_conv_len);
 				stdin_buf_len = stdin_buf_offset; // Discard invalid sequence
 			}
 
@@ -608,7 +608,7 @@ int igetch(int timeout)
 #ifdef _DEBUG
 			for (int j = stdin_conv_offset; j < stdin_conv_len; j++)
 			{
-				log_debug("input_conv: <--[%u]\n", (stdin_conv[j] + 256) % 256);
+				log_debug("input_conv: <--[%u]", (stdin_conv[j] + 256) % 256);
 			}
 #endif
 		}
@@ -1074,7 +1074,7 @@ int igetch(int timeout)
 #ifdef _DEBUG
 	if (out != KEY_TIMEOUT && out != KEY_NULL)
 	{
-		log_debug("output: -->[0x %x]\n", out);
+		log_debug("output: -->[0x %x]", out);
 	}
 #endif
 
@@ -1116,7 +1116,7 @@ int io_buf_conv(iconv_t cd, char *p_buf, int *p_buf_len, int *p_buf_offset, char
 
 	if (cd == (iconv_t)(-1) || p_buf == NULL || p_buf_len == NULL || p_buf_offset == NULL || p_conv == NULL || p_conv_len == NULL)
 	{
-		log_error("NULL pointer error\n");
+		log_error("NULL pointer error");
 		return -1;
 	}
 
@@ -1142,7 +1142,7 @@ int io_buf_conv(iconv_t cd, char *p_buf, int *p_buf_len, int *p_buf_offset, char
 
 			if (out_bytes <= 0)
 			{
-				log_error("No enough free space in p_conv, conv_len=%d, conv_size=%d\n", *p_conv_len, conv_size);
+				log_error("No enough free space in p_conv, conv_len=%d, conv_size=%d", *p_conv_len, conv_size);
 				return -2;
 			}
 
@@ -1168,7 +1168,7 @@ int io_buf_conv(iconv_t cd, char *p_buf, int *p_buf_len, int *p_buf_offset, char
 		{
 			if (errno == EINVAL) // Incomplete
 			{
-				log_debug("iconv(inbytes=%zu, outbytes=%zu) error: EINVAL, in_buf[0]=%d\n",
+				log_debug("iconv(inbytes=%zu, outbytes=%zu) error: EINVAL, in_buf[0]=%d",
 						  in_bytes, out_bytes, (unsigned char)in_buf[0]);
 				if (p_buf != in_buf)
 				{
@@ -1182,14 +1182,14 @@ int io_buf_conv(iconv_t cd, char *p_buf, int *p_buf_len, int *p_buf_offset, char
 			}
 			else if (errno == E2BIG)
 			{
-				log_error("iconv(inbytes=%zu, outbytes=%zu) error: E2BIG\n", in_bytes, out_bytes);
+				log_error("iconv(inbytes=%zu, outbytes=%zu) error: E2BIG", in_bytes, out_bytes);
 				return -1;
 			}
 			else if (errno == EILSEQ)
 			{
 				if (in_bytes > out_bytes || out_bytes <= 0)
 				{
-					log_error("iconv(inbytes=%zu, outbytes=%zu) error: EILSEQ\n", in_bytes, out_bytes);
+					log_error("iconv(inbytes=%zu, outbytes=%zu) error: EILSEQ", in_bytes, out_bytes);
 					return -2;
 				}
 
@@ -1197,16 +1197,16 @@ int io_buf_conv(iconv_t cd, char *p_buf, int *p_buf_len, int *p_buf_offset, char
 				if (in_bytes == 0)
 				{
 					in_bytes = (size_t)(*p_buf_len - *p_buf_offset);
-					log_debug("Reset in_bytes from 0 to %zu\n", in_bytes);
+					log_debug("Reset in_bytes from 0 to %zu", in_bytes);
 				}
 
-				log_debug("iconv(in_bytes=%zu, out_bytes=%zu) error: EILSEQ, in_buf[0]=%d\n",
+				log_debug("iconv(in_bytes=%zu, out_bytes=%zu) error: EILSEQ, in_buf[0]=%d",
 						  in_bytes, out_bytes, (unsigned char)in_buf[0]);
 				skip_current = 1;
 			}
 			else // something strange
 			{
-				log_debug("iconv(in_bytes=%zu, out_bytes=%zu) error: %d, in_buf[0]=%d\n",
+				log_debug("iconv(in_bytes=%zu, out_bytes=%zu) error: %d, in_buf[0]=%d",
 						  in_bytes, out_bytes, errno, (unsigned char)in_buf[0]);
 				*p_buf_offset = (int)(in_buf - p_buf);
 				*p_conv_len = (int)(conv_size - out_bytes);
@@ -1235,7 +1235,7 @@ int io_conv_init(const char *charset)
 
 	if (charset == NULL)
 	{
-		log_error("NULL pointer error\n");
+		log_error("NULL pointer error");
 		return -1;
 	}
 
@@ -1249,7 +1249,7 @@ int io_conv_init(const char *charset)
 	stdin_cd = iconv_open(tocode, stdio_charset);
 	if (stdin_cd == (iconv_t)(-1))
 	{
-		log_error("iconv_open(%s->%s) error: %d\n", stdio_charset, tocode, errno);
+		log_error("iconv_open(%s->%s) error: %d", stdio_charset, tocode, errno);
 		return -2;
 	}
 
@@ -1258,7 +1258,7 @@ int io_conv_init(const char *charset)
 	stdout_cd = iconv_open(tocode, BBS_default_charset);
 	if (stdout_cd == (iconv_t)(-1))
 	{
-		log_error("iconv_open(%s->%s) error: %d\n", BBS_default_charset, tocode, errno);
+		log_error("iconv_open(%s->%s) error: %d", BBS_default_charset, tocode, errno);
 		iconv_close(stdin_cd);
 		stdin_cd = (iconv_t)(-1);
 		return -2;

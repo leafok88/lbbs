@@ -76,28 +76,28 @@ int main(int argc, char *argv[])
 
 	if ((fp = fopen(ARTICLE_BLOCK_SHM_FILE, "w")) == NULL)
 	{
-		log_error("fopen(%s) error\n", ARTICLE_BLOCK_SHM_FILE);
+		log_error("fopen(%s) error", ARTICLE_BLOCK_SHM_FILE);
 		return -1;
 	}
 	fclose(fp);
 
 	if ((fp = fopen(SECTION_LIST_SHM_FILE, "w")) == NULL)
 	{
-		log_error("fopen(%s) error\n", SECTION_LIST_SHM_FILE);
+		log_error("fopen(%s) error", SECTION_LIST_SHM_FILE);
 		return -1;
 	}
 	fclose(fp);
 
 	if ((fp = fopen(TRIE_DICT_SHM_FILE, "w")) == NULL)
 	{
-		log_error("fopen(%s) error\n", TRIE_DICT_SHM_FILE);
+		log_error("fopen(%s) error", TRIE_DICT_SHM_FILE);
 		return -1;
 	}
 	fclose(fp);
 
 	if ((fp = fopen(USER_LIST_SHM_FILE, "w")) == NULL)
 	{
-		log_error("fopen(%s) error\n", USER_LIST_SHM_FILE);
+		log_error("fopen(%s) error", USER_LIST_SHM_FILE);
 		return -1;
 	}
 	fclose(fp);
@@ -110,20 +110,20 @@ int main(int argc, char *argv[])
 
 	if (article_block_init(ARTICLE_BLOCK_SHM_FILE, block_count) < 0)
 	{
-		log_error("article_block_init(%s, %d) error\n", ARTICLE_BLOCK_SHM_FILE, block_count);
+		log_error("article_block_init(%s, %d) error", ARTICLE_BLOCK_SHM_FILE, block_count);
 		return -2;
 	}
 
 	if (section_list_init(SECTION_LIST_SHM_FILE) < 0)
 	{
-		log_error("section_list_pool_init(%s) error\n", SECTION_LIST_SHM_FILE);
+		log_error("section_list_pool_init(%s) error", SECTION_LIST_SHM_FILE);
 		return -2;
 	}
 
 	// Load user_list and online_user_list
 	if (user_list_pool_init(USER_LIST_SHM_FILE) < 0)
 	{
-		log_error("user_list_pool_init() error\n");
+		log_error("user_list_pool_init() error");
 		return -2;
 	}
 
@@ -278,7 +278,7 @@ int main(int argc, char *argv[])
 
 	if (article_block_reset() != 0)
 	{
-		log_error("article_block_reset() error\n");
+		log_error("article_block_reset() error");
 		return -4;
 	}
 
@@ -736,7 +736,7 @@ int main(int argc, char *argv[])
 
 	if (article_block_reset() != 0)
 	{
-		log_error("article_block_reset() error\n");
+		log_error("article_block_reset() error");
 		return -4;
 	}
 
@@ -991,25 +991,25 @@ int main(int argc, char *argv[])
 
 	if (unlink(USER_LIST_SHM_FILE) < 0)
 	{
-		log_error("unlink(%s) error\n", USER_LIST_SHM_FILE);
+		log_error("unlink(%s) error", USER_LIST_SHM_FILE);
 		return -1;
 	}
 
 	if (unlink(TRIE_DICT_SHM_FILE) < 0)
 	{
-		log_error("unlink(%s) error\n", TRIE_DICT_SHM_FILE);
+		log_error("unlink(%s) error", TRIE_DICT_SHM_FILE);
 		return -1;
 	}
 
 	if (unlink(ARTICLE_BLOCK_SHM_FILE) < 0)
 	{
-		log_error("unlink(%s) error\n", ARTICLE_BLOCK_SHM_FILE);
+		log_error("unlink(%s) error", ARTICLE_BLOCK_SHM_FILE);
 		return -1;
 	}
 
 	if (unlink(SECTION_LIST_SHM_FILE) < 0)
 	{
-		log_error("unlink(%s) error\n", SECTION_LIST_SHM_FILE);
+		log_error("unlink(%s) error", SECTION_LIST_SHM_FILE);
 		return -1;
 	}
 

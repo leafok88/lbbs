@@ -93,7 +93,7 @@ int load_conf(const char *conf_file)
 		q = strtok_r(NULL, CONF_DELIM_WITH_SPACE, &saveptr);
 		if (q == NULL) // Empty value
 		{
-			log_error("Skip empty value of config item: %s\n", p);
+			log_error("Skip empty value of config item: %s", p);
 			continue;
 		}
 
@@ -101,7 +101,7 @@ int load_conf(const char *conf_file)
 		r = strtok_r(NULL, CONF_DELIM_WITH_SPACE, &saveptr);
 		if (r != NULL && r[0] != '#')
 		{
-			log_error("Skip config line with extra value %s = %s %s\n", p, q, r);
+			log_error("Skip config line with extra value %s = %s %s", p, q, r);
 			continue;
 		}
 
@@ -138,7 +138,7 @@ int load_conf(const char *conf_file)
 			BBS_max_client = atoi(q);
 			if (BBS_max_client <= 0 || BBS_max_client > MAX_CLIENT_LIMIT)
 			{
-				log_error("Ignore config bbs_max_client with incorrect value %d\n", BBS_max_client);
+				log_error("Ignore config bbs_max_client with incorrect value %d", BBS_max_client);
 				BBS_max_client = MAX_CLIENT_LIMIT;
 			}
 		}
@@ -147,7 +147,7 @@ int load_conf(const char *conf_file)
 			BBS_max_client_per_ip = atoi(q);
 			if (BBS_max_client_per_ip <= 0 || BBS_max_client_per_ip > MAX_CLIENT_PER_IP_LIMIT)
 			{
-				log_error("Ignore config bbs_max_client with incorrect value %d\n", BBS_max_client_per_ip);
+				log_error("Ignore config bbs_max_client with incorrect value %d", BBS_max_client_per_ip);
 				BBS_max_client_per_ip = MAX_CLIENT_PER_IP_LIMIT;
 			}
 		}
@@ -159,7 +159,7 @@ int load_conf(const char *conf_file)
 
 			if (y == NULL || m == NULL || d == NULL)
 			{
-				log_error("Ignore config bbs_start_dt with incorrect value\n");
+				log_error("Ignore config bbs_start_dt with incorrect value");
 				continue;
 			}
 			snprintf(BBS_start_dt, sizeof(BBS_start_dt), "%4s年%2s月%2s日", y, m, d);
@@ -169,7 +169,7 @@ int load_conf(const char *conf_file)
 			v = atoi(q);
 			if (v <= 0)
 			{
-				log_error("Ignore config bbs_sys_id with incorrect value %d\n", v);
+				log_error("Ignore config bbs_sys_id with incorrect value %d", v);
 				continue;
 			}
 			BBS_sys_id = v;
@@ -201,7 +201,7 @@ int load_conf(const char *conf_file)
 		}
 		else
 		{
-			log_error("Unknown config %s = %s\n", p, q);
+			log_error("Unknown config %s = %s", p, q);
 		}
 	}
 

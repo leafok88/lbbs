@@ -56,7 +56,7 @@ int main(int argc, char *argv[])
 
 	if ((fp = fopen(TRIE_DICT_SHM_FILE, "w")) == NULL)
 	{
-		log_error("fopen(%s) error\n", TRIE_DICT_SHM_FILE);
+		log_error("fopen(%s) error", TRIE_DICT_SHM_FILE);
 		return -1;
 	}
 	fclose(fp);
@@ -248,7 +248,7 @@ int main(int argc, char *argv[])
 
 	if (unlink(TRIE_DICT_SHM_FILE) < 0)
 	{
-		log_error("unlink(%s) error\n", TRIE_DICT_SHM_FILE);
+		log_error("unlink(%s) error", TRIE_DICT_SHM_FILE);
 		return -1;
 	}
 
