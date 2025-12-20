@@ -17,6 +17,7 @@
 #include "log.h"
 #include "screen.h"
 #include "user_priv.h"
+#include <stdlib.h>
 
 int display_article_meta(int32_t aid)
 {
