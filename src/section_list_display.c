@@ -58,6 +58,7 @@ enum select_cmd_t
 	QUERY_USER,
 	SET_FAVOR_ARTICLE,
 	UNSET_FAVOR_ARTICLE,
+	SET_EXCERPTION_ARTICLE,
 	FIRST_TOPIC_ARTICLE,
 	LAST_TOPIC_ARTICLE,
 	LAST_SECTION_ARTICLE,
@@ -339,6 +340,12 @@ static enum select_cmd_t section_list_select(int total_page, int item_count, int
 			if (item_count > 0)
 			{
 				return UNSET_FAVOR_ARTICLE;
+			}
+			break;
+		case 'm':
+			if (item_count > 0)
+			{
+				return SET_EXCERPTION_ARTICLE;
 			}
 			break;
 		case KEY_HOME:
@@ -1091,6 +1098,18 @@ int section_list_display(const char *sname, int32_t aid)
 			{
 				log_error("article_favor_set(aid=%d, 0) error",
 						  p_articles[selected_index]->tid == 0 ? p_articles[selected_index]->aid : p_articles[selected_index]->tid);
+			}
+			break;
+		case SET_EXCERPTION_ARTICLE:
+			if (!checkpriv(&BBS_priv, p_section->sid, S_POST) || !checkpriv(&BBS_priv, p_section->sid, S_MAN_S))
+			{
+				break;
+			}
+			ret = article_exc_set(p_section, p_articles[selected_index]->aid, p_articles[selected_index]->excerption);
+			if (ret < 0)
+			{
+				log_error("article_exc_set(aid=%d, excerption=%d) error\n",
+						  p_articles[selected_index]->aid, p_articles[selected_index]->excerption);
 			}
 			break;
 		case FIRST_TOPIC_ARTICLE:
