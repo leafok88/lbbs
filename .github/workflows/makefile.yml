@@ -2,14 +2,10 @@ name: Makefile CI
 
 on:
   push:
-    branches: 
-      - "main"
-      - "lbbs_dev"
+    branches: [ "main" ]
   pull_request:
-    branches:
-      - "main"
-      - "lbbs_dev"
-      
+    branches: [ "main" ]
+
 jobs:
   build:
 
