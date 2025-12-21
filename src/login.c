@@ -324,13 +324,6 @@ int check_user(const char *username, const char *password)
 		goto cleanup;
 	}
 
-	if (!SSH_v2 && checklevel2(&BBS_priv, P_MAN_S))
-	{
-		prints("\033[1;31m非普通账户必须使用SSH方式登录\033[m\r\n");
-		ret = 1;
-		goto cleanup;
-	}
-
 	ret = load_user_info(db, BBS_uid);
 
 	switch (ret)
@@ -350,6 +343,13 @@ int check_user(const char *username, const char *password)
 		goto cleanup;
 	default:
 		ret = -2;
+		goto cleanup;
+	}
+
+	if (!SSH_v2 && checklevel2(&BBS_priv, P_MAN_S))
+	{
+		prints("\033[1;31m非普通账户必须使用SSH方式登录\033[m\r\n");
+		ret = 1;
 		goto cleanup;
 	}
 
