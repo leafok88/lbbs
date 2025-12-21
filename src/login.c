@@ -324,24 +324,29 @@ int check_user(const char *username, const char *password)
 		goto cleanup;
 	}
 
-	if (!SSH_v2 && checklevel2(&BBS_priv, P_MAN_S))
-	{
-		prints("\033[1;31m非普通账户必须使用SSH方式登录\033[m\r\n");
-		ret = 1;
-		goto cleanup;
-	}
-
 	ret = load_user_info(db, BBS_uid);
 
 	switch (ret)
 	{
 	case 0: // Login successfully
+		if (!SSH_v2 && checklevel2(&BBS_priv, P_MAN_S))
+		{
+			prints("\033[1;31m非普通账户必须使用SSH方式登录\033[m\r\n");
+			ret = 1;
+			goto cleanup;
+		}
 		break;
 	case -1: // Load data error
 		prints("\033[1;31m读取用户数据错误...\033[m\r\n");
 		ret = -1;
 		goto cleanup;
 	case -2: // Enforce update user agreement
+		if (!SSH_v2 && checklevel2(&BBS_priv, P_MAN_S))
+		{
+			prints("\033[1;31m非普通账户必须使用SSH方式登录\033[m\r\n");
+			ret = 1;
+			goto cleanup;
+		}
 		ret = 2;
 		goto cleanup;
 	case -3: // Dead
