@@ -45,12 +45,14 @@
 #include <poll.h>
 #endif
 
-static const char MENU_CONF_DELIM[] = " \t\r\n";
-
 enum _bbs_net_constant_t
 {
 	MAXSTATION = 26 * 2,
 	STATION_PER_LINE = 4,
+	ORG_NAME_MAX_LEN = 40,
+	SITE_NAME_MAX_LEN = 40,
+	HOSTNAME_MAX_LEN = 253,
+	PORT_STR_MAX_LEN = 5,
 	USERNAME_MAX_LEN = 20,
 	PASSWORD_MAX_LEN = 20,
 	REMOTE_CONNECT_TIMEOUT = 10, // seconds
@@ -60,13 +62,15 @@ enum _bbs_net_constant_t
 
 struct _bbsnet_conf
 {
-	char org_name[40];
-	char site_name[40];
-	char host_name[IP_ADDR_LEN];
-	char port[6];
+	char org_name[ORG_NAME_MAX_LEN + 1];
+	char site_name[SITE_NAME_MAX_LEN + 1];
+	char host_name[HOSTNAME_MAX_LEN + 1];
+	char port[PORT_STR_MAX_LEN + 1];
 	int8_t use_ssh;
 	char charset[CHARSET_MAX_LEN + 1];
 } bbsnet_conf[MAXSTATION];
+
+static const char MENU_CONF_DELIM[] = " \t\r\n";
 
 static MENU_SET bbsnet_menu;
 
@@ -74,11 +78,14 @@ static void unload_bbsnet_conf(void);
 
 static int load_bbsnet_conf(const char *file_config)
 {
-	FILE *fp;
+	FILE *fin;
+	int fin_line = 0;
 	MENU *p_menu;
 	MENU_ITEM *p_menu_item;
 	MENU_ITEM_ID menu_item_id;
-	char line[LINE_BUFFER_LEN], *t1, *t2, *t3, *t4, *t5, *t6, *saveptr;
+	char line[LINE_BUFFER_LEN];
+	char *p = NULL;
+	char *saveptr = NULL;
 	long port;
 	char *endptr;
 
@@ -108,54 +115,92 @@ static int load_bbsnet_conf(const char *file_config)
 	p_menu->title.show = 0;
 	p_menu->screen_show = 0;
 
-	fp = fopen(file_config, "r");
-	if (fp == NULL)
+	fin = fopen(file_config, "r");
+	if (fin == NULL)
 	{
 		unload_bbsnet_conf();
 		return -2;
 	}
 
 	menu_item_id = 0;
-	while (fgets(line, sizeof(line), fp) && menu_item_id < MAXSTATION)
+	while (fgets(line, sizeof(line), fin) && menu_item_id < MAXSTATION)
 	{
-		t1 = strtok_r(line, MENU_CONF_DELIM, &saveptr);
-		t2 = strtok_r(NULL, MENU_CONF_DELIM, &saveptr);
-		t3 = strtok_r(NULL, MENU_CONF_DELIM, &saveptr);
-		t4 = strtok_r(NULL, MENU_CONF_DELIM, &saveptr);
-		t5 = strtok_r(NULL, MENU_CONF_DELIM, &saveptr);
-		t6 = strtok_r(NULL, MENU_CONF_DELIM, &saveptr);
+		fin_line++;
 
-		if (t1 == NULL || t2 == NULL || t3 == NULL || t4 == NULL ||
-			t5 == NULL || t6 == NULL || t1[0] == '#')
+		p = strtok_r(line, MENU_CONF_DELIM, &saveptr);
+		if (p == NULL) // Blank line
 		{
 			continue;
 		}
 
-		strncpy(bbsnet_conf[menu_item_id].site_name, t2, sizeof(bbsnet_conf[menu_item_id].site_name) - 1);
-		bbsnet_conf[menu_item_id].site_name[sizeof(bbsnet_conf[menu_item_id].site_name) - 1] = '\0';
-		strncpy(bbsnet_conf[menu_item_id].org_name, t1, sizeof(bbsnet_conf[menu_item_id].org_name) - 1);
+		if (*p == '#' || *p == '\r' || *p == '\n') // Comment or blank line
+		{
+			continue;
+		}
+
+		if (strlen(p) > sizeof(bbsnet_conf[menu_item_id].org_name) - 1)
+		{
+			log_error("Error org_name in BBSNET config line %d", fin_line);
+			continue;
+		}
+		strncpy(bbsnet_conf[menu_item_id].org_name, p, sizeof(bbsnet_conf[menu_item_id].org_name) - 1);
 		bbsnet_conf[menu_item_id].org_name[sizeof(bbsnet_conf[menu_item_id].org_name) - 1] = '\0';
-		strncpy(bbsnet_conf[menu_item_id].host_name, t3, sizeof(bbsnet_conf[menu_item_id].host_name) - 1);
+
+		p = strtok_r(NULL, MENU_CONF_DELIM, &saveptr);
+		if (p == NULL || strlen(p) > sizeof(bbsnet_conf[menu_item_id].site_name) - 1)
+		{
+			log_error("Error site_name in BBSNET config line %d", fin_line);
+			continue;
+		}
+		strncpy(bbsnet_conf[menu_item_id].site_name, p, sizeof(bbsnet_conf[menu_item_id].site_name) - 1);
+		bbsnet_conf[menu_item_id].site_name[sizeof(bbsnet_conf[menu_item_id].site_name) - 1] = '\0';
+
+		p = strtok_r(NULL, MENU_CONF_DELIM, &saveptr);
+		if (p == NULL || strlen(p) > sizeof(bbsnet_conf[menu_item_id].host_name) - 1)
+		{
+			log_error("Error host_name in BBSNET config line %d", fin_line);
+			continue;
+		}
+		strncpy(bbsnet_conf[menu_item_id].host_name, p, sizeof(bbsnet_conf[menu_item_id].host_name) - 1);
 		bbsnet_conf[menu_item_id].host_name[sizeof(bbsnet_conf[menu_item_id].host_name) - 1] = '\0';
-		port = strtol(t4, &endptr, 10);
+
+		p = strtok_r(NULL, MENU_CONF_DELIM, &saveptr);
+		if (p == NULL || strlen(p) > sizeof(bbsnet_conf[menu_item_id].port) - 1)
+		{
+			log_error("Error port in BBSNET config line %d", fin_line);
+			continue;
+		}
+		port = strtol(p, &endptr, 10);
 		if (*endptr != '\0' || port <= 0 || port > 65535)
 		{
-			log_error("Invalid port value %ld of menu item %d", port, menu_item_id);
-			fclose(fp);
-			unload_bbsnet_conf();
-			return -3;
+			log_error("Invalid port %ld in BBSNET config line %d", port, fin_line);
+			continue;
 		}
-		strncpy(bbsnet_conf[menu_item_id].port, t4, sizeof(bbsnet_conf[menu_item_id].port) - 1);
+		strncpy(bbsnet_conf[menu_item_id].port, p, sizeof(bbsnet_conf[menu_item_id].port) - 1);
 		bbsnet_conf[menu_item_id].port[sizeof(bbsnet_conf[menu_item_id].port) - 1] = '\0';
-		bbsnet_conf[menu_item_id].use_ssh = (toupper(t5[0]) == 'Y');
-		strncpy(bbsnet_conf[menu_item_id].charset, t6, sizeof(bbsnet_conf[menu_item_id].charset) - 1);
+
+		p = strtok_r(NULL, MENU_CONF_DELIM, &saveptr);
+		if (p == NULL || strlen(p) != 1)
+		{
+			log_error("Error use_ssh in BBSNET config line %d", fin_line);
+			continue;
+		}
+		bbsnet_conf[menu_item_id].use_ssh = (toupper(p[0]) == 'Y');
+
+		p = strtok_r(NULL, MENU_CONF_DELIM, &saveptr);
+		if (p == NULL || strlen(p) > sizeof(bbsnet_conf[menu_item_id].charset) - 1)
+		{
+			log_error("Error charset in BBSNET config line %d", fin_line);
+			continue;
+		}
+		strncpy(bbsnet_conf[menu_item_id].charset, p, sizeof(bbsnet_conf[menu_item_id].charset) - 1);
 		bbsnet_conf[menu_item_id].charset[sizeof(bbsnet_conf[menu_item_id].charset) - 1] = '\0';
 
 		p_menu_item = get_menu_item_by_id(&bbsnet_menu, menu_item_id);
 		if (p_menu_item == NULL)
 		{
-			log_error("get_menu_item_by_id(%d) return NULL pointer", menu_item_id);
-			fclose(fp);
+			log_error("get_menu_item_by_id(%d) error: NULL pointer", menu_item_id);
+			fclose(fin);
 			unload_bbsnet_conf();
 			return -3;
 		}
@@ -182,7 +227,7 @@ static int load_bbsnet_conf(const char *file_config)
 	bbsnet_menu.menu_item_pos[0] = 0;
 	bbsnet_menu.choose_step = 0;
 
-	fclose(fp);
+	fclose(fin);
 
 	return 0;
 }
@@ -359,8 +404,9 @@ static int bbsnet_connect(int n)
 		}
 
 		moveto(1, 1);
-		prints("通过SSH方式连接[%s]...", bbsnet_conf[n].site_name);
-		moveto(2, 1);
+		prints("\033[1;32m正在准备往 %s (%s:%s) 的%s连接... \033[m\r\n",
+			   bbsnet_conf[n].site_name, bbsnet_conf[n].host_name, bbsnet_conf[n].port,
+			   (bbsnet_conf[n].use_ssh ? "SSH" : "Telnet"));
 		prints("请输入用户名: ");
 		iflush();
 		if (str_input(remote_user, sizeof(remote_user), DOECHO) < 0)
@@ -388,8 +434,9 @@ static int bbsnet_connect(int n)
 	clearscr();
 
 	moveto(1, 1);
-	prints("\033[1;32m正在测试往 %s (%s) 的连接，请稍候... \033[m\r\n",
-		   bbsnet_conf[n].site_name, bbsnet_conf[n].host_name);
+	prints("\033[1;32m正在测试往 %s (%s:%s) 的%s连接，请稍候... \033[m\r\n",
+		   bbsnet_conf[n].site_name, bbsnet_conf[n].host_name, bbsnet_conf[n].port,
+		   (bbsnet_conf[n].use_ssh ? "SSH" : "Telnet"));
 	prints("\033[1;32m连接进行中，按\033[1;33mCtrl+C\033[1;32m中断。\033[m\r\n");
 	progress_bar(0, PROGRESS_BAR_LEN);
 
