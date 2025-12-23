@@ -34,25 +34,78 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
-static inline void app_help(void)
+typedef void (*arg_option_handler_t)(void);
+
+struct arg_option_t
 {
-	fprintf(stderr, "Usage: bbsd [-fhv] [...]\n\n"
-					"-f\t--foreground\t\tForce program run in foreground\n"
-					"-h\t--help\t\t\tDisplay this help message\n"
-					"-v\t--version\t\tDisplay version information\n"
-					"\t--display-log\t\tDisplay standard log information\n"
-					"\t--display-error-log\tDisplay error log information\n"
-					"-C\t--compile-config\tDisplay compile configuration\n"
-					"\n    If meet any bug, please report to <leaflet@leafok.com>\n\n");
+	const char *short_arg;
+	const char *long_arg;
+	const char *description;
+	arg_option_handler_t handler;
+};
+typedef struct arg_option_t ARG_OPTION;
+
+static void arg_foreground(void);
+static void arg_help(void);
+static void arg_version(void);
+static void arg_display_log(void);
+static void arg_display_error_log(void);
+static void arg_compile_info(void);
+static void arg_error(void);
+
+static const ARG_OPTION arg_options[] = {
+	{"-f", "--foreground", "Run in foreground", arg_foreground},
+	{"-h", "--help", "Display help message", arg_help},
+	{"-v", "--version", "Display version information", arg_version},
+	{NULL, "--display-log", "Display standard log information", arg_display_log},
+	{NULL, "--display-error-log", "Display error log information", arg_display_error_log},
+	{"-C", "--compile-config", "Display compile configuration", arg_compile_info}};
+
+static const int arg_options_count = sizeof(arg_options) / sizeof(ARG_OPTION);
+
+static int daemon_service = 1;
+static int std_log_redir = 0;
+static int error_log_redir = 0;
+
+static void arg_foreground(void)
+{
+	daemon_service = 0;
 }
 
-static inline void arg_error(void)
+static void arg_help(void)
 {
-	fprintf(stderr, "Invalid arguments\n");
-	app_help();
+	fprintf(stderr, "Usage: bbsd [-fhv] [...]\n\n");
+
+	for (int i = 0; i < arg_options_count; i++)
+	{
+		fprintf(stderr, "%s%*s%s%*s%s\n",
+				arg_options[i].short_arg ? arg_options[i].short_arg : "",
+				8 - (arg_options[i].short_arg ? (int)strlen(arg_options[i].short_arg) : 0), "",
+				arg_options[i].long_arg ? arg_options[i].long_arg : "",
+				24 - (arg_options[i].long_arg ? (int)strlen(arg_options[i].long_arg) : 0), "",
+				arg_options[i].description ? arg_options[i].description : "");
+	}
+
+	fprintf(stderr, "\n    If meet any bug, please report to <leaflet@leafok.com>\n\n");
 }
 
-static inline void app_compile_info(void)
+static void arg_version(void)
+{
+	printf("%s\n", APP_INFO);
+	printf("%s\n", COPYRIGHT_INFO);
+}
+
+static void arg_display_log(void)
+{
+	std_log_redir = 1;
+}
+
+static void arg_display_error_log(void)
+{
+	error_log_redir = 1;
+}
+
+static void arg_compile_info(void)
 {
 	printf("%s\n"
 		   "--enable-shared\t\t[%s]\n"
@@ -95,12 +148,15 @@ static inline void app_compile_info(void)
 	);
 }
 
+static void arg_error(void)
+{
+	fprintf(stderr, "Invalid arguments\n");
+	arg_help();
+}
+
 int main(int argc, char *argv[])
 {
 	char file_path_temp[FILE_PATH_LEN];
-	int daemon = 1;
-	int std_log_redir = 0;
-	int error_log_redir = 0;
 	FILE *fp;
 	int ret;
 	int last_aid;
@@ -112,72 +168,28 @@ int main(int argc, char *argv[])
 	// Parse args
 	for (i = 1; i < argc; i++)
 	{
-		switch (argv[i][0])
+		for (j = 0; j < arg_options_count; j++)
 		{
-		case '-':
-			if (argv[i][1] != '-')
+			if (arg_options[j].short_arg && strcmp(argv[i], arg_options[j].short_arg) == 0)
 			{
-				for (j = 1; j < strlen(argv[i]); j++)
-				{
-					switch (argv[i][j])
-					{
-					case 'f':
-						daemon = 0;
-						break;
-					case 'h':
-						app_help();
-						return 0;
-					case 'v':
-						printf("%s\n", APP_INFO);
-						printf("%s\n", COPYRIGHT_INFO);
-						return 0;
-					case 'C':
-						app_compile_info();
-						return 0;
-					default:
-						arg_error();
-						return 1;
-					}
-				}
+				arg_options[j].handler();
+				break;
 			}
-			else
+			else if (arg_options[j].long_arg && strcmp(argv[i], arg_options[j].long_arg) == 0)
 			{
-				if (strcmp(argv[i] + 2, "foreground") == 0)
-				{
-					daemon = 0;
-					break;
-				}
-				if (strcmp(argv[i] + 2, "help") == 0)
-				{
-					app_help();
-					return 0;
-				}
-				if (strcmp(argv[i] + 2, "version") == 0)
-				{
-					printf("%s\n", APP_INFO);
-					printf("%s\n", COPYRIGHT_INFO);
-					return 0;
-				}
-				if (strcmp(argv[i] + 2, "display-log") == 0)
-				{
-					std_log_redir = 1;
-				}
-				if (strcmp(argv[i] + 2, "display-error-log") == 0)
-				{
-					error_log_redir = 1;
-				}
-				if (strcmp(argv[i] + 2, "compile-config") == 0)
-				{
-					app_compile_info();
-					return 0;
-				}
+				arg_options[j].handler();
+				break;
 			}
-			break;
+		}
+		if (j == arg_options_count)
+		{
+			arg_error();
+			return -1;
 		}
 	}
 
 	// Initialize daemon
-	if (daemon)
+	if (daemon_service)
 	{
 		init_daemon();
 	}
@@ -210,11 +222,11 @@ int main(int argc, char *argv[])
 		return -1;
 	}
 
-	if ((!daemon) && std_log_redir)
+	if ((!daemon_service) && std_log_redir)
 	{
 		log_common_redir(STDERR_FILENO);
 	}
-	if ((!daemon) && error_log_redir)
+	if ((!daemon_service) && error_log_redir)
 	{
 		log_error_redir(STDERR_FILENO);
 	}
