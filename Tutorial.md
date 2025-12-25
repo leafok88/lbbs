@@ -5,13 +5,13 @@ All tutorial videos are conducted in Mandarine without subtitles.
 
 Installation Guide
 ==================
-![Web version](https://www.bilibili.com/video/BV1BqBGBFExZ/) [view on Youtube](https://www.youtube.com/watch?v=AzMRaLtpGSc)  
-![Telnet version](https://www.bilibili.com/video/BV186BLBREuz/) [view on Youtube](https://www.youtube.com/watch?v=h2Eex3b2XpY)  
+[Web version](https://www.bilibili.com/video/BV1BqBGBFExZ/) [view on Youtube](https://www.youtube.com/watch?v=AzMRaLtpGSc)  
+[Telnet version](https://www.bilibili.com/video/BV186BLBREuz/) [view on Youtube](https://www.youtube.com/watch?v=h2Eex3b2XpY)  
 
 
 Introduction of Technical Design
 ==================
-![Talk 1 --- Background of LBBS project](https://www.bilibili.com/video/BV1wqBjB2E5L/) [view on Youtube](https://www.youtube.com/watch?v=BjNz187AhFI)  
-![Talk 2 --- Architecture of Network Server with Socket Programming](https://www.bilibili.com/video/BV1ZUBDBKEhA/) [view on Youtube](https://www.youtube.com/watch?v=eqBXOjG2BbI)  
-![Talk 3 --- Optimization for High-concurrent Traversal and Browse of Articles](https://www.bilibili.com/video/BV16mBXByEuA/) [view on Youtube](https://www.youtube.com/watch?v=0MzrSFdq3fo)  
-![Talk 4 --- Difficulties in Building Text Editor](https://www.bilibili.com/video/BV1fKBXBkESL/) [view on Youtube](https://www.youtube.com/watch?v=KgaX3auf8pA)  
+[Talk 1 --- Background of LBBS project](https://www.bilibili.com/video/BV1wqBjB2E5L/) [view on Youtube](https://www.youtube.com/watch?v=BjNz187AhFI)  
+[Talk 2 --- Architecture of Network Server with Socket Programming](https://www.bilibili.com/video/BV1ZUBDBKEhA/) [view on Youtube](https://www.youtube.com/watch?v=eqBXOjG2BbI)  
+[Talk 3 --- Optimization for High-concurrent Traversal and Browse of Articles](https://www.bilibili.com/video/BV16mBXByEuA/) [view on Youtube](https://www.youtube.com/watch?v=0MzrSFdq3fo)  
+[Talk 4 --- Difficulties in Building Text Editor](https://www.bilibili.com/video/BV1fKBXBkESL/) [view on Youtube](https://www.youtube.com/watch?v=KgaX3auf8pA)  
