@@ -113,7 +113,7 @@ AC_DEFINE_UNQUOTED([RETSIGTYPE],
 
 AC_FUNC_STRFTIME
 AC_FUNC_VPRINTF
-AC_CHECK_FUNCS([dup2 gethostbyname inet_ntoa memset mkdir rmdir regcomp poll socket strstr])
+AC_CHECK_FUNCS([dup2 getaddrinfo inet_ntop memset mkdir rmdir regcomp poll socket strstr])
 
 AC_CONFIG_FILES([Makefile
                  src/Makefile
