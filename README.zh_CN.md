@@ -19,7 +19,12 @@
 
 安装说明
 ==================
-中文安装说明位于[INSTALL.zh_CN.md](INSTALL.zh_CN.md)
+中文安装说明位于[INSTALL.zh_CN.md](INSTALL.zh_CN.md)  
+
+
+教程
+==================
+安装演示和技术架构介绍位于[Tutorial.zh_CN.md](Tutorial.zh_CN.md)  
 
 
 版权信息
