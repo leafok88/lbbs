@@ -124,6 +124,7 @@ static int auth_password(ssh_session session, const char *user,
 
 	if (ret == 0)
 	{
+		log_common("User [%s] authenticated successfully", user);
 		return SSH_AUTH_SUCCESS;
 	}
 
@@ -132,6 +133,8 @@ static int auth_password(ssh_session session, const char *user,
 		sdata->error = 1;
 	}
 
+	log_common("User [%s] authentication failed (%d/%d)", user,
+			  sdata->tries, BBS_login_retry_times);
 	return SSH_AUTH_DENIED;
 }
 
