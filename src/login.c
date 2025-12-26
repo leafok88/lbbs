@@ -393,8 +393,6 @@ int check_user(const char *username, const char *password)
 		tzset();
 	}
 
-	log_common("User [%s] authenticated successfully", username);
-
 cleanup:
 	mysql_free_result(rs);
 	mysql_close(db);
