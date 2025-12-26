@@ -15,3 +15,4 @@
 [介绍2 -- 服务端架构和socket网络编程](https://www.bilibili.com/video/BV1ZUBDBKEhA/) [去Youtube观看](https://www.youtube.com/watch?v=eqBXOjG2BbI)  
 [介绍3 -- 为高并发的遍历和浏览优化](https://www.bilibili.com/video/BV16mBXByEuA/) [去Youtube观看](https://www.youtube.com/watch?v=0MzrSFdq3fo)  
 [介绍4 --- 漫谈文本编辑器](https://www.bilibili.com/video/BV1fKBXBkESL/) [去Youtube观看](https://www.youtube.com/watch?v=KgaX3auf8pA)  
+[介绍5 --- 数据结构和算法](https://www.bilibili.com/video/BV1B7BoBQEcD/) [去Youtube观看](https://www.youtube.com/watch?v=fJsAtVQZNv0)  
