@@ -165,7 +165,7 @@ static int _str_input(char *buffer, int buf_size, int max_display_len, enum io_e
 		{
 			continue;
 		}
-		else if (ch == BACKSPACE)
+		else if (ch == BACKSPACE || ch == KEY_DEL)
 		{
 			if (offset > 0)
 			{

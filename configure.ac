@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.69])
-AC_INIT([lbbs],[1.6.3])
+AC_INIT([lbbs],[1.7.0])
 AC_CONFIG_SRCDIR([src/])
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_MACRO_DIRS([m4])
@@ -113,7 +113,7 @@ AC_DEFINE_UNQUOTED([RETSIGTYPE],
 
 AC_FUNC_STRFTIME
 AC_FUNC_VPRINTF
-AC_CHECK_FUNCS([dup2 gethostbyname inet_ntoa memset mkdir rmdir regcomp poll socket strstr])
+AC_CHECK_FUNCS([dup2 getaddrinfo inet_ntop memset mkdir rmdir regcomp poll socket strstr])
 
 AC_CONFIG_FILES([Makefile
                  src/Makefile

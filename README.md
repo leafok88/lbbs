@@ -22,7 +22,12 @@ System Requirement
 
 Installation
 ==================
-See guide in [INSTALL.md](INSTALL.md)
+See guide in [INSTALL.md](INSTALL.md)  
+
+
+Tutorial
+==================
+Watch demos and keynotes in [Tutorial.md](Tutorial.md)  
 
 
 Copyright

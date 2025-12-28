@@ -124,6 +124,7 @@ static int auth_password(ssh_session session, const char *user,
 
 	if (ret == 0)
 	{
+		log_common("User [%s] authenticated successfully", user);
 		return SSH_AUTH_SUCCESS;
 	}
 
@@ -132,6 +133,8 @@ static int auth_password(ssh_session session, const char *user,
 		sdata->error = 1;
 	}
 
+	log_common("User [%s] authentication failed (%d/%d)", user,
+			  sdata->tries, BBS_login_retry_times);
 	return SSH_AUTH_DENIED;
 }
 
@@ -518,6 +521,7 @@ int net_server(const char *hostaddr, in_port_t port[])
 	int ret;
 	int flags_server[2];
 	struct sockaddr_in sin;
+	char local_addr[INET_ADDRSTRLEN];
 
 #ifdef HAVE_SYS_EPOLL_H
 	struct epoll_event ev, events[MAX_EVENTS];
@@ -606,6 +610,12 @@ int net_server(const char *hostaddr, in_port_t port[])
 		sin.sin_addr.s_addr = (hostaddr[0] != '\0' ? inet_addr(hostaddr) : INADDR_ANY);
 		sin.sin_port = htons(port[i]);
 
+		if (inet_ntop(AF_INET, &(sin.sin_addr), local_addr, sizeof(local_addr)) == NULL)
+		{
+			log_error("inet_ntop() error (%d)", errno);
+			return -1;
+		}
+
 		// Reuse address and port
 		flags_server[i] = 1;
 		if (setsockopt(socket_server[i], SOL_SOCKET, SO_REUSEADDR, &flags_server[i], sizeof(flags_server[i])) < 0)
@@ -622,7 +632,7 @@ int net_server(const char *hostaddr, in_port_t port[])
 		if (bind(socket_server[i], (struct sockaddr *)&sin, sizeof(sin)) < 0)
 		{
 			log_error("Bind address %s:%u error (%d)",
-					  inet_ntoa(sin.sin_addr), ntohs(sin.sin_port), errno);
+					  local_addr, port[i], errno);
 			return -1;
 		}
 
@@ -632,7 +642,7 @@ int net_server(const char *hostaddr, in_port_t port[])
 			return -1;
 		}
 
-		log_common("Listening at %s:%u", inet_ntoa(sin.sin_addr), ntohs(sin.sin_port));
+		log_common("Listening at %s:%u", local_addr, port[i]);
 
 #ifdef HAVE_SYS_EPOLL_H
 		ev.events = EPOLLIN;
@@ -790,7 +800,7 @@ int net_server(const char *hostaddr, in_port_t port[])
 #endif
 
 			log_common("Reload configuration");
-			
+
 			// Restart log
 			if (log_restart() < 0)
 			{
@@ -931,9 +941,12 @@ int net_server(const char *hostaddr, in_port_t port[])
 						}
 					}
 
-					strncpy(hostaddr_client, inet_ntoa(sin.sin_addr), sizeof(hostaddr_client) - 1);
-					hostaddr_client[sizeof(hostaddr_client) - 1] = '\0';
-
+					if (inet_ntop(AF_INET, &(sin.sin_addr), hostaddr_client, sizeof(hostaddr_client)) == NULL)
+					{
+						log_error("inet_ntop() error (%d)", errno);
+						close(socket_client);
+						break;
+					}
 					port_client = ntohs(sin.sin_port);
 
 					if (SYS_child_process_count - 1 < BBS_max_client)

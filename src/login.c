@@ -41,11 +41,10 @@ int bbs_login(void)
 {
 	char username[BBS_username_max_len + 1];
 	char password[BBS_password_max_len + 1];
-	int i = 0;
-	int ok = 0;
+	int i;
 	int ret;
 
-	for (; !SYS_server_exit && !ok && i < BBS_login_retry_times; i++)
+	for (i = 0; !SYS_server_exit && i < BBS_login_retry_times; i++)
 	{
 		prints("\033[1;33m请输入帐号\033[m(试用请输入`\033[1;36mguest\033[m', "
 			   "注册请输入`\033[1;31mnew\033[m'): ");
@@ -59,14 +58,13 @@ int bbs_login(void)
 		if (strcmp(username, "guest") == 0)
 		{
 			load_guest_info();
-
+			log_common("User [%s] authenticated successfully", username);
 			return 0;
 		}
 
 		if (strcmp(username, "new") == 0)
 		{
 			display_file(DATA_REGISTER, 1);
-
 			return -1;
 		}
 
@@ -87,18 +85,20 @@ int bbs_login(void)
 				ret = 0;
 			}
 
-			ok = (ret == 0);
+			if (ret == 0)
+			{
+				log_common("User [%s] authenticated successfully", username);
+				return 0;
+			}
+
+			log_common("User [%s] authentication failed (%d/%d)", username,
+					   i + 1, BBS_login_retry_times);
 			iflush();
 		}
 	}
 
-	if (!ok)
-	{
-		display_file(DATA_LOGIN_ERROR, 1);
-		return -1;
-	}
-
-	return 0;
+	display_file(DATA_LOGIN_ERROR, 1);
+	return -1;
 }
 
 int check_user(const char *username, const char *password)
