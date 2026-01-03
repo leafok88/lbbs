@@ -3,7 +3,7 @@
  * bwf
  *   - bad words filter
  *
- * Copyright (C) 2004-2025  Leaflet <leaflet@leafok.com>
+ * Copyright (C) 2004-2026  Leaflet <leaflet@leafok.com>
  */
 
 #ifndef _BWF_H_

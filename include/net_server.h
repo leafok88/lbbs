@@ -3,7 +3,7 @@
  * net_server
  *   - network server with SSH support
  *
- * Copyright (C) 2004-2025  Leaflet <leaflet@leafok.com>
+ * Copyright (C) 2004-2026  Leaflet <leaflet@leafok.com>
  */
 
 #ifndef _NET_SERVER_H_

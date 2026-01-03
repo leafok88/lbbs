@@ -3,7 +3,7 @@
  * io
  *   - basic terminal-based user input / output features
  *
- * Copyright (C) 2004-2025  Leaflet <leaflet@leafok.com>
+ * Copyright (C) 2004-2026  Leaflet <leaflet@leafok.com>
  */
 
 #ifndef _IO_H_
