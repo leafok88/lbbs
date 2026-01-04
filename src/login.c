@@ -46,6 +46,7 @@ int bbs_login(void)
 
 	for (i = 0; !SYS_server_exit && i < BBS_login_retry_times; i++)
 	{
+		clrtoeol();
 		prints("\033[1;33m请输入帐号\033[m(试用请输入`\033[1;36mguest\033[m', "
 			   "注册请输入`\033[1;31mnew\033[m'): ");
 		iflush();
@@ -70,6 +71,7 @@ int bbs_login(void)
 
 		if (username[0] != '\0')
 		{
+			clrtoeol();
 			prints("\033[1;37m请输入密码\033[m: ");
 			iflush();
 
