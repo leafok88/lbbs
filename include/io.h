@@ -26,6 +26,7 @@ enum io_key_t
     KEY_NULL = 0xffff,
     KEY_TIMEOUT = 0xfffe,
     KEY_CONTROL = 0xff,
+    KEY_BACKSPACE = 0x7f,
     KEY_UP = 0x0101,
     KEY_DOWN = 0x0102,
     KEY_RIGHT = 0x0103,

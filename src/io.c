@@ -1070,6 +1070,12 @@ int igetch(int timeout)
 		out = KEY_ESC;
 	}
 
+	// KEY_BACKSPACE -> BACKSPACE
+	if (out == KEY_BACKSPACE)
+	{
+		out = BACKSPACE;
+	}
+
 	// for debug
 #ifdef _DEBUG
 	if (out != KEY_TIMEOUT && out != KEY_NULL)
