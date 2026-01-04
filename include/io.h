@@ -17,9 +17,9 @@ enum io_key_t
     CR = '\r',
     LF = '\n',
     BACKSPACE = '\b',
-    BELL = '\b',
-    KEY_TAB = 9,
-    KEY_ESC = 27,
+    BELL = '\7',
+    KEY_TAB = '\t',
+    KEY_ESC = '\033',
     KEY_SPACE = '\040',
 
     // Expand key
