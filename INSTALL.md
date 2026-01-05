@@ -74,3 +74,13 @@ To install LBBS on Linux (e.g. Debian 13, CentOS Stream 10), please perform the 
    There should be no item owned by bbs. Otherwise, run the following command to cleanup:  
    sudo -u bbs ipcrm -a
 
+
+For Docker user
+==================
+You may either build the docker image from source code by running:  
+   docker compose up --build -d  
+
+or pull the docker image per release from Docker Hub by running:  
+   docker compose pull  
+
+You should always create / update the configuration files for local configuration (e.g. database connection, network port) as described above.  
