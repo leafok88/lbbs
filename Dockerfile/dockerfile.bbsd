@@ -1,11 +1,29 @@
+# Stage for Build
 FROM debian:latest
 
 ARG LBBS_HOME_DIR=/usr/local/lbbs
 
+RUN apt-get update && apt-get install -y \
+    gcc make gdb autoconf automake libtool pkg-config \
+    libssh-dev libpcre2-dev libmariadb-dev libsystemd-dev \
+    php-cli php-mysql \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY ./ /home/lbbs_src
+WORKDIR /home/lbbs_src
+
+RUN autoreconf --install --force
+RUN ./configure --prefix=${LBBS_HOME_DIR} \
+    && make && make install
+
+# Stage for Runtime
+FROM debian:13-slim
+
 # Install locales package and generate en_US.UTF-8
-RUN apt-get update && apt-get install -y locales && \
-    sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && \
-    locale-gen
+RUN apt-get update && apt-get install -y locales \
+    && sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen \
+    && locale-gen \
+    && rm -rf /var/lib/apt/lists/*
 
 # Set environment variables for the locale
 ENV LANG=en_US.UTF-8
@@ -13,21 +31,13 @@ ENV LANGUAGE=en_US:en
 ENV LC_ALL=en_US.UTF-8
 
 RUN apt-get update && apt-get install -y \
-    gcc make gdb autoconf automake libtool pkg-config \
-    libssh-dev libpcre2-dev libmariadb-dev libsystemd-dev \
-    php-cli php-mysql
+    libssh-4 libpcre2-8-0 libmariadb3 libsystemd0 \
+    php-cli php-mysql \
+    && rm -rf /var/lib/apt/lists/*
 
 # Copy the custom configuration file
 COPY ./Dockerfile/php.ini /usr/local/etc/php/php.ini
 
-RUN mkdir -p ${LBBS_HOME_DIR}
-
-COPY ./ /home/lbbs_src
-WORKDIR /home/lbbs_src
-
-RUN autoreconf --install --force
-RUN ./configure --prefix=${LBBS_HOME_DIR} && \
-    make && \
-    make install
+COPY --from=0 /usr/local/lbbs /usr/local/lbbs
 
 WORKDIR ${LBBS_HOME_DIR}
