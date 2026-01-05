@@ -1,3 +1,7 @@
+.git
+.gitignore
+/Dockerfile/dockerfile.*
+/docker-compose.yml
 /conf/bbsd.conf
 /conf/bbsnet.conf
 /conf/badwords.conf
