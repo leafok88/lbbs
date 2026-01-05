@@ -32,7 +32,7 @@ Watch demos and keynotes in [Tutorial.md](Tutorial.md)
 
 Copyright
 =================
-Copyright (C) 2004-2025 Leaflet <leaflet@leafok.com>  
+Copyright (C) 2004-2026 Leaflet <leaflet@leafok.com>  
 
 
 License

@@ -3,7 +3,7 @@
  * section_list_loader
  *   - load and query operations of section articles
  *
- * Copyright (C) 2004-2025  Leaflet <leaflet@leafok.com>
+ * Copyright (C) 2004-2026  Leaflet <leaflet@leafok.com>
  */
 
 #ifdef HAVE_CONFIG_H

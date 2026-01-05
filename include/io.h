@@ -3,7 +3,7 @@
  * io
  *   - basic terminal-based user input / output features
  *
- * Copyright (C) 2004-2025  Leaflet <leaflet@leafok.com>
+ * Copyright (C) 2004-2026  Leaflet <leaflet@leafok.com>
  */
 
 #ifndef _IO_H_
@@ -17,15 +17,16 @@ enum io_key_t
     CR = '\r',
     LF = '\n',
     BACKSPACE = '\b',
-    BELL = '\b',
-    KEY_TAB = 9,
-    KEY_ESC = 27,
+    BELL = '\7',
+    KEY_TAB = '\t',
+    KEY_ESC = '\033',
     KEY_SPACE = '\040',
 
     // Expand key
     KEY_NULL = 0xffff,
     KEY_TIMEOUT = 0xfffe,
     KEY_CONTROL = 0xff,
+    KEY_BACKSPACE = 0x7f,
     KEY_UP = 0x0101,
     KEY_DOWN = 0x0102,
     KEY_RIGHT = 0x0103,

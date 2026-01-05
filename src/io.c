@@ -3,7 +3,7 @@
  * io
  *   - basic terminal-based user input / output features
  *
- * Copyright (C) 2004-2025  Leaflet <leaflet@leafok.com>
+ * Copyright (C) 2004-2026  Leaflet <leaflet@leafok.com>
  */
 
 #ifdef HAVE_CONFIG_H
@@ -1068,6 +1068,12 @@ int igetch(int timeout)
 	if (out == 0 && in_esc)
 	{
 		out = KEY_ESC;
+	}
+
+	// KEY_BACKSPACE -> BACKSPACE
+	if (out == KEY_BACKSPACE)
+	{
+		out = BACKSPACE;
 	}
 
 	// for debug

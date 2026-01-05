@@ -3,7 +3,7 @@
  * data_file_mgr
  *   - Edit / Preview data files
  *
- * Copyright (C) 2004-2025  Leaflet <leaflet@leafok.com>
+ * Copyright (C) 2004-2026  Leaflet <leaflet@leafok.com>
  */
 
 #ifndef _DATA_FILE_MGR_H_

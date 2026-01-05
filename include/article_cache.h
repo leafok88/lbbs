@@ -3,7 +3,7 @@
  * article_cache
  *   - convert article content from DB to local cache with LML conversion and line offset index
  *
- * Copyright (C) 2004-2025  Leaflet <leaflet@leafok.com>
+ * Copyright (C) 2004-2026  Leaflet <leaflet@leafok.com>
  */
 
 #ifndef _ARTICLE_CACHE_H_

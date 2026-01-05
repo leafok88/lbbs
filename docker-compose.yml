@@ -1,0 +1,29 @@
+services:
+  bbsd:
+    image: leafok/lbbs-bbsd
+    shm_size: '4gb'
+    build:
+      context: .
+      dockerfile: Dockerfile/dockerfile.bbsd
+    ports:
+      - "2322:2322"
+      - "2323:2323"
+    volumes:
+      - bbsd-conf:/usr/local/lbbs/conf
+      - bbsd-data:/usr/local/lbbs/data
+      - bbsd-var:/usr/local/lbbs/var
+      - bbsd-log:/usr/local/lbbs/log
+      - bbsd-utils-conf:/usr/local/lbbs/utils/conf
+    command: [ "/usr/local/lbbs/bin/bbsd", "-f" ]
+
+volumes:
+  bbsd-conf:
+    driver: local
+  bbsd-data:
+    driver: local
+  bbsd-var:
+    driver: local
+  bbsd-log:
+    driver: local
+  bbsd-utils-conf:
+    driver: local

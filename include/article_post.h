@@ -3,7 +3,7 @@
  * article_post
  *   - user interactive feature to post / modify / reply article
  *
- * Copyright (C) 2004-2025  Leaflet <leaflet@leafok.com>
+ * Copyright (C) 2004-2026  Leaflet <leaflet@leafok.com>
  */
 
 #ifndef _ARTICLE_POST_H_

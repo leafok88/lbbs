@@ -3,7 +3,7 @@
  * hash_dict
  *   - hash-map based dict feature
  *
- * Copyright (C) 2004-2025  Leaflet <leaflet@leafok.com>
+ * Copyright (C) 2004-2026  Leaflet <leaflet@leafok.com>
  */
 
 #ifndef _HASH_DICT_H_

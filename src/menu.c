@@ -3,7 +3,7 @@
  * menu
  *   - configurable user interactive menu feature
  *
- * Copyright (C) 2004-2025  Leaflet <leaflet@leafok.com>
+ * Copyright (C) 2004-2026  Leaflet <leaflet@leafok.com>
  */
 
 #ifdef HAVE_CONFIG_H
@@ -88,7 +88,7 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 
 	if ((fin = fopen(conf_file, "r")) == NULL)
 	{
-		log_error("Open %s failed", conf_file);
+		log_error("Open %s error: %d", conf_file, errno);
 		return -2;
 	}
 

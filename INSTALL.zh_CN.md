@@ -73,3 +73,13 @@
    正常情况下不存在所有者是bbs的项。否则，请运行以下命令清理:  
    sudo -u bbs ipcrm -a
 
+
+Docker用户
+==================
+你可以从源代码位置生成容器镜像:  
+   docker compose up --build -d  
+
+也可以从Docker Hub下载镜像文件:  
+   docker compose pull  
+
+记得需要根据本地配置 (数据库连接、服务端口等) 修改配置文件，步骤见上节。  

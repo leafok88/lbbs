@@ -3,7 +3,7 @@
  * user_info_update
  *   - update user information
  *
- * Copyright (C) 2004-2025  Leaflet <leaflet@leafok.com>
+ * Copyright (C) 2004-2026  Leaflet <leaflet@leafok.com>
  *
  * Co-author:               老黑噜 <2391669999@qq.com>
  */

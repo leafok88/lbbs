@@ -3,7 +3,7 @@
  * str_process
  *   - common string processing features with UTF-8 support
  *
- * Copyright (C) 2004-2025  Leaflet <leaflet@leafok.com>
+ * Copyright (C) 2004-2026  Leaflet <leaflet@leafok.com>
  */
 
 #ifndef _STR_PROCESS_H_
