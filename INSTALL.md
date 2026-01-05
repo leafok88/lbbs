@@ -7,7 +7,7 @@ To install LBBS on Linux (e.g. Debian 13, CentOS Stream 10), please perform the 
    It is highly recommended to finish the configuration steps of web version first and make sure those features could work properly.
 
 1) Common requirements  
-   gcc >= 14.2  
+   gcc >= 13.3  
    autoconf >= 2.68  
    automake >= 1.16  
    php >= 8.2  
@@ -50,6 +50,7 @@ To install LBBS on Linux (e.g. Debian 13, CentOS Stream 10), please perform the 
 9) Generate menu configuration file with section data by running the script  
    sudo -u bbs php $LBBS_HOME_DIR/utils/bin/gen_section_menu.php  
    sudo -u bbs php $LBBS_HOME_DIR/utils/bin/gen_ex_list.php  
+   sudo -u bbs php $LBBS_HOME_DIR/utils/bin/gen_top.php  
 
 10) Create SSH2 RSA / ED25519 certificate  
    ssh-keygen -t rsa -C "Your Server Name" -f $LBBS_HOME_DIR/conf/ssh_host_rsa_key  

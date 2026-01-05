@@ -88,7 +88,7 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 
 	if ((fin = fopen(conf_file, "r")) == NULL)
 	{
-		log_error("Open %s failed", conf_file);
+		log_error("Open %s error: %d", conf_file, errno);
 		return -2;
 	}
 
