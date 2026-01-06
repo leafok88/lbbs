@@ -122,6 +122,14 @@ int io_init(void)
 		if (stdout_epollfd == -1)
 		{
 			log_error("epoll_create1() error (%d)", errno);
+			/* Clean up stdin_epollfd on failure */
+			if (stdin_epollfd != -1)
+			{
+				fcntl(STDIN_FILENO, F_SETFL, stdin_flags);
+				close(stdin_epollfd);
+				stdin_epollfd = -1;
+				stdin_flags = 0;
+			}
 			return -1;
 		}
 
@@ -135,6 +143,14 @@ int io_init(void)
 				log_error("close(stdout_epollfd) error (%d)", errno);
 			}
 			stdout_epollfd = -1;
+			/* Clean up stdin_epollfd on failure */
+			if (stdin_epollfd != -1)
+			{
+				fcntl(STDIN_FILENO, F_SETFL, stdin_flags);
+				close(stdin_epollfd);
+				stdin_epollfd = -1;
+				stdin_flags = 0;
+			}
 			return -1;
 		}
 
@@ -146,6 +162,14 @@ int io_init(void)
 				log_error("close(stdout_epollfd) error (%d)", errno);
 			}
 			stdout_epollfd = -1;
+			/* Clean up stdin_epollfd on failure */
+			if (stdin_epollfd != -1)
+			{
+				fcntl(STDIN_FILENO, F_SETFL, stdin_flags);
+				close(stdin_epollfd);
+				stdin_epollfd = -1;
+				stdin_flags = 0;
+			}
 			return -1;
 		}
 		if ((fcntl(STDOUT_FILENO, F_SETFL, stdout_flags | O_NONBLOCK)) == -1)
@@ -156,6 +180,14 @@ int io_init(void)
 				log_error("close(stdout_epollfd) error (%d)", errno);
 			}
 			stdout_epollfd = -1;
+			/* Clean up stdin_epollfd on failure */
+			if (stdin_epollfd != -1)
+			{
+				fcntl(STDIN_FILENO, F_SETFL, stdin_flags);
+				close(stdin_epollfd);
+				stdin_epollfd = -1;
+				stdin_flags = 0;
+			}
 			return -1;
 		}
 	}
@@ -642,6 +674,14 @@ int igetch(int timeout)
 
 		if (in_control)
 		{
+			/* Boundary check to prevent buffer overflow */
+			if (i >= LINE_BUFFER_LEN - 1)
+			{
+				/* Control sequence too long, discard */
+				in_control = 0;
+				out = c;
+				break;
+			}
 			tmp[i++] = c;
 			if (i >= 2)
 			{
@@ -673,6 +713,14 @@ int igetch(int timeout)
 
 		if (in_ascii)
 		{
+			/* Boundary check to prevent buffer overflow */
+			if (i >= LINE_BUFFER_LEN - 1)
+			{
+				/* Escape sequence too long, discard and return current char */
+				in_ascii = 0;
+				out = c;
+				break;
+			}
 			tmp[i++] = c;
 			if (i == 2 && (tmp[0] == 79 || tmp[0] == 91))
 			{
