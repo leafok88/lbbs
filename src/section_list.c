@@ -16,6 +16,7 @@
 #include "user_list.h"
 #include <errno.h>
 #include <fcntl.h>
+#include <pthread.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -78,6 +79,9 @@ typedef struct article_block_pool_t ARTICLE_BLOCK_POOL;
 static char article_block_shm_name[FILE_NAME_LEN];
 static ARTICLE_BLOCK_POOL *p_article_block_pool = NULL;
 
+/* Spinlock for protecting free list operations */
+static pthread_spinlock_t free_list_spinlock;
+
 static char section_list_shm_name[FILE_NAME_LEN];
 SECTION_LIST_POOL *p_section_list_pool = NULL;
 
@@ -99,6 +103,13 @@ int article_block_init(const char *filename, int block_count)
 	if (p_article_block_pool != NULL)
 	{
 		log_error("article_block_pool already initialized");
+		return -1;
+	}
+
+	/* Initialize spinlock for free list protection */
+	if (pthread_spin_init(&free_list_spinlock, PTHREAD_PROCESS_PRIVATE) != 0)
+	{
+		log_error("pthread_spin_init error");
 		return -1;
 	}
 
@@ -281,12 +292,19 @@ int set_article_block_shm_readonly(void)
 
 int detach_article_block_shm(void)
 {
+	int shm_count;
+	size_t pool_shm_size;
+
 	if (p_article_block_pool == NULL)
 	{
 		return -1;
 	}
 
-	for (int i = 0; i < p_article_block_pool->shm_count; i++)
+	/* Save necessary data before unmapping to avoid use-after-unmap */
+	shm_count = p_article_block_pool->shm_count;
+	pool_shm_size = p_article_block_pool->shm_size;
+
+	for (int i = 0; i < shm_count; i++)
 	{
 		if ((p_article_block_pool->shm_pool + i)->p_shm != NULL &&
 			munmap((p_article_block_pool->shm_pool + i)->p_shm, (p_article_block_pool->shm_pool + i)->shm_size) < 0)
@@ -296,7 +314,7 @@ int detach_article_block_shm(void)
 		}
 	}
 
-	if (p_article_block_pool != NULL && munmap(p_article_block_pool, p_article_block_pool->shm_size) < 0)
+	if (p_article_block_pool != NULL && munmap(p_article_block_pool, pool_shm_size) < 0)
 	{
 		log_error("munmap() error (%d)", errno);
 		return -3;
@@ -304,12 +322,17 @@ int detach_article_block_shm(void)
 
 	p_article_block_pool = NULL;
 
+	/* Destroy spinlock */
+	pthread_spin_destroy(&free_list_spinlock);
+
 	return 0;
 }
 
 inline static ARTICLE_BLOCK *pop_free_article_block(void)
 {
 	ARTICLE_BLOCK *p_block = NULL;
+
+	pthread_spin_lock(&free_list_spinlock);
 
 	if (p_article_block_pool->p_block_free_list != NULL)
 	{
@@ -319,13 +342,19 @@ inline static ARTICLE_BLOCK *pop_free_article_block(void)
 		p_block->article_count = 0;
 	}
 
+	pthread_spin_unlock(&free_list_spinlock);
+
 	return p_block;
 }
 
 inline static void push_free_article_block(ARTICLE_BLOCK *p_block)
 {
+	pthread_spin_lock(&free_list_spinlock);
+
 	p_block->p_next_block = p_article_block_pool->p_block_free_list;
 	p_article_block_pool->p_block_free_list = p_block;
+
+	pthread_spin_unlock(&free_list_spinlock);
 }
 
 int article_block_reset(void)
