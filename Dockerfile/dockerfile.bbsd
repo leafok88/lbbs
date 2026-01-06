@@ -1,5 +1,5 @@
 # Stage for Build
-FROM debian:latest
+FROM debian:13-slim
 
 ARG LBBS_HOME_DIR=/usr/local/lbbs
 
