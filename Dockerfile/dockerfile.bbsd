@@ -1,5 +1,5 @@
 # Stage for Build
-FROM debian:13-slim
+FROM debian:13-slim AS builder
 
 ARG LBBS_HOME_DIR=/usr/local/lbbs
 
@@ -38,6 +38,6 @@ RUN apt-get update && apt-get install -y \
 # Copy the custom configuration file
 COPY ./Dockerfile/php.ini /usr/local/etc/php/php.ini
 
-COPY --from=0 /usr/local/lbbs /usr/local/lbbs
+COPY --from=builder /usr/local/lbbs /usr/local/lbbs
 
 WORKDIR ${LBBS_HOME_DIR}
