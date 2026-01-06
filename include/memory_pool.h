@@ -10,6 +10,11 @@
 #define _MEMORY_POOL_H_
 
 #include <stddef.h>
+#include <pthread.h>
+
+/* Magic numbers for double-free detection */
+#define MEMORY_POOL_MAGIC_ALLOCATED 0xABCD1234U
+#define MEMORY_POOL_MAGIC_FREE      0xDEADBEEFU
 
 struct memory_pool_t
 {
@@ -22,6 +27,7 @@ struct memory_pool_t
 	int node_count_allocated;
 	int node_count_free;
 	int node_count_total;
+	pthread_mutex_t mutex;
 };
 typedef struct memory_pool_t MEMORY_POOL;
 
