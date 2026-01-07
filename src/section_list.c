@@ -281,12 +281,18 @@ int set_article_block_shm_readonly(void)
 
 int detach_article_block_shm(void)
 {
+	int shm_count;
+	size_t pool_shm_size;
+
 	if (p_article_block_pool == NULL)
 	{
 		return -1;
 	}
 
-	for (int i = 0; i < p_article_block_pool->shm_count; i++)
+	shm_count = p_article_block_pool->shm_count;
+	pool_shm_size = p_article_block_pool->shm_size;
+
+	for (int i = 0; i < shm_count; i++)
 	{
 		if ((p_article_block_pool->shm_pool + i)->p_shm != NULL &&
 			munmap((p_article_block_pool->shm_pool + i)->p_shm, (p_article_block_pool->shm_pool + i)->shm_size) < 0)
@@ -296,7 +302,7 @@ int detach_article_block_shm(void)
 		}
 	}
 
-	if (p_article_block_pool != NULL && munmap(p_article_block_pool, p_article_block_pool->shm_size) < 0)
+	if (p_article_block_pool != NULL && munmap(p_article_block_pool, pool_shm_size) < 0)
 	{
 		log_error("munmap() error (%d)", errno);
 		return -3;
