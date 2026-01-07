@@ -1,6 +1,6 @@
 # LBBS - Classical terminal server of LeafOK BBS
 
-中文版本的README.md位于[README.zh_CN.md](README.zh_CN.md)
+Chinese version of README.md is located at [README.zh_CN.md](README.zh_CN.md)
 
 
 Introduction
@@ -40,4 +40,4 @@ License
 This program is free software; you can redistribute it and/or modify 
 it under the terms of the [GNU General Public License](LICENSE) as published by 
 the Free Software Foundation; either version 3 of the License, or    
-(at your option) any later version.   
+(at your option) any later version.
