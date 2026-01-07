@@ -1,8 +1,6 @@
 # Stage for Build
 FROM debian:13-slim AS builder
 
-ARG LBBS_HOME_DIR=/usr/local/lbbs
-
 RUN apt-get update && apt-get install -y \
     gcc make gdb autoconf automake libtool pkg-config \
     libssh-dev libpcre2-dev libmariadb-dev libsystemd-dev \
@@ -13,7 +11,7 @@ COPY ./ /home/lbbs_src
 WORKDIR /home/lbbs_src
 
 RUN autoreconf --install --force
-RUN ./configure --prefix=${LBBS_HOME_DIR} \
+RUN ./configure --prefix=/usr/local/lbbs \
     && make && make install
 
 # Stage for Runtime
@@ -40,4 +38,4 @@ COPY ./Dockerfile/php.ini /usr/local/etc/php/php.ini
 
 COPY --from=builder /usr/local/lbbs /usr/local/lbbs
 
-WORKDIR ${LBBS_HOME_DIR}
+WORKDIR /usr/local/lbbs
