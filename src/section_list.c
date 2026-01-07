@@ -1514,7 +1514,7 @@ int section_list_move_topic(SECTION_LIST *p_section_src, SECTION_LIST *p_section
 		{
 			p_section_src->p_article_tail = p_article->p_prior;
 		}
-		if (p_section_src->p_article_head == p_article) // || p_section_src->p_article_tail == p_article
+		if (p_section_src->p_article_head == p_article) // Single element list
 		{
 			p_section_src->p_article_head = NULL;
 			p_section_src->p_article_tail = NULL;
