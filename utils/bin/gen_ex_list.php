@@ -90,7 +90,7 @@ MENU;
 	if (!isset($_SERVER["argc"]))
 	{
 		echo ("Invalid usage");
-		exit();
+		exit(-1);
 	}
 
 	chdir(dirname($_SERVER["argv"][0]));
@@ -138,7 +138,7 @@ MENU;
 	if ($rs == false)
 	{
 		echo ("Query section error: " . mysqli_error($db_conn));
-		exit();
+		exit(-2);
 	}
 
 	while ($row = mysqli_fetch_array($rs))
@@ -155,7 +155,7 @@ MENU;
 			if ($ret == false)
 			{
 				echo ("Update tm error: " . mysqli_error($db_conn));
-				exit();
+				exit(-3);
 			}
 		}
 		else

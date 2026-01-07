@@ -373,7 +373,6 @@ ARTICLE *article_block_find_by_aid(int32_t aid)
 	while (left < right)
 	{
 		// get block offset no less than mid value of left and right block offsets
-		// Use safe formula to avoid integer overflow: mid = ceil((left + right) / 2)
 		mid = left + (right - left + 1) / 2;
 
 		if (aid < p_article_block_pool->p_block[mid]->articles[0].aid)
@@ -394,7 +393,6 @@ ARTICLE *article_block_find_by_aid(int32_t aid)
 	// aid in the range [ aid of articles[left], aid of articles[right] ]
 	while (left < right)
 	{
-		// Use safe formula to avoid integer overflow
 		mid = left + (right - left) / 2;
 
 		if (aid <= p_block->articles[mid].aid)
@@ -1219,7 +1217,6 @@ ARTICLE *section_list_find_article_with_offset(SECTION_LIST *p_section, int32_t 
 	while (left < right)
 	{
 		// get page id no less than mid value of left page id and right page id
-		// Use safe formula to avoid integer overflow: mid = ceil((left + right) / 2)
 		mid = left + (right - left + 1) / 2;
 
 		if (aid < p_section->p_page_first_article[mid]->aid)

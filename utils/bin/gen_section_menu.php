@@ -2,7 +2,7 @@
 	if (!isset($_SERVER["argc"]))
 	{
 		echo ("Invalid usage");
-		exit();
+		exit(-1);
 	}
 
 	chdir(dirname($_SERVER["argv"][0]));
@@ -18,7 +18,7 @@
 	if ($buffer == false)
 	{
 		echo "Unable to load menu config file " . $menu_input_path . "\n";
-		exit();
+		exit(-2);
 	}
 
 	// Load section list
@@ -84,7 +84,7 @@
 	if ($ret == false)
 	{
 		echo "Query section list error: " . mysqli_error($db_conn);
-		exit();
+		exit(-3);
 	}
 
 	// Generate menu of section class
@@ -229,7 +229,7 @@ MENU;
 	if ($ret == false)
 	{
 		echo "Query excerptional section list error: " . mysqli_error($db_conn);
-		exit();
+		exit(-3);
 	}
 
 	// Generate menu of excerptional section class

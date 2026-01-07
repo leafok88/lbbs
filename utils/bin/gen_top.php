@@ -2,7 +2,7 @@
 	if (!isset($_SERVER["argc"]))
 	{
 		echo ("Invalid usage");
-		exit();
+		exit(-1);
 	}
 
 	chdir(dirname($_SERVER["argv"][0]));
@@ -43,7 +43,7 @@ MENU;
 	if ($rs == false)
 	{
 		echo("Query data error: " . mysqli_error($db_conn));
-		exit();
+		exit(-2);
 	}
 
 	$i = 1;
