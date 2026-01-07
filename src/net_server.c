@@ -56,6 +56,7 @@
 
 enum _net_server_constant_t
 {
+	SOCKET_LISTEN_BACKLOG = 20,
 	WAIT_CHILD_PROCESS_EXIT_TIMEOUT = 5, // second
 	WAIT_CHILD_PROCESS_KILL_TIMEOUT = 1, // second
 
@@ -636,7 +637,7 @@ int net_server(const char *hostaddr, in_port_t port[])
 			return -1;
 		}
 
-		if (listen(socket_server[i], 10) < 0)
+		if (listen(socket_server[i], SOCKET_LISTEN_BACKLOG) < 0)
 		{
 			log_error("Telnet socket listen error (%d)", errno);
 			return -1;
