@@ -6,7 +6,7 @@
 简介
 =================
 本软件旨在为一个纯Web访问的BBS [leafok_bbs](https://github.com/leafok/leafok_bbs) 提供基于Telnet访问的界面。  
-演示站点 : fenglin.info (Telnet 2323 / SSH2 2322)  
+演示站点: fenglin.info (Telnet 2323 / SSH2 2322)  
 ![欢迎](misc/images/ssh_welcome.jpg "欢迎访问LBBS")  
 ![菜单](misc/images/telnet_menu.jpg "主选单")  
 ![版块](misc/images/telnet_section.jpg "文章列表")  
@@ -15,9 +15,9 @@
 
 系统需求
 ==================
-1) GNU C 编译器  
-2) PHP ( 版本 >= 8.2 )  
-3) MySQL数据库 ( 版本 >= 8.4 )  
+1. GNU C 编译器  
+2. PHP (版本 >= 8.2)  
+3. MySQL数据库 (版本 >= 8.4)  
 
 
 安装说明
