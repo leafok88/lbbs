@@ -300,7 +300,6 @@ int detach_article_block_shm(void)
 		return -1;
 	}
 
-	/* Save necessary data before unmapping to avoid use-after-unmap */
 	shm_count = p_article_block_pool->shm_count;
 	pool_shm_size = p_article_block_pool->shm_size;
 
@@ -402,7 +401,7 @@ ARTICLE *article_block_find_by_aid(int32_t aid)
 	while (left < right)
 	{
 		// get block offset no less than mid value of left and right block offsets
-		mid = (left + right) / 2 + (left + right) % 2;
+		mid = left + (right - left + 1) / 2;
 
 		if (aid < p_article_block_pool->p_block[mid]->articles[0].aid)
 		{
@@ -422,7 +421,7 @@ ARTICLE *article_block_find_by_aid(int32_t aid)
 	// aid in the range [ aid of articles[left], aid of articles[right] ]
 	while (left < right)
 	{
-		mid = (left + right) / 2;
+		mid = left + (right - left) / 2;
 
 		if (aid <= p_block->articles[mid].aid)
 		{
@@ -1246,7 +1245,7 @@ ARTICLE *section_list_find_article_with_offset(SECTION_LIST *p_section, int32_t 
 	while (left < right)
 	{
 		// get page id no less than mid value of left page id and right page id
-		mid = (left + right) / 2 + (left + right) % 2;
+		mid = left + (right - left + 1) / 2;
 
 		if (aid < p_section->p_page_first_article[mid]->aid)
 		{
@@ -1543,14 +1542,17 @@ int section_list_move_topic(SECTION_LIST *p_section_src, SECTION_LIST *p_section
 		{
 			p_section_src->p_article_tail = p_article->p_prior;
 		}
-		if (p_section_src->p_article_head == p_article) // || p_section_src->p_article_tail == p_article
+		if (p_section_src->p_article_head == p_article) // Single element list
 		{
 			p_section_src->p_article_head = NULL;
 			p_section_src->p_article_tail = NULL;
 		}
-
-		p_article->p_prior->p_next = p_article->p_next;
-		p_article->p_next->p_prior = p_article->p_prior;
+		else
+		{
+			// Only update neighbor pointers if list is not empty after removal
+			p_article->p_prior->p_next = p_article->p_next;
+			p_article->p_next->p_prior = p_article->p_prior;
+		}
 
 		// Update sid of article
 		p_article->sid = p_section_dest->sid;

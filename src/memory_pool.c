@@ -80,16 +80,19 @@ inline static void *memory_pool_add_chunk(MEMORY_POOL *p_pool)
 	void *p_chunk;
 	void *p_node;
 	size_t i;
+	size_t chunk_size;
 
 	if (p_pool->chunk_count >= p_pool->chunk_count_limit)
 	{
 		log_error("Chunk count limit %d reached", p_pool->chunk_count);
 		return NULL;
 	}
-	p_chunk = malloc(p_pool->node_size * p_pool->node_count_per_chunk);
+
+	chunk_size = p_pool->node_size * p_pool->node_count_per_chunk;
+	p_chunk = malloc(chunk_size);
 	if (p_chunk == NULL)
 	{
-		log_error("malloc(%d * %d) error: OOM", p_pool->node_size, p_pool->node_count_per_chunk);
+		log_error("malloc(%zu) error: OOM", chunk_size);
 		return NULL;
 	}
 
@@ -180,7 +183,7 @@ int memory_pool_check_node(MEMORY_POOL *p_pool, void *p_node)
 			else
 			{
 				log_error("Address of node (%p) is not aligned with border of chunk %d [%p, %p)",
-						  i, p_node >= p_pool->p_chunks[i], (char *)(p_pool->p_chunks[i]) + chunk_size);
+						  p_node, i, p_pool->p_chunks[i], (char *)(p_pool->p_chunks[i]) + chunk_size);
 				return -3;
 			}
 		}
