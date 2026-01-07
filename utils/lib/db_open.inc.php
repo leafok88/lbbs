@@ -37,6 +37,6 @@
 
 		if ($db_conn == NULL)
 		{
-			exit();
+			exit(-1);
 		}
 	}

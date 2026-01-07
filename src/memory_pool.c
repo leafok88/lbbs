@@ -115,13 +115,6 @@ inline static void *memory_pool_add_chunk(MEMORY_POOL *p_pool)
 		return NULL;
 	}
 
-	/* Check for integer overflow before multiplication */
-	if (p_pool->node_count_per_chunk > SIZE_MAX / p_pool->node_size)
-	{
-		log_error("Integer overflow in chunk size calculation");
-		return NULL;
-	}
-
 	chunk_size = p_pool->node_size * p_pool->node_count_per_chunk;
 	p_chunk = malloc(chunk_size);
 	if (p_chunk == NULL)
