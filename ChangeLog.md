@@ -1,74 +1,67 @@
-# Changelog of LBBS - Classical terminal server of LeafOK BBS
+# LBBS Changelog - Classic Terminal Server for LeafOK BBS
 
-中文版本的ChangeLog.md位于[ChangeLog.zh_CN.md](ChangeLog.zh_CN.md)
+The Chinese version of this changelog is available at [ChangeLog.zh_CN.md](ChangeLog.zh_CN.md).
 
+## 2025-12-26 v1.7
 
-2025-12-26  v1.7
-=================
-Add minor features
+### Major Features Added
 
-1. Enhance article management
+1. Docker container deployment support
+2. Enhanced article management capabilities
 
+## 2025-11-21 v1.6
 
-2025-11-21  v1.6
-=================
-Support running on MSYS2 / MinGW64  
+Added support for running on MSYS2 / MinGW64 environments.
 
+## 2025-11-07 v1.5
 
-2025-11-07  v1.5
-=================
-Add major features
+### Major Features Added
 
-1. Display of all user list  
-2. Display of online user list  
-3. Display user information of selected item  
-4. Search user by username  
-5. Search article by username  
-6. Search article by title  
-7. Bad words filter  
-8. Selection of variant / fixed display width of wide-character  
+1. Complete user list display
+2. Online user list display
+3. Detailed user information display for selected items
+4. User search by username
+5. Article search by author username
+6. Article search by title
+7. Bad words filtering system
+8. Variable/fixed width display selection for wide characters
 
+## 2025-10-15 v1.4
 
-2025-10-15  v1.4
-=================
-Add major features
+### Major Features Added
 
-1. Personal favorite topics  
-2. Menu of top 10 hot topics  
-3. Allow charset selection (UTF-8 or GBK) by user  
-4. Support full / partial line deletion in text editor
+1. Personal favorite topics/bookmarks
+2. "Top 10 Hot Topics" menu
+3. User-selectable character encoding (UTF-8 or GBK)
+4. Full/partial line deletion support in text editor
 
+## 2025-07-01 v1.3
 
-2025-07-01  v1.3
-=================
-1. Support UTF8 instead of GBK
-2. Support charset conversion in BBSNET
+1. UTF-8 encoding support (replacing GBK)
+2. Character set conversion support in BBSNET
 
+## 2025-06-28 v1.2
 
-2025-06-28  v1.2
-=================
-Add major features
+### Major Features Added
 
-1. Display specific articles at the top (bottom) of the section  
-2. Excerptional directories and articles  
+1. Pinned article display at top/bottom of section lists
+2. Excerpt/featured directories and articles display
 
+## 2025-06-15 v1.1
 
-2025-06-15  v1.1
-=================
-Major release with all fundamental features
+Major release containing all fundamental features:
 
-1. Post / modify / reply article with text editor  
-2. Delete article by user self or admin  
-3. New / viewed article status display  
-4. SSH2 secure connection  
+1. Post, modify, and reply to articles using text editor
+2. Article deletion by users (self) or administrators
+3. New/viewed article status indicators
+4. SSH2 secure connection support
 
+## 2025-05-31 v1.0
 
-2025-05-31  v1.0
-=================
-Initial release with major features ready
+Initial release with core features:
 
-1. User login with accounts registered in Web  
-2. Board category / list with user favor setting  
-3. Article list per board with topic articles group selection  
-4. Article reader with quick article / topic selecting  
-5. Utilities, such as game, site shuttle, etc.  
+1. User login with web-registered accounts
+2. Board categories and lists with user favorites
+3. Article lists per board with topic grouping
+4. Article reader with quick article/topic navigation
+5. Utilities including games and site shuttle
