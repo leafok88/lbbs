@@ -1,5 +1,7 @@
 # 安装说明
 
+英文版本的更新日志位于 [INSTALL.md](INSTALL.md)。
+
 要在 Linux（例如：Debian 13、CentOS Stream 10）上安装 LBBS，请按照以下步骤操作：
 
 ## 0. 准备工作

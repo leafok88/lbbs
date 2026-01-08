@@ -1,5 +1,7 @@
 # Installation
 
+The Chinese version of this changelog is available at [INSTALL.zh_CN.md](INSTALL.zh_CN.md).
+
 To install LBBS on Linux (e.g., Debian 13, CentOS Stream 10), please perform the following steps:
 
 ## 0. Prerequisites
