@@ -1,85 +1,153 @@
-安装说明
-==================
-请按照以下步骤在Linux (例如: Debian 13, CentOS Stream 10) 上进行LBBS的编译和安装:
+# 安装说明
 
-0) 准备工作  
-   按照[leafok_bbs](https://github.com/leafok/leafok_bbs)下README.md的说明，初始化Web/Telnet版本共享的数据库。   
-   强烈建议先按照Web版本的说明完成基础功能的配置和验证，再开始Telnet版本的安装。
+要在 Linux（例如：Debian 13、CentOS Stream 10）上安装 LBBS，请按照以下步骤操作：
 
-1) 通用工具/基础库依赖  
-   gcc >= 14.2  
-   autoconf >= 2.68  
-   automake >= 1.16  
-   php >= 8.2  
-   mysql >= 8.4  
-   (Debian / Ubuntu 用户)  
-   sudo apt-get install -y libssh-dev libsystemd-dev  
-   (For CentOS / RHEL 用户)  
-   sudo dnf install -y libssh-devel systemd-devel  
-   (MSYS2 with MinGW-w64 toolchain 用户)  
-   pacman -S --needed msys2-runtime-devel libssh libssh-devel pcre2-devel mingw-w64-x86_64-libiconv mingw-w64-x86_64-libmariadbclient  
+## 0. 准备工作
 
-2) 从Github导出或下载源代码文件  
-   运行以下命令来初始化autoconf/automake环境:  
-   autoreconf --install --force
+按照 [leafok_bbs](https://github.com/leafok/leafok_bbs) 中的 README.md 说明，初始化 Web 和 Telnet 版本共享的数据库结构。
 
-3) 编译源代码  
-   export LBBS_HOME_DIR=/usr/local/lbbs  
-   (Linux用户)  
-   ./configure --prefix=$LBBS_HOME_DIR  
-   (MSYS2用户: 需要MinGW-w64)  
-   ./configure --prefix=$LBBS_HOME_DIR --disable-shared PKG_CONFIG_PATH=/mingw64/lib/pkgconfig/  
-   make
+强烈建议先完成 Web 版本的配置步骤，并确保这些功能正常工作。
 
-4) 建立用户和组  
-   sudo useradd bbs
+## 1. 通用要求
 
-5) 安装程序文件和数据文件  
-   sudo make install  
-   chown -R bbs:bbs $LBBS_HOME_DIR
+- gcc >= 13.3
+- autoconf >= 2.68
+- automake >= 1.16
+- php >= 8.2
+- mysql >= 8.4
 
-6) 修改以下配置文件  
-   默认配置文件被命名为*.default，请先将其改名。  
-   $LBBS_HOME_DIR/conf/bbsd.conf  
-   $LBBS_HOME_DIR/conf/bbsnet.conf  
-   $LBBS_HOME_DIR/conf/badwords.conf  
-   $LBBS_HOME_DIR/utils/conf/db_conn.conf.php  
+### 发行版特定软件包
 
-7) 运行以下脚本来生成菜单配置文件和版块精华区数据文件  
-   sudo -u bbs php $LBBS_HOME_DIR/utils/bin/gen_section_menu.php  
-   sudo -u bbs php $LBBS_HOME_DIR/utils/bin/gen_ex_list.php  
+**Debian / Ubuntu：**
+```bash
+sudo apt-get install -y libssh-dev libsystemd-dev
+```
 
-8) 将MySQL服务器的CA证书文件，复制到$LBBS_HOME_DIR/conf/ca_cert.pem  
+**CentOS / RHEL：**
+```bash
+sudo dnf install -y libssh-devel systemd-devel
+```
 
-9) 创建SSH2 RSA / ED25519 证书  
-   ssh-keygen -t rsa -C "Your Server Name" -N "" -f $LBBS_HOME_DIR/conf/ssh_host_rsa_key  
-   ssh-keygen -t ed25519 -C "Your Server Name" -N "" -f $LBBS_HOME_DIR/conf/ssh_host_ed25519_key  
-   ssh-keygen -t ecdsa -C "Your Server Name" -N "" -f $LBBS_HOME_DIR/conf/ssh_host_ecdsa_key  
+**MSYS2 with MinGW-w64 工具链：**
+```bash
+pacman -S --needed msys2-runtime-devel libssh libssh-devel pcre2-devel mingw-w64-x86_64-libiconv mingw-w64-x86_64-libmariadbclient
+```
 
-10) 启动服务程序  
-   sudo -u bbs $LBBS_HOME_DIR/bin/bbsd
+## 2. 提取源代码文件
 
-11) (可选) 配置systemd  
-   基于conf/lbbs.service创建/usr/lib/systemd/system/lbbs.service，并进行必要的修改。  
-   刷新配置并启动服务。  
+从 tarball 或 GitHub 导出源代码文件。
 
-12) (可选) 配置logrotate  
-   基于conf/lbbs.logrotate创建/etc/logrotate.d/bbsd，并进行必要的修改。  
-   重启logrotate服务。  
+运行以下命令来设置 autoconf/automake 环境：
+```bash
+autoreconf --install --force
+```
 
-13) 服务异常终止时的清理  
-   由于未预期的错误或者不当操作导致lbbs进程异常终止时，在重启服务之前可能需要进行共享内存/信号量的清理。先运行以下命令检测:  
-   sudo -u bbs ipcs  
-   正常情况下不存在所有者是bbs的项。否则，请运行以下命令清理:  
-   sudo -u bbs ipcrm -a
+## 3. 编译源代码
 
+```bash
+export LBBS_HOME_DIR=/usr/local/lbbs
+```
 
-Docker用户
-==================
-你可以从源代码位置生成容器镜像:  
-   docker compose up --build -d  
+**对于 Linux：**
+```bash
+./configure --prefix=$LBBS_HOME_DIR
+```
 
-也可以从Docker Hub下载镜像文件:  
-   docker compose pull  
+**对于 MSYS2 with MinGW-w64 工具链：**
+```bash
+./configure --prefix=$LBBS_HOME_DIR --disable-shared PKG_CONFIG_PATH=/mingw64/lib/pkgconfig/
+```
 
-记得需要根据本地配置 (数据库连接、服务端口等) 修改配置文件，步骤见上节。  
+```bash
+make
+```
+
+## 4. 创建用户和组
+
+```bash
+sudo useradd bbs
+```
+
+## 5. 安装二进制和数据文件
+
+```bash
+sudo make install
+chown -R bbs:bbs $LBBS_HOME_DIR
+```
+
+## 6. 修改配置文件
+
+默认配置文件保存为 `*.default`。首先重命名它们：
+
+- `$LBBS_HOME_DIR/conf/bbsd.conf`
+- `$LBBS_HOME_DIR/conf/bbsnet.conf`
+- `$LBBS_HOME_DIR/conf/badwords.conf`
+- `$LBBS_HOME_DIR/utils/conf/db_conn.conf.php`
+
+## 7. 复制 MySQL CA 证书
+
+将 MySQL 服务器的 CA 证书文件复制到 `$LBBS_HOME_DIR/conf/ca_cert.pem`。
+
+## 8. 生成菜单配置文件
+
+运行以下脚本以生成包含版块数据的菜单配置文件：
+
+```bash
+sudo -u bbs php $LBBS_HOME_DIR/utils/bin/gen_section_menu.php
+sudo -u bbs php $LBBS_HOME_DIR/utils/bin/gen_ex_list.php
+sudo -u bbs php $LBBS_HOME_DIR/utils/bin/gen_top.php
+```
+
+## 9. 创建 SSH2 证书
+
+```bash
+ssh-keygen -t rsa -C "您的服务器名称" -N "" -f $LBBS_HOME_DIR/conf/ssh_host_rsa_key
+ssh-keygen -t ed25519 -C "您的服务器名称" -N "" -f $LBBS_HOME_DIR/conf/ssh_host_ed25519_key
+ssh-keygen -t ecdsa -C "您的服务器名称" -N "" -f $LBBS_HOME_DIR/conf/ssh_host_ecdsa_key
+```
+
+## 10. 启动
+
+```bash
+sudo -u bbs $LBBS_HOME_DIR/bin/bbsd
+```
+
+## 11. （可选）设置 systemd
+
+从 `conf/lbbs.service` 中的示例创建您自己的 `/usr/lib/systemd/system/lbbs.service`，并进行任何必要的更改。
+
+重新加载守护进程配置并启动服务。
+
+## 12. （可选）设置 logrotate
+
+从 `conf/lbbs.logrotate` 中的示例创建您自己的 `/etc/logrotate.d/lbbs`，并进行任何必要的更改。
+
+重新启动 logrotate 服务。
+
+## 13. 服务异常终止时的清理
+
+如果发生意外故障或操作不当导致 LBBS 进程异常终止，在重新启动进程之前可能需要手动清理共享内存/信号量。
+
+首先，使用以下命令检查：
+```bash
+sudo -u bbs ipcs
+```
+
+不应存在属于 `bbs` 的项目。否则，使用以下命令清理：
+```bash
+sudo -u bbs ipcrm -a
+```
+
+# 对于 Docker 用户
+
+您可以通过运行以下命令从源代码构建 Docker 镜像：
+```bash
+docker compose up --build -d
+```
+
+或者通过运行以下命令从 Docker Hub 拉取每个版本的 Docker 镜像：
+```bash
+docker compose pull
+```
+
+您应始终按照上述说明创建/更新本地配置（例如，数据库连接、网络端口）的配置文件。
