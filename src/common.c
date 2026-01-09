@@ -13,7 +13,16 @@
 #include "common.h"
 
 // Version
-const char APP_INFO[] = PACKAGE_STRING " build on " __DATE__ " " __TIME__;
+#ifdef __x86_64__
+const char APP_INFO[] = PACKAGE_STRING " build (x86_64) on " __DATE__ " " __TIME__;
+#else
+#ifdef __aarch64__
+const char APP_INFO[] = PACKAGE_STRING " build (aarch64) on " __DATE__ " " __TIME__;
+#else
+const char APP_INFO[] = PACKAGE_STRING " build (i386) on " __DATE__ " " __TIME__;
+#endif
+#endif
+
 const char COPYRIGHT_INFO[] = "Copyright (C) 2004-2026  Leaflet <leaflet@leafok.com>\n"
 							  "This program comes with ABSOLUTELY NO WARRANTY.\n"
 							  "This is free software, and you are welcome to redistribute it \n"
