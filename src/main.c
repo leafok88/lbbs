@@ -72,9 +72,9 @@ static void arg_foreground(void)
 	daemon_service = 0;
 }
 
-static void arg_help(void)
+static void arg_usage(void)
 {
-	fprintf(stderr, "Usage: bbsd [-fhv] [...]\n\n");
+	fprintf(stderr, "Usage: bbsd [-fhvC] [...]\n\n");
 
 	for (int i = 0; i < arg_options_count; i++)
 	{
@@ -89,10 +89,19 @@ static void arg_help(void)
 	fprintf(stderr, "\n    If meet any bug, please report to <leaflet@leafok.com>\n\n");
 }
 
+static void arg_help(void)
+{
+	arg_usage();
+
+	exit(0);
+}
+
 static void arg_version(void)
 {
-	printf("%s\n", APP_INFO);
-	printf("%s\n", COPYRIGHT_INFO);
+	fprintf(stderr, "%s\n", APP_INFO);
+	fprintf(stderr, "%s\n", COPYRIGHT_INFO);
+
+	exit(0);
 }
 
 static void arg_display_log(void)
@@ -107,51 +116,55 @@ static void arg_display_error_log(void)
 
 static void arg_compile_info(void)
 {
-	printf("%s\n"
-		   "--enable-shared\t\t[%s]\n"
-		   "--enable-systemd\t[%s]\n"
-		   "--with-debug\t\t[%s]\n"
-		   "--with-epoll\t\t[%s]\n"
-		   "--with-mariadb\t\t[%s]\n"
-		   "--with-sysv\t\t[%s]\n",
-		   APP_INFO,
+	fprintf(stderr, "%s\n"
+					"--enable-shared\t\t[%s]\n"
+					"--enable-systemd\t[%s]\n"
+					"--with-debug\t\t[%s]\n"
+					"--with-epoll\t\t[%s]\n"
+					"--with-mariadb\t\t[%s]\n"
+					"--with-sysv\t\t[%s]\n",
+			APP_INFO,
 #ifdef _ENABLE_SHARED
-		   "yes",
+			"yes",
 #else
-		   "no",
+			"no",
 #endif
 #ifdef HAVE_SYSTEMD_SD_DAEMON_H
-		   "yes",
+			"yes",
 #else
-		   "no",
+			"no",
 #endif
 #ifdef _DEBUG
-		   "yes",
+			"yes",
 #else
-		   "no",
+			"no",
 #endif
 #ifdef HAVE_SYS_EPOLL_H
-		   "yes",
+			"yes",
 #else
-		   "no",
+			"no",
 #endif
 #ifdef HAVE_MARIADB_CLIENT
-		   "yes",
+			"yes",
 #else
-		   "no",
+			"no",
 #endif
 #ifdef HAVE_SYSTEM_V
-		   "yes"
+			"yes"
 #else
-		   "no"
+			"no"
 #endif
 	);
+
+	exit(0);
 }
 
 static void arg_error(void)
 {
 	fprintf(stderr, "Invalid arguments\n");
-	arg_help();
+	arg_usage();
+
+	exit(1);
 }
 
 int main(int argc, char *argv[])
@@ -215,6 +228,8 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "setlocale(LC_ALL, en_US.UTF-8) error\n");
 		return -1;
 	}
+
+	fprintf(stderr, "%s\n", APP_INFO);
 
 	// Initialize log
 	if (log_begin(LOG_FILE_INFO, LOG_FILE_ERROR) < 0)

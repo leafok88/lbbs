@@ -14,6 +14,7 @@ on:
     types: [published]
 
 env:
+  DOCKERHUB_PLATFORMS: linux/amd64,linux/arm64
   BBSD_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/lbbs-bbsd
 
 jobs:
@@ -39,6 +40,7 @@ jobs:
         id: push-bbsd
         uses: docker/build-push-action@v5
         with:
+          platforms: ${{ env.DOCKERHUB_PLATFORMS }}
           context: .
           file: ./Dockerfile/dockerfile.bbsd
           push: true

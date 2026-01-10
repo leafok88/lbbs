@@ -1,6 +1,6 @@
 # 安装说明
 
-英文版本的更新日志位于 [INSTALL.md](INSTALL.md)。
+英文版本的安装说明位于 [INSTALL.md](INSTALL.md)。
 
 要在 Linux（例如：Debian 13、CentOS Stream 10）上安装 LBBS，请按照以下步骤操作：
 
@@ -79,12 +79,31 @@ chown -R bbs:bbs $LBBS_HOME_DIR
 
 ## 6. 修改配置文件
 
-默认配置文件保存为 `*.default`。首先重命名它们：
+默认配置文件保存为 `*.default`。首先复制并重命名它们：
 
-- `$LBBS_HOME_DIR/conf/bbsd.conf`
-- `$LBBS_HOME_DIR/conf/bbsnet.conf`
-- `$LBBS_HOME_DIR/conf/badwords.conf`
-- `$LBBS_HOME_DIR/utils/conf/db_conn.conf.php`
+```bash
+cd $LBBS_HOME_DIR
+cp conf/bbsd.conf.default conf/bbsd.conf
+cp conf/bbsnet.conf.default conf/bbsnet.conf
+cp conf/badwords.conf.default conf/badwords.conf
+cp utils/conf/db_conn.conf.php.default utils/conf/db_conn.conf.php
+```
+
+然后编辑每个文件以匹配您的环境：
+
+### bbsd.conf
+需要调整的关键设置：
+- `db_host`, `db_username`, `db_password`, `db_database`: MySQL 连接详情
+- `bbs_server`, `bbs_port`, `bbs_ssh_port`: 网络设置
+- `bbs_name`: 您的 BBS 名称
+- `bbs_max_client`: 最大并发连接数（根据服务器容量调整）
+
+### db_conn.conf.php
+设置数据库连接参数：
+- `$DB_hostname`, `$DB_username`, `$DB_password`, `$DB_database`
+
+### bbsnet.conf & badwords.conf
+根据您的 BBS 策略进行审查和自定义。
 
 ## 7. 复制 MySQL CA 证书
 
@@ -101,6 +120,8 @@ sudo -u bbs php $LBBS_HOME_DIR/utils/bin/gen_top.php
 ```
 
 ## 9. 创建 SSH2 证书
+
+为 SSH 服务器组件生成 SSH 主机密钥。`-N ""` 标志为密钥设置空密码（自动化服务启动所需）。
 
 ```bash
 ssh-keygen -t rsa -C "您的服务器名称" -N "" -f $LBBS_HOME_DIR/conf/ssh_host_rsa_key
@@ -130,26 +151,60 @@ sudo -u bbs $LBBS_HOME_DIR/bin/bbsd
 
 如果发生意外故障或操作不当导致 LBBS 进程异常终止，在重新启动进程之前可能需要手动清理共享内存/信号量。
 
-首先，使用以下命令检查：
+### 何时需要清理
+- `bbsd` 进程崩溃或被强制终止后
+- 如果 `bbsd` 启动时出现"共享内存已存在"错误
+- 当 `ipcs` 显示属于用户 `bbs` 的资源时
+
+### 检查孤儿资源
+首先，检查是否有剩余的共享内存段或信号量：
 ```bash
 sudo -u bbs ipcs
 ```
 
-不应存在属于 `bbs` 的项目。否则，使用以下命令清理：
+查看 "SHM"（共享内存）和 "SEM"（信号量）部分中 "OWNER" 为 `bbs` 的条目。
+
+### 清理
+如果存在资源，使用以下命令删除：
 ```bash
 sudo -u bbs ipcrm -a
 ```
 
-# 对于 Docker 用户
+这将删除 `bbs` 用户可访问的所有共享内存和信号量资源。
 
-您可以通过运行以下命令从源代码构建 Docker 镜像：
+## 14. Docker 安装（替代方法）
+
+对于容器化部署，LBBS 提供 Docker 支持。
+
+### 从源代码构建
+要从源代码构建 Docker 镜像：
 ```bash
 docker compose up --build -d
 ```
 
-或者通过运行以下命令从 Docker Hub 拉取每个版本的 Docker 镜像：
+### 使用预构建镜像
+要使用 Docker Hub 中的预构建镜像：
 ```bash
 docker compose pull
+docker compose up -d
 ```
 
-您应始终按照上述说明创建/更新本地配置（例如，数据库连接、网络端口）的配置文件。
+### Docker 配置
+使用 Docker 时，您仍然需要适当配置 LBBS：
+
+1. **配置文件**：按照步骤 6 中的说明创建和自定义配置文件。
+2. **数据库连接**：确保 `db_conn.conf.php` 指向您的 MySQL 服务器（容器应能访问该服务器）。
+3. **端口映射**：默认情况下，Docker Compose 映射：
+   - SSH 端口：2222 → 22（容器）
+   - Telnet 端口：2323 → 23（容器）
+   
+   如果需要，请在 `docker-compose.yml` 中调整这些设置。
+4. **持久化数据**：`data/` 和 `conf/` 目录作为卷挂载以实现持久化。
+
+### Docker Compose 管理
+- 启动：`docker compose up -d`
+- 停止：`docker compose down`
+- 查看日志：`docker compose logs -f`
+- 重启：`docker compose restart`
+
+有关更多详细信息，请参阅 `docker-compose.yml` 文件和 Docker 文档。
