@@ -1,6 +1,6 @@
 # Installation
 
-The Chinese version of this changelog is available at [INSTALL.zh_CN.md](INSTALL.zh_CN.md).
+The Chinese version of this installation guide is available at [INSTALL.zh_CN.md](INSTALL.zh_CN.md).
 
 To install LBBS on Linux (e.g., Debian 13, CentOS Stream 10), please perform the following steps:
 
@@ -79,12 +79,31 @@ chown -R bbs:bbs $LBBS_HOME_DIR
 
 ## 6. Modify Configuration Files
 
-Default configuration files are saved as `*.default`. Rename them first:
+Default configuration files are saved as `*.default`. Copy and rename them first:
 
-- `$LBBS_HOME_DIR/conf/bbsd.conf`
-- `$LBBS_HOME_DIR/conf/bbsnet.conf`
-- `$LBBS_HOME_DIR/conf/badwords.conf`
-- `$LBBS_HOME_DIR/utils/conf/db_conn.conf.php`
+```bash
+cd $LBBS_HOME_DIR
+cp conf/bbsd.conf.default conf/bbsd.conf
+cp conf/bbsnet.conf.default conf/bbsnet.conf
+cp conf/badwords.conf.default conf/badwords.conf
+cp utils/conf/db_conn.conf.php.default utils/conf/db_conn.conf.php
+```
+
+Then edit each file to match your environment:
+
+### bbsd.conf
+Key settings to adjust:
+- `db_host`, `db_username`, `db_password`, `db_database`: MySQL connection details
+- `bbs_server`, `bbs_port`, `bbs_ssh_port`: Network settings
+- `bbs_name`: Your BBS name
+- `bbs_max_client`: Maximum concurrent connections (adjust based on server capacity)
+
+### db_conn.conf.php
+Set the database connection parameters:
+- `$DB_hostname`, `$DB_username`, `$DB_password`, `$DB_database`
+
+### bbsnet.conf & badwords.conf
+Review and customize as needed for your BBS policies.
 
 ## 7. Copy MySQL CA Certificate
 
@@ -101,6 +120,8 @@ sudo -u bbs php $LBBS_HOME_DIR/utils/bin/gen_top.php
 ```
 
 ## 9. Create SSH2 Certificates
+
+Generate SSH host keys for the SSH server component. The `-N ""` flag sets an empty passphrase for the keys (required for automated service startup).
 
 ```bash
 ssh-keygen -t rsa -C "Your Server Name" -N "" -f $LBBS_HOME_DIR/conf/ssh_host_rsa_key
@@ -130,26 +151,60 @@ Restart the logrotate service.
 
 In case of unexpected failure or improper operation resulting in abnormal termination of the LBBS process, manual cleanup of shared memory/semaphore might be required before relaunching the process.
 
-First, check with:
+### When Cleanup is Needed
+- After a crash or force-kill of the `bbsd` process
+- If `bbsd` fails to start with "shared memory already exists" errors
+- When `ipcs` shows resources owned by user `bbs`
+
+### Checking for Orphaned Resources
+First, check for any remaining shared memory segments or semaphores:
 ```bash
 sudo -u bbs ipcs
 ```
 
-There should be no items owned by `bbs`. Otherwise, clean up with:
+Look for entries in the "SHM" (shared memory) and "SEM" (semaphore) sections where the "OWNER" is `bbs`.
+
+### Cleaning Up
+If resources exist, remove them with:
 ```bash
 sudo -u bbs ipcrm -a
 ```
 
-# For Docker Users
+This removes all shared memory and semaphore resources accessible to the `bbs` user.
 
-You may either build the Docker image from source code by running:
+## 14. Docker Installation (Alternative Method)
+
+For containerized deployment, LBBS provides Docker support.
+
+### Building from Source
+To build the Docker image from source code:
 ```bash
 docker compose up --build -d
 ```
 
-or pull the Docker image per release from Docker Hub by running:
+### Using Pre-built Images
+To use pre-built images from Docker Hub:
 ```bash
 docker compose pull
+docker compose up -d
 ```
 
-You should always create/update the configuration files for local configuration (e.g., database connection, network port) as described above.
+### Configuration for Docker
+When using Docker, you still need to configure LBBS appropriately:
+
+1. **Configuration Files**: Create and customize the configuration files as described in Step 6.
+2. **Database Connection**: Ensure `db_conn.conf.php` points to your MySQL server (which should be accessible from the container).
+3. **Port Mapping**: By default, Docker Compose maps:
+   - SSH port: 2322 → 2322 (container)
+   - Telnet port: 2323 → 2323 (container)
+   
+   Adjust these in `docker-compose.yml` if needed.
+4. **Persistent Data**: The `data/` and `conf/` directories are mounted as volumes for persistence.
+
+### Docker Compose Management
+- Start: `docker compose up -d`
+- Stop: `docker compose down`
+- View logs: `docker compose logs -f`
+- Restart: `docker compose restart`
+
+For more details, refer to the `docker-compose.yml` file and Docker documentation.
