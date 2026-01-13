@@ -35,7 +35,7 @@ static const char *cstate[10] =
 
 char fname[FILE_PATH_LEN];
 time_t birth;
-int weight, satis, mon, day, age, angery, sick, oo, happy, clean, tiredstrong, play;
+int weight, satis, day, month, age, angery, sick, oo, happy, clean, tiredstrong, play;
 int winn, losee, last, chictime, agetmp, food, zfood;
 char chicken_name[CHICKEN_NAME_LEN + 1];
 FILE *cfp;
@@ -109,22 +109,15 @@ static int load_chicken()
 		last = 0;
 	}
 	ret = fscanf(fp, "%d %d %d %d %d %d %d %d %d %d %d %d %d %d %s ",
-				 &weight, &mon, &day, &satis, &age, &oo, &happy, &clean, &tiredstrong, &play, &winn, &losee, &food, &zfood, chicken_name);
+				 &weight, &day, &month, &satis, &age, &oo, &happy, &clean, &tiredstrong, &play, &winn, &losee, &food, &zfood, chicken_name);
 	if (ret != 15)
 	{
 		log_error("Error in chicken data");
 	}
 	fclose(fp);
 
-	if (day < (ptime.tm_mon + 1))
-	{
-		age = ptime.tm_mday;
-		age = age + 31 - mon;
-	}
-	else
-	{
-		age = ptime.tm_mday - mon;
-	}
+	age = (ptime.tm_mon + 1 + 12 - month) % 12 * 31 +
+		  (ptime.tm_mday - day);
 
 	return 0;
 }
@@ -135,7 +128,7 @@ int save_chicken()
 
 	fp = fopen(fname, "r+");
 	fprintf(fp, "%d %d %d %d %d %d %d %d %d %d %d %d %d %d %s ",
-			weight, mon, day, satis, age, oo, happy, clean, tiredstrong, play, winn, losee, food, zfood, chicken_name);
+			weight, day, month, satis, age, oo, happy, clean, tiredstrong, play, winn, losee, food, zfood, chicken_name);
 	fclose(fp);
 
 	return 0;
@@ -224,7 +217,7 @@ static int show_chicken()
 		"  快乐度:%d"
 		"  满意度:%d",
 		// "  大补丸:%d\r\n",
-		chicken_name, age, weight, food, zfood, tiredstrong, clean, day, mon, money_balance(), happy, satis); //,oo);
+		chicken_name, age, weight, food, zfood, tiredstrong, clean, month, day, money_balance(), happy, satis); //,oo);
 
 	moveto(3, 0);
 	if (age <= 16)
