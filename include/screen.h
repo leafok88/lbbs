@@ -39,6 +39,7 @@ extern void clearscr();
 
 extern int press_any_key();
 extern int press_any_key_ex(const char *msg, int sec);
+extern int press_any_key_no_prompt(int sec);
 
 extern void set_input_echo(int echo);
 

@@ -672,7 +672,7 @@ int pressany(int i)
 	moveto(23, 0);
 	prints("[33;46;1m                           [34m%s[37m                         [0m", cstate[i]);
 	iflush();
-	ch = igetch_t(MIN(BBS_max_user_idle_time, 60));
+	ch = press_any_key_no_prompt(60);
 	moveto(23, 0);
 	clrtoeol();
 	iflush();
@@ -688,7 +688,7 @@ int guess()
 	clrtoeol();
 	iflush();
 
-	ch = igetch_t(MIN(BBS_max_user_idle_time, 60));
+	ch = press_any_key_no_prompt(60);
 	if ((ch != '1') && (ch != '2') && (ch != '3'))
 	{
 		return -1; // error input
