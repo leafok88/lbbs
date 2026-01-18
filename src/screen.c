@@ -98,15 +98,20 @@ inline int press_any_key()
 
 int press_any_key_ex(const char *msg, int sec)
 {
-	int ch = 0;
-	int duration = 0;
-	time_t t_begin = time(NULL);
-
 	moveto(SCREEN_ROWS, 0);
 	clrtoeol();
 
 	prints(msg);
 	iflush();
+
+	return press_any_key_no_prompt(sec);
+}
+
+inline int press_any_key_no_prompt(int sec)
+{
+	int ch = 0;
+	int duration = 0;
+	time_t t_begin = time(NULL);
 
 	igetch_reset();
 
