@@ -28,9 +28,6 @@ jobs:
 
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
-      with:
-        # This line enables the GitHub Actions cache storage backend for Buildx
-        install: true
           
     - name: Extract Docker metadata
       id: meta
