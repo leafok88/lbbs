@@ -46,7 +46,6 @@ jobs:
         context: .
         file: Dockerfile/dockerfile.bbsd
         tags: |
-          ${{ env.BBSD_IMAGE }}:dev
           ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
         cache-from: type=gha # Pull cache from GitHub Actions cache
