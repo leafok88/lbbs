@@ -59,8 +59,7 @@ jobs:
           tags: |
             ${{ env.BBSD_IMAGE }}:${{ github.ref_name }}
             ${{ env.BBSD_IMAGE }}:latest
-            ${{ steps.meta.outputs.tags }}            
+            ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha # Pull cache from GitHub Actions cache
           cache-to: type=gha,mode=max # Push cache to GitHub Actions cache
-          
