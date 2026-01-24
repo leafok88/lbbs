@@ -33,13 +33,13 @@ jobs:
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
           
-    - name: Extract Docker metadata
-      id: meta
+    - name: Extract Docker metadata (bbsd)
+      id: meta-bbsd
       uses: docker/metadata-action@v5
       with:
         images: ${{ env.BBSD_IMAGE }}
           
-    - name: Build the Docker image
+    - name: Build the Docker image (bbsd)
       id: build-bbsd
       uses: docker/build-push-action@v5
       with:
@@ -47,7 +47,7 @@ jobs:
         context: .
         file: Dockerfile/dockerfile.bbsd
         tags: |
-          ${{ steps.meta.outputs.tags }}
-        labels: ${{ steps.meta.outputs.labels }}
+          ${{ steps.meta-bbsd.outputs.tags }}
+        labels: ${{ steps.meta-bbsd.outputs.labels }}
         cache-from: type=gha # Pull cache from GitHub Actions cache
         cache-to: type=gha,mode=max # Push cache to GitHub Actions cache
