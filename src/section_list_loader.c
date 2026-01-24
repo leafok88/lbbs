@@ -630,7 +630,7 @@ int apply_article_op_log_from_db(int op_count_limit)
 						  p_section->sid, p_article->aid);
 			}
 			break;
-		case 'Z': // Set article as trnasship
+		case 'Z': // Set article as transship
 			p_article->transship = 1;
 			break;
 		default:

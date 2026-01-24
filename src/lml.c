@@ -409,6 +409,10 @@ int lml_render(const char *str_in, char *str_out, int buf_len, int width, int qu
 			CHECK_AND_APPEND_OUTPUT(str_out, buf_len, j, tab_spaces, tab_width, line_width);
 			continue;
 		}
+		else if (!quote_mode && str_in[i] == '\033')
+		{
+			continue; // Skip control characters while not in quote mode
+		}
 
 		if (!lml_tag_disabled && str_in[i] == '[')
 		{
