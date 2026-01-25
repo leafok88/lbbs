@@ -60,6 +60,8 @@ jobs:
           context: .
           file: ./Dockerfile/dockerfile.bbsd
           push: true
+          provenance: true
+          sbom: true
           tags: |
             ${{ env.BBSD_IMAGE }}:${{ github.ref_name }}
             ${{ env.BBSD_IMAGE }}:latest
