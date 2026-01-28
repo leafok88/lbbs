@@ -10,8 +10,9 @@
 name: Publish Docker image
 
 on:
-  release:
-    types: [published]
+  push:
+    tags:
+      - "v*.*.*"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -60,6 +61,8 @@ jobs:
           context: .
           file: ./Dockerfile/dockerfile.bbsd
           push: true
+          provenance: true
+          sbom: true
           tags: |
             ${{ env.BBSD_IMAGE }}:${{ github.ref_name }}
             ${{ env.BBSD_IMAGE }}:latest
