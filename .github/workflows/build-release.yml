@@ -47,4 +47,3 @@ jobs:
         prerelease: true
         files: |
           lbbs-*.tar.gz
-        token: ${{ secrets.GITHUB_TOKEN }}
