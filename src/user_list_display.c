@@ -520,6 +520,7 @@ int user_list_search(void)
 			moveto(3, 1);
 			clrtoeol();
 			prints("用户名格式非法");
+			press_any_key();
 			continue;
 		}
 
