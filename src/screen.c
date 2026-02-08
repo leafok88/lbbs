@@ -170,6 +170,12 @@ static int _str_input(char *buffer, int buf_size, int max_display_len, enum io_e
 		{
 			continue;
 		}
+		else if (ch == KEY_ESC)
+		{
+			buffer[0] = '\0';
+			offset = 0;
+			break;
+		}
 		else if (ch == BACKSPACE || ch == KEY_DEL)
 		{
 			if (offset > 0)
@@ -344,6 +350,12 @@ int get_data(int row, int col, char *prompt, char *buffer, int buf_size, int max
 		else if (ch == LF || ch == '\0')
 		{
 			continue;
+		}
+		else if (ch == KEY_ESC)
+		{
+			buffer[0] = '\0';
+			len = 0;
+			break;
 		}
 		else if (ch == BACKSPACE)
 		{
