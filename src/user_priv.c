@@ -21,6 +21,12 @@
 
 BBS_user_priv BBS_priv;
 
+// External definitions for inline functions
+extern inline int checklevel(BBS_user_priv *p_priv, int level);
+extern inline int checklevel2(BBS_user_priv *p_priv, int level);
+extern inline int checkpriv(BBS_user_priv *p_priv, int sid, int priv);
+extern inline int is_favor(BBS_user_priv *p_priv, int sid);
+
 inline static int search_priv(BBS_user_priv *p_priv, int sid, int *p_offset)
 {
 	int left = 0;

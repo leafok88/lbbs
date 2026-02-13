@@ -36,6 +36,9 @@ static const unsigned int hash_dict_prime_list[] = {
 
 static const unsigned int hash_dict_prime_list_count = sizeof(hash_dict_prime_list) / sizeof(hash_dict_prime_list[0]);
 
+// External definition for inline function
+extern inline unsigned int hash_dict_item_count(HASH_DICT *p_dict);
+
 HASH_DICT *hash_dict_create(int item_count_limit)
 {
 	HASH_DICT *p_dict = NULL;

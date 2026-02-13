@@ -40,6 +40,12 @@ static const char MENU_CONF_DELIM_WITHOUT_SPACE[] = "\r\n";
 MENU_SET bbs_menu;
 MENU_SET top10_menu;
 
+// External definitions for inline functions
+extern inline MENU *get_menu(MENU_SET *p_menu_set, const char *menu_name);
+extern inline MENU *get_menu_by_id(MENU_SET *p_menu_set, MENU_ID menu_id);
+extern inline MENU_ITEM *get_menu_item_by_id(MENU_SET *p_menu_set, MENU_ITEM_ID menu_item_id);
+extern inline MENU_SCREEN *get_menu_screen_by_id(MENU_SET *p_menu_set, MENU_SCREEN_ID menu_screen_id);
+
 int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 {
 	char filepath[FILE_PATH_LEN];
